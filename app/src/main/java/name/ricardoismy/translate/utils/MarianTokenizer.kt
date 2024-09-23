@@ -4,8 +4,6 @@ import android.content.Context
 import com.github.google.sentencepiece.SentencePieceProcessor
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import org.tensorflow.lite.support.common.FileUtil
-import java.nio.charset.Charset
 
 class MarianTokenizer(
     context: Context,
@@ -101,7 +99,13 @@ class MarianTokenizer(
     fun encode(text: String, padTokens: Boolean = false): Pair<IntArray, IntArray> {
         try {
             val tokens = tokenize(text)
-            val inputIds = tokens.map { convertTokenToId(it) }.toIntArray()
+            var inputIds = tokens.map { convertTokenToId(it) }.toIntArray()
+
+            // TODO: improve handling of EOS token
+            val inputIdsWithEos = inputIds.toMutableList()
+            inputIdsWithEos.add(eosId)
+
+            inputIds = inputIdsWithEos.toIntArray()
 
             val truncatedInputIds = if (!padTokens && inputIds.size < maxInputLength) {
                 inputIds
@@ -143,7 +147,7 @@ class MarianTokenizer(
         }
     }
 
-    fun decode(ids: List<Int>, filterSpecialTokens: Boolean = true): String {
+    fun decode(ids: IntArray, filterSpecialTokens: Boolean = true): String {
         try {
             var tokens = ids.map { convertIdToToken(it) }
 
@@ -176,20 +180,14 @@ class MarianTokenizer(
     }
 
     private fun loadVocabulary(context: Context, filePath: String): List<String> {
-        val vocabBuffer = FileUtil.loadMappedFile(context, filePath)
-        val vocabString = Charset.forName("UTF-8").decode(vocabBuffer).toString()
-        val vocab = Json.decodeFromString<JsonObject>(vocabString).keys.toList()
+        val vocabBuffer = context.assets.open(filePath).readBytes().toString(Charsets.UTF_8)
+        val vocab = Json.decodeFromString<JsonObject>(vocabBuffer).keys.toList()
 
         return vocab
     }
 
     private fun loadSentencePieceModel(context: Context, filePath: String): ByteArray {
-        val buffer = FileUtil.loadMappedFile(context, filePath)
-        val byteArray = ByteArray(buffer.remaining())
-
-        buffer.get(byteArray)
-
-        return byteArray
+        return context.assets.open(filePath).readBytes()
     }
 
     private fun extractLanguageCodes(vocabulary: List<String>): List<String> {

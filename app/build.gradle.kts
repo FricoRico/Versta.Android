@@ -49,7 +49,7 @@ android {
         }
     }
     androidResources {
-        noCompress += "tflite"
+        noCompress += "ort"
         noCompress += "json"
         noCompress += "spm"
     }
@@ -82,11 +82,7 @@ dependencies {
     implementation(libs.mlkit.text.recognition.devanagari)
     implementation(libs.mlkit.text.recognition.japanese)
     implementation(libs.mlkit.text.recognition.korean)
-    implementation(libs.tensorflow.lite)
-    implementation(libs.tensorflow.lite.gpu)
-    implementation(libs.tensorflow.lite.support)
-    implementation(libs.tensorflow.lite.select.tf.ops)
-    implementation(libs.tensorflow.lite.metadata)
+    implementation(files("$projectDir/libs/onnxruntime-arm64-v8a-1.19.2.aar"))
     implementation(libs.levyfan.sentencepiece)
     implementation(libs.kotlinx.serialization)
 }

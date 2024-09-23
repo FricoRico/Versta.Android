@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val translator = Translator(baseContext)
-        val inputText = "これはテストです。"
+        val inputText = "Dit is een test."
         val translatedText = translator.translate(inputText)
         println("Translated Text: $translatedText")
 

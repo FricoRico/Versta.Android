@@ -9,4 +9,11 @@
 .externalNativeBuild
 .cxx
 local.properties
-/models
+
+# Python virtual environment files
+/models/**/bin
+/models/**/include
+/models/**/lib
+/models/**/share
+/models/**/pyenv.cfg
+/models/translation/**/*

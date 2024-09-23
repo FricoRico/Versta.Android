@@ -1,46 +1,42 @@
 package name.ricardoismy.translate.utils
 
 import android.content.Context
-import org.tensorflow.lite.support.model.Model.Device
 
 class Translator(
     context: Context,
-    device: Device = Device.CPU,
-    threads: Int = 4
 ) {
     private val tokenizer = MarianTokenizer(
         context,
-        encoderFilePath = ENCODER_FILE_NAME,
-        decoderFilePath = DECODER_FILE_NAME,
+        encoderFilePath = TOKENIZER_SOURCE_FILE_NAME,
+        decoderFilePath = TOKENIZER_TARGET_FILE_NAME,
         vocabularyFilePath = VOCAB_FILE_NAME,
-        sourceLanguage = "ja",
-        targetLanguage = "nl"
+        sourceLanguage = "nl",
+        targetLanguage = "en"
     )
 
-    private val model = MarianModel(
+    private val model = OpusInference(
         context,
-        modelFilePath = MODEL_FILE_NAME,
-        device = device,
-        threads = threads
+        encoderFilePath = ENCODER_MODEL_FILE_NAME,
+        decoderFilePath = DECODER_MODEL_FILE_NAME,
     )
 
     fun translate(input: String): String {
         val (inputIds, attentionMask) = tokenizer.encode(input)
 
-        val logits = model.generate(inputIds, attentionMask)
+        val encoderHiddenStates = model.encode(inputIds, attentionMask)
+        val tokenIds = model.decode(encoderHiddenStates, attentionMask, tokenizer.padId, tokenizer.eosId)
 
-        val tokens = model.getPredictedTokens(logits)
-
-        val outputText = "Dit is een test."
+        val outputText = tokenizer.decode(tokenIds)
 
         return outputText
     }
 
     companion object {
         private val TAG: String = Translator::class.java.simpleName
-        private const val MODEL_FILE_NAME: String = "opus-mt-ja-nl.tflite"
-        private const val VOCAB_FILE_NAME: String = "opus-mt-ja-nl-vocab.json"
-        private const val ENCODER_FILE_NAME: String = "opus-mt-ja-nl-source.spm"
-        private const val DECODER_FILE_NAME: String = "opus-mt-ja-nl-target.spm"
+        private const val ENCODER_MODEL_FILE_NAME: String = "opus-mt-nl-en-encoder.ort"
+        private const val DECODER_MODEL_FILE_NAME: String = "opus-mt-nl-en-decoder.ort"
+        private const val VOCAB_FILE_NAME: String = "opus-mt-nl-en-vocab.json"
+        private const val TOKENIZER_SOURCE_FILE_NAME: String = "opus-mt-nl-en-source.spm"
+        private const val TOKENIZER_TARGET_FILE_NAME: String = "opus-mt-nl-en-target.spm"
     }
 }
