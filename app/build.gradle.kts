@@ -52,7 +52,6 @@ android {
         noCompress += "tflite"
         noCompress += "json"
         noCompress += "spm"
-        noCompress += "model"
     }
     externalNativeBuild {
         ndkBuild {
@@ -86,6 +85,8 @@ dependencies {
     implementation(libs.tensorflow.lite)
     implementation(libs.tensorflow.lite.gpu)
     implementation(libs.tensorflow.lite.support)
+    implementation(libs.tensorflow.lite.select.tf.ops)
+    implementation(libs.tensorflow.lite.metadata)
     implementation(libs.levyfan.sentencepiece)
     implementation(libs.kotlinx.serialization)
 }

@@ -66,6 +66,15 @@ class MarianTokenizer(
     val vocabSize: Int
         get() = sourceVocabulary.size
 
+    val eosId: Int
+        get() = sourceVocabulary.indexOf(eosToken)
+
+    val unknownId: Int
+        get() = sourceVocabulary.indexOf(unknownToken)
+
+    val padId: Int
+        get() = sourceVocabulary.indexOf(padToken)
+
     private val specialTokens: List<String>
         get() = listOf(unknownToken, eosToken, padToken)
 
@@ -89,18 +98,20 @@ class MarianTokenizer(
         }
     }
 
-    fun encode(text: String): Pair<IntArray, IntArray> {
+    fun encode(text: String, padTokens: Boolean = false): Pair<IntArray, IntArray> {
         try {
             val tokens = tokenize(text)
             val inputIds = tokens.map { convertTokenToId(it) }.toIntArray()
 
-            val truncatedInputIds = if (inputIds.size > maxInputLength) {
+            val truncatedInputIds = if (!padTokens && inputIds.size < maxInputLength) {
+                inputIds
+            } else if (inputIds.size > maxInputLength) {
                 inputIds.copyOfRange(0, maxInputLength)
             } else {
                 inputIds.copyOf(maxInputLength)
             }
 
-            val attentionMask = IntArray(maxInputLength) { i -> if (i < inputIds.size) 1 else 0 }
+            val attentionMask = IntArray(truncatedInputIds.size) { i -> if (i < inputIds.size) 1 else 0 }
 
             return Pair(truncatedInputIds, attentionMask)
         } catch (e: Exception) {
@@ -132,11 +143,15 @@ class MarianTokenizer(
         }
     }
 
-    fun decode(ids: List<Int>): String {
+    fun decode(ids: List<Int>, filterSpecialTokens: Boolean = true): String {
         try {
-            val tokens = ids.map { convertIdToToken(it) }
+            var tokens = ids.map { convertIdToToken(it) }
 
-            return convertTokensToString(tokens)
+            if (filterSpecialTokens) {
+                tokens = tokens.filter { it !in specialTokens }
+            }
+
+            return tokens.joinToString("").replace(SENTENCE_PIECE_UNDERLINE, " ").trim()
         } catch (e: Exception) {
             throw IllegalArgumentException("Decoding ids: $ids", e)
         }
