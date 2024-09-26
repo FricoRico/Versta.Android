@@ -77,6 +77,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.mlkit.text.recognition.latin)
     implementation(libs.mlkit.text.recognition.chinese)
     implementation(libs.mlkit.text.recognition.devanagari)
@@ -84,5 +85,10 @@ dependencies {
     implementation(libs.mlkit.text.recognition.korean)
     implementation(libs.levyfan.sentencepiece)
     implementation(libs.kotlinx.serialization)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.lifecycle)
+
     implementation(files("$projectDir/libs/arm64-v8a/onnxruntime-1.19.2.aar"))
 }
