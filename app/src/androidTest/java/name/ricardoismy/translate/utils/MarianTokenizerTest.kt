@@ -4,7 +4,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class OpusInferenceTokenizerTest {
+class MarianTokenizerTest {
 
     @Test
     fun testMarianTokenizer() {
@@ -56,7 +56,7 @@ class OpusInferenceTokenizerTest {
             targetLanguage = "nl"
         )
 
-        val input = listOf(65000, 231, 24, 15, 6811, 2, 0)
+        val input = intArrayOf(65000, 231, 24, 15, 6811, 2, 0)
         val expected = "Dit is een test."
         val output = tokenizer.decode(input)
 

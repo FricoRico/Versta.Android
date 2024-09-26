@@ -99,13 +99,7 @@ class MarianTokenizer(
     fun encode(text: String, padTokens: Boolean = false): Pair<IntArray, IntArray> {
         try {
             val tokens = tokenize(text)
-            var inputIds = tokens.map { convertTokenToId(it) }.toIntArray()
-
-            // TODO: improve handling of EOS token
-            val inputIdsWithEos = inputIds.toMutableList()
-            inputIdsWithEos.add(eosId)
-
-            inputIds = inputIdsWithEos.toIntArray()
+            val inputIds = tokens.map { convertTokenToId(it) }.toIntArray().plus(eosId)
 
             val truncatedInputIds = if (!padTokens && inputIds.size < maxInputLength) {
                 inputIds

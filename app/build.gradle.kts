@@ -82,7 +82,7 @@ dependencies {
     implementation(libs.mlkit.text.recognition.devanagari)
     implementation(libs.mlkit.text.recognition.japanese)
     implementation(libs.mlkit.text.recognition.korean)
-    implementation(files("$projectDir/libs/onnxruntime-arm64-v8a-1.19.2.aar"))
     implementation(libs.levyfan.sentencepiece)
     implementation(libs.kotlinx.serialization)
+    implementation(files("$projectDir/libs/arm64-v8a/onnxruntime-1.19.2.aar"))
 }

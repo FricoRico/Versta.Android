@@ -69,7 +69,6 @@ class OpusInference(
             arrayOf(encoderAttentionMask.map { it.toLong() }.toLongArray())
         )
 
-        val temperature = 0.7f
         val decoderInputIds = mutableListOf<Long>(padTokenID.toLong())
         val generatedTokens = mutableListOf<Long>()
 
@@ -124,21 +123,6 @@ class OpusInference(
 
         return generatedTokens.map { it.toInt() }.toIntArray()
     }
-
-    private fun softmax(logits: FloatArray): FloatArray {
-        val maxLogit = logits.maxOrNull() ?: 0f
-        val expLogits = logits.map { exp((it - maxLogit).toDouble()) }
-        val sumExpLogits = expLogits.sum()
-        return expLogits.map { (it / sumExpLogits).toFloat() }.toFloatArray()
-    }
-
-    private fun sampleFromDistribution(probabilities: FloatArray): Int {
-        val cumulativeProbs = probabilities.scan(0f, Float::plus).drop(1)
-        val randomValue = Random.nextFloat() * cumulativeProbs.last()
-        return cumulativeProbs.indexOfFirst { it > randomValue }
-    }
-
-
 
     fun close() {
         encoderSession.close()
