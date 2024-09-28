@@ -16,7 +16,7 @@ pip install -r requirements.txt
 2. Copy the ONNX models to a directory. For example, `models/translation/en-ja/input` directory.
 3. Run the conversion using the CLI:
 ```bash
-python -m onnxruntime.tools.convert_onnx_models_to_ort $INPUT_DIR --output_dir $OUTPUT_DIR --target_platform arm
+python -m onnxruntime.tools.convert_onnx_models_to_ort $INPUT_DIR --output_dir $OUTPUT_DIR --target_platform arm --optimization_style Runtime --enable_type_reduction
 ```
 
 Replace `$INPUT_DIR` with the directory containing the ONNX models and `$OUTPUT_DIR` with the directory where you want the ORT models to be saved. After conversion, you will have the ORT models in the specified output directory. Only the models **WITHOUT** the `with_runtime_opt` suffix are needed for the application.
@@ -26,7 +26,7 @@ TODO: Add instructions for packing the models into the Android app along with a 
 ### Optional: ONNX Runtime
 Since the ONNX models contain operations that are not available in the prepackaged ONNX Runtime for Android, we need to build the runtime from source. This is an optional step only for those who want to contribute new versions of the runtime to the project.
 
-In the previous step, we converted the ONNX models to ORT format. Along with the ORT models, the conversion script also generated a `required_operators.config`, which contains the list of operators required by the model. We need to build the ONNX Runtime with these operators enabled.
+In the previous step, we converted the ONNX models to ORT format. Along with the ORT models, the conversion script also generated a `required_operators_and_types.with_runtime_opt.config`, which contains the list of operators required by the model. We need to build the ONNX Runtime with these operators enabled.
 
 To be able to compile the project, you need to have the Android NDK and SDK installed on your system. You can download and install the SDK and NDK through Android Studio or download them separately from the [Android Developer website](https://developer.android.com/studio). Make sure to set the `ANDROID_HOME` and `ANDROID_NDK` environment variables to the SDK and NDK paths, respectively.
 
@@ -43,13 +43,14 @@ git checkout tags/vX.XX.X
 ./build.sh --config Release \
            --build_shared_lib \
            --android \
-           --android_api 21 \
+           --android_api 28 \
            --android_sdk $ANDROID_HOME \
            --android_ndk $ANDROID_NDK \
            --android_abi $ARCHITECTURE \
            --minimal_build extended \
            --build_java \
-           --use_nnapi \
+           --use_xnnpack \
+           --use_nnapi \ 
            --include_ops_by_config $REQUIRED_CONFIG_PATH \
            --parallel
 ```

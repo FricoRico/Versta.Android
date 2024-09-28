@@ -1,6 +1,5 @@
 package name.ricardoismy.translate.utils
 
-import android.media.Image
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
@@ -13,7 +12,7 @@ import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.TextRecognizerOptionsInterface
 
 
-class TextRecognitionProcessor(textRecognizerOptions: TextRecognizerOptionsInterface, private val frameProcessor: (Image, List<Text.TextBlock>) -> Unit):
+class TextRecognitionProcessor(textRecognizerOptions: TextRecognizerOptionsInterface, private val frameProcessor: (ImageProxy, Text) -> Unit):
     ImageAnalysis.Analyzer {
     private val textRecognizer: TextRecognizer = TextRecognition.getClient(textRecognizerOptions)
 
@@ -25,7 +24,7 @@ class TextRecognitionProcessor(textRecognizerOptions: TextRecognizerOptionsInter
 
             textRecognizer.process(image)
                 .addOnSuccessListener { visionText ->
-                    frameProcessor(mediaImage, visionText.textBlocks)
+                    frameProcessor(imageProxy, visionText)
 
                     imageProxy.close()
                 }

@@ -23,7 +23,7 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@style/Theme.Translate"
-            tools:targetApi="31"
+            tools:targetApi="34"
             android:largeHeap="true">
         <activity
                 android:name=".MainActivity"

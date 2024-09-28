@@ -3,17 +3,51 @@ package name.ricardoismy.translate.utils
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OnnxTensorLike
 import ai.onnxruntime.OrtEnvironment
+import ai.onnxruntime.OrtLoggingLevel
 import ai.onnxruntime.OrtSession
+import ai.onnxruntime.providers.NNAPIFlags
 import android.content.Context
-import kotlin.math.exp
-import kotlin.random.Random
+import java.util.EnumSet
+
+class DecoderMetadata(
+    val batchSize: Int,
+    val sequenceLength: Int,
+) {
+    private val completedBatches: BooleanArray = BooleanArray(batchSize) { false }
+    private var completedBatchCount: Int = 0
+
+    fun isBatchComplete(index: Int): Boolean {
+        return completedBatches[index]
+    }
+
+    fun isDoneDecoding(): Boolean {
+        return completedBatchCount == batchSize
+    }
+
+    fun markBatchComplete(index: Int) {
+        completedBatches[index] = true
+        completedBatchCount++
+    }
+}
+
+// Shape: [batch_size, sequence_length, hidden_size]
+typealias EncoderHiddenStates = Array<Array<FloatArray>>
+
+// Shape: [batch_size, sequence_length, vocab_size]
+typealias DecoderLogits = Array<Array<FloatArray>>
 
 class OpusInference(
     context: Context,
     encoderFilePath: String,
     decoderFilePath: String,
+    threadCount: Int = 4,
 ) {
-    private val ortEnvironment = OrtEnvironment.getEnvironment()
+    private val ortEnvironment = OrtEnvironment.getEnvironment(
+        OrtLoggingLevel.ORT_LOGGING_LEVEL_WARNING,
+        "OpusInference",
+        OrtEnvironment.ThreadingOptions().apply {
+            setGlobalSpinControl(false)
+        })
 
     private val encoderSession: OrtSession
     private val decoderSession: OrtSession
@@ -24,104 +58,119 @@ class OpusInference(
         val decoderFile = assetManager.open(decoderFilePath).readBytes()
 
         val sessionOptions = OrtSession.SessionOptions()
-        sessionOptions.addNnapi()
+        sessionOptions.setCPUArenaAllocator(true)
+        sessionOptions.setMemoryPatternOptimization(true)
+        sessionOptions.setInterOpNumThreads(1)
+        sessionOptions.addXnnpack(mapOf("intra_op_num_threads" to threadCount.toString()))
 
         encoderSession = ortEnvironment.createSession(encoderFile, sessionOptions)
         decoderSession = ortEnvironment.createSession(decoderFile, sessionOptions)
     }
 
-    fun encode(inputIds: IntArray, attentionMask: IntArray): Array<Array<FloatArray>> {
-        val inputIdsTensor = OnnxTensor.createTensor(
-            ortEnvironment,
-            arrayOf(inputIds.map { it.toLong() }.toLongArray())
+    @Suppress("UNCHECKED_CAST")
+    fun encode(inputIds: Array<LongArray>, attentionMask: Array<LongArray>): Array<Array<FloatArray>> {
+        val inputIdsTensor = OnnxTensor.createTensor(ortEnvironment, inputIds)
+        val attentionMaskTensor = OnnxTensor.createTensor(ortEnvironment, attentionMask)
+
+        val inputs = mapOf(
+            "input_ids" to inputIdsTensor,
+            "attention_mask" to attentionMaskTensor
         )
-        val attentionMaskTensor = OnnxTensor.createTensor(
-            ortEnvironment,
-            arrayOf(attentionMask.map { it.toLong() }.toLongArray())
-        )
 
-        val inputs = mutableMapOf<String, OnnxTensorLike>()
-        inputs["input_ids"] = inputIdsTensor
-        inputs["attention_mask"] = attentionMaskTensor
+        try {
+            val encoderOutput = encoderSession.run(inputs)
 
-        // TODO: support multiple sequence support
-        val encoderOutput = encoderSession.run(inputs)
+            val encoderHiddenStates = encoderOutput.get("last_hidden_state").get().value as EncoderHiddenStates
+            encoderOutput.close()
 
-        val encoderHiddenStates =
-            encoderOutput[0].value as Array<Array<FloatArray>>  // Shape: [batch_size, sequence_length, hidden_size]
-
-        inputIdsTensor.close()
-        attentionMaskTensor.close()
-        encoderOutput.close()
-
-        return encoderHiddenStates
+            return encoderHiddenStates
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw e
+        } finally {
+            inputIdsTensor.close()
+            attentionMaskTensor.close()
+        }
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun decode(
         encoderOutputs: Array<Array<FloatArray>>,
-        encoderAttentionMask: IntArray,
-        padTokenID: Int,
-        eosTokenId: Int
-    ): IntArray {
-        val encoderOutputsTensor = OnnxTensor.createTensor(ortEnvironment, encoderOutputs)
-        val encoderAttentionMaskTensor = OnnxTensor.createTensor(
-            ortEnvironment,
-            arrayOf(encoderAttentionMask.map { it.toLong() }.toLongArray())
-        )
+        attentionMask: Array<LongArray>,
+        padTokenID: Long,
+        eosTokenId: Long,
+        maxSequenceLength: Int = 128
+    ): Array<LongArray> {
+        try {
+            val decoderMetadata = DecoderMetadata(encoderOutputs.size, maxSequenceLength)
 
-        val decoderInputIds = mutableListOf<Long>(padTokenID.toLong())
-        val generatedTokens = mutableListOf<Long>()
+            val encoderOutputsTensor = OnnxTensor.createTensor(ortEnvironment, encoderOutputs)
+            val encoderAttentionMaskTensor = OnnxTensor.createTensor(ortEnvironment, attentionMask)
 
-        // TODO: support multiple sequence support
-        for (step in 0 until 50) {
-            // Convert decoderInputIds to LongArray and make it 2D
-            val decoderInputIdsArray = arrayOf(decoderInputIds.toLongArray())
+            val decoderInputIds = Array(decoderMetadata.batchSize) { longArrayOf(padTokenID) }
 
-            // Create decoder input IDs tensor
-            val decoderInputIdsTensor = OnnxTensor.createTensor(
-                ortEnvironment,
-                decoderInputIdsArray
+            val inputs = mutableMapOf<String, OnnxTensorLike>(
+                "encoder_hidden_states" to encoderOutputsTensor,
+                "encoder_attention_mask" to encoderAttentionMaskTensor
             )
 
-            // Prepare inputs for the decoder
-            val inputs = mutableMapOf<String, OnnxTensorLike>()
-            inputs["input_ids"] = decoderInputIdsTensor
-            inputs["encoder_hidden_states"] = encoderOutputsTensor
-            inputs["encoder_attention_mask"] = encoderAttentionMaskTensor
+            for (step in 0 until decoderMetadata.sequenceLength) {
+                if (decoderMetadata.isDoneDecoding()) {
+                    break
+                }
 
-            // Run the decoder session
-            val decoderOutputs = decoderSession.run(inputs)
+                val decoderInputIdsTensor = OnnxTensor.createTensor(
+                    ortEnvironment,
+                    decoderInputIds
+                )
 
-            // Get the logits
-            val logits =
-                decoderOutputs[0].value as Array<Array<FloatArray>>  // Shape: [batch_size, sequence_length, vocab_size]
+                inputs["input_ids"] = decoderInputIdsTensor
 
-            // Get the logits for the last token in the sequence
-            val lastTokenLogits = logits[0][decoderInputIds.size - 1]
+                val decoderOutputs = decoderSession.run(inputs)
+                val logits = decoderOutputs.get("logits").get().value as DecoderLogits
 
-            // Greedy decoding: pick the token with the highest score
-            val nextTokenId = lastTokenLogits.indices.maxByOrNull { lastTokenLogits[it] }?.toLong()
-                ?: eosTokenId.toLong()
+                for (i in 0 until decoderMetadata.batchSize) {
+                    if (decoderMetadata.isBatchComplete(i)) {
+                        decoderInputIds[i] = decoderInputIds[i].plus(padTokenID)
+                        continue
+                    }
 
-            generatedTokens.add(nextTokenId)
+                    val batchLogits = logits[i][decoderInputIds[i].size - 1]
+                    val token = argmaxTokenMatcher(batchLogits)
 
-            // Check for EOS token
-            if (nextTokenId == eosTokenId.toLong()) {
-                break
+                    decoderInputIds[i] = decoderInputIds[i].plus(token)
+
+                    if (token == eosTokenId) {
+                        decoderMetadata.markBatchComplete(i)
+                    }
+                }
+
+                decoderInputIdsTensor.close()
+                decoderOutputs.close()
             }
 
-            // Append the next token ID to decoder input IDs for the next iteration
-            decoderInputIds.add(nextTokenId)
+            encoderOutputsTensor.close()
+            encoderAttentionMaskTensor.close()
 
-            // Clean up tensors
-            decoderInputIdsTensor.close()
-            decoderOutputs.close()
+            return decoderInputIds
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw e
+        }
+    }
+
+    private fun argmaxTokenMatcher(logits: FloatArray): Long {
+        var maxLogit = Float.NEGATIVE_INFINITY
+        var maxIndex = 0
+
+        for (i in logits.indices) {
+            if (logits[i] > maxLogit) {
+                maxLogit = logits[i]
+                maxIndex = i
+            }
         }
 
-        encoderOutputsTensor.close()
-        encoderAttentionMaskTensor.close()
-
-        return generatedTokens.map { it.toInt() }.toIntArray()
+        return maxIndex.toLong()
     }
 
     fun close() {

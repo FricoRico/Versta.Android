@@ -12,7 +12,7 @@ composeLifecycle = "2.8.6"
 mlKitTextRecognition = "16.0.0"
 sentencePiece = "1.9.6"
 kotlinxSerialization = "1.6.3"
-androidCameraX = "1.3.4"
+androidCameraX = "1.4.0-rc02"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

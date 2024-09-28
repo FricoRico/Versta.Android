@@ -61,17 +61,17 @@ class MarianTokenizer(
         decoder.loadFromSerializedProto(decoderModel)
     }
 
-    val vocabSize: Int
-        get() = sourceVocabulary.size
+    val vocabSize: Long
+        get() = sourceVocabulary.size.toLong()
 
-    val eosId: Int
-        get() = sourceVocabulary.indexOf(eosToken)
+    val eosId: Long
+        get() = sourceVocabulary.indexOf(eosToken).toLong()
 
-    val unknownId: Int
-        get() = sourceVocabulary.indexOf(unknownToken)
+    val unknownId: Long
+        get() = sourceVocabulary.indexOf(unknownToken).toLong()
 
-    val padId: Int
-        get() = sourceVocabulary.indexOf(padToken)
+    val padId: Long
+        get() = sourceVocabulary.indexOf(padToken).toLong()
 
     private val specialTokens: List<String>
         get() = listOf(unknownToken, eosToken, padToken)
@@ -96,10 +96,10 @@ class MarianTokenizer(
         }
     }
 
-    fun encode(text: String, padTokens: Boolean = false): Pair<IntArray, IntArray> {
+    fun encode(text: String, padTokens: Boolean = false): Pair<LongArray, LongArray> {
         try {
             val tokens = tokenize(text)
-            val inputIds = tokens.map { convertTokenToId(it) }.toIntArray().plus(eosId)
+            val inputIds = tokens.map { convertTokenToId(it) }.toLongArray().plus(eosId)
 
             val truncatedInputIds = if (!padTokens && inputIds.size < maxInputLength) {
                 inputIds
@@ -109,7 +109,8 @@ class MarianTokenizer(
                 inputIds.copyOf(maxInputLength)
             }
 
-            val attentionMask = IntArray(truncatedInputIds.size) { i -> if (i < inputIds.size) 1 else 0 }
+            val attentionMask =
+                LongArray(truncatedInputIds.size) { i -> if (i < inputIds.size) 1 else 0 }
 
             return Pair(truncatedInputIds, attentionMask)
         } catch (e: Exception) {
@@ -117,31 +118,27 @@ class MarianTokenizer(
         }
     }
 
-    fun convertTokensToString(tokens: List<String>): String {
+    fun batchEncode(
+        texts: List<String>,
+        padTokens: Boolean = false
+    ): Pair<Array<LongArray>, Array<LongArray>> {
         try {
-            var outputStr = ""
+            val inputIds = mutableListOf<LongArray>()
+            val attentionMasks = mutableListOf<LongArray>()
 
-            val currentTokens = mutableListOf<String>()
-            for (token in tokens) {
-                if (token in specialTokens) {
-                    outputStr += decoder.decodePieces(currentTokens) + token + " "
-                    currentTokens.clear()
-                    continue
-                }
-
-                currentTokens.add(token)
+            for (text in texts) {
+                val (ids, mask) = encode(text, padTokens)
+                inputIds.add(ids)
+                attentionMasks.add(mask)
             }
 
-            outputStr += decoder.decodePieces(currentTokens)
-            outputStr = outputStr.replace(SENTENCE_PIECE_UNDERLINE, " ")
-
-            return outputStr.trim()
+            return padBatchSequences(inputIds, attentionMasks)
         } catch (e: Exception) {
-            throw IllegalArgumentException("Converting tokens to string: $tokens", e)
+            throw IllegalArgumentException("Batch encoding texts: $texts", e)
         }
     }
 
-    fun decode(ids: IntArray, filterSpecialTokens: Boolean = true): String {
+    fun decode(ids: LongArray, filterSpecialTokens: Boolean = true): String {
         try {
             var tokens = ids.map { convertIdToToken(it) }
 
@@ -155,22 +152,86 @@ class MarianTokenizer(
         }
     }
 
-    private fun convertTokenToId(token: String): Int {
-        val id = sourceVocabulary.indexOf(token)
+    fun batchDecode(
+        ids: Array<LongArray>,
+        filterSpecialTokens: Boolean = true,
+    ): String {
+        try {
+            val sentences = ids.map { decode(it, filterSpecialTokens) }
 
-        if (id == -1) {
-            return sourceVocabulary.indexOf(unknownToken)
+            return sentences.joinToString(" ") { it }.trim()
+        } catch (e: Exception) {
+            throw IllegalArgumentException("Batch decoding ids: $ids", e)
+        }
+    }
+
+    fun splitSentences(text: String, groupLength: Int = 192): List<String> {
+        val sentences = text.trimIndent().split("(?<=[.!?。！？])\\s+".toRegex())
+
+        // Step 3: Group short sentences together, keep long ones separate
+        val result = mutableListOf<String>()
+        val currentGroup = StringBuilder()
+
+        for (sentence in sentences) {
+            if (currentGroup.length + sentence.length > groupLength) {
+                if (currentGroup.isNotEmpty()) {
+                    result.add(currentGroup.toString().trim())
+                    currentGroup.clear()
+                }
+
+                result.add(sentence.trim())
+                continue
+            }
+
+            currentGroup.append(sentence).append(" ")
+        }
+
+        if (currentGroup.isNotEmpty()) {
+            result.add(currentGroup.toString().trim())
+        }
+
+        return result
+    }
+
+    private fun padBatchSequences(
+        inputIdsBatch: MutableList<LongArray>,
+        attentionMaskBatch: MutableList<LongArray>
+    ): Pair<Array<LongArray>, Array<LongArray>> {
+        val maxLength = inputIdsBatch.maxOf { it.size }
+
+        for (i in inputIdsBatch.indices) {
+            val inputIds = inputIdsBatch[i]
+            val attentionMask = attentionMaskBatch[i]
+
+            if (inputIds.size < maxLength) {
+                inputIdsBatch[i] = inputIds + LongArray(maxLength - inputIds.size) { padId }
+            }
+
+            if (attentionMask.size < maxLength) {
+                attentionMaskBatch[i] =
+                    attentionMask + LongArray(maxLength - attentionMask.size) { 0 }
+            }
+        }
+
+        return Pair(inputIdsBatch.toTypedArray(), attentionMaskBatch.toTypedArray())
+    }
+
+    private fun convertTokenToId(token: String): Long {
+        val id = sourceVocabulary.indexOf(token).toLong()
+
+        if (id == -1L) {
+            return sourceVocabulary.indexOf(unknownToken).toLong()
         }
 
         return id
     }
 
-    private fun convertIdToToken(id: Int): String {
-        if (id < 0 || id >= vocabSize) {
+    private fun convertIdToToken(id: Long): String {
+        if (id < 0L || id >= vocabSize) {
             return unknownToken
         }
 
-        return targetVocabulary[id]
+        return targetVocabulary[id.toInt()]
     }
 
     private fun loadVocabulary(context: Context, filePath: String): List<String> {

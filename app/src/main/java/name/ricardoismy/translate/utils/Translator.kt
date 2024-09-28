@@ -20,23 +20,28 @@ class Translator(
         decoderFilePath = DECODER_MODEL_FILE_NAME,
     )
 
-    fun translate(input: String): String {
-        val (inputIds, attentionMask) = tokenizer.encode(input)
+    fun translate(input: String, sentenceBatching: Boolean = true): String {
+        val encoderInput = if (sentenceBatching) tokenizer.splitSentences(input) else listOf(input)
 
+        val (inputIds, attentionMask) = tokenizer.batchEncode(encoderInput)
         val encoderHiddenStates = model.encode(inputIds, attentionMask)
-        val tokenIds = model.decode(encoderHiddenStates, attentionMask, tokenizer.padId, tokenizer.eosId)
 
-        val outputText = tokenizer.decode(tokenIds)
+        val tokenIds =
+            model.decode(encoderHiddenStates, attentionMask, tokenizer.padId, tokenizer.eosId)
+
+        val outputText = tokenizer.batchDecode(tokenIds)
 
         return outputText
     }
 
     companion object {
         private val TAG: String = Translator::class.java.simpleName
-        private const val ENCODER_MODEL_FILE_NAME: String = "opus-mt-nl-en-encoder.ort"
-        private const val DECODER_MODEL_FILE_NAME: String = "opus-mt-nl-en-decoder.ort"
-        private const val VOCAB_FILE_NAME: String = "opus-mt-nl-en-vocab.json"
-        private const val TOKENIZER_SOURCE_FILE_NAME: String = "opus-mt-nl-en-source.spm"
-        private const val TOKENIZER_TARGET_FILE_NAME: String = "opus-mt-nl-en-target.spm"
+        private const val ENCODER_MODEL_FILE_NAME: String =
+            "encoder_model_quantized.with_runtime_opt.ort"
+        private const val DECODER_MODEL_FILE_NAME: String =
+            "decoder_model_quantized.with_runtime_opt.ort"
+        private const val VOCAB_FILE_NAME: String = "vocab.json"
+        private const val TOKENIZER_SOURCE_FILE_NAME: String = "source.spm"
+        private const val TOKENIZER_TARGET_FILE_NAME: String = "target.spm"
     }
 }
