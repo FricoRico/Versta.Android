@@ -15,5 +15,9 @@ local.properties
 /models/**/include
 /models/**/lib
 /models/**/share
+/models/**/output
 /models/**/pyenv.cfg
-/models/translation/**/*
+
+# Translation models
+/models/translation/**
+!/models/translation/versta/**
