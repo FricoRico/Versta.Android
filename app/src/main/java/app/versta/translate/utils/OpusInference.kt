@@ -1,4 +1,4 @@
-package name.ricardoismy.translate.utils
+package app.versta.translate.utils
 
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OnnxTensorLike

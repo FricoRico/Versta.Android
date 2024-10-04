@@ -1,4 +1,4 @@
-package name.ricardoismy.translate.core.entity
+package app.versta.translate.core.entity
 
 data class CachResult (
     val cached: List<String> = emptyList(),

@@ -1,4 +1,4 @@
-package name.ricardoismy.translate.ui.theme
+package app.versta.translate.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

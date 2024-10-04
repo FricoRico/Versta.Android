@@ -1,8 +1,8 @@
-package name.ricardoismy.translate.core.service
+package app.versta.translate.core.service
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import name.ricardoismy.translate.core.entity.TranslationCache
+import app.versta.translate.core.entity.TranslationCache
 
 interface ModelInterface {
     fun encode(inputIds: Array<LongArray>, attentionMask: Array<LongArray>): Array<*>

@@ -1,4 +1,4 @@
-package name.ricardoismy.translate.utils
+package app.versta.translate.utils
 
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals

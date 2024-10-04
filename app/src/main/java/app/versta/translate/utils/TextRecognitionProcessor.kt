@@ -1,4 +1,4 @@
-package name.ricardoismy.translate.utils
+package app.versta.translate.utils
 
 import android.util.Log
 import androidx.annotation.OptIn

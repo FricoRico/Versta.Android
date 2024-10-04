@@ -1,10 +1,10 @@
-package name.ricardoismy.translate.utils
+package app.versta.translate.utils
 
 import android.content.Context
 import com.github.google.sentencepiece.SentencePieceProcessor
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import name.ricardoismy.translate.core.service.TokenizerInterface
+import app.versta.translate.core.service.TokenizerInterface
 
 class MarianTokenizer(
     context: Context,

@@ -1,4 +1,4 @@
-package name.ricardoismy.translate
+package app.versta.translate
 
 import android.os.Build
 import android.os.Bundle
@@ -11,16 +11,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import name.ricardoismy.translate.screens.CameraScreen
-import name.ricardoismy.translate.ui.theme.TranslateTheme
+import app.versta.translate.screens.CameraScreen
+import app.versta.translate.ui.theme.TranslateTheme
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.draw.clip
 import androidx.core.content.ContextCompat
-import name.ricardoismy.translate.utils.Translator
+import app.versta.translate.utils.Translator
 
 class MainActivity : ComponentActivity() {
     private val activityResultLauncher =

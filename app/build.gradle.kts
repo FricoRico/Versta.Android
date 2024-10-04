@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "name.ricardoismy.translate"
+    namespace = "app.versta.translate"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "name.ricardoismy.translate"
+        applicationId = "app.versta.translate"
         minSdk = 28
         targetSdk = 34
         versionCode = 1

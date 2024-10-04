@@ -1,4 +1,4 @@
-package name.ricardoismy.translate.utils
+package app.versta.translate.utils
 
 class MosesPunctuationNormalizer(
     private val lang: String = "en",

@@ -1,4 +1,4 @@
-package name.ricardoismy.translate.screens
+package app.versta.translate.screens
 
 import android.content.Context
 import android.graphics.Matrix
@@ -45,8 +45,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import name.ricardoismy.translate.utils.TextRecognitionProcessor
-import name.ricardoismy.translate.utils.Translator
+import app.versta.translate.utils.TextRecognitionProcessor
+import app.versta.translate.utils.Translator
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.math.max
@@ -88,7 +88,7 @@ class TextRecognitionViewModel(context: Context) : ViewModel() {
     private val bufferSize = 6
     private val temporalBuffer = ArrayDeque<List<TrackedTextBlock>>(bufferSize)
     private val stableFrameCountThreshold = 3
-    private val confidenceThreshold = 0.8f
+    private val confidenceThreshold = 0.5f
 
     private val safeAreaFactor = 0.02f
     private var scaleFactor = 1.0f
