@@ -5,9 +5,7 @@ import ai.onnxruntime.OnnxTensorLike
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtLoggingLevel
 import ai.onnxruntime.OrtSession
-import ai.onnxruntime.providers.NNAPIFlags
 import android.content.Context
-import java.util.EnumSet
 
 class DecoderMetadata(
     val batchSize: Int,
@@ -52,6 +50,10 @@ class OpusInference(
     private val encoderSession: OrtSession
     private val decoderSession: OrtSession
 
+    private val padTokenID: Long = 67027
+    private val eosTokenId: Long = 0
+    private val maxSequenceLength: Int = 128
+
     init {
         val assetManager = context.assets
         val encoderFile = assetManager.open(encoderFilePath).readBytes()
@@ -68,7 +70,7 @@ class OpusInference(
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun encode(inputIds: Array<LongArray>, attentionMask: Array<LongArray>): Array<Array<FloatArray>> {
+    fun encode(inputIds: Array<LongArray>, attentionMask: Array<LongArray>): EncoderHiddenStates {
         val inputIdsTensor = OnnxTensor.createTensor(ortEnvironment, inputIds)
         val attentionMaskTensor = OnnxTensor.createTensor(ortEnvironment, attentionMask)
 
@@ -95,16 +97,13 @@ class OpusInference(
 
     @Suppress("UNCHECKED_CAST")
     fun decode(
-        encoderOutputs: Array<Array<FloatArray>>,
+        encoderHiddenStates: Array<Array<FloatArray>>,
         attentionMask: Array<LongArray>,
-        padTokenID: Long,
-        eosTokenId: Long,
-        maxSequenceLength: Int = 128
     ): Array<LongArray> {
         try {
-            val decoderMetadata = DecoderMetadata(encoderOutputs.size, maxSequenceLength)
+            val decoderMetadata = DecoderMetadata(encoderHiddenStates.size, maxSequenceLength)
 
-            val encoderOutputsTensor = OnnxTensor.createTensor(ortEnvironment, encoderOutputs)
+            val encoderOutputsTensor = OnnxTensor.createTensor(ortEnvironment, encoderHiddenStates)
             val encoderAttentionMaskTensor = OnnxTensor.createTensor(ortEnvironment, attentionMask)
 
             val decoderInputIds = Array(decoderMetadata.batchSize) { longArrayOf(padTokenID) }

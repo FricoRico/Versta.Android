@@ -23,23 +23,23 @@ class Translator(
     fun translate(input: String, sentenceBatching: Boolean = true): String {
         val encoderInput = if (sentenceBatching) tokenizer.splitSentences(input) else listOf(input)
 
-        val (inputIds, attentionMask) = tokenizer.batchEncode(encoderInput)
+        val (inputIds, attentionMask) = tokenizer.encode(encoderInput)
         val encoderHiddenStates = model.encode(inputIds, attentionMask)
 
         val tokenIds =
-            model.decode(encoderHiddenStates, attentionMask, tokenizer.padId, tokenizer.eosId)
+            model.decode(encoderHiddenStates, attentionMask)
 
-        val outputText = tokenizer.batchDecode(tokenIds)
+        val outputText = tokenizer.decode(tokenIds)
 
-        return outputText
+        return outputText.joinToString(" ").trim()
     }
 
     companion object {
         private val TAG: String = Translator::class.java.simpleName
         private const val ENCODER_MODEL_FILE_NAME: String =
-            "encoder_model_quantized.with_runtime_opt.ort"
+            "encoder_model_quantized_new.with_runtime_opt.ort"
         private const val DECODER_MODEL_FILE_NAME: String =
-            "decoder_model_quantized.with_runtime_opt.ort"
+            "decoder_model_quantized_new.with_runtime_opt.ort"
         private const val VOCAB_FILE_NAME: String = "vocab.json"
         private const val TOKENIZER_SOURCE_FILE_NAME: String = "source.spm"
         private const val TOKENIZER_TARGET_FILE_NAME: String = "target.spm"

@@ -4,6 +4,7 @@ import android.content.Context
 import com.github.google.sentencepiece.SentencePieceProcessor
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import name.ricardoismy.translate.core.service.TokenizerInterface
 
 class MarianTokenizer(
     context: Context,
@@ -18,7 +19,7 @@ class MarianTokenizer(
     private val eosToken: String = "</s>",
     private val padToken: String = "<pad>",
     private val separatedVocabularies: Boolean = false
-) {
+): TokenizerInterface {
     companion object {
         private const val SENTENCE_PIECE_UNDERLINE = "▁"
         private val languageCodeRegex = Regex(">>.+<<")
@@ -86,7 +87,7 @@ class MarianTokenizer(
         return Pair(code, languageCodeRegex.replace(text, ""))
     }
 
-    fun tokenize(text: String): List<String> {
+    override fun tokenize(text: String): List<String> {
         try {
             val (code, cleanText) = removeLanguageCode(text)
             val pieces = encoder.encodeAsPieces(cleanText)
@@ -96,7 +97,7 @@ class MarianTokenizer(
         }
     }
 
-    fun encode(text: String, padTokens: Boolean = false): Pair<LongArray, LongArray> {
+    override fun encode(text: String, padTokens: Boolean): Pair<LongArray, LongArray> {
         try {
             val tokens = tokenize(text)
             val inputIds = tokens.map { convertTokenToId(it) }.toLongArray().plus(eosId)
@@ -118,9 +119,9 @@ class MarianTokenizer(
         }
     }
 
-    fun batchEncode(
+    override fun encode(
         texts: List<String>,
-        padTokens: Boolean = false
+        padTokens: Boolean
     ): Pair<Array<LongArray>, Array<LongArray>> {
         try {
             val inputIds = mutableListOf<LongArray>()
@@ -138,7 +139,7 @@ class MarianTokenizer(
         }
     }
 
-    fun decode(ids: LongArray, filterSpecialTokens: Boolean = true): String {
+    override fun decode(ids: LongArray, filterSpecialTokens: Boolean): String {
         try {
             var tokens = ids.map { convertIdToToken(it) }
 
@@ -152,20 +153,18 @@ class MarianTokenizer(
         }
     }
 
-    fun batchDecode(
+    override fun decode(
         ids: Array<LongArray>,
-        filterSpecialTokens: Boolean = true,
-    ): String {
+        filterSpecialTokens: Boolean,
+    ): List<String> {
         try {
-            val sentences = ids.map { decode(it, filterSpecialTokens) }
-
-            return sentences.joinToString(" ") { it }.trim()
+            return ids.map { decode(it, filterSpecialTokens) }
         } catch (e: Exception) {
             throw IllegalArgumentException("Batch decoding ids: $ids", e)
         }
     }
 
-    fun splitSentences(text: String, groupLength: Int = 192): List<String> {
+    override fun splitSentences(text: String, groupLength: Int): List<String> {
         val sentences = text.trimIndent().split("(?<=[.!?。！？])\\s+".toRegex())
 
         // Step 3: Group short sentences together, keep long ones separate
