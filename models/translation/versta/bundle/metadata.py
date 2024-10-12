@@ -3,12 +3,12 @@ import json
 from pathlib import Path
 from typing import List, TypedDict
 
-class Metadata(TypedDict):
+class BundleMetadata(TypedDict):
     directory: Path
     source_language: str
     target_language: str
 
-def load_metadata(model_dir: Path) -> Metadata:
+def load_metadata(model_dir: Path) -> BundleMetadata:
     """
     Loads and parses the metadata.json file from the specified folder.
 
@@ -20,18 +20,17 @@ def load_metadata(model_dir: Path) -> Metadata:
     """
     metadata_file = model_dir / "metadata.json"
 
-    metadata = Metadata(
+    metadata = BundleMetadata(
         directory=None,
         source_language=None,
         target_language=None
     )
 
     if metadata_file.exists():
-        metadata["directory"] = model_dir
-
         with open(metadata_file, "r", encoding="utf-8") as file:
             data = json.load(file)
 
+            metadata["directory"] = metadata_file.parent.name
             metadata["source_language"] = data.get("source_language")
             metadata["target_language"] = data.get("target_language")
 
@@ -42,9 +41,9 @@ def load_metadata(model_dir: Path) -> Metadata:
 
         return metadata
     else:
-        raise FileNotFoundError(f"Metadata file not found in {model_dir}")
+        raise FileNotFoundError(f"BundleMetadata file not found in {model_dir}")
 
-def load_metadata_for_input_dirs(input_dirs: List[Path]) -> List[Metadata]:
+def load_metadata_for_input_dirs(input_dirs: List[Path]) -> List[BundleMetadata]:
     """
     Loads the metadata.json file from the specified input directories.
 
@@ -52,23 +51,23 @@ def load_metadata_for_input_dirs(input_dirs: List[Path]) -> List[Metadata]:
         input_dirs (List[Path]): List of paths to the input directories containing the metadata.json files.
 
     Returns:
-        List[Metadata]: List of metadata with the source and target languages.
+        List[BundleMetadata]: List of metadata with the source and target languages.
     """
-    metadata: List[Metadata] = list()
+    metadata: List[BundleMetadata] = list()
 
     for folder in input_dirs:
         metadata.append(load_metadata(folder))
 
     return metadata
 
-def generate_metadata(output_dir: Path, languages: List[str], language_metadata: List[Metadata], language_pairs: bool) -> Path:
+def generate_metadata(output_dir: Path, languages: List[str], language_metadata: List[BundleMetadata], language_pairs: bool) -> Path:
     """
     Generates a metadata file for the model conversion process.
 
     Args:
         output_dir (Path): Path to the directory where the metadata file will be saved.
         languages (List[str]): List of languages supported by the model.
-        metadata (List[Metadata]): List of Metadata dictionaries containing source and target language pairs.
+        metadata (List[BundleMetadata]): List of BundleMetadata dictionaries containing source and target language pairs.
         language_pairs (bool): Flag to indicate if the metadata contains language pairs.
     """
     metadata = {
@@ -87,7 +86,7 @@ def generate_metadata(output_dir: Path, languages: List[str], language_metadata:
     return metadata_file_path
 
 # Custom serialization function to handle non-serializable objects (like Path)
-def serialize_metadata(obj: Metadata) -> dict:
+def serialize_metadata(obj: BundleMetadata) -> dict:
     if isinstance(obj, Path):
         return str(obj)
     raise TypeError(f"Object of type {type(obj)} is not JSON serializable")

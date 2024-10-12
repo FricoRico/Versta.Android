@@ -1,10 +1,12 @@
 import json
+
 from pathlib import Path
+from typing import List
 
 from .tokenizer import TokenizerFiles
 from .convert_ort import ORTFiles
 
-def generate_metadata(output_dir: Path, source_language: str, target_language: str, tokenizer_files: TokenizerFiles, ort_files: ORTFiles) -> str:
+def generate_metadata(output_dir: Path, model: str, source_language: str, target_language: str, architectures: List[str], tokenizer_files: TokenizerFiles, ort_files: ORTFiles) -> str:
     """
     Generates a metadata file for the model conversion process.
 
@@ -16,8 +18,10 @@ def generate_metadata(output_dir: Path, source_language: str, target_language: s
         ort_files (ORTFiles): Dictionary containing the file paths for the encoder and decoder ORT files.
     """
     metadata = {
+        "base_model": model,
         "source_language": source_language,
         "target_language": target_language,
+        "architectures": architectures,
         "files": {
             "tokenizer": tokenizer_files or {},
             "inference": ort_files or {}

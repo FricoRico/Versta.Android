@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import List
 
 from .metadata import load_metadata_for_input_dirs, generate_metadata
-from .language import validate_translation_pairs, extract_unique_languages
+from .language import validate_translation_pairs, extract_unique_languages, update_metadata_file
 from .bundle_tar import bundle_files
-from .utils import remove_folder
+from .utils import copy_folders, remove_folder
 
 def parse_args():
     parser = ArgumentParser(
@@ -87,16 +87,23 @@ def main(
     bundle_output_dir.mkdir(parents=True, exist_ok=True)
     intermediates_dir.mkdir(parents=True, exist_ok=True)
 
-    # Step 4: Generate metadata for the model conversion process
+    # Step 4: Copy the input directories to the intermediate directory
+    copy_folders(input_dirs, intermediates_dir)
+
+    # Step 5: Update the metadata files with the new file paths
+    for data in metadata:
+        update_metadata_file(intermediates_dir / data["directory"] / "metadata.json", data["directory"])
+
+    # Step 6: Generate metadata for the model conversion process
     generate_metadata(intermediates_dir, languages, metadata, translation_pairs)
 
-    # Step 5: Bundle the folders into a single .tar.gz file
+    # Step 7: Bundle the folders into a single .tar.gz file
     output_archive = bundle_output_dir / f"{"-".join(languages)}-bundle.tar.gz"
-    output_files = input_dirs + [intermediates_dir / "metadata.json"]
+    output_files = list(intermediates_dir.iterdir())
 
     bundle_files(output_files, output_archive)
 
-    # Step 6: Remove intermediate files if specified
+    # Step 8: Remove intermediate files if specified
     if clean_intermediates:
         remove_folder(intermediates_dir)
         print("Intermediates files cleaned.")

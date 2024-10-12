@@ -3,7 +3,7 @@ import os
 from argparse import ArgumentParser
 from pathlib import Path
 
-from .config import get_source_language, get_target_language
+from .config import get_source_language, get_target_language, get_architecture
 from .tokenizer import save_tokenizer
 from .quantize import quantize_model
 from .convert_onnx import convert_model_to_onnx
@@ -60,6 +60,7 @@ def main(
     """
     source_language = get_source_language(model)
     target_language = get_target_language(model)
+    architectures = get_architecture(model)
 
     language_output_dir = output_dir / f"{source_language}-{target_language}"
 
@@ -86,7 +87,7 @@ def main(
     ort_files = convert_model_to_ort(quantization_dir, language_output_dir)
 
     # Step 5: Create metadata file for the model
-    generate_metadata(language_output_dir, source_language, target_language, tokenizer_files, ort_files)
+    generate_metadata(language_output_dir, model, source_language, target_language, architectures, tokenizer_files, ort_files)
 
     # Step 6: Remove intermediate files if specified
     if clean_intermediates:
