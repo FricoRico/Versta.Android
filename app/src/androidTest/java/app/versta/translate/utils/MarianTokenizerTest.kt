@@ -38,10 +38,10 @@ class MarianTokenizerTest {
         )
 
         val input = "これはテストです。"
-        val expected = listOf(650, 9528, 207, 8)
+        val expected = longArrayOf(650, 9528, 207, 8)
         val (inputIds, _) = tokenizer.encode(input)
 
-        assertEquals(expected, inputIds.filter { it != 0 })
+        assertEquals(expected, inputIds.filter { it != 0L })
     }
 
     @Test
@@ -56,9 +56,9 @@ class MarianTokenizerTest {
             targetLanguage = "nl"
         )
 
-        val input = intArrayOf(65000, 231, 24, 15, 6811, 2, 0)
+        val input = longArrayOf(65000, 231, 24, 15, 6811, 2, 0)
         val expected = "Dit is een test."
-        val output = tokenizer.decode(input)
+        val output = tokenizer.decode(arrayOf(input))
 
         assertEquals(expected, output)
     }

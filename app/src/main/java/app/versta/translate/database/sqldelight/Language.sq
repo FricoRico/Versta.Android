@@ -1,0 +1,43 @@
+CREATE TABLE Language (
+    id TEXT NOT NULL PRIMARY KEY,
+    source TEXT NOT NULL,
+    target TEXT NOT NULL
+);
+
+CREATE INDEX languagePair ON Language(source, target);
+
+getAll:
+SELECT * FROM Language;
+
+getAllSourceLanguages:
+SELECT DISTINCT source FROM Language;
+
+getById:
+SELECT * FROM Language WHERE id = :id LIMIT 1;
+
+getBySourceAndTarget:
+SELECT * FROM Language WHERE source = :source AND target = :target LIMIT 1;
+
+getAllBySourceLanguage:
+SELECT * FROM Language WHERE source LIKE :source || "%";
+
+getBySource:
+SELECT * FROM Language WHERE source = :source;
+
+getByTarget:
+SELECT * FROM Language WHERE target = :target;
+
+insertOrIgnore {
+    INSERT OR IGNORE INTO Language (
+        id,
+        source,
+        target
+    ) VALUES (
+        :id,
+        :source,
+        :target
+    );
+}
+
+removeNotIn:
+DELETE FROM Language WHERE source NOT IN :source AND target NOT IN :target;

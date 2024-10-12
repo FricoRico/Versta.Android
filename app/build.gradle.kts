@@ -1,7 +1,18 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.kotlinx.serialization)
+    alias(libs.plugins.sqldelight)
+}
+
+sqldelight {
+    databases {
+        create("Database") {
+            packageName.set("app.versta.translate.database")
+            srcDirs.setFrom("src/main")
+        }
+    }
 }
 
 android {
@@ -69,7 +80,6 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -77,18 +87,28 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.compose.animation)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.appache.commons.compress)
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.kotlinx.serialization)
+    implementation(libs.levyfan.sentencepiece)
     implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.material.icons)
+    implementation(libs.material.icons.extended)
     implementation(libs.mlkit.text.recognition.latin)
     implementation(libs.mlkit.text.recognition.chinese)
     implementation(libs.mlkit.text.recognition.devanagari)
     implementation(libs.mlkit.text.recognition.japanese)
     implementation(libs.mlkit.text.recognition.korean)
-    implementation(libs.levyfan.sentencepiece)
-    implementation(libs.kotlinx.serialization)
-    implementation(libs.androidx.camera.core)
-    implementation(libs.androidx.camera.camera2)
-    implementation(libs.androidx.camera.view)
-    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.navigation.compose)
+    implementation(libs.sqldelight.android)
+    implementation(libs.sqldelight.coroutines)
 
     implementation(files("$projectDir/libs/arm64-v8a/onnxruntime-1.19.2.aar"))
 }

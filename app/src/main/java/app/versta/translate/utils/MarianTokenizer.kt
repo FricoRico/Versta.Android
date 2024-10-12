@@ -167,7 +167,6 @@ class MarianTokenizer(
     override fun splitSentences(text: String, groupLength: Int): List<String> {
         val sentences = text.trimIndent().split("(?<=[.!?。！？])\\s+".toRegex())
 
-        // Step 3: Group short sentences together, keep long ones separate
         val result = mutableListOf<String>()
         val currentGroup = StringBuilder()
 

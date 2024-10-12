@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="site_url" translatable="false">https://versta.app</string>
+    <string name="language_models_url" translatable="false">%1$s/models/languages</string>
+</resources>

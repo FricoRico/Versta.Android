@@ -1,0 +1,44 @@
+import kotlin.String;
+import kotlin.collections.List;
+import kotlin.collections.Map;
+
+CREATE TABLE LanguageModel (
+    languageId TEXT NOT NULL PRIMARY KEY,
+    baseModel TEXT NOT NULL,
+    architectures TEXT AS List<String> NOT NULL,
+    path TEXT NOT NULL,
+    files TEXT AS Map<String, Map<String, String>> NOT NULL
+);
+
+CREATE INDEX languageModelLanguageId ON LanguageModel(languageId);
+
+getAll:
+SELECT * FROM LanguageModel;
+
+getAllByLanguageId:
+SELECT * FROM LanguageModel WHERE languageId = :languageId;
+
+upsert {
+    UPDATE LanguageModel SET
+        architectures = :architectures,
+        path = :path,
+        files = :files
+    WHERE languageId = :languageId AND baseModel = :baseModel;
+
+    INSERT OR IGNORE INTO LanguageModel (
+        languageId,
+        baseModel,
+        architectures,
+        path,
+        files
+    ) VALUES (
+        :languageId,
+        :baseModel,
+        :architectures,
+        :path,
+        :files
+    );
+}
+
+removeNotIn:
+DELETE FROM LanguageModel WHERE languageId NOT IN :languageIds;

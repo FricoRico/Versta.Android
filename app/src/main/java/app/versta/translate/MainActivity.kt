@@ -11,17 +11,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import app.versta.translate.screens.CameraScreen
+import app.versta.translate.ui.screen.Camera
 import app.versta.translate.ui.theme.TranslateTheme
 import android.Manifest
 import android.content.pm.PackageManager
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.draw.clip
 import androidx.core.content.ContextCompat
+import app.versta.translate.utils.FilePicker
+import app.versta.translate.ui.component.LanguageSelectionDrawer
+import app.versta.translate.ui.component.Router
 import app.versta.translate.utils.Translator
 
 class MainActivity : ComponentActivity() {
+//    private lateinit var pickFileLauncher: ActivityResultLauncher<Array<String>>
+
+//    private val fileExtractorScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
     private val activityResultLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
@@ -59,7 +67,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             TranslateTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    CameraScreen(
+                    Camera(
                         modifier = Modifier
                             .padding(innerPadding)
                             .clip(shape = MaterialTheme.shapes.extraLarge)
@@ -72,18 +80,26 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        FilePicker.registerForActivity(this)
+
         enableEdgeToEdge()
         setContent {
             TranslateTheme {
-                Box{}
+                Box(
+                    modifier = Modifier.background(MaterialTheme.colorScheme.background)
+                ){
+                    Router()
+
+                    LanguageSelectionDrawer()
+                }
             }
         }
-
-        if (!allPermissionsGranted()) {
-            requestPermissions()
-        } else {
-            setCameraPreview()
-        }
+//
+//        if (!allPermissionsGranted()) {
+//            requestPermissions()
+//        } else {
+//            setCameraPreview()
+//        }
     }
 
     companion object {

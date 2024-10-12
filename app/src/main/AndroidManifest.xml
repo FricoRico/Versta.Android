@@ -1,34 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="app.versta.translate"
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="app.versta.translate">
 
-    <uses-sdk
-            tools:overrideLibrary="
+    <uses-sdk tools:overrideLibrary="
           androidx.camera.camera2, androidx.camera.core,
           androidx.camera.view, androidx.camera.lifecycle,
           com.google.mlkit.vision.segmentation.subject" />
 
     <uses-feature android:name="android.hardware.camera.any" />
 
-    <uses-permission android:name="android.permission.INTERNET" tools:node="remove"/>
-    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission
+        android:name="android.permission.INTERNET"
+        tools:node="remove" />
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application
-            android:allowBackup="true"
-            android:dataExtractionRules="@xml/data_extraction_rules"
-            android:fullBackupContent="@xml/backup_rules"
-            android:icon="@mipmap/ic_launcher"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_round"
-            android:supportsRtl="true"
-            android:theme="@style/Theme.Translate"
-            tools:targetApi="34"
-            android:largeHeap="true">
+        android:name=".MainApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Translate"
+        tools:targetApi="34">
         <activity
-                android:name="app.versta.translate.MainActivity"
-                android:exported="true"
-                android:theme="@style/Theme.Translate">
+            android:name=".MainActivity"
+            android:screenOrientation="portrait"
+            android:exported="true"
+            android:theme="@style/Theme.Translate">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
