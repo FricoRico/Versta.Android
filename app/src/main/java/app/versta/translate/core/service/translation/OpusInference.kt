@@ -1,4 +1,4 @@
-package app.versta.translate.utils
+package app.versta.translate.core.service.translation
 
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OnnxTensorLike
@@ -6,6 +6,10 @@ import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtLoggingLevel
 import ai.onnxruntime.OrtSession
 import android.content.Context
+import app.versta.translate.core.entity.LanguageModelInferenceFiles
+import app.versta.translate.core.service.ModelInterface
+import java.io.File
+import kotlin.io.path.pathString
 
 class DecoderMetadata(
     val batchSize: Int,
@@ -36,10 +40,8 @@ typealias DecoderLogits = Array<Array<FloatArray>>
 
 class OpusInference(
     context: Context,
-    encoderFilePath: String,
-    decoderFilePath: String,
     threadCount: Int = 4,
-) {
+): ModelInterface {
     private val ortEnvironment = OrtEnvironment.getEnvironment(
         OrtLoggingLevel.ORT_LOGGING_LEVEL_WARNING,
         "OpusInference",
@@ -47,30 +49,24 @@ class OpusInference(
             setGlobalSpinControl(false)
         })
 
-    private val encoderSession: OrtSession
-    private val decoderSession: OrtSession
+    private val sessionOptions = OrtSession.SessionOptions().apply {
+        setCPUArenaAllocator(true)
+        setMemoryPatternOptimization(true)
+        setInterOpNumThreads(1)
+        addXnnpack(mapOf("intra_op_num_threads" to threadCount.toString()))
+    }
+
+    private var encoderSession: OrtSession? = null
+    private var decoderSession: OrtSession? = null
 
     private val padTokenID: Long = 67027
     private val eosTokenId: Long = 0
     private val maxSequenceLength: Int = 128
 
-    init {
-        val assetManager = context.assets
-        val encoderFile = assetManager.open(encoderFilePath).readBytes()
-        val decoderFile = assetManager.open(decoderFilePath).readBytes()
-
-        val sessionOptions = OrtSession.SessionOptions()
-        sessionOptions.setCPUArenaAllocator(true)
-        sessionOptions.setMemoryPatternOptimization(true)
-        sessionOptions.setInterOpNumThreads(1)
-        sessionOptions.addXnnpack(mapOf("intra_op_num_threads" to threadCount.toString()))
-
-        encoderSession = ortEnvironment.createSession(encoderFile, sessionOptions)
-        decoderSession = ortEnvironment.createSession(decoderFile, sessionOptions)
-    }
+    private val assetManager = context.assets
 
     @Suppress("UNCHECKED_CAST")
-    fun encode(inputIds: Array<LongArray>, attentionMask: Array<LongArray>): EncoderHiddenStates {
+    override fun encode(inputIds: Array<LongArray>, attentionMask: Array<LongArray>): EncoderHiddenStates {
         val inputIdsTensor = OnnxTensor.createTensor(ortEnvironment, inputIds)
         val attentionMaskTensor = OnnxTensor.createTensor(ortEnvironment, attentionMask)
 
@@ -80,7 +76,13 @@ class OpusInference(
         )
 
         try {
-            val encoderOutput = encoderSession.run(inputs)
+            val encoderOutput = encoderSession?.run(inputs)
+
+            if (encoderOutput == null) {
+                inputIdsTensor.close()
+                attentionMaskTensor.close()
+                return emptyArray()
+            }
 
             val encoderHiddenStates = encoderOutput.get("last_hidden_state").get().value as EncoderHiddenStates
             encoderOutput.close()
@@ -96,10 +98,7 @@ class OpusInference(
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun decode(
-        encoderHiddenStates: Array<Array<FloatArray>>,
-        attentionMask: Array<LongArray>,
-    ): Array<LongArray> {
+    override fun decode(encoderHiddenStates: Array<*>, attentionMask: Array<*>): Array<LongArray> {
         try {
             val decoderMetadata = DecoderMetadata(encoderHiddenStates.size, maxSequenceLength)
 
@@ -125,7 +124,13 @@ class OpusInference(
 
                 inputs["input_ids"] = decoderInputIdsTensor
 
-                val decoderOutputs = decoderSession.run(inputs)
+                val decoderOutputs = decoderSession?.run(inputs)
+
+                if (decoderOutputs == null) {
+                    decoderInputIdsTensor.close()
+                    break
+                }
+
                 val logits = decoderOutputs.get("logits").get().value as DecoderLogits
 
                 for (i in 0 until decoderMetadata.batchSize) {
@@ -144,8 +149,8 @@ class OpusInference(
                     }
                 }
 
-                decoderInputIdsTensor.close()
                 decoderOutputs.close()
+                decoderInputIdsTensor.close()
             }
 
             encoderOutputsTensor.close()
@@ -156,6 +161,16 @@ class OpusInference(
             e.printStackTrace()
             throw e
         }
+    }
+
+    override fun load(files: LanguageModelInferenceFiles) {
+        close()
+
+        val encoderFile = File(files.encoder.pathString).readBytes()
+        val decoderFile = File(files.decoder.pathString).readBytes()
+
+        encoderSession = ortEnvironment.createSession(encoderFile, sessionOptions)
+        decoderSession = ortEnvironment.createSession(decoderFile, sessionOptions)
     }
 
     private fun argmaxTokenMatcher(logits: FloatArray): Long {
@@ -173,8 +188,9 @@ class OpusInference(
     }
 
     fun close() {
-        encoderSession.close()
-        decoderSession.close()
+        encoderSession?.close()
+        decoderSession?.close()
+
         ortEnvironment.close()
     }
 }

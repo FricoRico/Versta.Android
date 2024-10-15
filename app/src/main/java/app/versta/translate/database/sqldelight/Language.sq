@@ -12,14 +12,17 @@ SELECT * FROM Language;
 getAllSourceLanguages:
 SELECT DISTINCT source FROM Language;
 
+getAllTargetLanguages:
+SELECT DISTINCT target FROM Language;
+
+getAllBySourceLanguage:
+SELECT DISTINCT target FROM Language WHERE source = :source;
+
 getById:
 SELECT * FROM Language WHERE id = :id LIMIT 1;
 
 getBySourceAndTarget:
 SELECT * FROM Language WHERE source = :source AND target = :target LIMIT 1;
-
-getAllBySourceLanguage:
-SELECT * FROM Language WHERE source LIKE :source || "%";
 
 getBySource:
 SELECT * FROM Language WHERE source = :source;

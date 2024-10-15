@@ -1,5 +1,6 @@
 package app.versta.translate.utils
 
+import app.versta.translate.core.service.translation.MosesPunctuationNormalizer
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

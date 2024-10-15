@@ -9,15 +9,16 @@ data class LanguageModelFiles(
 )
 
 data class LanguageModelTokenizerFiles(
-    val config: String,
-    val vocabulary: String,
-    val source: String,
-    val target: String
+    val config: Path,
+    val sourceVocabulary: Path,
+    val targetVocabulary: Path?,
+    val source: Path,
+    val target: Path
 )
 
 data class LanguageModelInferenceFiles(
-    val encoder: String,
-    val decoder: String
+    val encoder: Path,
+    val decoder: Path
 )
 
 typealias LanguageModelFilesMap = Map<String, Map<String, String>>

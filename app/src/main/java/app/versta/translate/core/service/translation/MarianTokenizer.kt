@@ -1,19 +1,16 @@
-package app.versta.translate.utils
+package app.versta.translate.core.service.translation
 
-import android.content.Context
+import app.versta.translate.core.entity.LanguageModelTokenizerFiles
+import app.versta.translate.core.entity.LanguagePair
 import com.github.google.sentencepiece.SentencePieceProcessor
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import app.versta.translate.core.service.TokenizerInterface
+import java.io.File
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.pathString
 
 class MarianTokenizer(
-    context: Context,
-    encoderFilePath: String,
-    decoderFilePath: String,
-    vocabularyFilePath: String,
-    targetVocabularyFilePath: String? = null,
-    private val sourceLanguage: String,
-    private val targetLanguage: String,
     private val maxInputLength: Int = 512,
     private val unknownToken: String = "<unk>",
     private val eosToken: String = "</s>",
@@ -28,39 +25,15 @@ class MarianTokenizer(
     private val encoder = SentencePieceProcessor()
     private val decoder = SentencePieceProcessor()
 
-    private val sourceVocabulary: List<String>
-    private var targetVocabulary: List<String>
+    private var sourceVocabulary: List<String> = emptyList()
+    private var targetVocabulary: List<String> = emptyList()
 
-    private val normalizer = MosesPunctuationNormalizer(lang = sourceLanguage)
+    private var sourceLanguage: String = ""
+    private var targetLanguage: String = ""
+
+    private var normalizer: MosesPunctuationNormalizer? = null
 
     private val supportedLanguageCodes = mutableListOf<String>()
-
-    init {
-        sourceVocabulary = loadVocabulary(context, vocabularyFilePath)
-        if (!validateVocabulary(sourceVocabulary, eosToken, padToken, unknownToken)) {
-            throw IllegalArgumentException("Vocabulary does not contain the provided tokens")
-        }
-
-        if (separatedVocabularies) {
-            if (targetVocabularyFilePath == null) {
-                throw IllegalArgumentException("Target vocabulary file path must be provided when using separated vocabularies")
-            }
-
-            targetVocabulary = loadVocabulary(context, targetVocabularyFilePath)
-            if (!validateVocabulary(targetVocabulary, eosToken, padToken, unknownToken)) {
-                throw IllegalArgumentException("Target vocabulary does not contain the provided tokens")
-            }
-        } else {
-            supportedLanguageCodes.addAll(extractLanguageCodes(sourceVocabulary))
-            targetVocabulary = sourceVocabulary
-        }
-
-        val encoderModel = loadSentencePieceModel(context, encoderFilePath)
-        encoder.loadFromSerializedProto(encoderModel)
-
-        val decoderModel = loadSentencePieceModel(context, decoderFilePath)
-        decoder.loadFromSerializedProto(decoderModel)
-    }
 
     val vocabSize: Long
         get() = sourceVocabulary.size.toLong()
@@ -78,7 +51,7 @@ class MarianTokenizer(
         get() = listOf(unknownToken, eosToken, padToken)
 
     fun normalize(text: String): String {
-        return normalizer.normalize(text)
+        return normalizer?.normalize(text) ?: text
     }
 
     private fun removeLanguageCode(text: String): Pair<List<String>, String> {
@@ -191,6 +164,41 @@ class MarianTokenizer(
         return result
     }
 
+    override fun load(
+        files: LanguageModelTokenizerFiles,
+        languages: LanguagePair
+    ) {
+        sourceLanguage = languages.source.locale.language
+        targetLanguage = languages.target.locale.language
+
+        normalizer = MosesPunctuationNormalizer(lang = sourceLanguage)
+
+        sourceVocabulary = loadVocabulary(files.sourceVocabulary.pathString)
+        if (!validateVocabulary(sourceVocabulary, eosToken, padToken, unknownToken)) {
+            throw IllegalArgumentException("Vocabulary does not contain the provided tokens")
+        }
+
+        if (separatedVocabularies) {
+            if (files.targetVocabulary == null) {
+                throw IllegalArgumentException("Target vocabulary file path must be provided when using separated vocabularies")
+            }
+
+            targetVocabulary = loadVocabulary(files.targetVocabulary.pathString)
+            if (!validateVocabulary(targetVocabulary, eosToken, padToken, unknownToken)) {
+                throw IllegalArgumentException("Target vocabulary does not contain the provided tokens")
+            }
+        } else {
+            supportedLanguageCodes.addAll(extractLanguageCodes(sourceVocabulary))
+            targetVocabulary = sourceVocabulary
+        }
+
+        val encoderModel = loadSentencePieceModel(files.source.absolutePathString())
+        encoder.loadFromSerializedProto(encoderModel)
+
+        val decoderModel = loadSentencePieceModel(files.target.pathString)
+        decoder.loadFromSerializedProto(decoderModel)
+    }
+
     private fun padBatchSequences(
         inputIdsBatch: MutableList<LongArray>,
         attentionMaskBatch: MutableList<LongArray>
@@ -232,15 +240,15 @@ class MarianTokenizer(
         return targetVocabulary[id.toInt()]
     }
 
-    private fun loadVocabulary(context: Context, filePath: String): List<String> {
-        val vocabBuffer = context.assets.open(filePath).readBytes().toString(Charsets.UTF_8)
+    private fun loadVocabulary(filePath: String): List<String> {
+        val vocabBuffer = File(filePath).readBytes().toString(Charsets.UTF_8)
         val vocab = Json.decodeFromString<JsonObject>(vocabBuffer).keys.toList()
 
         return vocab
     }
 
-    private fun loadSentencePieceModel(context: Context, filePath: String): ByteArray {
-        return context.assets.open(filePath).readBytes()
+    private fun loadSentencePieceModel(filePath: String): ByteArray {
+        return File(filePath).readBytes()
     }
 
     private fun extractLanguageCodes(vocabulary: List<String>): List<String> {

@@ -1,4 +1,4 @@
-package app.versta.translate.utils
+package app.versta.translate.core.service.translation
 
 class MosesPunctuationNormalizer(
     private val lang: String = "en",

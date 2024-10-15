@@ -1,31 +1,53 @@
 package app.versta.translate.adapter.outbound
 
+import androidx.core.net.toUri
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageMetadata
+import app.versta.translate.core.entity.LanguageModelFiles
+import app.versta.translate.core.entity.LanguageModelInferenceFiles
+import app.versta.translate.core.entity.LanguageModelTokenizerFiles
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.ModelMetadata
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.executeAsListFlow
 import kotlinx.coroutines.flow.map
+import okio.Path.Companion.toPath
+import java.nio.file.Path
 import java.app.versta.translate.database.sqldelight.Language as LanguageDatabaseModel
 import java.app.versta.translate.database.sqldelight.LanguageModel as LanguageModelDatabaseModel
-import java.util.Locale
 import kotlin.io.path.absolutePathString
 
 class LanguageDatabaseRepository(
     private val database: DatabaseContainer,
 ) {
+    /**
+     * Gets the languages available in the database.
+     */
     fun getLanguages() = database.languages.getAll().executeAsListFlow().map { results ->
         results.map { mapLanguageDatabaseModelToLanguagePair(it) }
     }
 
+    /**
+     * Gets the source languages available in the database.
+     */
     fun getSourceLanguages() =
         database.languages.getAllSourceLanguages().executeAsListFlow().map { results ->
             results.map { mapSingleLanguageDatabaseModelToLanguage(it) }
         }
 
-    fun getLanguageBySource(sourceLanguage: Locale) =
-        database.languages.getAllBySourceLanguage(sourceLanguage.language).executeAsOneOrNull()
+    /**
+     * Gets the target languages for a given source language.
+     */
+    fun getTargetLanguagesBySource(sourceLanguage: Language) =
+            database.languages.getAllBySourceLanguage(sourceLanguage.locale.language)
+                .executeAsListFlow().map { results ->
+                results.map { mapSingleLanguageDatabaseModelToLanguage(it) }
+            }
+
+    fun getLanguageModel(languagePair: LanguagePair) =
+        database.languageModels.getAllByLanguageId(languagePair.id).executeAsListFlow().map { results ->
+            results.firstOrNull()?.let { mapLanguageModelDatabaseModelToLanguageModelFiles(it) }
+        }
 
     /**
      * Inserts a [LanguageMetadata] into the database, ignoring if it already exists.
@@ -100,7 +122,6 @@ class LanguageDatabaseRepository(
         )
     }
 
-
     /**
      * Maps a [LanguageMetadata] to a [LanguageModelDatabaseModel].
      * @param data The language metadata to map.
@@ -119,6 +140,25 @@ class LanguageDatabaseRepository(
             architectures = data.architectures.map { it.value },
             path = data.root?.absolutePathString() ?: "",
             files = data.files
+        )
+    }
+
+    private fun mapLanguageModelDatabaseModelToLanguageModelFiles(data: LanguageModelDatabaseModel): LanguageModelFiles {
+        val path = data.path.toPath().toNioPath()
+
+        return LanguageModelFiles(
+            path = path,
+            tokenizer = LanguageModelTokenizerFiles(
+                config = path.resolve(data.files["tokenizer"]?.get("config") ?: ""),
+                sourceVocabulary = path.resolve(data.files["tokenizer"]?.get("vocabulary") ?: ""),
+                targetVocabulary = null, // TODO: Target vocabulary not supported right now
+                source = path.resolve(data.files["tokenizer"]?.get("source") ?: ""),
+                target = path.resolve(data.files["tokenizer"]?.get("target") ?: "")
+            ),
+            inference = LanguageModelInferenceFiles(
+                encoder = path.resolve(data.files["inference"]?.get("encoder") ?: ""),
+                decoder = path.resolve(data.files["inference"]?.get("decoder") ?: "")
+            )
         )
     }
 

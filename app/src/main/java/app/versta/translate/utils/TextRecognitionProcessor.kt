@@ -35,6 +35,6 @@ class TextRecognitionProcessor(textRecognizerOptions: TextRecognizerOptionsInter
     }
 
     companion object {
-        private val TAG: String = Translator::class.java.simpleName
+        private val TAG: String = TextRecognitionProcessor::class.java.simpleName
     }
 }

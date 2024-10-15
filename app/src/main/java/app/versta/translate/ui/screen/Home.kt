@@ -46,6 +46,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
 import app.versta.translate.ui.component.LanguageSelector
+import app.versta.translate.ui.component.TranslationTextFieldMinimal
 import app.versta.translate.ui.component.TransparentTextField
 import app.versta.translate.ui.theme.spacing
 
@@ -120,21 +121,9 @@ fun Home(navController: NavHostController) {
                 Row {
                     Column {
                         LanguageSelector()
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            ),
-                            shape = MaterialTheme.shapes.extraLarge,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(height = 180.dp)
-                                .padding(MaterialTheme.spacing.small),
-                        ) {
-                            TransparentTextField(
-                                placeholder = "Type something",
-                                modifier = Modifier.padding(MaterialTheme.spacing.small),
-                            )
-                        }
+
+                        TranslationTextFieldMinimal()
+
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier

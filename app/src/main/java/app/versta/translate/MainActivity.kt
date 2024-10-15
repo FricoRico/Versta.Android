@@ -23,7 +23,7 @@ import androidx.core.content.ContextCompat
 import app.versta.translate.utils.FilePicker
 import app.versta.translate.ui.component.LanguageSelectionDrawer
 import app.versta.translate.ui.component.Router
-import app.versta.translate.utils.Translator
+import app.versta.translate.ui.component.TranslatorLoadingProgressDialog
 
 class MainActivity : ComponentActivity() {
 //    private lateinit var pickFileLauncher: ActivityResultLauncher<Array<String>>
@@ -90,6 +90,7 @@ class MainActivity : ComponentActivity() {
                 ){
                     Router()
 
+                    TranslatorLoadingProgressDialog()
                     LanguageSelectionDrawer()
                 }
             }
@@ -103,7 +104,7 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        private val TAG: String = Translator::class.java.simpleName
+        private val TAG: String = MainActivity::class.java.simpleName
         private val REQUIRED_PERMISSIONS =
             mutableListOf(
                 Manifest.permission.CAMERA,

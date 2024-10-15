@@ -3,12 +3,18 @@ package app.versta.translate
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
-import android.view.WindowManager
+import androidx.datastore.preferences.preferencesDataStore
 import app.versta.translate.adapter.outbound.LanguageDatabaseRepository
-import app.versta.translate.core.entity.TranslationCache
+import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.ModelExtractor
+import app.versta.translate.core.model.TranslationViewModel
+import app.versta.translate.core.service.ModelInterface
+import app.versta.translate.core.service.TokenizerInterface
+import app.versta.translate.core.service.TranslatorService
+import app.versta.translate.core.service.translation.MarianTokenizer
+import app.versta.translate.core.service.translation.OpusInference
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.TarExtractor
 import org.koin.android.ext.koin.androidContext
@@ -18,13 +24,21 @@ import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 import org.koin.dsl.module
 
+val Context.dataStore by preferencesDataStore(name = "preferences")
+
 val translateModule = module {
-    single { TranslationCache(64) }
     single<ModelExtractor> { TarExtractor(get()) }
+    single<TokenizerInterface> { MarianTokenizer()}
+    single<ModelInterface> { OpusInference(get()) }
+
+    single { get<Context>().dataStore }
 
     single { LanguageDatabaseRepository(get()) }
+    single { LanguagePreferenceRepository(get()) }
+    single { TranslatorService(get(), get()) }
 
-    viewModel { LanguageViewModel(get(), get()) }
+    viewModel { LanguageViewModel(get(), get(), get()) }
+    viewModel { TranslationViewModel(get(), get(), get()) }
     viewModel { LicenseViewModel() }
 }
 

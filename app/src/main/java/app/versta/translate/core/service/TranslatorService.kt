@@ -1,12 +1,17 @@
 package app.versta.translate.core.service
 
+import app.versta.translate.core.entity.LanguageModelFiles
+import app.versta.translate.core.entity.LanguageModelInferenceFiles
+import app.versta.translate.core.entity.LanguageModelTokenizerFiles
+import app.versta.translate.core.entity.LanguagePair
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import app.versta.translate.core.entity.TranslationCache
+import app.versta.translate.core.entity.TranslationMemoryCache
 
 interface ModelInterface {
     fun encode(inputIds: Array<LongArray>, attentionMask: Array<LongArray>): Array<*>
     fun decode(encoderHiddenStates: Array<*>, attentionMask: Array<*>): Array<LongArray>
+    fun load(files: LanguageModelInferenceFiles)
 }
 
 interface TokenizerInterface {
@@ -20,14 +25,15 @@ interface TokenizerInterface {
     fun decode(ids: LongArray, filterSpecialTokens: Boolean = true): String
     fun decode(ids: Array<LongArray>, filterSpecialTokens: Boolean = true): List<String>
     fun splitSentences(text: String, groupLength: Int = 192): List<String>
+    fun load(files: LanguageModelTokenizerFiles, languages: LanguagePair)
 }
 
 class TranslatorService(
     private val tokenizer: TokenizerInterface,
     private val model: ModelInterface,
-    cacheSize: Int = 100
+    cacheSize: Int = 64
 ) {
-    private val translationCache = TranslationCache(cacheSize)
+    private val translationCache = TranslationMemoryCache(cacheSize)
     private val queue = Mutex()
 
     // TODO: Make this a configuration option
@@ -73,6 +79,11 @@ class TranslatorService(
 
             outputText
         }
+    }
+
+    fun load(files: LanguageModelFiles, languagePair: LanguagePair) {
+        tokenizer.load(files.tokenizer, languagePair)
+        model.load(files.inference)
     }
 
 }

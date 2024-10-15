@@ -1,6 +1,7 @@
 package app.versta.translate.utils
 
 import androidx.test.platform.app.InstrumentationRegistry
+import app.versta.translate.core.service.translation.MarianTokenizer
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

@@ -1,32 +1,39 @@
 package app.versta.translate.ui.component
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 
 @Composable
 fun TransparentTextField(
     modifier: Modifier = Modifier,
     placeholder: String,
-    initialValue: String = ""
+    onValueChange: (String) -> Unit,
+    onSubmit: (() -> Unit)? = null,
+    value: String = "",
 ) {
-    var text by remember { mutableStateOf(initialValue) }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     TextField(
         modifier = Modifier
-            .fillMaxSize()
             .then(modifier),
-        value = text,
-        onValueChange = { text = it },
+        value = value,
+        onValueChange = onValueChange,
+        keyboardOptions = if (onSubmit != null) KeyboardOptions(imeAction = ImeAction.Done) else KeyboardOptions.Default,
+        keyboardActions = KeyboardActions(
+            onDone = {
+                onSubmit?.invoke()
+                keyboardController?.hide()
+            }),
         label = {
             Text(placeholder)
         },

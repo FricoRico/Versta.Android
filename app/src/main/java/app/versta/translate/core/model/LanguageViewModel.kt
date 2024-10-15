@@ -4,18 +4,38 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.versta.translate.adapter.outbound.LanguageDatabaseRepository
+import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.core.entity.BundleMetadata
+import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageMetadata
 import app.versta.translate.core.entity.ModelMetadata
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.flow.lastOrNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.util.Locale
 
 interface ModelExtractor {
     /**
@@ -75,9 +95,11 @@ enum class LanguageType {
     Target
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class LanguageViewModel(
     private val modelExtractor: ModelExtractor,
-    private val languageDatabaseRepository: LanguageDatabaseRepository
+    private val languageDatabaseRepository: LanguageDatabaseRepository,
+    private val languagePreferenceRepository: LanguagePreferenceRepository
 ) : ViewModel() {
     private val _languageSelectionState = MutableStateFlow<LanguageType?>(null)
     val languageSelectionState: StateFlow<LanguageType?> = _languageSelectionState
@@ -85,16 +107,81 @@ class LanguageViewModel(
     private val _progressState = MutableStateFlow<ExtractionProgress>(ExtractionProgress.Idle)
     val progressState: StateFlow<ExtractionProgress> = _progressState.asStateFlow()
 
-    val availableLanguages = languageDatabaseRepository.getLanguages()
-    val sourceLanguages = languageDatabaseRepository.getSourceLanguages()
+    val sourceLanguage = languagePreferenceRepository.sourceLanguage
+    val targetLanguage = languagePreferenceRepository.targetLanguage
 
-    fun getTargetLanguagesForSource(sourceLanguage: Locale) {
-        val availableSourceLanguages =
-            languageDatabaseRepository.getLanguageBySource(sourceLanguage)
+    val canSwapLanguages = sourceLanguage.combine(targetLanguage) { source, target ->
+        source != null && target != null
     }
 
+    val availableLanguages = languageDatabaseRepository.getLanguages()
+    val sourceLanguages = languageDatabaseRepository.getSourceLanguages()
+    val targetLanguages = sourceLanguage
+        .flatMapLatest {
+            if (it != null) {
+                languageDatabaseRepository.getTargetLanguagesBySource(it)
+            } else {
+                flowOf(emptyList())
+            }
+        }
+
+    /**
+     * Sets the language selection state.
+     */
     fun setLanguageSelectionState(state: LanguageType?) {
         _languageSelectionState.value = state
+    }
+
+    /**
+     * Sets the source language.
+     */
+    fun setSourceLanguage(language: Language) {
+        viewModelScope.launch {
+            val current = sourceLanguage.first()
+            languagePreferenceRepository.setSourceLanguage(language)
+
+            // If there is a target language available for the current source language, set it instead
+            // of clearing the target language.
+            if (current != null && targetLanguages.first().contains(current)) {
+                languagePreferenceRepository.setTargetLanguage(current)
+                return@launch
+            }
+
+            // If the current target language is not available for the new source language, clear the
+            // current target language.
+            languageDatabaseRepository.getTargetLanguagesBySource(language).collectLatest { languages ->
+                if (languages.none { it == targetLanguage.first() }) {
+                    clearTargetLanguage()
+                }
+            }
+        }
+    }
+
+    /**
+     * Sets the target language.
+     */
+    fun setTargetLanguage(language: Language) {
+        viewModelScope.launch {
+            languagePreferenceRepository.setTargetLanguage(language)
+        }
+    }
+
+    /**
+     * Swaps the source and target languages.
+     */
+    fun swapLanguages() {
+        viewModelScope.launch {
+            languagePreferenceRepository.swapLanguages()
+        }
+    }
+
+    /**
+     * Clears the target language.
+     */
+    private fun clearTargetLanguage() {
+        viewModelScope.launch {
+            languagePreferenceRepository.clearTargetLanguage()
+        }
     }
 
     /**
