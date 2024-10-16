@@ -39,7 +39,6 @@ typealias EncoderHiddenStates = Array<Array<FloatArray>>
 typealias DecoderLogits = Array<Array<FloatArray>>
 
 class OpusInference(
-    context: Context,
     threadCount: Int = 4,
 ): ModelInterface {
     private val ortEnvironment = OrtEnvironment.getEnvironment(
@@ -58,12 +57,6 @@ class OpusInference(
 
     private var encoderSession: OrtSession? = null
     private var decoderSession: OrtSession? = null
-
-    private val padTokenID: Long = 67027
-    private val eosTokenId: Long = 0
-    private val maxSequenceLength: Int = 128
-
-    private val assetManager = context.assets
 
     @Suppress("UNCHECKED_CAST")
     override fun encode(inputIds: Array<LongArray>, attentionMask: Array<LongArray>): EncoderHiddenStates {
@@ -98,14 +91,14 @@ class OpusInference(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun decode(encoderHiddenStates: Array<*>, attentionMask: Array<*>): Array<LongArray> {
+    override fun decode(encoderHiddenStates: Array<*>, attentionMask: Array<*>, eosId: Long, padId: Long, maxSequenceLength: Int): Array<LongArray> {
         try {
             val decoderMetadata = DecoderMetadata(encoderHiddenStates.size, maxSequenceLength)
 
             val encoderOutputsTensor = OnnxTensor.createTensor(ortEnvironment, encoderHiddenStates)
             val encoderAttentionMaskTensor = OnnxTensor.createTensor(ortEnvironment, attentionMask)
 
-            val decoderInputIds = Array(decoderMetadata.batchSize) { longArrayOf(padTokenID) }
+            val decoderInputIds = Array(decoderMetadata.batchSize) { longArrayOf(padId) }
 
             val inputs = mutableMapOf<String, OnnxTensorLike>(
                 "encoder_hidden_states" to encoderOutputsTensor,
@@ -135,7 +128,7 @@ class OpusInference(
 
                 for (i in 0 until decoderMetadata.batchSize) {
                     if (decoderMetadata.isBatchComplete(i)) {
-                        decoderInputIds[i] = decoderInputIds[i].plus(padTokenID)
+                        decoderInputIds[i] = decoderInputIds[i].plus(padId)
                         continue
                     }
 
@@ -144,7 +137,7 @@ class OpusInference(
 
                     decoderInputIds[i] = decoderInputIds[i].plus(token)
 
-                    if (token == eosTokenId) {
+                    if (token == eosId) {
                         decoderMetadata.markBatchComplete(i)
                     }
                 }

@@ -17,7 +17,7 @@ class BundleMetadata(
 ) {
     fun isValid() =
         languages.isNotEmpty()
-            && (isLanguagePair && languages.size % 2 == 0)
+            && (if (isLanguagePair) languages.size % 2 == 0 else true)
             && metadata.isNotEmpty()
 }
 
@@ -45,7 +45,6 @@ class LanguageMetadata(
 ) {
     fun isValid() = baseModel.isNotBlank()
             && sourceLanguage.isNotBlank()
-            && targetLanguage.isNotBlank()
             && architectures.isNotEmpty()
             && files.isNotEmpty()
             && root?.isAbsolute ?: false

@@ -234,6 +234,7 @@ class LanguageViewModel(
         val bundleMetadataFile = File(output, "metadata.json")
         val bundleMetadata = Json.decodeFromString<BundleMetadata>(bundleMetadataFile.readText())
 
+        // TODO: Improve error handling
         if (!bundleMetadata.isValid()) {
             throw Exception("Invalid metadata file")
         }
@@ -245,6 +246,7 @@ class LanguageViewModel(
             )
         }
 
+        // TODO: Improve error handling
         if (languageMetadata.any { !it.isValid() }) {
             throw Exception("Invalid language metadata file")
         }

@@ -10,11 +10,17 @@ import app.versta.translate.core.entity.TranslationMemoryCache
 
 interface ModelInterface {
     fun encode(inputIds: Array<LongArray>, attentionMask: Array<LongArray>): Array<*>
-    fun decode(encoderHiddenStates: Array<*>, attentionMask: Array<*>): Array<LongArray>
+    fun decode(encoderHiddenStates: Array<*>, attentionMask: Array<*>, eosId: Long, padId: Long, maxSequenceLength: Int = 128): Array<LongArray>
     fun load(files: LanguageModelInferenceFiles)
 }
 
 interface TokenizerInterface {
+    val vocabSize: Long
+
+    val padId: Long
+    val eosId: Long
+    val unknownId: Long
+
     fun tokenize(text: String): List<String>
     fun encode(text: String, padTokens: Boolean = false): Pair<LongArray, LongArray>
     fun encode(
@@ -71,7 +77,7 @@ class TranslatorService(
             val encoderHiddenStates = model.encode(inputIds, attentionMask)
 
             val tokenIds =
-                model.decode(encoderHiddenStates, attentionMask)
+                model.decode(encoderHiddenStates, attentionMask, tokenizer.eosId, tokenizer.padId)
 
             val outputText = tokenizer.decode(tokenIds)
 

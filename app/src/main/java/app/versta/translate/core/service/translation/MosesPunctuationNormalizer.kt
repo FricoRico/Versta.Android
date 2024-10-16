@@ -1,7 +1,7 @@
 package app.versta.translate.core.service.translation
 
 class MosesPunctuationNormalizer(
-    private val lang: String = "en",
+    private val lang: String,
     private val penn: Boolean = true,
     private val normQuoteCommas: Boolean = true,
     private val normNumbers: Boolean = true,

@@ -35,16 +35,16 @@ class MarianTokenizer(
 
     private val supportedLanguageCodes = mutableListOf<String>()
 
-    val vocabSize: Long
+    override val vocabSize: Long
         get() = sourceVocabulary.size.toLong()
 
-    val eosId: Long
+    override val eosId: Long
         get() = sourceVocabulary.indexOf(eosToken).toLong()
 
-    val unknownId: Long
+    override val unknownId: Long
         get() = sourceVocabulary.indexOf(unknownToken).toLong()
 
-    val padId: Long
+    override val padId: Long
         get() = sourceVocabulary.indexOf(padToken).toLong()
 
     private val specialTokens: List<String>

@@ -29,7 +29,7 @@ val Context.dataStore by preferencesDataStore(name = "preferences")
 val translateModule = module {
     single<ModelExtractor> { TarExtractor(get()) }
     single<TokenizerInterface> { MarianTokenizer()}
-    single<ModelInterface> { OpusInference(get()) }
+    single<ModelInterface> { OpusInference() }
 
     single { get<Context>().dataStore }
 
