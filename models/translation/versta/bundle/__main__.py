@@ -39,7 +39,7 @@ def parse_args():
     parser.add_argument(
         "--translation_pairs",
         action="store_true",
-        default=True,
+        default=False,
         help="Whether the languages are a pair, e.g. 'en-nl' and 'nl-en'."
         "A language pair allows for the translation model to be used in both directions easily."
         "This will default to True if not specified.",

@@ -6,7 +6,7 @@ from typing import List
 from .tokenizer import TokenizerFiles
 from .convert_ort import ORTFiles
 
-def generate_metadata(output_dir: Path, model: str, source_language: str, target_language: str, architectures: List[str], tokenizer_files: TokenizerFiles, ort_files: ORTFiles) -> str:
+def generate_metadata(output_dir: Path, model: str, source_language: str, target_language: str, architectures: List[str], tokenizer_files: TokenizerFiles, ort_files: ORTFiles or ORTMonolithFile, monolith: bool) -> str:
     """
     Generates a metadata file for the model conversion process.
 
@@ -16,12 +16,14 @@ def generate_metadata(output_dir: Path, model: str, source_language: str, target
         target_language (str): Target language for the translation model.
         tokenizer_files (TokenizerFiles): Dictionary containing the file paths for the tokenizer files.
         ort_files (ORTFiles): Dictionary containing the file paths for the encoder and decoder ORT files.
+        monolith (bool): Whether the model is in monolith mode or not.
     """
     metadata = {
         "base_model": model,
         "source_language": source_language,
         "target_language": target_language,
         "architectures": architectures,
+        "monolith": monolith,
         "files": {
             "tokenizer": tokenizer_files or {},
             "inference": ort_files or {}
