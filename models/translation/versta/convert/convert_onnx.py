@@ -10,4 +10,15 @@ def convert_model_to_onnx(model_name: str, export_dir: Path, monolith: bool):
         export_dir (Path): Path to the directory where the ONNX model will be saved.
         monolith (bool): Whether to export the model in monolith mode or not.
     """
-    main_export(model_name, output=export_dir, task="text2text-generation", monolith=monolith)
+    task = "text2text-generation-with-past"
+
+    if monolith:
+        task = "text2text-generation"
+
+    main_export(
+        model_name,
+        output=export_dir,
+        task=task,
+        monolith=monolith,
+        framework="pt"
+    )

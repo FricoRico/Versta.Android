@@ -94,7 +94,7 @@ def _get_files_from_output(output_dir: Path) -> ORTFiles:
 
         if "encoder_model" in file:
             ort_files["encoder"] = file
-        elif "decoder_model_merged" in file:
+        elif "decoder_model" in file:
             ort_files["decoder"] = file
 
     # Check if any required file is still None, raise an error if it is

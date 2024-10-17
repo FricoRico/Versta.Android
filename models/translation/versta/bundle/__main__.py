@@ -46,11 +46,11 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--clean_intermediates",
+        "--keep_intermediates",
         action="store_true",
-        default=True,
+        default=False,
         help="Whether to remove intermediate files created during the conversion process."
-        "This will default to True if not specified.",
+        "This will default to False if not specified.",
     )
 
     parsed_args = parser.parse_args()
@@ -60,7 +60,7 @@ def main(
     input_dirs: List[Path],
     output_dir: Path,
     translation_pairs: bool = True,
-    clean_intermediates: bool = True
+    keep_intermediates: bool = False
 ):
     """
     Main function to bundle multiple translation models into a single tarball file.
@@ -104,7 +104,7 @@ def main(
     bundle_files(output_files, output_archive)
 
     # Step 8: Remove intermediate files if specified
-    if clean_intermediates:
+    if keep_intermediates == False:
         remove_folder(intermediates_dir)
         print("Intermediates files cleaned.")
 
@@ -114,5 +114,5 @@ if __name__ == "__main__":
         input_dirs=args.input_dir,
         output_dir=args.output_dir,
         translation_pairs=args.translation_pairs,
-        clean_intermediates=args.clean_intermediates,
+        keep_intermediates=args.keep_intermediates,
     )

@@ -40,17 +40,17 @@ def parse_args():
     parser.add_argument(
         "--monolith",
         action="store_true",
-        default=True,
+        default=False,
         help="Whether to export the model in monolith mode or not."
         "This will default to True if not specified. Exporting in monolith mode will export the model as a single file.",
     )
 
     parser.add_argument(
-        "--clean_intermediates",
+        "--keep_intermediates",
         action="store_true",
-        default=True,
+        default=False,
         help="Whether to remove intermediate files created during the conversion process."
-        "This will default to True if not specified.",
+        "This will default to False if not specified.",
     )
 
     parsed_args = parser.parse_args()
@@ -59,8 +59,8 @@ def parse_args():
 def main(
     model: str,
     output_dir: Path,
-    monolith: bool = True,
-    clean_intermediates: bool = True,
+    monolith: bool = False,
+    keep_intermediates: bool = False,
 ):
     """
     Main function to handle the model conversion, tokenization, and quantization process.
@@ -93,7 +93,7 @@ def main(
         quantize_model(converted_dir, "model.onnx", quantization_dir)
     else:
         quantize_model(converted_dir, "encoder_model.onnx", quantization_dir)
-        quantize_model(converted_dir, "decoder_model_merged.onnx", quantization_dir)
+        quantize_model(converted_dir, "decoder_model.onnx", quantization_dir)
 
     # Step 4: Convert the quantized models to ORT format
     ort_files = convert_model_to_ort(quantization_dir, language_output_dir, monolith)
@@ -102,7 +102,7 @@ def main(
     generate_metadata(language_output_dir, model, source_language, target_language, architectures, tokenizer_files, ort_files, monolith)
 
     # Step 6: Remove intermediate files if specified
-    if clean_intermediates:
+    if keep_intermediates == False:
         remove_folder(intermediates_dir)
         print("Intermediates files cleaned.")
 
@@ -112,5 +112,5 @@ if __name__ == "__main__":
         model=args.model,
         output_dir=args.output_dir,
         monolith=args.monolith,
-        clean_intermediates=args.clean_intermediates,
+        keep_intermediates=args.keep_intermediates,
     )
