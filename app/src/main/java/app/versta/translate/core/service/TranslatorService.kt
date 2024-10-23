@@ -9,8 +9,7 @@ import kotlinx.coroutines.sync.withLock
 import app.versta.translate.core.entity.TranslationMemoryCache
 
 interface ModelInterface {
-    fun encode(inputIds: Array<LongArray>, attentionMask: Array<LongArray>): Array<*>
-    fun decode(encoderHiddenStates: Array<*>, attentionMask: Array<*>, eosId: Long, padId: Long, maxSequenceLength: Int = 128): Array<LongArray>
+    fun run(inputIds: Array<LongArray>, attentionMask: Array<LongArray>, eosId: Long, padId: Long, maxSequenceLength: Int = 96): Array<LongArray>
     fun load(files: LanguageModelInferenceFiles)
 }
 
@@ -34,6 +33,27 @@ interface TokenizerInterface {
     fun load(files: LanguageModelTokenizerFiles, languages: LanguagePair)
 }
 
+class DecoderMetadata(
+    val batchSize: Int,
+    val sequenceLength: Int,
+) {
+    private val completedBatches: BooleanArray = BooleanArray(batchSize) { false }
+    private var completedBatchCount: Int = 0
+
+    fun isBatchComplete(index: Int): Boolean {
+        return completedBatches[index]
+    }
+
+    fun isDoneDecoding(): Boolean {
+        return completedBatchCount == batchSize
+    }
+
+    fun markBatchComplete(index: Int) {
+        completedBatches[index] = true
+        completedBatchCount++
+    }
+}
+
 class TranslatorService(
     private val tokenizer: TokenizerInterface,
     private val model: ModelInterface,
@@ -45,6 +65,7 @@ class TranslatorService(
     // TODO: Make this a configuration option
     private val sentenceBatching = true
 
+
     suspend fun translate(input: String): String {
         val batchedInput = if (sentenceBatching) tokenizer.splitSentences(input) else listOf(input)
 
@@ -54,8 +75,9 @@ class TranslatorService(
     }
 
     suspend fun translate(input: List<String>): List<String> {
-        // Check to see if the translation is already in the cache, if so return it.
-        var cache = translationCache.get(input)
+        val sanitized = input.map { sanitize(it) }
+
+        var cache = translationCache.get(sanitized)
         if (cache.missing.isEmpty()) {
             return cache.cached
         }
@@ -66,7 +88,7 @@ class TranslatorService(
 
         return queue.withLock {
             // Check to see if the translation is already in the cache, if so return it.
-            cache = translationCache.get(cache.missing)
+            cache = translationCache.get(sanitized)
 
             if (cache.missing.isEmpty()) {
                 output.addAll(cache.cached)
@@ -74,17 +96,22 @@ class TranslatorService(
             }
 
             val (inputIds, attentionMask) = tokenizer.encode(cache.missing)
-            val encoderHiddenStates = model.encode(inputIds, attentionMask)
-
-            val tokenIds =
-                model.decode(encoderHiddenStates, attentionMask, tokenizer.eosId, tokenizer.padId)
+            val tokenIds = model.run(inputIds, attentionMask, tokenizer.eosId, tokenizer.padId)
 
             val outputText = tokenizer.decode(tokenIds)
 
-            translationCache.put(input, outputText)
+            translationCache.put(sanitized, outputText)
 
             outputText
         }
+    }
+
+    private fun sanitize(input: String): String {
+        val filteredString = input.filter { it.isDefined() }
+
+        val utf8Bytes = filteredString.toByteArray(Charsets.UTF_8)
+
+        return String(utf8Bytes, Charsets.UTF_8)
     }
 
     fun load(files: LanguageModelFiles, languagePair: LanguagePair) {

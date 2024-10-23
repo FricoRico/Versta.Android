@@ -18,28 +18,34 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.core.model.LicenseViewModel
+import app.versta.translate.databaseModule
+import app.versta.translate.translateModule
 import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.koinActivityViewModel
 import app.versta.translate.utils.shift
+import org.koin.compose.KoinApplication
+import org.koin.compose.koinInject
 
 @Composable
 fun TrialLicenseCard(
-    modifier: Modifier = Modifier,
-    licenseViewModel: LicenseViewModel = koinActivityViewModel()
+    licenseViewModel: LicenseViewModel = koinActivityViewModel(),
+    modifier: Modifier = Modifier
 ) {
-    val isTrialLicense = licenseViewModel.isTrialLicense.collectAsStateWithLifecycle()
+    val isTrialLicense by licenseViewModel.isTrialLicense.collectAsStateWithLifecycle()
 
-    if (!isTrialLicense.value) return
+    if (!isTrialLicense) return
 
     val context = LocalContext.current
 
@@ -92,11 +98,15 @@ fun TrialLicenseCard(
             ) {
                 Text(
                     text = "Trial license",
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
                     style = MaterialTheme.typography.titleSmall,
                     fontSize = 18.sp,
                 )
                 Text(
                     text = "You are currently on a trial license, support the project by upgrading.",
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 2,
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -119,7 +129,16 @@ fun TrialLicenseCard(
 }
 
 @Composable
-@Preview(showBackground = true)
+@Preview
 private fun TrialLicenseCardPreview() {
-    TrialLicenseCard()
+    return KoinApplication(
+        application = {
+            modules(
+                translateModule,
+                databaseModule,
+            )
+        }
+    ) {
+        TrialLicenseCard(licenseViewModel = koinInject())
+    }
 }

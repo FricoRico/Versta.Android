@@ -15,18 +15,14 @@ class LanguageORTFiles(TypedDict):
     encoder: Path
     decoder: Path
 
-class LanguageORTMonolithFile(TypedDict):
-    model: Path
-
 class LanguageFiles(TypedDict):
     tokenizer: LanguageTokenizerFiles
-    inference: LanguageORTFiles or LanguageORTMonolithFile
+    inference: LanguageORTFiles
 
 class LanguageMetadata(TypedDict):
     source_language: str
     target_language: str
     architectures: List[str]
-    monolith: bool
     files: LanguageFiles
 
 def validate_translation_pairs(metadata_list: List[BundleMetadata]) -> List[Tuple[str, str]]:

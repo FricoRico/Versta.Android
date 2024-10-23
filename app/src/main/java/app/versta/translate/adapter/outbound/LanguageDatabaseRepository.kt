@@ -1,6 +1,5 @@
 package app.versta.translate.adapter.outbound
 
-import androidx.core.net.toUri
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageMetadata
 import app.versta.translate.core.entity.LanguageModelFiles
@@ -12,10 +11,9 @@ import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.executeAsListFlow
 import kotlinx.coroutines.flow.map
 import okio.Path.Companion.toPath
-import java.nio.file.Path
+import kotlin.io.path.absolutePathString
 import java.app.versta.translate.database.sqldelight.Language as LanguageDatabaseModel
 import java.app.versta.translate.database.sqldelight.LanguageModel as LanguageModelDatabaseModel
-import kotlin.io.path.absolutePathString
 
 class LanguageDatabaseRepository(
     private val database: DatabaseContainer,

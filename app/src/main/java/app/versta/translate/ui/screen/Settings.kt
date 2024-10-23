@@ -159,11 +159,13 @@ fun Settings(navController: NavController) {
                         SettingsListItem(
                             headlineContent = "Account",
                             supportingContent = "Sign in, sign out, manage account settings",
+                            colors = SettingsDefaults.colorsInverted(),
                             onClick = {/*TODO*/ },
                         )
                         SettingsListItem(
                             headlineContent = "Feedback",
                             supportingContent = "Send feedback, report a problem",
+                            colors = SettingsDefaults.colorsInverted(),
                             onClick = {/*TODO*/ },
                         )
                     }

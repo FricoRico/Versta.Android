@@ -13,6 +13,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +34,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toRectF
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.Text.TextBlock
@@ -74,7 +76,7 @@ class TextRecognitionViewModel(context: Context) : ViewModel() {
     private val _rotationCompensation = mutableStateOf(0f)
     val rotationCompensation = _rotationCompensation
 
-    private val bufferSize = 12
+    private val bufferSize = 32
     private val temporalBuffer = ArrayDeque<List<TrackedTextBlock>>(bufferSize)
     private val stableFrameCountThreshold = 4
     private val confidenceThreshold = 0.4f
@@ -91,10 +93,10 @@ class TextRecognitionViewModel(context: Context) : ViewModel() {
                     text = it.text,
                     lines = it.lines,
                     boundingBox = it.boundingBox!!,
-                    confidence = calculateConfidence(it),
+                    confidence = 1f,
                     blockAngle = blockAngle(it),
                 )
-            }.filter { it.confidence > confidenceThreshold }
+            }
 
             if (filteredTextBlocks.isEmpty()) {
                 clearBuffer()
@@ -198,7 +200,7 @@ fun Camera(
     modifier: Modifier = Modifier,
     viewModel: TextRecognitionViewModel = TextRecognitionViewModel(LocalContext.current)
 ) {
-    val stableBlocks by viewModel.stableBlocks.collectAsState()
+    val stableBlocks by viewModel.stableBlocks.collectAsStateWithLifecycle()
     val transformMatrix by viewModel.transformMatrix
     val rotationCompensation by viewModel.rotationCompensation
     val safeArea by viewModel.safeArea
@@ -225,11 +227,11 @@ fun Camera(
 
     val imageAnalyzer = ImageAnalysis.Builder()
         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-        .setResolutionSelector(
-            ResolutionSelector.Builder()
-                .setAllowedResolutionMode(ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE)
-                .build()
-        )
+//        .setResolutionSelector(
+//            ResolutionSelector.Builder()
+//                .setAllowedResolutionMode(ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE)
+//                .build()
+//        )
         .build()
         .also {
             it.setAnalyzer(ContextCompat.getMainExecutor(context), textRecognitionProcessor)
@@ -252,9 +254,12 @@ fun Camera(
         textSize = 16f
     }
 
+   val aspectRatio =  (preview.resolutionInfo?.resolution?.height?.toFloat() ?: 3f) / (preview.resolutionInfo?.resolution?.width?.toFloat() ?: 4f)
+
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .aspectRatio(aspectRatio)
             .then(modifier)
     ) {
         AndroidView(

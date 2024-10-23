@@ -25,6 +25,7 @@ import app.versta.translate.ui.screen.LanguageSettings
 import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.screen.Settings
 import app.versta.translate.ui.screen.StatusBarStyle
+import app.versta.translate.ui.screen.TextTranslation
 
 @Composable
 fun Router() {
@@ -55,30 +56,6 @@ fun Router() {
     return NavHost(
         navController = navController,
         startDestination = Screens.Home(),
-        enterTransition = {
-            slideIntoContainer(
-                AnimatedContentTransitionScope.SlideDirection.Left,
-                tween(300)
-            ) + fadeIn(tween(300))
-        },
-        exitTransition = {
-            slideOutOfContainer(
-                AnimatedContentTransitionScope.SlideDirection.Left,
-                tween(300)
-            ) + fadeOut(tween(300))
-        },
-        popEnterTransition = {
-            slideIntoContainer(
-                AnimatedContentTransitionScope.SlideDirection.Right,
-                tween(300)
-            ) + fadeIn(tween(300))
-        },
-        popExitTransition = {
-            slideOutOfContainer(
-                AnimatedContentTransitionScope.SlideDirection.Right,
-                tween(300)
-            ) + fadeOut(tween(300))
-        },
         modifier = Modifier.fillMaxSize()
     ) {
         composable(Screens.Home()) {
@@ -95,6 +72,9 @@ fun Router() {
         }
         composable(Screens.LanguageImport()) {
             LanguageImport(navController)
+        }
+        composable(Screens.TextTranslation()) {
+            TextTranslation(navController)
         }
     }
 }

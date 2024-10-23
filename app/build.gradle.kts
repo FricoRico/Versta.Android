@@ -111,5 +111,5 @@ dependencies {
     implementation(libs.sqldelight.android)
     implementation(libs.sqldelight.coroutines)
 
-    implementation(files("$projectDir/libs/arm64-v8a/onnxruntime-1.19.2.aar"))
+    implementation(files("$projectDir/libs/arm64-v8a/onnxruntime-nightly.aar"))
 }

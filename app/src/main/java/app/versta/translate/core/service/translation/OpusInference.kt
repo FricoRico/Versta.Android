@@ -5,32 +5,12 @@ import ai.onnxruntime.OnnxTensorLike
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtLoggingLevel
 import ai.onnxruntime.OrtSession
-import android.content.Context
+import ai.onnxruntime.OrtUtil
 import app.versta.translate.core.entity.LanguageModelInferenceFiles
+import app.versta.translate.core.service.DecoderMetadata
 import app.versta.translate.core.service.ModelInterface
 import java.io.File
 import kotlin.io.path.pathString
-
-class DecoderMetadata(
-    val batchSize: Int,
-    val sequenceLength: Int,
-) {
-    private val completedBatches: BooleanArray = BooleanArray(batchSize) { false }
-    private var completedBatchCount: Int = 0
-
-    fun isBatchComplete(index: Int): Boolean {
-        return completedBatches[index]
-    }
-
-    fun isDoneDecoding(): Boolean {
-        return completedBatchCount == batchSize
-    }
-
-    fun markBatchComplete(index: Int) {
-        completedBatches[index] = true
-        completedBatchCount++
-    }
-}
 
 // Shape: [batch_size, sequence_length, hidden_size]
 typealias EncoderHiddenStates = Array<Array<FloatArray>>
@@ -59,7 +39,7 @@ class OpusInference(
     private var decoderSession: OrtSession? = null
 
     @Suppress("UNCHECKED_CAST")
-    override fun encode(inputIds: Array<LongArray>, attentionMask: Array<LongArray>): EncoderHiddenStates {
+    private fun encode(inputIds: Array<LongArray>, attentionMask: Array<LongArray>): EncoderHiddenStates {
         val inputIdsTensor = OnnxTensor.createTensor(ortEnvironment, inputIds)
         val attentionMaskTensor = OnnxTensor.createTensor(ortEnvironment, attentionMask)
 
@@ -91,7 +71,7 @@ class OpusInference(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun decode(encoderHiddenStates: Array<*>, attentionMask: Array<*>, eosId: Long, padId: Long, maxSequenceLength: Int): Array<LongArray> {
+    private fun decode(encoderHiddenStates: Array<*>, attentionMask: Array<*>, eosId: Long, padId: Long, maxSequenceLength: Int): Array<LongArray> {
         try {
             val decoderMetadata = DecoderMetadata(encoderHiddenStates.size, maxSequenceLength)
 
@@ -102,7 +82,8 @@ class OpusInference(
 
             val inputs = mutableMapOf<String, OnnxTensorLike>(
                 "encoder_hidden_states" to encoderOutputsTensor,
-                "encoder_attention_mask" to encoderAttentionMaskTensor
+                "encoder_attention_mask" to encoderAttentionMaskTensor,
+                "use_cache_branch" to OnnxTensor.createTensor(ortEnvironment, booleanArrayOf(false))
             )
 
             for (step in 0 until decoderMetadata.sequenceLength) {
@@ -154,6 +135,17 @@ class OpusInference(
             e.printStackTrace()
             throw e
         }
+    }
+
+    override fun run(
+        inputIds: Array<LongArray>,
+        attentionMask: Array<LongArray>,
+        eosId: Long,
+        padId: Long,
+        maxSequenceLength: Int
+    ): Array<LongArray> {
+        val encoderHiddenStates = encode(inputIds, attentionMask)
+        return decode(encoderHiddenStates, attentionMask, eosId, padId, maxSequenceLength)
     }
 
     override fun load(files: LanguageModelInferenceFiles) {

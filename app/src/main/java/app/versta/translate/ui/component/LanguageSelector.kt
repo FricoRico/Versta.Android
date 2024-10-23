@@ -2,7 +2,9 @@ package app.versta.translate.ui.component
 
 import android.content.Context
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -32,7 +34,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
 import app.versta.translate.core.entity.Language
@@ -46,8 +47,8 @@ import org.koin.compose.KoinApplication
 
 @Composable
 fun LanguageSelector(
-    modifier: Modifier = Modifier,
-    languageViewModel: LanguageViewModel = koinActivityViewModel()
+    languageViewModel: LanguageViewModel = koinActivityViewModel(),
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
 
@@ -56,14 +57,8 @@ fun LanguageSelector(
 
     val canSwapLanguages = languageViewModel.canSwapLanguages.collectAsStateWithLifecycle(false)
 
-    return Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-        ),
-        shape = RoundedCornerShape(64.dp),
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(MaterialTheme.spacing.small)
             .then(modifier),
     ) {
         Row(
@@ -71,6 +66,10 @@ fun LanguageSelector(
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
             modifier = Modifier
                 .fillMaxWidth()
+                .background(
+                    color = MaterialTheme.colorScheme.inverseSurface,
+                    shape = MaterialTheme.shapes.extraLarge,
+                )
                 .padding(MaterialTheme.spacing.small),
         ) {
             LanguageSelectorButton(

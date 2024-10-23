@@ -17,8 +17,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.versta.translate.utils.darken
 import app.versta.translate.utils.lighten
+import app.versta.translate.utils.shift
 
 object SettingsDefaults {
     val DefaultDisabledAlpha = 0.38f
@@ -57,6 +57,29 @@ object SettingsDefaults {
         disabledHeadlineColor: Color = MaterialTheme.colorScheme.inverseOnSurface.copy(DefaultDisabledAlpha),
         disabledLeadingIconColor: Color = MaterialTheme.colorScheme.inverseOnSurface.copy(DefaultDisabledAlpha),
         disabledTrailingIconColor: Color = MaterialTheme.colorScheme.inverseOnSurface.copy(DefaultDisabledAlpha),
+    ) = ListItemDefaults.colors(
+        containerColor = containerColor,
+        headlineColor = headlineColor,
+        leadingIconColor = leadingIconColor,
+        overlineColor = overlineColor,
+        supportingColor = supportingColor,
+        trailingIconColor = trailingIconColor,
+        disabledHeadlineColor = disabledHeadlineColor,
+        disabledLeadingIconColor = disabledLeadingIconColor,
+        disabledTrailingIconColor = disabledTrailingIconColor,
+    )
+
+    @Composable
+    fun colorsSecondary(
+        containerColor: Color = MaterialTheme.colorScheme.secondary,
+        headlineColor: Color = MaterialTheme.colorScheme.onSecondary,
+        leadingIconColor: Color = MaterialTheme.colorScheme.onSecondary.lighten(0.2f),
+        overlineColor: Color = MaterialTheme.colorScheme.onSecondary.lighten(0.2f),
+        supportingColor: Color = MaterialTheme.colorScheme.onSecondary.lighten(0.2f),
+        trailingIconColor: Color = MaterialTheme.colorScheme.onSecondary.lighten(0.2f),
+        disabledHeadlineColor: Color = MaterialTheme.colorScheme.onSecondary.copy(DefaultDisabledAlpha),
+        disabledLeadingIconColor: Color = MaterialTheme.colorScheme.onSecondary.copy(DefaultDisabledAlpha),
+        disabledTrailingIconColor: Color = MaterialTheme.colorScheme.onSecondary.copy(DefaultDisabledAlpha),
     ) = ListItemDefaults.colors(
         containerColor = containerColor,
         headlineColor = headlineColor,

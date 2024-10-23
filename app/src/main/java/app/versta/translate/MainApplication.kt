@@ -9,6 +9,7 @@ import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.ModelExtractor
+import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.core.service.ModelInterface
 import app.versta.translate.core.service.TokenizerInterface
@@ -39,6 +40,7 @@ val translateModule = module {
 
     viewModel { LanguageViewModel(get(), get(), get()) }
     viewModel { TranslationViewModel(get(), get(), get()) }
+    viewModel { TextTranslationViewModel() }
     viewModel { LicenseViewModel() }
 }
 

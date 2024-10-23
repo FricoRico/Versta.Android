@@ -49,6 +49,7 @@ class TranslationViewModel(
                 translatorService.load(files, languages)
                 _loadingProgress.value = LoadingProgress.Completed
             } catch (e: Exception) {
+                e.printStackTrace()
                 _loadingProgress.value = LoadingProgress.Error(e)
             }
         }

@@ -18,7 +18,7 @@ class TranslationMemoryCache(private val maxSize: Int = 64) {
 
     fun get(key: List<String>): CacheResult {
         val cached = key.mapNotNull { cache[it.hashCode()] }
-        val missing = key.filter { it !in cached }
+        val missing = key.filter { cache.contains(it.hashCode()).not() }
 
         return CacheResult(cached, missing)
     }
