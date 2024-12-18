@@ -9,13 +9,13 @@ import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.ModelExtractor
+import app.versta.translate.core.model.TextRecognitionViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
-import app.versta.translate.core.service.ModelInterface
-import app.versta.translate.core.service.TokenizerInterface
-import app.versta.translate.core.service.TranslatorService
-import app.versta.translate.core.service.translation.MarianTokenizer
-import app.versta.translate.core.service.translation.OpusInference
+import app.versta.translate.adapter.outbound.MarianTokenizer
+import app.versta.translate.adapter.outbound.MarianInference
+import app.versta.translate.core.model.ModelInterface
+import app.versta.translate.core.model.TokenizerInterface
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.TarExtractor
 import org.koin.android.ext.koin.androidContext
@@ -29,17 +29,17 @@ val Context.dataStore by preferencesDataStore(name = "preferences")
 
 val translateModule = module {
     single<ModelExtractor> { TarExtractor(get()) }
-    single<TokenizerInterface> { MarianTokenizer()}
-    single<ModelInterface> { OpusInference() }
+    single<TokenizerInterface> { MarianTokenizer() }
+    single<ModelInterface> { MarianInference() }
 
     single { get<Context>().dataStore }
 
     single { LanguageDatabaseRepository(get()) }
     single { LanguagePreferenceRepository(get()) }
-    single { TranslatorService(get(), get()) }
 
     viewModel { LanguageViewModel(get(), get(), get()) }
-    viewModel { TranslationViewModel(get(), get(), get()) }
+    viewModel { TranslationViewModel(get(), get(), get(), get()) }
+    viewModel { TextRecognitionViewModel() }
     viewModel { TextTranslationViewModel() }
     viewModel { LicenseViewModel() }
 }

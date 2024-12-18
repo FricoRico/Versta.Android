@@ -17,12 +17,12 @@ sqldelight {
 
 android {
     namespace = "app.versta.translate"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "app.versta.translate"
         minSdk = 28
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -69,6 +69,8 @@ android {
             path("native/jni/Android.mk")
         }
     }
+    ndkVersion = "27.0.12077973"
+    buildToolsVersion = "35.0.0"
 }
 
 dependencies {
@@ -98,7 +100,6 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
     implementation(libs.kotlinx.serialization)
-    implementation(libs.levyfan.sentencepiece)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.material.icons)
     implementation(libs.material.icons.extended)
@@ -111,5 +112,6 @@ dependencies {
     implementation(libs.sqldelight.android)
     implementation(libs.sqldelight.coroutines)
 
-    implementation(files("$projectDir/libs/arm64-v8a/onnxruntime-nightly.aar"))
+    implementation(libs.onnxruntime)
+    implementation(libs.onnxruntime.extensions)
 }

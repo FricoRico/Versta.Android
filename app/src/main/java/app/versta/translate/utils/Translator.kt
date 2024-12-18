@@ -1,8 +1,8 @@
 package app.versta.translate.utils
 
 //import android.content.Context
-//import app.versta.translate.core.service.translation.MarianTokenizer
-//import app.versta.translate.core.service.translation.OpusInference
+//import app.versta.translate.adapter.outbound.MarianTokenizer
+//import app.versta.translate.adapter.outbound.OpusInference
 
 //class Translator(
 //    context: Context,

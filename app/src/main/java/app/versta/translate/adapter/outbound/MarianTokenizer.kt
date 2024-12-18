@@ -1,11 +1,14 @@
-package app.versta.translate.core.service.translation
+package app.versta.translate.adapter.outbound
 
+import android.util.Log
 import app.versta.translate.core.entity.LanguageModelTokenizerFiles
 import app.versta.translate.core.entity.LanguagePair
-import com.github.google.sentencepiece.SentencePieceProcessor
+import app.versta.translate.core.model.TokenizerInterface
+import app.versta.translate.bridge.inference.BeamSearch
+import app.versta.translate.bridge.tokenize.SentencePieceProcessor
+import app.versta.translate.bridge.tokenize.Vocabulary
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import app.versta.translate.core.service.TokenizerInterface
 import java.io.File
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.pathString
@@ -22,8 +25,10 @@ class MarianTokenizer(
         private val languageCodeRegex = Regex(">>.+<<")
     }
 
-    private val encoder = SentencePieceProcessor()
-    private val decoder = SentencePieceProcessor()
+    private val encoder =
+        SentencePieceProcessor()
+    private val decoder =
+        SentencePieceProcessor()
 
     private var sourceVocabulary: List<String> = emptyList()
     private var targetVocabulary: List<String> = emptyList()
@@ -91,26 +96,27 @@ class MarianTokenizer(
             throw IllegalArgumentException("Encoding text: $text", e)
         }
     }
-
-    override fun encode(
-        texts: List<String>,
-        padTokens: Boolean
-    ): Pair<Array<LongArray>, Array<LongArray>> {
-        try {
-            val inputIds = mutableListOf<LongArray>()
-            val attentionMasks = mutableListOf<LongArray>()
-
-            for (text in texts) {
-                val (ids, mask) = encode(text, padTokens)
-                inputIds.add(ids)
-                attentionMasks.add(mask)
-            }
-
-            return padBatchSequences(inputIds, attentionMasks)
-        } catch (e: Exception) {
-            throw IllegalArgumentException("Batch encoding texts: $texts", e)
-        }
-    }
+//
+//    override fun encode(
+//        texts: String,
+//        beamsSize: Int,
+//        padTokens: Boolean
+//    ): Pair<Array<LongArray>, Array<LongArray>> {
+//        try {
+//            val inputIds = mutableListOf<LongArray>()
+//            val attentionMasks = mutableListOf<LongArray>()
+//
+//            for (text in texts) {
+//                val (ids, mask) = encode(text, padTokens)
+//                inputIds.add(ids)
+//                attentionMasks.add(mask)
+//            }
+//
+//            return padBatchSequences(inputIds, attentionMasks)
+//        } catch (e: Exception) {
+//            throw IllegalArgumentException("Batch encoding texts: $texts", e)
+//        }
+//    }
 
     override fun decode(ids: LongArray, filterSpecialTokens: Boolean): String {
         try {
@@ -125,17 +131,17 @@ class MarianTokenizer(
             throw IllegalArgumentException("Decoding ids: $ids", e)
         }
     }
-
-    override fun decode(
-        ids: Array<LongArray>,
-        filterSpecialTokens: Boolean,
-    ): List<String> {
-        try {
-            return ids.map { decode(it, filterSpecialTokens) }
-        } catch (e: Exception) {
-            throw IllegalArgumentException("Batch decoding ids: $ids", e)
-        }
-    }
+//
+//    override fun decode(
+//        ids: Array<LongArray>,
+//        filterSpecialTokens: Boolean,
+//    ): List<String> {
+//        try {
+//            return ids.map { decode(it, filterSpecialTokens) }
+//        } catch (e: Exception) {
+//            throw IllegalArgumentException("Batch decoding ids: $ids", e)
+//        }
+//    }
 
     override fun splitSentences(text: String, groupLength: Int): List<String> {
         val sentences = text.trimIndent().split("(?<=[.!?。！？])\\s+".toRegex())
@@ -173,17 +179,19 @@ class MarianTokenizer(
 
         normalizer = MosesPunctuationNormalizer(lang = sourceLanguage)
 
-        sourceVocabulary = loadVocabulary(files.sourceVocabulary.pathString)
+        val startTime = System.currentTimeMillis()
+        sourceVocabulary = Vocabulary.load(files.sourceVocabulary.pathString)
         if (!validateVocabulary(sourceVocabulary, eosToken, padToken, unknownToken)) {
             throw IllegalArgumentException("Vocabulary does not contain the provided tokens")
         }
+        Log.i("Tokenizer", "Loaded source vocabulary in ${System.currentTimeMillis() - startTime}ms")
 
         if (separatedVocabularies) {
             if (files.targetVocabulary == null) {
                 throw IllegalArgumentException("Target vocabulary file path must be provided when using separated vocabularies")
             }
 
-            targetVocabulary = loadVocabulary(files.targetVocabulary.pathString)
+            targetVocabulary = Vocabulary.load(files.targetVocabulary.pathString)
             if (!validateVocabulary(targetVocabulary, eosToken, padToken, unknownToken)) {
                 throw IllegalArgumentException("Target vocabulary does not contain the provided tokens")
             }

@@ -1,10 +1,5 @@
 package app.versta.translate.core.entity
 
-data class CacheResult (
-    val cached: List<String> = emptyList(),
-    val missing: List<String> = emptyList()
-)
-
 class TranslationMemoryCache(private val maxSize: Int = 64) {
     private val cache = object : LinkedHashMap<Int, String>(maxSize, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, String>?): Boolean {
@@ -14,13 +9,6 @@ class TranslationMemoryCache(private val maxSize: Int = 64) {
 
     fun get(key: String): String? {
         return cache[key.hashCode()]
-    }
-
-    fun get(key: List<String>): CacheResult {
-        val cached = key.mapNotNull { cache[it.hashCode()] }
-        val missing = key.filter { cache.contains(it.hashCode()).not() }
-
-        return CacheResult(cached, missing)
     }
 
     fun put(key: String, value: String) {

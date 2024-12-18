@@ -1,12 +1,15 @@
 from transformers import AutoTokenizer
 from pathlib import Path
 from typing import TypedDict, Tuple
+from struct import pack
+from json import load
 
 class TokenizerFiles(TypedDict):
     config: Path
     vocabulary: Path
     source: Path
     target: Path
+    vocabulary_optimized: Path
 
 def save_tokenizer(model_name: str, export_dir: Path) -> TokenizerFiles:
     """
@@ -58,3 +61,30 @@ def _get_files_from_output(output_files: Tuple[str]) -> TokenizerFiles:
         raise FileNotFoundError(f"Missing required Tokenizer output files: {', '.join(missing_files)}")
 
     return tokenizer_files
+
+def optimize_vocabulary(tokenizer_files: TokenizerFiles, export_dir: Path) -> TokenizerFiles:
+    """
+    Writes a vocabulary dictionary to a binary file. Greatly improving the loading speed
+    of the vocabulary on mobile devices. Each word is null-terminated, followed by a 4-byte integer index.
+    """
+    source_vocabulary = _load_vocabulary(export_dir / tokenizer_files["vocabulary"])
+    optimized_vocabulary = export_dir / "vocab_optimized.bin"
+
+    with open(optimized_vocabulary, 'wb') as f:
+        for word, index in source_vocabulary.items():
+            # Write the word as a null-terminated byte string
+            f.write(word.encode('utf-8') + b'\0')
+            # Write the index as a 4-byte little-endian integer
+            f.write(pack('<I', index))
+
+
+    tokenizer_files["vocabulary_optimized"] = optimized_vocabulary.name
+
+    return tokenizer_files
+
+def _load_vocabulary(vocabulary_file: Path) -> dict:
+    """
+    Loads a JSON file into a Python dictionary.
+    """
+    with open(vocabulary_file, 'r', encoding='utf-8') as f:
+        return load(f)

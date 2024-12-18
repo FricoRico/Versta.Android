@@ -13,7 +13,9 @@
 # limitations under the License.
 
 JNI_SRC_FILES := \
-    com_github_google_sentencepiece_SentencePieceJNI.cc
+    $(SRC_DIR)/beam_search.cc \
+    $(SRC_DIR)/sentence_piece.cc \
+    $(SRC_DIR)/vocabulary.cc
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/src/sentencepiece/builtin_pb
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/src/third_party

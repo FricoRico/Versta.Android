@@ -17,8 +17,8 @@ LOCAL_PATH := $(call my-dir)
 LOCAL_ARM_NEON := true
 
 ############ some local flags
-# If you change any of those flags, you need to rebuild both libjni_latinime_common_static
-# and the shared library that uses libjni_latinime_common_static.
+# If you change any of those flags, you need to rebuild both libapp_versta_translate_common_static
+# and the shared library that uses libapp_versta_translate_common_static.
 FLAG_DBG ?= true
 FLAG_DO_PROFILE ?= false
 
@@ -71,7 +71,7 @@ endif # FLAG_FULL_DBG
 endif # FLAG_DBG
 endif # FLAG_DO_PROFILE
 
-LOCAL_MODULE := libjni_latinime_common_static
+LOCAL_MODULE := libapp_versta_translate_common_static
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_CLANG := true
@@ -83,7 +83,7 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 
 # All code in LOCAL_WHOLE_STATIC_LIBRARIES will be built into this shared library.
-LOCAL_WHOLE_STATIC_LIBRARIES := libjni_latinime_common_static
+LOCAL_WHOLE_STATIC_LIBRARIES := libapp_versta_translate_common_static
 
 LOCAL_LDFLAGS += -llog
 
@@ -95,7 +95,7 @@ ifeq ($(FLAG_DBG), true)
 endif # FLAG_DBG
 endif # FLAG_DO_PROFILE
 
-LOCAL_MODULE := libjni_sentencepiece
+LOCAL_MODULE := libapp_versta_translate_bridge
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_CLANG := true

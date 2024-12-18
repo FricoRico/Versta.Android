@@ -45,7 +45,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +64,7 @@ fun TextTranslation(
         isTranslating = true
         val startTime = System.currentTimeMillis()
         processingScope.launch {
-            val output = translationViewModel.translatorService.translate(input)
+            val output = translationViewModel.translate(input)
             val elapsedTime = System.currentTimeMillis() - startTime
 
             textTranslationViewModel.setTargetText(output)

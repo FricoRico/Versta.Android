@@ -148,7 +148,7 @@ class LanguageDatabaseRepository(
             path = path,
             tokenizer = LanguageModelTokenizerFiles(
                 config = path.resolve(data.files["tokenizer"]?.get("config") ?: ""),
-                sourceVocabulary = path.resolve(data.files["tokenizer"]?.get("vocabulary") ?: ""),
+                sourceVocabulary = path.resolve(data.files["tokenizer"]?.get("vocabulary_optimized") ?: ""),
                 targetVocabulary = null, // TODO: Target vocabulary not supported right now
                 source = path.resolve(data.files["tokenizer"]?.get("source") ?: ""),
                 target = path.resolve(data.files["tokenizer"]?.get("target") ?: "")

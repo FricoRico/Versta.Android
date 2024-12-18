@@ -26,7 +26,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Translate"
-        tools:targetApi="34">
+        tools:targetApi="35">
         <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait"
@@ -36,6 +36,19 @@
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".TranslateActivity"
+            android:screenOrientation="portrait"
+            android:exported="true"
+            android:label="Translate"
+            android:theme="@style/Theme.Translate">
+            <intent-filter>
+                <data android:mimeType="text/plain"/>
+
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
     </application>

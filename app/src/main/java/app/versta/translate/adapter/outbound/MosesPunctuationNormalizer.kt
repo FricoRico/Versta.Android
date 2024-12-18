@@ -1,4 +1,4 @@
-package app.versta.translate.core.service.translation
+package app.versta.translate.adapter.outbound
 
 class MosesPunctuationNormalizer(
     private val lang: String,
@@ -163,7 +163,7 @@ class MosesPunctuationNormalizer(
         var normalizedText = text
 
         if (preReplaceUnicodePunct) {
-            normalizedText = replaceUnicodePunct(normalizedText)
+            normalizedText = replaceUnicodePunctuation(normalizedText)
         }
 
         for ((pattern, replacement) in substitutions) {
@@ -171,13 +171,13 @@ class MosesPunctuationNormalizer(
         }
 
         if (postRemoveControlChars) {
-            normalizedText = removeControlChars(normalizedText)
+            normalizedText = removeControlCharacters(normalizedText)
         }
 
         return normalizedText.trim()
     }
 
-    private fun replaceUnicodePunct(text: String): String {
+    private fun replaceUnicodePunctuation(text: String): String {
         var replacedText = text
         for ((pattern, replacement) in replaceUnicodePunctuation) {
             replacedText = replacedText.replace(Regex(pattern), replacement)
@@ -185,7 +185,7 @@ class MosesPunctuationNormalizer(
         return replacedText
     }
 
-    private fun removeControlChars(text: String): String {
+    private fun removeControlCharacters(text: String): String {
         return Regex("\\p{C}").replace(text, "")
     }
 }

@@ -1,5 +1,3 @@
-import torch
-from transformers import MarianMTModel, MarianTokenizer
 from optimum.exporters.onnx import main_export
 from pathlib import Path
 

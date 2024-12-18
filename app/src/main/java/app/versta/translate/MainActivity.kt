@@ -25,7 +25,7 @@ import app.versta.translate.ui.component.LanguageSelectionDrawer
 import app.versta.translate.ui.component.Router
 import app.versta.translate.ui.component.TranslatorLoadingProgressDialog
 
-class MainActivity : ComponentActivity() {
+open class MainActivity : ComponentActivity() {
 //    private lateinit var pickFileLauncher: ActivityResultLauncher<Array<String>>
 
 //    private val fileExtractorScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
