@@ -3,37 +3,24 @@ package app.versta.translate.core.model
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.versta.translate.adapter.outbound.LanguageDatabaseRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
+import app.versta.translate.adapter.outbound.LanguageRepository
 import app.versta.translate.core.entity.BundleMetadata
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageMetadata
 import app.versta.translate.core.entity.ModelMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flatMapMerge
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.last
-import kotlinx.coroutines.flow.lastOrNull
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
 
@@ -98,7 +85,7 @@ enum class LanguageType {
 @OptIn(ExperimentalCoroutinesApi::class)
 class LanguageViewModel(
     private val modelExtractor: ModelExtractor,
-    private val languageDatabaseRepository: LanguageDatabaseRepository,
+    private val languageDatabaseRepository: LanguageRepository,
     private val languagePreferenceRepository: LanguagePreferenceRepository
 ) : ViewModel() {
     private val _languageSelectionState = MutableStateFlow<LanguageType?>(null)
@@ -107,8 +94,8 @@ class LanguageViewModel(
     private val _progressState = MutableStateFlow<ExtractionProgress>(ExtractionProgress.Idle)
     val progressState: StateFlow<ExtractionProgress> = _progressState.asStateFlow()
 
-    val sourceLanguage = languagePreferenceRepository.sourceLanguage
-    val targetLanguage = languagePreferenceRepository.targetLanguage
+    val sourceLanguage = languagePreferenceRepository.getSourceLanguage()
+    val targetLanguage = languagePreferenceRepository.getTargetLanguage()
 
     val canSwapLanguages = sourceLanguage.combine(targetLanguage) { source, target ->
         source != null && target != null

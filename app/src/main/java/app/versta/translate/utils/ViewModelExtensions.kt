@@ -1,11 +1,13 @@
 package app.versta.translate.utils
 
-import androidx.activity.ComponentActivity
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
-import org.koin.androidx.compose.koinViewModel
+import androidx.lifecycle.ViewModelProvider
 
-@Composable
-inline fun <reified T : ViewModel> koinActivityViewModel(): T =
-    koinViewModel(viewModelStoreOwner = LocalContext.current as ComponentActivity)
+@Suppress("UNCHECKED_CAST")
+fun <T: ViewModel> viewModelFactory(factory: () -> T): ViewModelProvider.Factory {
+    return object : ViewModelProvider.Factory {
+        override fun <T: ViewModel> create(modelClass: Class<T>): T {
+            return factory() as T
+        }
+    }
+}

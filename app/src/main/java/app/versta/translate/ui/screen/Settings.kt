@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
+import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.ui.component.SettingsDefaults
 import app.versta.translate.ui.component.SettingsListItem
 import app.versta.translate.ui.component.TrialLicenseCard
@@ -42,7 +43,10 @@ import app.versta.translate.ui.theme.spacing
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Settings(navController: NavController) {
+fun Settings(
+    navController: NavController,
+    licenseViewModel: LicenseViewModel
+) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val collapsedFraction = scrollBehavior.state.collapsedFraction
 
@@ -149,7 +153,7 @@ fun Settings(navController: NavController) {
                         )
                     }
 
-                    TrialLicenseCard()
+                    TrialLicenseCard(licenseViewModel = licenseViewModel)
 
                     Column(
                         modifier = Modifier
@@ -178,5 +182,8 @@ fun Settings(navController: NavController) {
 @Composable
 @Preview
 fun SettingsPreview() {
-    return Settings(navController = rememberNavController())
+    return Settings(
+        navController = rememberNavController(),
+        licenseViewModel = LicenseViewModel()
+    )
 }

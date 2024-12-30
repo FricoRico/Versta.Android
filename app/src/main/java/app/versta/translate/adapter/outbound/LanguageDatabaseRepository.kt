@@ -17,18 +17,18 @@ import java.app.versta.translate.database.sqldelight.LanguageModel as LanguageMo
 
 class LanguageDatabaseRepository(
     private val database: DatabaseContainer,
-) {
+) : LanguageRepository {
     /**
-     * Gets the languages available in the database.
+     * Gets the languages available in the repository.
      */
-    fun getLanguages() = database.languages.getAll().executeAsListFlow().map { results ->
+    override fun getLanguages() = database.languages.getAll().executeAsListFlow().map { results ->
         results.map { mapLanguageDatabaseModelToLanguagePair(it) }
     }
 
     /**
-     * Gets the source languages available in the database.
+     * Gets the source languages available in the repository.
      */
-    fun getSourceLanguages() =
+    override fun getSourceLanguages() =
         database.languages.getAllSourceLanguages().executeAsListFlow().map { results ->
             results.map { mapSingleLanguageDatabaseModelToLanguage(it) }
         }
@@ -36,40 +36,43 @@ class LanguageDatabaseRepository(
     /**
      * Gets the target languages for a given source language.
      */
-    fun getTargetLanguagesBySource(sourceLanguage: Language) =
+    override fun getTargetLanguagesBySource(sourceLanguage: Language) =
             database.languages.getAllBySourceLanguage(sourceLanguage.locale.language)
                 .executeAsListFlow().map { results ->
                 results.map { mapSingleLanguageDatabaseModelToLanguage(it) }
             }
 
-    fun getLanguageModel(languagePair: LanguagePair) =
+    /**
+     * Gets the language model files for a given language pair.
+     */
+    override fun getLanguageModel(languagePair: LanguagePair) =
         database.languageModels.getAllByLanguageId(languagePair.id).executeAsListFlow().map { results ->
             results.firstOrNull()?.let { mapLanguageModelDatabaseModelToLanguageModelFiles(it) }
         }
 
     /**
-     * Inserts a [LanguageMetadata] into the database, ignoring if it already exists.
+     * Inserts a [LanguageMetadata] into the repository, ignoring if it already exists.
      * @param metadata The metadata to insert.
      */
-    fun insertLanguageOrIgnore(metadata: LanguageMetadata) {
+    override fun insertLanguageOrIgnore(metadata: LanguageMetadata) {
         val languageModel = mapLanguageMetadataToLanguageDatabaseModel(metadata)
         insertLanguageDatabaseModelOrIgnore(data = languageModel)
     }
 
     /**
-     * Inserts or updates the language models in the database.
+     * Inserts or updates the language models in the repository.
      * @param metadata The metadata to insert or update.
      */
-    fun upsertLanguageModel(metadata: LanguageMetadata) {
+    override fun upsertLanguageModel(metadata: LanguageMetadata) {
         val languageModel = mapLanguageMetadataToLanguageModelDatabaseModel(metadata)
         upsertLanguageModelDatabaseModel(data = languageModel)
     }
 
     /**
-     * Inserts or updates the language models in the database.
+     * Inserts or updates the language models in the repository.
      * @param metadata The metadata to insert or update.
      */
-    fun upsertLanguageModels(metadata: ModelMetadata) {
+    override fun upsertLanguageModels(metadata: ModelMetadata) {
         database.languages.transaction {
             metadata.languageMetadata.forEach { metadata ->
                 insertLanguageOrIgnore(metadata)
@@ -79,7 +82,7 @@ class LanguageDatabaseRepository(
     }
 
     /**
-     * Inserts a [LanguageDatabaseModel] into the database, ignoring if it already exists.
+     * Inserts a [LanguageDatabaseModel] into the repository, ignoring if it already exists.
      * @param data The data to insert.
      */
     private fun insertLanguageDatabaseModelOrIgnore(data: LanguageDatabaseModel) {
@@ -91,7 +94,7 @@ class LanguageDatabaseRepository(
     }
 
     /**
-     * Inserts or updates a [LanguageModelDatabaseModel] into the database.
+     * Inserts or updates a [LanguageModelDatabaseModel] into the repository.
      * @param data The data to upsert.
      */
     private fun upsertLanguageModelDatabaseModel(data: LanguageModelDatabaseModel) {

@@ -64,7 +64,7 @@ class MosesPunctuationNormalizerTest {
     @Test
     fun testNormalizationPipeline() {
         val mosesNormUnicode = MosesPunctuationNormalizer(
-            preReplaceUnicodePunct = true,
+            preReplaceUnicodePunctuation = true,
             postRemoveControlChars = true
         )
         val text = "０《１２３》      ４５６％  '' 【７８９】"

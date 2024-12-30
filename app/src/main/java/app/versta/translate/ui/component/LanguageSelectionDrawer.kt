@@ -1,6 +1,7 @@
 package app.versta.translate.ui.component
 
 import android.content.Context
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,18 +30,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.versta.translate.adapter.outbound.LanguageMemoryRepository
+import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.model.LanguageType
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.utils.koinActivityViewModel
+import app.versta.translate.utils.TarExtractor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LanguageSelectionDrawer(languageViewModel: LanguageViewModel = koinActivityViewModel()) {
+fun LanguageSelectionDrawer(
+    languageViewModel: LanguageViewModel,
+) {
     val languageSelection = languageViewModel.languageSelectionState.collectAsStateWithLifecycle()
 
     val drawerOpenedState = languageSelection.value != null
@@ -75,6 +81,7 @@ fun LanguageSelectionDrawer(languageViewModel: LanguageViewModel = koinActivityV
                             }
                         )
                     }
+
                     LanguageType.Target -> {
                         LanguageSelectionTargetLanguage(
                             context = context,
@@ -85,6 +92,7 @@ fun LanguageSelectionDrawer(languageViewModel: LanguageViewModel = koinActivityV
                             }
                         )
                     }
+
                     else -> {}
                 }
             }

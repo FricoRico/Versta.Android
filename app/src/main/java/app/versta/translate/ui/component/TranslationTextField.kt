@@ -1,5 +1,6 @@
 package app.versta.translate.ui.component
 
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,10 +23,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.utils.koinActivityViewModel
 
 @Composable
-fun TranslationTextField(modifier: Modifier = Modifier, textTranslationViewModel: TextTranslationViewModel = koinActivityViewModel(), onSubmit: (String) -> Unit) {
+fun TranslationTextField(
+    modifier: Modifier = Modifier,
+    onSubmit: (String) -> Unit,
+    textTranslationViewModel: TextTranslationViewModel
+) {
     val input by textTranslationViewModel.sourceText.collectAsStateWithLifecycle()
 
     Box(
@@ -53,7 +57,7 @@ fun TranslationTextField(modifier: Modifier = Modifier, textTranslationViewModel
                 onSubmit = {
                     onSubmit(input)
                 },
-                maxLines = 12,
+                maxLines = 8,
                 colors = TextFieldDefaults.colorsTransparent()
             )
             Row (
@@ -88,5 +92,8 @@ fun TranslationTextField(modifier: Modifier = Modifier, textTranslationViewModel
 @Composable
 @Preview(showBackground = true)
 fun TranslationTextFieldMinimalPreview() {
-    TranslationTextField{}
+    TranslationTextField (
+        textTranslationViewModel = TextTranslationViewModel(),
+        onSubmit = {}
+    )
 }

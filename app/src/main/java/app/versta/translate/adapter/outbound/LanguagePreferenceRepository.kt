@@ -1,80 +1,44 @@
 package app.versta.translate.adapter.outbound
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguagePair
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 
-class LanguagePreferenceRepository(
-    private val dataStore: DataStore<Preferences>
-) {
-    val sourceLanguage: Flow<Language?> = dataStore.data.map { preferences ->
-        val data = preferences[SOURCE_LANGUAGE_KEY]
-        if (data != null) mapIsoCodeToLanguage(data) else null
-    }
+interface LanguagePreferenceRepository {
+    /**
+     * Gets the source language from the data store.
+     */
+    fun getSourceLanguage(): Flow<Language?>
 
-    suspend fun setSourceLanguage(language: Language) {
-        dataStore.edit { preferences ->
-            preferences[SOURCE_LANGUAGE_KEY] = mapLanguageEntityToIsoCode(language)
-        }
-    }
+    /**
+     * Sets the source language in the data store.
+     * @param language The language to set.
+     */
+    suspend fun setSourceLanguage(language: Language)
 
-    val targetLanguage: Flow<Language?> = dataStore.data.map { preferences ->
-        val data = preferences[TARGET_LANGUAGE_KEY]
-        if (data != null) mapIsoCodeToLanguage(data) else null
-    }
+    /**
+     * Gets the target language from the data store.
+     */
+    fun getTargetLanguage(): Flow<Language?>
 
-    val languagePair: Flow<LanguagePair?> = dataStore.data.map { preferences ->
-        val sourceData = preferences[SOURCE_LANGUAGE_KEY]
-        val targetData = preferences[TARGET_LANGUAGE_KEY]
+    /**
+     * Sets the target language in the data store.
+     * @param language The language to set.
+     */
+    suspend fun setTargetLanguage(language: Language)
 
-        if (sourceData != null && targetData != null) {
-            mapIsoCodesToLanguagePair(sourceData, targetData)
-        } else {
-            null
-        }
-    }
+    /**
+     * Gets the language pair from the data store.
+     */
+    fun getLanguagePair(): Flow<LanguagePair?>
 
-    suspend fun setTargetLanguage(language: Language) {
-        dataStore.edit { preferences ->
-            preferences[TARGET_LANGUAGE_KEY] = mapLanguageEntityToIsoCode(language)
-        }
-    }
+    /**
+     * Swaps the source and target languages in the data store.
+     */
+    suspend fun swapLanguages()
 
-    suspend fun swapLanguages() {
-        dataStore.edit { preferences ->
-            val sourceLanguage = preferences[SOURCE_LANGUAGE_KEY]
-            val targetLanguage = preferences[TARGET_LANGUAGE_KEY]
-
-            preferences[SOURCE_LANGUAGE_KEY] = targetLanguage ?: ""
-            preferences[TARGET_LANGUAGE_KEY] = sourceLanguage ?: ""
-        }
-    }
-
-    suspend fun clearTargetLanguage() {
-        dataStore.edit { preferences ->
-            preferences.remove(TARGET_LANGUAGE_KEY)
-        }
-    }
-
-    private fun mapLanguageEntityToIsoCode(language: Language): String {
-        return language.locale.language
-    }
-
-    private fun mapIsoCodeToLanguage(isoCode: String): Language {
-        return Language.fromIsoCode(isoCode)
-    }
-
-    private fun mapIsoCodesToLanguagePair(sourceIsoCode: String, targetIsoCode: String): LanguagePair {
-        return LanguagePair(mapIsoCodeToLanguage(sourceIsoCode), mapIsoCodeToLanguage(targetIsoCode))
-    }
-
-    companion object {
-        val SOURCE_LANGUAGE_KEY = stringPreferencesKey("source_language")
-        val TARGET_LANGUAGE_KEY = stringPreferencesKey("target_language")
-    }
+    /**
+     * Clears the target language in the data store.
+     */
+    suspend fun clearTargetLanguage()
 }

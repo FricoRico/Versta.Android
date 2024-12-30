@@ -1,13 +1,13 @@
 package app.versta.translate.adapter.outbound
 
 class MosesPunctuationNormalizer(
-    private val lang: String,
-    private val penn: Boolean = true,
-    private val normQuoteCommas: Boolean = true,
-    private val normNumbers: Boolean = true,
-    private val preReplaceUnicodePunct: Boolean = false,
-    private val postRemoveControlChars: Boolean = false,
-    private val perlParity: Boolean = false
+    lang: String,
+    penn: Boolean = true,
+    normQuoteCommas: Boolean = true,
+    normNumbers: Boolean = true,
+    perlParity: Boolean = false,
+    private val preReplaceUnicodePunctuation: Boolean = false,
+    private val postRemoveControlChars: Boolean = false
 ) {
     private val extraWhitespace = listOf(
         "\\r" to "",
@@ -162,7 +162,7 @@ class MosesPunctuationNormalizer(
     fun normalize(text: String): String {
         var normalizedText = text
 
-        if (preReplaceUnicodePunct) {
+        if (preReplaceUnicodePunctuation) {
             normalizedText = replaceUnicodePunctuation(normalizedText)
         }
 

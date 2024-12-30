@@ -13,18 +13,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.core.model.LicenseViewModel
-import app.versta.translate.databaseModule
-import app.versta.translate.translateModule
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.utils.koinActivityViewModel
 import app.versta.translate.utils.shift
-import org.koin.compose.KoinApplication
-import org.koin.compose.koinInject
 
 @Composable
 fun TrialLicensePill(
-    licenseViewModel: LicenseViewModel = koinActivityViewModel(),
-    modifier: Modifier = Modifier
+    licenseViewModel: LicenseViewModel,
+    modifier: Modifier = Modifier,
 ) {
     val isTrialLicense by licenseViewModel.isTrialLicense.collectAsStateWithLifecycle()
 
@@ -62,14 +57,7 @@ fun TrialLicensePill(
 @Composable
 @Preview
 private fun TrialLicensePillPreview() {
-    return KoinApplication(
-        application = {
-            modules(
-                translateModule,
-                databaseModule,
-            )
-        }
-    ) {
-        TrialLicensePill(licenseViewModel = koinInject())
-    }
+        TrialLicensePill(
+            licenseViewModel = TODO()
+        )
 }

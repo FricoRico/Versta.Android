@@ -1,41 +1,35 @@
 package app.versta.translate.adapter.outbound
 
-import ai.onnxruntime.OnnxTensor
-import ai.onnxruntime.OnnxTensorLike
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtLoggingLevel
 import ai.onnxruntime.OrtSession
-import ai.onnxruntime.TensorInfo
 import ai.onnxruntime.extensions.OrtxPackage
-import android.util.Log
 import app.versta.translate.core.entity.LanguageModelInferenceFiles
-import app.versta.translate.core.model.ModelInterface
-import app.versta.translate.bridge.inference.BeamSearch
+import app.versta.translate.core.entity.DecoderInput
+import app.versta.translate.core.entity.DecoderOutput
+import app.versta.translate.core.entity.EncoderAttentionMasks
+import app.versta.translate.core.entity.EncoderHiddenStates
+import app.versta.translate.core.entity.EncoderInput
+import app.versta.translate.core.entity.EncoderOutput
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import java.io.File
 import kotlin.io.path.pathString
-import java.util.PriorityQueue
-import kotlin.math.ln
-
-// Shape: [batch_size, sequence_length, hidden_size]
-typealias EncoderHiddenStates = Array<Array<FloatArray>>
-
-// Shape: [batch_size, sequence_length, vocab_size]
-typealias DecoderLogits = Array<Array<FloatArray>>
 
 class MarianInference(
     threadCount: Int = 4,
-) : ModelInterface {
-    private val ortEnvironment = OrtEnvironment.getEnvironment(
-        OrtLoggingLevel.ORT_LOGGING_LEVEL_WARNING,
-        "OpusInference",
-        OrtEnvironment.ThreadingOptions().apply {
-            setGlobalSpinControl(false)
-        })
+) : TranslationInference {
+    private val ortEnvironment =
+        OrtEnvironment.getEnvironment(OrtLoggingLevel.ORT_LOGGING_LEVEL_FATAL,
+            "OpusInference",
+            OrtEnvironment.ThreadingOptions().apply {
+                setGlobalSpinControl(false)
+            })
 
     private val sessionOptions = OrtSession.SessionOptions().apply {
         setCPUArenaAllocator(true)
         setMemoryPatternOptimization(true)
-        setInterOpNumThreads(1)
+        setInterOpNumThreads(threadCount)
         addXnnpack(mapOf("intra_op_num_threads" to threadCount.toString()))
         registerCustomOpLibrary(OrtxPackage.getLibraryPath())
     }
@@ -43,208 +37,151 @@ class MarianInference(
     private var encoderSession: OrtSession? = null
     private var decoderSession: OrtSession? = null
 
-    @Suppress("UNCHECKED_CAST")
     private fun encode(
-        inputIds: LongArray,
-        attentionMask: LongArray
-    ): Array<FloatArray> {
-        val inputIdsTensor = OnnxTensor.createTensor(ortEnvironment, arrayOf(inputIds))
-        val attentionMaskTensor = OnnxTensor.createTensor(ortEnvironment, arrayOf(attentionMask))
+        inputIds: LongArray, attentionMask: LongArray
+    ): EncoderHiddenStates {
+        if (encoderSession == null) {
+            throw IllegalStateException("Encoder session is not loaded")
+        }
 
-        val inputs = mapOf(
-            "input_ids" to inputIdsTensor,
-            "attention_mask" to attentionMaskTensor
+        val encoderInput = EncoderInput(
+            ortEnvironment = ortEnvironment,
+            inputIds = inputIds,
+            attentionMask = attentionMask
         )
 
+        val encoderOutput = EncoderOutput()
+
         try {
-            val encoderOutput = encoderSession?.run(inputs)
+            val inputs = encoderInput.get()
+            val output = encoderOutput.parse(encoderSession!!.run(inputs))
 
-            if (encoderOutput == null) {
-                inputIdsTensor.close()
-                attentionMaskTensor.close()
-                return emptyArray()
-            }
-
-            val encoderHiddenStates =
-                encoderOutput.get("last_hidden_state").get().value as EncoderHiddenStates
-            encoderOutput.close()
-
-            return encoderHiddenStates.first()
+            return output ?: throw IllegalStateException("Encoder output is null")
         } catch (e: Exception) {
             e.printStackTrace()
             throw e
         } finally {
-            inputIdsTensor.close()
-            attentionMaskTensor.close()
+            encoderInput.close()
         }
     }
 
-    data class Beam(val sequence: LongArray, val score: Float)
 
-    @Suppress("UNCHECKED_CAST")
-    private suspend fun beamDecode(
-        encoderHiddenStates: Array<FloatArray>,
-        attentionMask: LongArray,
+    private fun decode(
+        encoderHiddenStates: EncoderHiddenStates,
+        attentionMask: EncoderAttentionMasks,
         eosId: Long,
         padId: Long,
         beamsSize: Int,
-        maxSequenceLength: Int
+        maxSequenceLength: Int,
     ): LongArray {
+        if (decoderSession == null) {
+            throw IllegalStateException("Encoder session is not loaded")
+        }
+
+        val beams = app.versta.translate.core.entity.BeamSearch(
+            size = beamsSize,
+            padId = padId,
+            eosId = eosId
+        )
+
+        val decoderInput = DecoderInput(
+            ortEnvironment = ortEnvironment,
+            encoderHiddenStates = Array(beamsSize) { encoderHiddenStates },
+            encoderAttentionMask = Array(beamsSize) { attentionMask }
+        )
+
+        val decoderOutput = DecoderOutput()
+
         try {
-            var beams: MutableList<Beam> = MutableList(beamsSize) {
-                Beam(longArrayOf(padId), 1f)
-            }
-            val encoderHiddenStateBeams = Array(beamsSize) { encoderHiddenStates }
-            val attentionMaskBeams = Array(beamsSize) { attentionMask }
-
-            val encoderOutputsTensor =
-                OnnxTensor.createTensor(ortEnvironment, encoderHiddenStateBeams)
-            val encoderAttentionMaskTensor =
-                OnnxTensor.createTensor(ortEnvironment, attentionMaskBeams)
-
-            val noCacheTensor = OnnxTensor.createTensor(ortEnvironment, booleanArrayOf(false))
-            val cacheTensor = OnnxTensor.createTensor(ortEnvironment, booleanArrayOf(true))
-
-            val inputs = mutableMapOf<String, OnnxTensorLike>(
-                "encoder_hidden_states" to encoderOutputsTensor,
-                "encoder_attention_mask" to encoderAttentionMaskTensor,
-                "use_cache_branch" to noCacheTensor
-            )
-
-            var decoderOutputs: OrtSession.Result? = null
-
-            var stepsMade = 0
-            var totalInferenceTime = 0L
-            var startTime: Long
-
-            val presentDecoderRegex = "present.\\d".toRegex()
-            val decoderCache = mutableMapOf<String, OnnxTensorLike>()
-
             for (step in 0 until maxSequenceLength) {
-                if (beams.all { it.sequence[it.sequence.size - 1] == eosId }) {
+                if (beams.complete()) {
                     break
                 }
 
                 val decoderInputIds = Array(beamsSize) { i ->
-                    longArrayOf(beams[i].sequence.last())
+                    longArrayOf(beams.lastTokenInBeam(i))
                 }
-                val decoderInputIdsTensor = OnnxTensor.createTensor(
-                    ortEnvironment,
-                    decoderInputIds
+
+                val inputs = decoderInput.get(decoderInputIds, decoderOutput.cache)
+                val output = decoderOutput.parse(decoderSession!!.run(inputs)) ?: break
+
+                beams.search(
+                    logits = output,
+                    beamsSize = beamsSize
                 )
-                inputs["input_ids"] = decoderInputIdsTensor
-
-                if (decoderCache.isNotEmpty()) {
-                    decoderCache.forEach { (key, value) ->
-                        inputs[key] = value
-                    }
-                    inputs["use_cache_branch"] = cacheTensor
-                }
-
-                startTime = System.currentTimeMillis()
-                decoderOutputs = decoderSession?.run(inputs)
-                totalInferenceTime += System.currentTimeMillis() - startTime
-                stepsMade++
-
-                Log.i(
-                    "OpusInference",
-                    "Inference time: ${System.currentTimeMillis() - startTime} ms, current step: $step"
-                )
-
-                if (decoderOutputs == null) {
-                    decoderInputIdsTensor.close()
-                    break
-                }
-
-                for (output in decoderOutputs) {
-                    when {
-                        output.key == "logits" -> {
-                            val logits = output.value.value as DecoderLogits
-
-                            startTime = System.currentTimeMillis()
-                            // Parallel processing of beams using Kotlin coroutines
-                            var newBeams = arrayOf<Beam>()
-                            for (i in beams.indices) {
-                                // Retrieve top-k tokens for each beam independently
-                                val topKIndices = BeamSearch.topKIndices(logits[i][0], 8)
-
-                                // Expand each beam with top-k tokens
-                                for (token in topKIndices) {
-                                    val newSeq = beams[i].sequence + token.toLong()
-                                    val logitValue = logits[i][0][token].coerceAtLeast(1e-9f)
-                                    val newScore = beams[i].score + ln(logitValue)
-
-                                    newBeams = newBeams.plus(Beam(newSeq, newScore))
-                                }
-                            }
-
-                            Log.i(
-                                "OpusInference",
-                                "Beam search time: ${System.currentTimeMillis() - startTime} ms"
-                            )
-
-                            // Prune: Keep only the top `beamsSize` beams by score
-                            beams = newBeams
-                                .sortedByDescending { it.score }
-                                .take(beamsSize)
-                                .toMutableList()
-                        }
-
-                        output.key.contains(
-                            presentDecoderRegex
-                        ) -> {
-                            if (output.value.info is TensorInfo) {
-                                val info = output.value.info as TensorInfo
-
-                                if (info.shape[2] >= 512) {
-                                    decoderCache.clear()
-                                    continue
-                                }
-
-                                if (info.shape[0] == 0L) {
-                                    continue
-                                }
-                            }
-
-                            val key = output.key.replace("present", "past_key_values")
-                            if (output.value is OnnxTensorLike) {
-//                                decoderCache[key]?.close()
-                                decoderCache[key] = output.value as OnnxTensorLike
-                            }
-                        }
-
-                        else -> {
-                            continue
-                        }
-                    }
-                }
-
-                val tempDecoderOutputResults = beams.maxByOrNull { it.score }?.sequence ?: longArrayOf()
-                Log.d(TAG, "Best sequence: ${tempDecoderOutputResults.joinToString(" ")}")
-
-                decoderInputIdsTensor.close()
             }
 
-            decoderOutputs?.close()
-
-            noCacheTensor.close()
-            cacheTensor.close()
-            encoderOutputsTensor.close()
-            encoderAttentionMaskTensor.close()
-
-            Log.i(
-                "OpusInference",
-                "Total inference time: $totalInferenceTime ms, in $stepsMade steps"
-            )
-
-            return beams.maxByOrNull { it.score }?.sequence ?: longArrayOf()
+            return beams.best()
         } catch (e: Exception) {
             e.printStackTrace()
             throw e
+        } finally {
+            decoderInput.close()
         }
     }
 
-    override suspend fun run(
+    private fun decodeAsFlow(
+        encoderHiddenStates: EncoderHiddenStates,
+        attentionMask: EncoderAttentionMasks,
+        eosId: Long,
+        padId: Long,
+        beamsSize: Int,
+        maxSequenceLength: Int,
+    ): Flow<LongArray> {
+        if (decoderSession == null) {
+            throw IllegalStateException("Encoder session is not loaded")
+        }
+
+        return flow {
+            val beams = app.versta.translate.core.entity.BeamSearch(
+                size = beamsSize,
+                padId = padId,
+                eosId = eosId
+            )
+
+            val decoderInput = DecoderInput(
+                ortEnvironment = ortEnvironment,
+                encoderHiddenStates = Array(beamsSize) { encoderHiddenStates },
+                encoderAttentionMask = Array(beamsSize) { attentionMask }
+            )
+
+            val decoderOutput = DecoderOutput()
+
+            try {
+
+                for (step in 0 until maxSequenceLength) {
+                    if (beams.complete()) {
+                        break
+                    }
+
+                    val decoderInputIds = Array(beamsSize) { i ->
+                        longArrayOf(beams.lastTokenInBeam(i))
+                    }
+
+                    val inputs = decoderInput.get(
+                        inputIds = decoderInputIds,
+                        cache = decoderOutput.cache
+                    )
+                    val output =
+                        decoderOutput.parse(decoderSession!!.run(inputs)) ?: break
+
+                    beams.search(
+                        logits = output,
+                        beamsSize = beamsSize
+                    )
+
+                    emit(beams.best())
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                throw e
+            } finally {
+                decoderInput.close()
+            }
+        }
+    }
+
+    override fun run(
         inputIds: LongArray,
         attentionMask: LongArray,
         eosId: Long,
@@ -252,31 +189,42 @@ class MarianInference(
         beams: Int,
         maxSequenceLength: Int
     ): LongArray {
-        val encoderHiddenStates = encode(inputIds, attentionMask)
+        val encoderHiddenStates = encode(
+            inputIds = inputIds,
+            attentionMask = attentionMask
+        )
 
-        return beamDecode(
-            encoderHiddenStates,
-            attentionMask,
-            eosId,
-            padId,
-            beams,
-            maxSequenceLength
+        return decode(
+            encoderHiddenStates = encoderHiddenStates,
+            attentionMask = attentionMask,
+            eosId = eosId,
+            padId = padId,
+            beamsSize = beams,
+            maxSequenceLength = maxSequenceLength
         )
     }
 
-    // Efficient top-k selection without sorting entire array
-    private fun getTopKIndices(array: FloatArray, k: Int): LongArray {
-        val heap = PriorityQueue<Pair<Int, Float>>(compareByDescending { it.second })
-        for (i in array.indices) {
-            val value = array[i]
-            if (heap.size < k) {
-                heap.add(Pair(i, value))
-            } else if (value > (heap.peek()?.second ?: 0f)) {
-                heap.poll()
-                heap.add(Pair(i, value))
-            }
-        }
-        return heap.map { it.first.toLong() }.toLongArray()
+    override fun runAsFlow(
+        inputIds: LongArray,
+        attentionMask: LongArray,
+        eosId: Long,
+        padId: Long,
+        beams: Int,
+        maxSequenceLength: Int
+    ): Flow<LongArray> {
+        val encoderHiddenStates = encode(
+            inputIds = inputIds,
+            attentionMask = attentionMask
+        )
+
+        return decodeAsFlow(
+            encoderHiddenStates = encoderHiddenStates,
+            attentionMask = attentionMask,
+            eosId = eosId,
+            padId = padId,
+            beamsSize = beams,
+            maxSequenceLength = maxSequenceLength
+        )
     }
 
     override fun load(files: LanguageModelInferenceFiles) {

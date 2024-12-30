@@ -3,7 +3,7 @@ package app.versta.translate.ui.screen
 import android.content.Context
 import android.graphics.Paint
 import android.graphics.Rect
-import android.util.Log
+import androidx.activity.ComponentActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -30,12 +30,10 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.toRectF
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import app.versta.translate.core.model.TextRecognitionViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.utils.TextRecognitionProcessor
-import app.versta.translate.utils.koinActivityViewModel
-import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
-import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,10 +44,16 @@ import kotlin.coroutines.suspendCoroutine
 
 @Composable
 fun Camera(
-    modifier: Modifier = Modifier,
-    textRecognitionViewModel: TextRecognitionViewModel = koinActivityViewModel(),
-    translationViewModel: TranslationViewModel = koinActivityViewModel(),
+    textRecognitionViewModel: TextRecognitionViewModel,
+    translationViewModel: TranslationViewModel,
+    modifier: Modifier = Modifier
 ) {
+//    val translationViewModel = viewModel<TranslationViewModel>(
+//        factory = viewModelFactory {
+//            MainApplication.viewModel.translationViewModel
+//        }
+//    )
+
     val stableBlocks by textRecognitionViewModel.stableBlocks.collectAsStateWithLifecycle()
     val transformMatrix by textRecognitionViewModel.transformMatrix
     val rotationCompensation by textRecognitionViewModel.rotationCompensation

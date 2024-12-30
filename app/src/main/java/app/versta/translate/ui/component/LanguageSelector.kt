@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,13 +14,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.SyncAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -29,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -36,18 +35,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
+import app.versta.translate.adapter.outbound.LanguageMemoryRepository
+import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.model.LanguageType
 import app.versta.translate.core.model.LanguageViewModel
-import app.versta.translate.databaseModule
-import app.versta.translate.translateModule
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.utils.koinActivityViewModel
-import org.koin.compose.KoinApplication
+import app.versta.translate.utils.TarExtractor
 
 @Composable
 fun LanguageSelector(
-    languageViewModel: LanguageViewModel = koinActivityViewModel(),
+    languageViewModel: LanguageViewModel,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -63,19 +61,19 @@ fun LanguageSelector(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+//            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    color = MaterialTheme.colorScheme.inverseSurface,
+                    color = MaterialTheme.colorScheme.surfaceContainer,
                     shape = MaterialTheme.shapes.extraLarge,
                 )
-                .padding(MaterialTheme.spacing.small),
         ) {
             LanguageSelectorButton(
                 context = context,
                 language = sourceLanguage.value,
                 text = "Source language",
+                placeholder = "From",
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Source) },
                 modifier = Modifier.weight(1f),
             )
@@ -100,6 +98,7 @@ fun LanguageSelector(
                 context = context,
                 language = targetLanguage.value,
                 text = "Target language",
+                placeholder = "To",
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Target) },
                 modifier = Modifier.weight(1f),
             )
@@ -108,52 +107,74 @@ fun LanguageSelector(
 }
 
 @Composable
-fun LanguageSelectorButton(context: Context, language: Language?, text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun LanguageSelectorButton(
+    context: Context,
+    language: Language?,
+    text: String,
+    placeholder: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val flagDrawable = language?.getFlagDrawable(context)
 
     Button(
         onClick = onClick,
-        contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.medium, vertical = ButtonDefaults.ContentPadding.calculateTopPadding()),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+        contentPadding = PaddingValues(MaterialTheme.spacing.large, MaterialTheme.spacing.medium),
         modifier = Modifier
             .height(intrinsicSize = IntrinsicSize.Min)
             .then(modifier),
     ) {
-        Row (
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            if (flagDrawable != null) {
-                Image(
-                    painter = painterResource(flagDrawable),
-                    contentDescription = "Flag",
-                    modifier = Modifier
-                        .requiredSize(MaterialTheme.spacing.large)
-                        .clip(MaterialTheme.shapes.large)
+        Column {
+            Text(
+                text = placeholder,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                modifier = Modifier.padding(
+                    bottom = MaterialTheme.spacing.small,
+                    end = MaterialTheme.spacing.small,
+                )
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                if (flagDrawable != null) {
+                    Image(
+                        painter = painterResource(flagDrawable),
+                        contentDescription = "Flag",
+                        modifier = Modifier
+                            .requiredSize(MaterialTheme.spacing.large)
+                            .clip(MaterialTheme.shapes.large)
+                    )
+                }
+
+
+                Text(
+                    text = language?.name ?: text,
+                    style = MaterialTheme.typography.labelLarge,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
                 )
             }
-
-            Text(
-                text = language?.name ?: text,
-                color = MaterialTheme.colorScheme.onPrimary,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-            )
         }
     }
 }
 
 @Composable
-@Preview
+@Preview(showBackground = true)
 fun LanguageSelectorPreview() {
-    return KoinApplication(
-        application = {
-            modules(
-                translateModule,
-                databaseModule,
-            )
-        }
-    ) {
-        LanguageSelector()
-    }
+    return LanguageSelector(
+        languageViewModel = LanguageViewModel(
+            modelExtractor = TarExtractor(LocalContext.current),
+            languageDatabaseRepository = LanguageMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+        ),
+    )
 }

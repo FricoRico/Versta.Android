@@ -1,5 +1,6 @@
 package app.versta.translate.ui.screen
 
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -37,22 +38,24 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
+import app.versta.translate.adapter.outbound.LanguageMemoryRepository
+import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.ui.component.SettingsListItem
 import app.versta.translate.ui.component.SwipeDelete
 import app.versta.translate.ui.theme.spacing
+import app.versta.translate.utils.TarExtractor
 import app.versta.translate.utils.darken
-import app.versta.translate.utils.koinActivityViewModel
-import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LanguageSettings(
     navController: NavController,
-    languageViewModel: LanguageViewModel = koinActivityViewModel()
+    languageViewModel: LanguageViewModel,
 ) {
     val sourceLanguages by languageViewModel.sourceLanguages.collectAsStateWithLifecycle(emptyList())
     val availableLanguages by languageViewModel.availableLanguages.collectAsStateWithLifecycle(
@@ -208,6 +211,10 @@ fun LanguageSettings(
 private fun PreviewLanguageSettings() {
     LanguageSettings(
         navController = rememberNavController(),
-        languageViewModel = koinViewModel()
+        languageViewModel = LanguageViewModel(
+            modelExtractor = TarExtractor(LocalContext.current),
+            languageDatabaseRepository = LanguageMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+        ),
     )
 }

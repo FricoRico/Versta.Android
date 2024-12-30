@@ -1,63 +1,62 @@
 package app.versta.translate
 
-import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
 import app.versta.translate.adapter.outbound.LanguageDatabaseRepository
-import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
-import app.versta.translate.core.model.LanguageViewModel
-import app.versta.translate.core.model.LicenseViewModel
+import app.versta.translate.adapter.outbound.LanguagePreferenceDataStoreRepository
+import app.versta.translate.adapter.outbound.LanguageRepository
 import app.versta.translate.core.model.ModelExtractor
-import app.versta.translate.core.model.TextRecognitionViewModel
-import app.versta.translate.core.model.TextTranslationViewModel
-import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.adapter.outbound.MarianTokenizer
 import app.versta.translate.adapter.outbound.MarianInference
-import app.versta.translate.core.model.ModelInterface
-import app.versta.translate.core.model.TokenizerInterface
+import app.versta.translate.adapter.outbound.TranslationInference
+import app.versta.translate.adapter.outbound.TranslationTokenizer
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.TarExtractor
-import org.koin.android.ext.koin.androidContext
-import org.koin.android.ext.koin.androidLogger
-import org.koin.androidx.viewmodel.dsl.viewModel
-import org.koin.core.context.startKoin
-import org.koin.core.logger.Level
-import org.koin.dsl.module
 
 val Context.dataStore by preferencesDataStore(name = "preferences")
 
-val translateModule = module {
-    single<ModelExtractor> { TarExtractor(get()) }
-    single<TokenizerInterface> { MarianTokenizer() }
-    single<ModelInterface> { MarianInference() }
+interface ApplicationModuleInterface {
+    val languageRepository: LanguageRepository
+    val languagePreferenceRepository: LanguagePreferenceDataStoreRepository
 
-    single { get<Context>().dataStore }
-
-    single { LanguageDatabaseRepository(get()) }
-    single { LanguagePreferenceRepository(get()) }
-
-    viewModel { LanguageViewModel(get(), get(), get()) }
-    viewModel { TranslationViewModel(get(), get(), get(), get()) }
-    viewModel { TextRecognitionViewModel() }
-    viewModel { TextTranslationViewModel() }
-    viewModel { LicenseViewModel() }
+    val extractor: ModelExtractor
+    val tokenizer: TranslationTokenizer
+    val model: TranslationInference
 }
 
-val databaseModule = module {
-    single { DatabaseContainer(get()) }
+class ApplicationModule(context: Context) : ApplicationModuleInterface {
+    val database = DatabaseContainer(context)
+
+    override val languageRepository: LanguageRepository by lazy {
+        LanguageDatabaseRepository(database)
+    }
+
+    override val languagePreferenceRepository: LanguagePreferenceDataStoreRepository by lazy {
+        LanguagePreferenceDataStoreRepository(context.dataStore)
+    }
+
+    override val extractor: ModelExtractor by lazy {
+        TarExtractor(context)
+    }
+
+    override val tokenizer: TranslationTokenizer by lazy {
+        MarianTokenizer()
+    }
+
+    override val model: TranslationInference by lazy {
+        MarianInference()
+    }
 }
 
-class MainApplication : Application(){
-    @SuppressLint("NewApi")
+class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        startKoin {
-            androidLogger(level = Level.DEBUG)
-            androidContext(this@MainApplication)
+        module = ApplicationModule(this)
+    }
 
-            modules(translateModule, databaseModule)
-        }
+    companion object {
+        lateinit var module: ApplicationModuleInterface
     }
 }

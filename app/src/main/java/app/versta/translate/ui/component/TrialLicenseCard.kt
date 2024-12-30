@@ -2,6 +2,7 @@ package app.versta.translate.ui.component
 
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,18 +31,13 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.core.model.LicenseViewModel
-import app.versta.translate.databaseModule
-import app.versta.translate.translateModule
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.utils.koinActivityViewModel
 import app.versta.translate.utils.shift
-import org.koin.compose.KoinApplication
-import org.koin.compose.koinInject
 
 @Composable
 fun TrialLicenseCard(
-    licenseViewModel: LicenseViewModel = koinActivityViewModel(),
-    modifier: Modifier = Modifier
+    licenseViewModel: LicenseViewModel,
+    modifier: Modifier = Modifier,
 ) {
     val isTrialLicense by licenseViewModel.isTrialLicense.collectAsStateWithLifecycle()
 
@@ -131,14 +127,7 @@ fun TrialLicenseCard(
 @Composable
 @Preview
 private fun TrialLicenseCardPreview() {
-    return KoinApplication(
-        application = {
-            modules(
-                translateModule,
-                databaseModule,
-            )
-        }
-    ) {
-        TrialLicenseCard(licenseViewModel = koinInject())
-    }
+        TrialLicenseCard(
+            licenseViewModel = TODO(),
+        )
 }

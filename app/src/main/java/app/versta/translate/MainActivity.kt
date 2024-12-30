@@ -15,20 +15,76 @@ import app.versta.translate.ui.screen.Camera
 import app.versta.translate.ui.theme.TranslateTheme
 import android.Manifest
 import android.content.pm.PackageManager
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.draw.clip
 import androidx.core.content.ContextCompat
+import app.versta.translate.core.model.LanguageViewModel
+import app.versta.translate.core.model.LicenseViewModel
+import app.versta.translate.core.model.TextRecognitionViewModel
+import app.versta.translate.core.model.TextTranslationViewModel
+import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.utils.FilePicker
 import app.versta.translate.ui.component.LanguageSelectionDrawer
 import app.versta.translate.ui.component.Router
 import app.versta.translate.ui.component.TranslatorLoadingProgressDialog
+import app.versta.translate.utils.viewModelFactory
 
 open class MainActivity : ComponentActivity() {
 //    private lateinit var pickFileLauncher: ActivityResultLauncher<Array<String>>
 
 //    private val fileExtractorScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+    private val languageViewModel by viewModels<LanguageViewModel>(
+        factoryProducer = {
+            viewModelFactory {
+                LanguageViewModel(
+                    modelExtractor = MainApplication.module.extractor,
+                    languageDatabaseRepository = MainApplication.module.languageRepository,
+                    languagePreferenceRepository = MainApplication.module.languagePreferenceRepository
+                )
+            }
+        }
+    )
+
+    private val translationViewModel by viewModels<TranslationViewModel>(
+        factoryProducer = {
+            viewModelFactory {
+                TranslationViewModel(
+                    tokenizer = MainApplication.module.tokenizer,
+                    model = MainApplication.module.model,
+                    languageRepository = MainApplication.module.languageRepository,
+                    languagePreferenceRepository = MainApplication.module.languagePreferenceRepository
+                )
+            }
+        }
+    )
+
+    private val textRecognitionViewModel by viewModels<TextRecognitionViewModel>(
+        factoryProducer = {
+            viewModelFactory {
+                TextRecognitionViewModel()
+            }
+        }
+    )
+
+    private val textTranslationViewModel by viewModels<TextTranslationViewModel>(
+        factoryProducer = {
+            viewModelFactory {
+                TextTranslationViewModel()
+            }
+        }
+    )
+
+    private val licenseViewModel by viewModels<LicenseViewModel>(
+        factoryProducer = {
+            viewModelFactory {
+                LicenseViewModel()
+            }
+        }
+    )
 
     private val activityResultLauncher =
         registerForActivityResult(
@@ -70,7 +126,9 @@ open class MainActivity : ComponentActivity() {
                     Camera(
                         modifier = Modifier
                             .padding(innerPadding)
-                            .clip(shape = MaterialTheme.shapes.extraLarge)
+                            .clip(shape = MaterialTheme.shapes.extraLarge),
+                        textRecognitionViewModel = textRecognitionViewModel,
+                        translationViewModel = translationViewModel,
                     )
                 }
             }
@@ -87,11 +145,17 @@ open class MainActivity : ComponentActivity() {
             TranslateTheme {
                 Box(
                     modifier = Modifier.background(MaterialTheme.colorScheme.background)
-                ){
-                    Router()
+                ) {
+                    Router(
+                        languageViewModel = languageViewModel,
+                        licenseViewModel = licenseViewModel,
+                        textTranslationViewModel = textTranslationViewModel,
+                        textRecognitionViewModel = textRecognitionViewModel,
+                        translationViewModel = translationViewModel
+                    )
 
-                    TranslatorLoadingProgressDialog()
-                    LanguageSelectionDrawer()
+                    TranslatorLoadingProgressDialog(translationViewModel = translationViewModel)
+                    LanguageSelectionDrawer(languageViewModel = languageViewModel)
                 }
             }
         }

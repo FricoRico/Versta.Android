@@ -1,6 +1,6 @@
 package app.versta.translate.core.entity
 
-class DecoderMetadata(
+data class DecoderMetadata(
     val batchSize: Int,
     val sequenceLength: Int,
 ) {

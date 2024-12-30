@@ -14,34 +14,40 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.core.model.LoadingProgress
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.utils.koinActivityViewModel
 
 @Composable
 fun TranslatorLoadingProgressDialog(
-    translationViewModel: TranslationViewModel = koinActivityViewModel()
+    translationViewModel: TranslationViewModel
 ) {
     val loadingProgress = translationViewModel.loadingProgress.collectAsStateWithLifecycle()
 
-   if(loadingProgress.value == LoadingProgress.InProgress) {
-       Dialog(onDismissRequest = { /* Can not be dismissed */ }) {
-           Card(
-               colors = CardDefaults.cardColors(
-                   containerColor = MaterialTheme.colorScheme.surface,
-               ),
-               shape = MaterialTheme.shapes.extraLarge
-           ) {
-               CircularProgressIndicator(
-                   modifier = Modifier
-                       .padding(MaterialTheme.spacing.extraLarge)
-                       .align(Alignment.CenterHorizontally)
-               )
-           }
-       }
-   }
+    if (loadingProgress.value == LoadingProgress.InProgress) {
+        Dialog(onDismissRequest = { /* Can not be dismissed */ }) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+                shape = MaterialTheme.shapes.extraLarge
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .padding(MaterialTheme.spacing.extraLarge)
+                        .align(Alignment.CenterHorizontally)
+                )
+            }
+        }
+    }
 }
 
 @Composable
 @Preview
 fun TranslatorLoadingDialogPreview() {
-    TranslatorLoadingProgressDialog()
+    TranslatorLoadingProgressDialog(
+        translationViewModel = TranslationViewModel(
+            tokenizer = TODO(),
+            model = TODO(),
+            languageRepository = TODO(),
+            languagePreferenceRepository = TODO()
+        )
+    )
 }

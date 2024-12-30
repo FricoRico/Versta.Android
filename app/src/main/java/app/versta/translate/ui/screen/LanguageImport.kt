@@ -3,6 +3,7 @@ package app.versta.translate.ui.screen
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -40,22 +41,27 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startActivity
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import app.versta.translate.MainApplication
 import app.versta.translate.R
+import app.versta.translate.adapter.outbound.LanguageMemoryRepository
+import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.core.model.ExtractionProgress
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.ModelFilePickerCallback
 import app.versta.translate.utils.FilePicker
 import app.versta.translate.ui.theme.spacing
+import app.versta.translate.utils.TarExtractor
+import app.versta.translate.utils.viewModelFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun LanguageImport(
     navController: NavController,
-    languageViewModel: LanguageViewModel = koinViewModel()
+    languageViewModel: LanguageViewModel
 ) {
     val pagerState = rememberPagerState(pageCount = { 3 })
     val coroutineScope = rememberCoroutineScope()
@@ -290,6 +296,10 @@ fun OnboardingScreen3() {
 fun LanguageImportPreview() {
     LanguageImport(
         navController = rememberNavController(),
-        languageViewModel = koinViewModel()
+        languageViewModel = LanguageViewModel(
+            modelExtractor = TarExtractor(LocalContext.current),
+            languageDatabaseRepository = LanguageMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+        )
     )
 }

@@ -1,51 +1,28 @@
 package app.versta.translate.core.model
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.versta.translate.adapter.outbound.LanguageDatabaseRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
+import app.versta.translate.adapter.outbound.LanguageRepository
+import app.versta.translate.adapter.outbound.TranslationInference
+import app.versta.translate.adapter.outbound.TranslationTokenizer
 import app.versta.translate.core.entity.LanguageModelFiles
-import app.versta.translate.core.entity.LanguageModelInferenceFiles
-import app.versta.translate.core.entity.LanguageModelTokenizerFiles
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.TranslationMemoryCache
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-
-interface ModelInterface {
-    suspend fun run(inputIds: LongArray, attentionMask: LongArray, eosId: Long, padId: Long, beams: Int = 6, maxSequenceLength: Int = 128): LongArray
-    fun load(files: LanguageModelInferenceFiles)
-}
-
-interface TokenizerInterface {
-    val vocabSize: Long
-
-    val padId: Long
-    val eosId: Long
-    val unknownId: Long
-
-    fun tokenize(text: String): List<String>
-    fun encode(text: String, padTokens: Boolean = false): Pair<LongArray, LongArray>
-//    fun encode(
-//        texts: List<String>,
-//        padTokens: Boolean = false
-//    ): Pair<Array<LongArray>, Array<LongArray>>
-
-    fun decode(ids: LongArray, filterSpecialTokens: Boolean = true): String
-//    fun decode(ids: Array<LongArray>, filterSpecialTokens: Boolean = true): List<String>
-    fun splitSentences(text: String, groupLength: Int = 192): List<String>
-    fun load(files: LanguageModelTokenizerFiles, languages: LanguagePair)
-}
 
 sealed class LoadingProgress {
     data object Idle : LoadingProgress()
@@ -58,9 +35,9 @@ sealed class LoadingProgress {
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TranslationViewModel(
-    private val tokenizer: TokenizerInterface,
-    private val model: ModelInterface,
-    private val languageDatabaseRepository: LanguageDatabaseRepository,
+    private val tokenizer: TranslationTokenizer,
+    private val model: TranslationInference,
+    private val languageRepository: LanguageRepository,
     private val languagePreferenceRepository: LanguagePreferenceRepository,
 ) : ViewModel() {
     // TODO: Make this a configuration option
@@ -74,9 +51,45 @@ class TranslationViewModel(
     private val translationCache = TranslationMemoryCache(cacheSize)
     private val queue = Mutex()
 
-    private val languages = languagePreferenceRepository.languagePair
+    private val languages = languagePreferenceRepository.getLanguagePair()
     private val loadModelFlow = languages.filterNotNull().mapLatest { data ->
-        languageDatabaseRepository.getLanguageModel(data).first()
+        languageRepository.getLanguageModel(data).first()
+    }
+
+    fun translateAsFlow(input: String): Flow<String> {
+        val sanitized = sanitize(input)
+
+        var cache = translationCache.get(sanitized)
+        if (cache != null) {
+            return flowOf(cache)
+        }
+
+        return flow {
+            queue.withLock {
+                // Check to see if the translation is already in the cache, if so return it.
+                cache = translationCache.get(sanitized)
+
+                if (cache != null) {
+                    emit(cache!!)
+                }
+
+                val (inputIds, attentionMask) = tokenizer.encode(sanitized)
+                model.runAsFlow(
+                    inputIds,
+                    attentionMask,
+                    tokenizer.eosId,
+                    tokenizer.padId,
+                    numOfBeams
+                ).collect { tokenIds ->
+                    val outputText = tokenizer.decode(tokenIds)
+                    emit(outputText)
+
+                    if (tokenIds.last() == tokenizer.eosId) {
+                        translationCache.put(sanitized, outputText)
+                    }
+                }
+            }
+        }
     }
 
     suspend fun translate(input: String): String {
@@ -96,15 +109,14 @@ class TranslationViewModel(
             }
 
             val (inputIds, attentionMask) = tokenizer.encode(sanitized)
-            val tokenIds = model.run(inputIds, attentionMask, tokenizer.eosId, tokenizer.padId, numOfBeams)
-
-            val startTimestamp = System.currentTimeMillis()
-            val outputText = tokenizer.decode(tokenIds)
-            Log.d("TranslationViewModel", "Decoding took ${System.currentTimeMillis() - startTimestamp}ms")
-
-            translationCache.put(sanitized, outputText)
-
-            outputText
+            val tokenIds = model.run(
+                inputIds,
+                attentionMask,
+                tokenizer.eosId,
+                tokenizer.padId,
+                numOfBeams
+            )
+            tokenizer.decode(tokenIds)
         }
     }
 

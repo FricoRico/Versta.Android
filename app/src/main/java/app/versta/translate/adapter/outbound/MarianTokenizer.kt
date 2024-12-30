@@ -3,8 +3,6 @@ package app.versta.translate.adapter.outbound
 import android.util.Log
 import app.versta.translate.core.entity.LanguageModelTokenizerFiles
 import app.versta.translate.core.entity.LanguagePair
-import app.versta.translate.core.model.TokenizerInterface
-import app.versta.translate.bridge.inference.BeamSearch
 import app.versta.translate.bridge.tokenize.SentencePieceProcessor
 import app.versta.translate.bridge.tokenize.Vocabulary
 import kotlinx.serialization.json.Json
@@ -19,7 +17,7 @@ class MarianTokenizer(
     private val eosToken: String = "</s>",
     private val padToken: String = "<pad>",
     private val separatedVocabularies: Boolean = false
-): TokenizerInterface {
+): TranslationTokenizer {
     companion object {
         private const val SENTENCE_PIECE_UNDERLINE = "▁"
         private val languageCodeRegex = Regex(">>.+<<")

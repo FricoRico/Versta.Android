@@ -1,23 +1,21 @@
 package app.versta.translate.ui.component
 
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.navigation.NavController
-import androidx.navigation.NavHost
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import app.versta.translate.core.model.LanguageViewModel
+import app.versta.translate.core.model.LicenseViewModel
+import app.versta.translate.core.model.TextRecognitionViewModel
+import app.versta.translate.core.model.TextTranslationViewModel
+import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.screen.Camera
 import app.versta.translate.ui.screen.Home
 import app.versta.translate.ui.screen.LanguageImport
@@ -28,11 +26,17 @@ import app.versta.translate.ui.screen.StatusBarStyle
 import app.versta.translate.ui.screen.TextTranslation
 
 @Composable
-fun Router() {
+fun Router(
+    languageViewModel: LanguageViewModel,
+    licenseViewModel: LicenseViewModel,
+    textTranslationViewModel: TextTranslationViewModel,
+    textRecognitionViewModel: TextRecognitionViewModel,
+    translationViewModel: TranslationViewModel,
+) {
     val navController = rememberNavController()
 
     val view = LocalView.current
-    val activity = view.context as androidx.activity.ComponentActivity
+    val activity = view.context as ComponentActivity
     val window = activity.window
 
     DisposableEffect(Unit) {
@@ -42,8 +46,10 @@ fun Router() {
             } ?: StatusBarStyle.Dark
 
             val windowInsetsController = WindowCompat.getInsetsController(window, view)
-            windowInsetsController.isAppearanceLightStatusBars = statusBarStyle == StatusBarStyle.Dark
-            windowInsetsController.isAppearanceLightNavigationBars = statusBarStyle == StatusBarStyle.Dark
+            windowInsetsController.isAppearanceLightStatusBars =
+                statusBarStyle == StatusBarStyle.Dark
+            windowInsetsController.isAppearanceLightNavigationBars =
+                statusBarStyle == StatusBarStyle.Dark
         }
 
         navController.addOnDestinationChangedListener(listener)
@@ -59,22 +65,44 @@ fun Router() {
         modifier = Modifier.fillMaxSize()
     ) {
         composable(Screens.Home()) {
-            Home(navController)
+            Home(
+                navController = navController,
+                textTranslationViewModel = textTranslationViewModel,
+                licenseViewModel = licenseViewModel,
+                languageViewModel = languageViewModel
+            )
         }
         composable(Screens.Camera()) {
-            Camera()
+            Camera(
+                textRecognitionViewModel = textRecognitionViewModel,
+                translationViewModel = translationViewModel
+            )
         }
         composable(Screens.Settings()) {
-            Settings(navController)
+            Settings(
+                navController = navController,
+                licenseViewModel = licenseViewModel,
+            )
         }
         composable(Screens.LanguageSettings()) {
-            LanguageSettings(navController)
+            LanguageSettings(
+                navController = navController,
+                languageViewModel = languageViewModel
+            )
         }
         composable(Screens.LanguageImport()) {
-            LanguageImport(navController)
+            LanguageImport(
+                navController = navController,
+                languageViewModel = languageViewModel
+            )
         }
         composable(Screens.TextTranslation()) {
-            TextTranslation(navController)
+            TextTranslation(
+                navController = navController,
+                languageViewModel = languageViewModel,
+                translationViewModel = translationViewModel,
+                textTranslationViewModel = textTranslationViewModel
+            )
         }
     }
 }
