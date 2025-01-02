@@ -5,7 +5,9 @@ import android.os.Bundle
 import app.versta.translate.core.model.TextTranslationViewModel
 
 class TranslateActivity : MainActivity() {
-    private val textTranslationViewModel = TextTranslationViewModel()
+    private val textTranslationViewModel = TextTranslationViewModel(
+        languagePreferenceRepository = MainApplication.module.languagePreferenceRepository
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (intent.action == Intent.ACTION_PROCESS_TEXT) {

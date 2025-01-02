@@ -17,11 +17,11 @@ sqldelight {
 
 android {
     namespace = "app.versta.translate"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "app.versta.translate"
-        minSdk = 28
+        minSdk = 29
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -55,6 +55,8 @@ android {
         kotlinCompilerExtensionVersion = "1.5.1"
     }
     packaging {
+        resources.excludes.add("META-INF/*")
+
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
@@ -107,6 +109,7 @@ dependencies {
     implementation(libs.mlkit.text.recognition.japanese)
     implementation(libs.mlkit.text.recognition.korean)
     implementation(libs.navigation.compose)
+    implementation(libs.nicolas.raoul.jakaroma)
     implementation(libs.sqldelight.android)
     implementation(libs.sqldelight.coroutines)
 

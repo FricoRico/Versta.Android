@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.MicNone
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -21,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.ui.theme.spacing
 
@@ -28,6 +31,7 @@ import app.versta.translate.ui.theme.spacing
 fun TranslationTextField(
     modifier: Modifier = Modifier,
     onSubmit: (String) -> Unit,
+    onClear: () -> Unit,
     textTranslationViewModel: TextTranslationViewModel
 ) {
     val input by textTranslationViewModel.sourceText.collectAsStateWithLifecycle()
@@ -65,17 +69,52 @@ fun TranslationTextField(
                     .padding(horizontal = MaterialTheme.spacing.small)
                     .padding(bottom = MaterialTheme.spacing.small)
                     .fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall)
+                ) {
+                    FilledIconButton(
+                        onClick = {
+                            onClear()
+                        },
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Close,
+                            contentDescription = "Clear"
+                        )
+                    }
+                    FilledIconButton(
+                        onClick = {},
+                        enabled = false,
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            disabledContentColor = MaterialTheme.colorScheme.surfaceContainerLowest
+                        ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.MicNone,
+                            contentDescription = "Dictate"
+                        )
+                    }
+                }
                 FilledIconButton(
                     onClick = {
                         onSubmit(input)
                     },
                     colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                        disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        disabledContentColor = MaterialTheme.colorScheme.onSurface
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        disabledContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        disabledContentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                 ) {
                     Icon(
@@ -93,7 +132,10 @@ fun TranslationTextField(
 @Preview(showBackground = true)
 fun TranslationTextFieldMinimalPreview() {
     TranslationTextField (
-        textTranslationViewModel = TextTranslationViewModel(),
-        onSubmit = {}
+        textTranslationViewModel = TextTranslationViewModel(
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+        ),
+        onSubmit = {},
+        onClear = {}
     )
 }

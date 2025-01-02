@@ -1,5 +1,6 @@
 package app.versta.translate.core.model
 
+import android.icu.text.Transliterator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
@@ -24,6 +25,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+// TODO: Move to generic entity class
 sealed class LoadingProgress {
     data object Idle : LoadingProgress()
 
@@ -134,6 +136,7 @@ class TranslationViewModel(
             try {
                 tokenizer.load(files.tokenizer, languages)
                 model.load(files.inference)
+
                 _loadingProgress.value = LoadingProgress.Completed
             } catch (e: Exception) {
                 e.printStackTrace()

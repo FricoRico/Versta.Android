@@ -60,59 +60,23 @@ fun Home(
         },
         content = { _, scrollConnection ->
             Column(
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
                 modifier = Modifier
                     .verticalScroll(scrollBehavior)
                     .nestedScroll(scrollConnection)
-                    .padding(top = MaterialTheme.spacing.medium)
-                    .padding(horizontal = MaterialTheme.spacing.medium)
+                    .padding(top = MaterialTheme.spacing.small)
+                    .padding(horizontal = MaterialTheme.spacing.small)
             ) {
                 LanguageSelector(languageViewModel = languageViewModel)
-
-//                        SingleChoiceSegmentedButtonRow(
-//                            modifier = Modifier.fillMaxWidth()
-//                        ) {
-//                            SegmentedButton(
-//                                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
-//                                onClick = {
-//                                    navController.navigate(Screens.Camera())
-//                                },
-//                                selected = false
-//                            ) {
-//                                Icon(
-//                                    imageVector = Icons.Outlined.CameraAlt,
-//                                    contentDescription = "Vision"
-//                                )
-//                            }
-//                            SegmentedButton(
-//                                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
-//                                onClick = {
-//                                    navController.navigate(Screens.TextTranslation())
-//                                },
-//                                selected = false
-//                            ) {
-//                                Icon(
-//                                    imageVector = Icons.Outlined.Translate,
-//                                    contentDescription = "Text"
-//                                )
-//                            }
-//                            SegmentedButton(
-//                                shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
-//                                onClick = { },
-//                                enabled = false,
-//                                selected = false
-//                            ) {
-//                                Icon(
-//                                    imageVector = Icons.Outlined.MicNone,
-//                                    contentDescription = "Voice"
-//                                )
-//                            }
-//                        }
 
                 TranslationTextField(
                     textTranslationViewModel = textTranslationViewModel,
                     onSubmit = {
                         navController.navigate(Screens.TextTranslation())
+                    },
+                    onClear = {
+                        textTranslationViewModel.clearSourceText()
+                        textTranslationViewModel.clearTargetText()
                     }
                 )
 
@@ -147,8 +111,10 @@ fun Home(
 private fun HomePreview() {
     Home(
         navController = rememberNavController(),
-        textTranslationViewModel = TextTranslationViewModel(),
         licenseViewModel = LicenseViewModel(),
+        textTranslationViewModel = TextTranslationViewModel(
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+        ),
         languageViewModel = LanguageViewModel(
             modelExtractor = TarExtractor(LocalContext.current),
             languageDatabaseRepository = LanguageMemoryRepository(),

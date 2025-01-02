@@ -1,6 +1,8 @@
 package app.versta.translate.ui.component
 
 import android.content.Context
+import android.graphics.drawable.shapes.Shape
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +16,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.shape.CornerBasedShape
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.SyncAlt
 import androidx.compose.material3.Button
@@ -23,16 +28,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
@@ -46,7 +55,8 @@ import app.versta.translate.utils.TarExtractor
 @Composable
 fun LanguageSelector(
     languageViewModel: LanguageViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onLanguageSwap: () -> Unit = {},
 ) {
     val context = LocalContext.current
 
@@ -55,13 +65,13 @@ fun LanguageSelector(
 
     val canSwapLanguages = languageViewModel.canSwapLanguages.collectAsStateWithLifecycle(false)
 
+
     Box(
         modifier = Modifier
             .then(modifier),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-//            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
@@ -72,17 +82,64 @@ fun LanguageSelector(
             LanguageSelectorButton(
                 context = context,
                 language = sourceLanguage.value,
-                text = "Source language",
+                text = "Select language",
                 placeholder = "From",
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Source) },
                 modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(
+                    start = MaterialTheme.spacing.large,
+                    top = MaterialTheme.spacing.medium,
+                    end = MaterialTheme.spacing.extraLarge,
+                    bottom = MaterialTheme.spacing.medium
+                ),
+                shape = RoundedCornerShape(
+                    topStart = MaterialTheme.shapes.extraLarge.topStart,
+                    topEnd = CornerSize(0.dp),
+                    bottomStart = MaterialTheme.shapes.extraLarge.bottomStart,
+                    bottomEnd = CornerSize(0.dp),
+                )
             )
 
+            LanguageSelectorButton(
+                context = context,
+                language = targetLanguage.value,
+                text = "Select language",
+                placeholder = "To",
+                onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Target) },
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(
+                    start = MaterialTheme.spacing.extraLarge,
+                    top = MaterialTheme.spacing.medium,
+                    end = MaterialTheme.spacing.large,
+                    bottom = MaterialTheme.spacing.medium
+                ),
+                shape = RoundedCornerShape(
+                    topStart = CornerSize(0.dp),
+                    topEnd = MaterialTheme.shapes.extraLarge.topEnd,
+                    bottomStart = CornerSize(0.dp),
+                    bottomEnd = MaterialTheme.shapes.extraLarge.bottomEnd,
+                )
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .matchParentSize(),
+        ) {
+           VerticalDivider(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(MaterialTheme.spacing.small),
+                color = MaterialTheme.colorScheme.surface,
+           )
             FilledIconButton(
                 enabled = canSwapLanguages.value,
                 onClick = {
-                    languageViewModel.swapLanguages()
+                    languageViewModel.swapLanguages().invokeOnCompletion {
+                        onLanguageSwap()
+                    }
                 },
+                modifier = Modifier.align(Alignment.Center),
                 colors = IconButtonDefaults.filledIconButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = MaterialTheme.colorScheme.onSurface,
@@ -90,18 +147,9 @@ fun LanguageSelector(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.SyncAlt,
-                    contentDescription = stringResource(R.string.settings),
+                    contentDescription = stringResource(R.string.swap_languages),
                 )
             }
-
-            LanguageSelectorButton(
-                context = context,
-                language = targetLanguage.value,
-                text = "Target language",
-                placeholder = "To",
-                onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Target) },
-                modifier = Modifier.weight(1f),
-            )
         }
     }
 }
@@ -113,6 +161,8 @@ fun LanguageSelectorButton(
     text: String,
     placeholder: String,
     onClick: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues(MaterialTheme.spacing.large, MaterialTheme.spacing.medium),
+    shape: CornerBasedShape = MaterialTheme.shapes.extraLarge,
     modifier: Modifier = Modifier
 ) {
     val flagDrawable = language?.getFlagDrawable(context)
@@ -123,7 +173,8 @@ fun LanguageSelectorButton(
             containerColor = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
-        contentPadding = PaddingValues(MaterialTheme.spacing.large, MaterialTheme.spacing.medium),
+        shape = shape,
+        contentPadding = contentPadding,
         modifier = Modifier
             .height(intrinsicSize = IntrinsicSize.Min)
             .then(modifier),

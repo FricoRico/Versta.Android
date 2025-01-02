@@ -11,6 +11,7 @@ import app.versta.translate.core.entity.LanguageMetadata
 import app.versta.translate.core.entity.ModelMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -122,8 +123,8 @@ class LanguageViewModel(
     /**
      * Sets the source language.
      */
-    fun setSourceLanguage(language: Language) {
-        viewModelScope.launch {
+    fun setSourceLanguage(language: Language): Job {
+        return viewModelScope.launch {
             val current = sourceLanguage.first()
             languagePreferenceRepository.setSourceLanguage(language)
 
@@ -136,19 +137,20 @@ class LanguageViewModel(
 
             // If the current target language is not available for the new source language, clear the
             // current target language.
-            languageDatabaseRepository.getTargetLanguagesBySource(language).collectLatest { languages ->
-                if (languages.none { it == targetLanguage.first() }) {
-                    clearTargetLanguage()
+            languageDatabaseRepository.getTargetLanguagesBySource(language)
+                .collectLatest { languages ->
+                    if (languages.none { it == targetLanguage.first() }) {
+                        clearTargetLanguage()
+                    }
                 }
-            }
         }
     }
 
     /**
      * Sets the target language.
      */
-    fun setTargetLanguage(language: Language) {
-        viewModelScope.launch {
+    fun setTargetLanguage(language: Language): Job {
+        return viewModelScope.launch {
             languagePreferenceRepository.setTargetLanguage(language)
         }
     }
@@ -156,8 +158,8 @@ class LanguageViewModel(
     /**
      * Swaps the source and target languages.
      */
-    fun swapLanguages() {
-        viewModelScope.launch {
+    fun swapLanguages(): Job {
+        return viewModelScope.launch {
             languagePreferenceRepository.swapLanguages()
         }
     }
@@ -165,8 +167,8 @@ class LanguageViewModel(
     /**
      * Clears the target language.
      */
-    private fun clearTargetLanguage() {
-        viewModelScope.launch {
+    private fun clearTargetLanguage(): Job {
+        return viewModelScope.launch {
             languagePreferenceRepository.clearTargetLanguage()
         }
     }

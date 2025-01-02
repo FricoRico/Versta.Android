@@ -11,17 +11,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.versta.translate.adapter.outbound.LanguageMemoryRepository
+import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
+import app.versta.translate.adapter.outbound.MockInference
+import app.versta.translate.adapter.outbound.MockTokenizer
 import app.versta.translate.core.model.LoadingProgress
+import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.theme.spacing
 
 @Composable
 fun TranslatorLoadingProgressDialog(
-    translationViewModel: TranslationViewModel
+    translationViewModel: TranslationViewModel,
+    textTranslationViewModel: TextTranslationViewModel
 ) {
-    val loadingProgress = translationViewModel.loadingProgress.collectAsStateWithLifecycle()
+    val translationModelLoadingProgress =
+        translationViewModel.loadingProgress.collectAsStateWithLifecycle()
+    val textTranslationLoadingProgress =
+        textTranslationViewModel.loadingProgress.collectAsStateWithLifecycle()
 
-    if (loadingProgress.value == LoadingProgress.InProgress) {
+    if (translationModelLoadingProgress.value == LoadingProgress.InProgress || textTranslationLoadingProgress.value == LoadingProgress.InProgress) {
         Dialog(onDismissRequest = { /* Can not be dismissed */ }) {
             Card(
                 colors = CardDefaults.cardColors(
@@ -44,10 +53,13 @@ fun TranslatorLoadingProgressDialog(
 fun TranslatorLoadingDialogPreview() {
     TranslatorLoadingProgressDialog(
         translationViewModel = TranslationViewModel(
-            tokenizer = TODO(),
-            model = TODO(),
-            languageRepository = TODO(),
-            languagePreferenceRepository = TODO()
+            tokenizer = MockTokenizer(),
+            model = MockInference(),
+            languageRepository = LanguageMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+        ),
+        textTranslationViewModel = TextTranslationViewModel(
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
         )
     )
 }

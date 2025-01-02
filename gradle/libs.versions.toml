@@ -1,13 +1,14 @@
 [versions]
 agp = "8.5.2"
 kotlin = "2.1.0"
-coreKtx = "1.15.0"
+coreKtx = "1.13.1"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.9.3"
 composeBom = "2024.12.01"
 
+nicolasRaoulJakorama = "1.0.0"
 androidComposeAnimation = "1.7.6"
 androidComposeMaterial3 = "1.3.1"
 androidDataStore = "1.1.1"
@@ -54,6 +55,7 @@ mlkit-text-recognition-devanagari = { group = "com.google.mlkit", name = "text-r
 mlkit-text-recognition-japanese = { group = "com.google.mlkit", name = "text-recognition-japanese", version.ref = "mlKitTextRecognition" }
 mlkit-text-recognition-korean = { group = "com.google.mlkit", name = "text-recognition-korean", version.ref = "mlKitTextRecognition" }
 navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+nicolas-raoul-jakaroma = { group = "com.github.nicolas-raoul", name = "jakaroma", version.ref = "nicolasRaoulJakorama" }
 sqldelight-android = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
 onnxruntime = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version.ref = "onnxRuntime" }

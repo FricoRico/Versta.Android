@@ -73,7 +73,9 @@ open class MainActivity : ComponentActivity() {
     private val textTranslationViewModel by viewModels<TextTranslationViewModel>(
         factoryProducer = {
             viewModelFactory {
-                TextTranslationViewModel()
+                TextTranslationViewModel(
+                    languagePreferenceRepository = MainApplication.module.languagePreferenceRepository
+                )
             }
         }
     )
@@ -154,7 +156,10 @@ open class MainActivity : ComponentActivity() {
                         translationViewModel = translationViewModel
                     )
 
-                    TranslatorLoadingProgressDialog(translationViewModel = translationViewModel)
+                    TranslatorLoadingProgressDialog(
+                        translationViewModel = translationViewModel,
+                        textTranslationViewModel = textTranslationViewModel
+                    )
                     LanguageSelectionDrawer(languageViewModel = languageViewModel)
                 }
             }
