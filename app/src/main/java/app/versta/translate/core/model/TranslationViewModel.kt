@@ -1,6 +1,5 @@
 package app.versta.translate.core.model
 
-import android.icu.text.Transliterator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
@@ -43,25 +42,27 @@ class TranslationViewModel(
     private val languagePreferenceRepository: LanguagePreferenceRepository,
 ) : ViewModel() {
     // TODO: Make this a configuration option
-    private val cacheSize: Int = 64
-    private val sentenceBatching = false
-    private val numOfBeams = 3
+    private val _cacheSize: Int = 64
+    private val _sentenceBatching = false
+    private val _numOfBeams = 3
+    private val _cacheEnabled = false
 
     private val _loadingProgress = MutableStateFlow<LoadingProgress>(LoadingProgress.Idle)
     val loadingProgress: StateFlow<LoadingProgress> = _loadingProgress.asStateFlow()
 
-    private val translationCache = TranslationMemoryCache(cacheSize)
+    private val translationCache = TranslationMemoryCache(_cacheSize)
     private val queue = Mutex()
 
-    private val languages = languagePreferenceRepository.getLanguagePair()
+    val languages = languagePreferenceRepository.getLanguagePair()
+
     private val loadModelFlow = languages.filterNotNull().mapLatest { data ->
-        languageRepository.getLanguageModel(data).first()
+        languageRepository.getLanguageModel(data)
     }
 
-    fun translateAsFlow(input: String): Flow<String> {
+    fun translateAsFlow(input: String, languages: LanguagePair): Flow<String> {
         val sanitized = sanitize(input)
 
-        var cache = translationCache.get(sanitized)
+        var cache = translationCache.get(sanitized, languages)
         if (cache != null) {
             return flowOf(cache)
         }
@@ -69,7 +70,7 @@ class TranslationViewModel(
         return flow {
             queue.withLock {
                 // Check to see if the translation is already in the cache, if so return it.
-                cache = translationCache.get(sanitized)
+                cache = translationCache.get(sanitized, languages)
 
                 if (cache != null) {
                     emit(cache!!)
@@ -81,30 +82,30 @@ class TranslationViewModel(
                     attentionMask,
                     tokenizer.eosId,
                     tokenizer.padId,
-                    numOfBeams
+                    _numOfBeams
                 ).collect { tokenIds ->
                     val outputText = tokenizer.decode(tokenIds)
                     emit(outputText)
 
-                    if (tokenIds.last() == tokenizer.eosId) {
-                        translationCache.put(sanitized, outputText)
+                    if (_cacheEnabled && tokenIds.last() == tokenizer.eosId) {
+                        translationCache.put(sanitized, outputText, languages)
                     }
                 }
             }
         }
     }
 
-    suspend fun translate(input: String): String {
+    suspend fun translate(input: String, languages: LanguagePair): String {
         val sanitized = sanitize(input)
 
-        var cache = translationCache.get(sanitized)
+        var cache = translationCache.get(sanitized, languages)
         if (cache != null) {
             return cache
         }
 
         return queue.withLock {
             // Check to see if the translation is already in the cache, if so return it.
-            cache = translationCache.get(sanitized)
+            cache = translationCache.get(sanitized, languages)
 
             if (cache != null) {
                 return cache!!
@@ -116,7 +117,7 @@ class TranslationViewModel(
                 attentionMask,
                 tokenizer.eosId,
                 tokenizer.padId,
-                numOfBeams
+                _numOfBeams
             )
             tokenizer.decode(tokenIds)
         }

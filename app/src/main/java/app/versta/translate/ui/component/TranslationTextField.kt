@@ -1,6 +1,5 @@
 package app.versta.translate.ui.component
 
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,7 +33,7 @@ fun TranslationTextField(
     onClear: () -> Unit,
     textTranslationViewModel: TextTranslationViewModel
 ) {
-    val input by textTranslationViewModel.sourceText.collectAsStateWithLifecycle()
+    val input by textTranslationViewModel.input.collectAsStateWithLifecycle()
 
     Box(
         modifier = Modifier
@@ -56,7 +55,7 @@ fun TranslationTextField(
                     .defaultMinSize(minHeight = 192.dp),
                 value = input,
                 onValueChange = {
-                    textTranslationViewModel.setSourceText(it)
+                    textTranslationViewModel.setInput(it)
                 },
                 onSubmit = {
                     onSubmit(input)

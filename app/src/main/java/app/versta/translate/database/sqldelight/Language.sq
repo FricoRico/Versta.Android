@@ -1,7 +1,10 @@
+import kotlin.Boolean;
+
 CREATE TABLE Language (
     id TEXT NOT NULL PRIMARY KEY,
     source TEXT NOT NULL,
-    target TEXT NOT NULL
+    target TEXT NOT NULL,
+    bidirectional INTEGER AS Boolean DEFAULT 0
 );
 
 CREATE INDEX languagePair ON Language(source, target);
@@ -30,17 +33,29 @@ SELECT * FROM Language WHERE source = :source;
 getByTarget:
 SELECT * FROM Language WHERE target = :target;
 
+getBySourceIncludingBidirecional:
+SELECT * FROM Language WHERE source = :source OR (target = :source AND bidirectional = 1);
+
 insertOrIgnore {
     INSERT OR IGNORE INTO Language (
         id,
         source,
-        target
+        target,
+        bidirectional
     ) VALUES (
         :id,
         :source,
-        :target
+        :target,
+        :bidirectional
     );
 }
+
+deleteById:
+DELETE FROM Language WHERE id = :id;
+
+deleteByIds:
+DELETE FROM Language WHERE id IN :ids;
+
 
 removeNotIn:
 DELETE FROM Language WHERE source NOT IN :source AND target NOT IN :target;

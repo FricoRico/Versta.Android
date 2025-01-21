@@ -3,4 +3,14 @@
     <string name="settings">Settings</string>
     <string name="back">Back</string>
     <string name="swap_languages">Swap languages</string>
+    <string name="close_sheet">Close sheet</string>
+    <string name="translator">Translator</string>
+    <string name="translate">Translate</string>
+    <string name="clear">Clear</string>
+    <string name="dictate">Dictate</string>
+    <string name="share">Share</string>
+    <string name="copy">Copy</string>
+    <string name="flag">%1$s flag</string>
+    <string name="target_languages_available">%1$s target languages available</string>
+    <string name="remove">Remove</string>
 </resources>

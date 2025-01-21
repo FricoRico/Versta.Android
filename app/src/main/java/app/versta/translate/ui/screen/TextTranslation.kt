@@ -1,20 +1,16 @@
 package app.versta.translate.ui.screen
 
 import android.content.Intent
-import android.widget.Toast
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -24,13 +20,11 @@ import androidx.compose.material.icons.outlined.MicNone
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
@@ -39,12 +33,14 @@ import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -63,8 +59,10 @@ import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.LanguageSelector
+import app.versta.translate.ui.component.ModalBottomSheetScaffold
 import app.versta.translate.ui.component.TextField
 import app.versta.translate.ui.component.TextFieldDefaults
+import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.TarExtractor
 import kotlinx.coroutines.CoroutineScope
@@ -84,49 +82,83 @@ fun TextTranslation(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
 
-    val source by textTranslationViewModel.sourceText.collectAsStateWithLifecycle("")
-    val sourceRomanizated by textTranslationViewModel.sourceTextRomanizated.collectAsStateWithLifecycle("")
-    val target by textTranslationViewModel.targetText.collectAsStateWithLifecycle("")
-    val targetRomanizated by textTranslationViewModel.targetTextRomanizated.collectAsStateWithLifecycle("")
+    var translateOnChange by remember { mutableStateOf(true) }
 
-    val translationScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    val input by textTranslationViewModel.input.collectAsStateWithLifecycle("")
+    val inputTransliteration by textTranslationViewModel.inputTransliteration.collectAsStateWithLifecycle(
+        ""
+    )
+    val translated by textTranslationViewModel.translated.collectAsStateWithLifecycle("")
+    val translatedTransliteration by textTranslationViewModel.translatedTransliteration.collectAsStateWithLifecycle(
+        ""
+    )
 
-    val drawerScope = rememberCoroutineScope()
-    val drawerState =
-        rememberStandardBottomSheetState(
+    val languages by translationViewModel.languages.collectAsStateWithLifecycle(null)
+
+    val sheetScope = rememberCoroutineScope()
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
             skipHiddenState = false,
-            initialValue = SheetValue.Expanded,
+            initialValue = SheetValue.Hidden,
             confirmValueChange = {
                 it != SheetValue.Hidden
             }
         )
-    val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = drawerState
     )
 
+    val translationScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
     fun translate(input: String) {
+        if (input.isEmpty()) {
+            return
+        }
+
+        sheetScope.launch {
+            focusManager.clearFocus()
+            scaffoldState.bottomSheetState.expand()
+        }
+
         translationScope.launch {
-            translationViewModel.translateAsFlow(input)
+            if (languages == null) return@launch
+
+            translationViewModel.translateAsFlow(input, languages!!)
                 .collect {
-                    textTranslationViewModel.setTargetText(it)
+                    textTranslationViewModel.setTranslation(it)
                 }
         }
     }
 
-    fun hideDrawer() {
-        drawerScope.launch {
-            drawerState.hide()
-        }
+    fun clearInput() {
+        textTranslationViewModel.clearInput()
     }
 
-    fun expandDrawer() {
-        drawerScope.launch {
-            focusManager.clearFocus()
-            drawerState.expand()
+    fun clearTranslation() {
+        sheetScope.launch {
+            scaffoldState.bottomSheetState.hide()
         }
+
+        textTranslationViewModel.clearTranslation()
     }
 
-    fun shareText(output: String) {
+    fun onClear() {
+        clearInput()
+        clearTranslation()
+    }
+
+    fun onSubmit(input: String) {
+        translate(input)
+    }
+
+    fun onSwapLanguages() {
+        textTranslationViewModel.setInput(translated)
+        clearTranslation()
+    }
+
+    fun onCopy(output: String) {
+        clipboardManager.setText(AnnotatedString(output))
+    }
+
+    fun onShare(output: String) {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, output)
@@ -135,15 +167,24 @@ fun TextTranslation(
         context.startActivity(chooser, null)
     }
 
-    if (source.isNotEmpty()) {
-        LaunchedEffect(Unit) {
-            expandDrawer()
-
-            translate(source)
-        }
+    LaunchedEffect(languages) {
+        clearTranslation()
     }
 
-    BottomSheetScaffold(
+    LaunchedEffect(input) {
+        if (!translateOnChange) {
+            return@LaunchedEffect
+        }
+
+        if (input.isEmpty()) {
+            return@LaunchedEffect
+        }
+
+        translateOnChange = false
+        translate(input)
+    }
+
+    ModalBottomSheetScaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 navigationIcon = {
@@ -155,26 +196,17 @@ fun TextTranslation(
                 },
                 title = {
                     Text(
-                        text = "Translator"
+                        text = stringResource(R.string.translator)
                     )
                 },
             )
         },
-        content = { innerPadding ->
-            val bottomPadding by animateDpAsState(
-                targetValue =
-                if (drawerState.targetValue != SheetValue.Hidden) (innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium)
-                else (WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + MaterialTheme.spacing.medium),
-                label = "drawerBottomPadding"
-            )
-
+        content = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = MaterialTheme.spacing.small)
-                    .padding(bottom = bottomPadding)
-                    .padding(horizontal = MaterialTheme.spacing.small)
+                    .padding(MaterialTheme.spacing.small)
             ) {
                 LanguageSelector(
                     modifier = Modifier
@@ -183,198 +215,227 @@ fun TextTranslation(
                         ),
                     languageViewModel = languageViewModel,
                     onLanguageSwap = {
-                        textTranslationViewModel.setSourceText(target)
-                        textTranslationViewModel.clearTargetText()
-
-                        hideDrawer()
-                    }
+                        onSwapLanguages()
+                    },
                 )
                 Column(
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    Column {
-                        TextField(
-                            placeholder = "Type something",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = MaterialTheme.spacing.small)
-                                .padding(horizontal = MaterialTheme.spacing.medium)
-                                .defaultMinSize(minHeight = 192.dp),
-                            value = source,
-                            onValueChange = {
-                                textTranslationViewModel.setSourceText(it)
-                            },
-                            onSubmit = {
-                                translate(source)
-                                expandDrawer()
-                            },
-                            colors = TextFieldDefaults.colorsTransparent()
-                        )
-
-                        if (sourceRomanizated.isNotEmpty()) {
-                            Text(
-                                text = sourceRomanizated,
-                                modifier = Modifier
-                                    .padding(MaterialTheme.spacing.medium),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                    TextTranslationInputField(
+                        input = input,
+                        transliteration = inputTransliteration,
+                        modifier = Modifier
+                            .padding(top = MaterialTheme.spacing.small)
+                            .padding(start = MaterialTheme.spacing.medium),
+                        onValueChange = {
+                            textTranslationViewModel.setInput(it)
+                        },
+                        onSubmit = {
+                            onSubmit(input)
                         }
-                    }
-                    Row(
+                    )
+
+                    TextTranslationInputButtonRow(
                         modifier = Modifier
                             .padding(horizontal = MaterialTheme.spacing.small)
-                            .padding(bottom = MaterialTheme.spacing.small)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
-                        ) {
-                            FilledIconButton(
-                                onClick = {
-                                    textTranslationViewModel.clearSourceText()
-                                    textTranslationViewModel.clearTargetText()
-                                    hideDrawer()
-                                },
-                                colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                    contentColor = MaterialTheme.colorScheme.onSurface,
-                                    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-                                    disabledContentColor = MaterialTheme.colorScheme.onSurface
-                                ),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Close,
-                                    contentDescription = "Clear"
-                                )
-                            }
-
-                            FilledIconButton(
-                                onClick = {},
-                                enabled = false,
-                                colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                    contentColor = MaterialTheme.colorScheme.onSurface,
-                                    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-                                    disabledContentColor = MaterialTheme.colorScheme.surfaceContainerHighest
-                                ),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.MicNone,
-                                    contentDescription = "Clear"
-                                )
-                            }
-                        }
-
-                        FilledIconButton(
-                            onClick = {
-                                translate(source)
-                                expandDrawer()
-                            },
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                                disabledContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                disabledContentColor = MaterialTheme.colorScheme.onPrimary
-                            ),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Translate,
-                                contentDescription = "Translate"
-                            )
-                        }
-                    }
+                            .padding(bottom = MaterialTheme.spacing.small),
+                        onTranslate = {
+                            onSubmit(input)
+                        },
+                        onClear = {
+                            onClear()
+                        },
+                    )
                 }
             }
         },
         scaffoldState = scaffoldState,
         sheetPeekHeight = BottomSheetDefaults.SheetPeekHeight + MaterialTheme.spacing.large,
         sheetContent = {
-            val availableHeightDp =
-                1f - (WindowInsets.statusBars.asPaddingValues()
-                    .calculateTopPadding() / LocalConfiguration.current.screenHeightDp.dp)
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(availableHeightDp)
                     .padding(MaterialTheme.spacing.small)
-                    .padding(vertical = MaterialTheme.spacing.medium)
+                    .padding(
+                        bottom =
+                        WindowInsets.navigationBars
+                            .asPaddingValues()
+                            .calculateBottomPadding()
+                    )
             ) {
-                Row(
+                TextTranslationOutput(
+                    translation = translated,
+                    transliteration = translatedTransliteration,
+                )
+
+                TextTranslationOutputButtonRow(
+                    onCopy = {
+                        onCopy(translated)
+                    },
+                    onShare = {
+                        onShare(translated)
+                    },
                     modifier = Modifier
                         .padding(horizontal = MaterialTheme.spacing.small)
-                        .padding(bottom = MaterialTheme.spacing.small)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(
-                        space = MaterialTheme.spacing.small,
-                        alignment = Alignment.End
-                    ),
-                ) {
-                    FilledIconButton(
-                        onClick = {
-                            clipboardManager.setText(AnnotatedString(target))
-                            Toast.makeText(context, "Text copied to clipboard", Toast.LENGTH_SHORT)
-                                .show()
-                        },
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            disabledContentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.ContentCopy,
-                            contentDescription = "Copy"
-                        )
-                    }
-
-                    FilledIconButton(
-                        onClick = {
-                            shareText(target)
-                        },
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            disabledContentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Share,
-                            contentDescription = "Share"
-                        )
-                    }
-                }
-
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
-//                    items(target.split("\n")) { line ->
-                    item {
-                        Text(
-                            text = target,
-                            modifier = Modifier
-                                .padding(MaterialTheme.spacing.large),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    item {
-                        Text(
-                            text = targetRomanizated,
-                            modifier = Modifier
-                                .padding(MaterialTheme.spacing.large),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
+                        .padding(bottom = MaterialTheme.spacing.small),
+                )
             }
         }
     )
+}
+
+@Composable
+fun TextTranslationInputField(
+    input: String,
+    transliteration: String,
+    onValueChange: (String) -> Unit = {},
+    onSubmit: (String) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+        modifier = modifier
+    ) {
+        TextField(
+            placeholder = "Type something",
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 192.dp),
+            value = input,
+            onValueChange = onValueChange,
+            onSubmit = { onSubmit(input) },
+            colors = TextFieldDefaults.colorsTransparent()
+        )
+
+        if (transliteration.isNotEmpty()) {
+            Text(
+                text = transliteration,
+                modifier = Modifier.padding(start = MaterialTheme.spacing.medium),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+}
+
+@Composable
+fun TextTranslationInputButtonRow(
+    onTranslate: () -> Unit,
+    onClear: () -> Unit,
+    onDictate: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(modifier),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
+        ) {
+            FilledIconButton(
+                onClick = onClear,
+                colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Close,
+                    contentDescription = stringResource(R.string.clear)
+                )
+            }
+
+            FilledIconButton(
+                onClick = {
+                    onDictate?.invoke()
+                },
+                enabled = onDictate != null,
+                colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.MicNone,
+                    contentDescription = stringResource(R.string.dictate)
+                )
+            }
+        }
+
+        FilledIconButton(
+            onClick = onTranslate,
+            colors = FilledIconButtonDefaults.primaryIconButtonColors(),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Translate,
+                contentDescription = stringResource(R.string.translate)
+            )
+        }
+    }
+}
+
+@Composable
+fun TextTranslationOutput(
+    translation: String,
+    transliteration: String,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(modifier)
+    ) {
+        item {
+            Text(
+                text = translation,
+                modifier = Modifier
+                    .padding(MaterialTheme.spacing.large),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+        item {
+            Text(
+                text = transliteration,
+                modifier = Modifier
+                    .padding(MaterialTheme.spacing.large),
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+}
+
+@Composable
+fun TextTranslationOutputButtonRow(
+    onCopy: () -> Unit,
+    onShare: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(modifier),
+        horizontalArrangement = Arrangement.spacedBy(
+            space = MaterialTheme.spacing.small,
+            alignment = Alignment.End
+        ),
+    ) {
+        FilledIconButton(
+            onClick = onCopy,
+            colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.ContentCopy,
+                contentDescription = stringResource(R.string.copy)
+            )
+        }
+
+        FilledIconButton(
+            onClick = onShare,
+            colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Share,
+                contentDescription = stringResource(R.string.share)
+            )
+        }
+    }
 }
 
 @Composable
@@ -387,7 +448,7 @@ fun TextTranslationPreview() {
         ),
         languageViewModel = LanguageViewModel(
             modelExtractor = TarExtractor(LocalContext.current),
-            languageDatabaseRepository = LanguageMemoryRepository(),
+            languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository()
         ),
         translationViewModel = TranslationViewModel(

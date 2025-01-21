@@ -1,7 +1,6 @@
 package app.versta.translate.ui.component
 
 import android.content.Context
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,22 +24,19 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.versta.translate.adapter.outbound.LanguageMemoryRepository
-import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.model.LanguageType
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.utils.TarExtractor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,8 +48,8 @@ fun LanguageSelectionDrawer(
     val drawerOpenedState = languageSelection.value != null
     val drawerState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    val sourceLanguages = languageViewModel.sourceLanguages.collectAsStateWithLifecycle(emptyList())
-    val targetLanguages = languageViewModel.targetLanguages.collectAsStateWithLifecycle(emptyList())
+    val sourceLanguages by languageViewModel.sourceLanguages.collectAsStateWithLifecycle(emptyList())
+    val targetLanguages by languageViewModel.targetLanguages.collectAsStateWithLifecycle(emptyList())
 
     val context = LocalContext.current
 
@@ -74,7 +70,7 @@ fun LanguageSelectionDrawer(
                     LanguageType.Source -> {
                         LanguageSelectionSourceLanguage(
                             context = context,
-                            languages = sourceLanguages.value,
+                            languages = sourceLanguages,
                             onClick = {
                                 languageViewModel.setSourceLanguage(it)
                                 languageViewModel.setLanguageSelectionState(null)
@@ -85,7 +81,7 @@ fun LanguageSelectionDrawer(
                     LanguageType.Target -> {
                         LanguageSelectionTargetLanguage(
                             context = context,
-                            languages = targetLanguages.value,
+                            languages = targetLanguages,
                             onClick = {
                                 languageViewModel.setTargetLanguage(it)
                                 languageViewModel.setLanguageSelectionState(null)

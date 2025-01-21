@@ -1,6 +1,6 @@
 import os
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 from pathlib import Path
 from typing import List
 
@@ -8,6 +8,19 @@ from .metadata import load_metadata_for_input_dirs, generate_metadata
 from .language import validate_translation_pairs, extract_unique_languages, update_metadata_file
 from .bundle_tar import bundle_files
 from .utils import copy_folders, remove_folder
+
+with open(Path(__file__).parent / ".." / "version.txt", "r") as version_file:
+    version = version_file.read().strip()
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise ArgumentTypeError('Boolean value expected.')
 
 def parse_args():
     parser = ArgumentParser(
@@ -37,10 +50,12 @@ def parse_args():
    )
 
     parser.add_argument(
-        "--translation_pairs",
-        action="store_true",
-        default=False,
-        help="Whether the languages are a pair, e.g. 'en-nl' and 'nl-en'."
+        "--bidirectional",
+        type=str2bool,
+        nargs='?',
+        const=True, 
+        default=True,
+        help="Whether the languages are a bidirectional pair, e.g. 'en-nl' and 'nl-en'."
         "A language pair allows for the translation model to be used in both directions easily."
         "This will default to True if not specified.",
     )
@@ -59,7 +74,7 @@ def parse_args():
 def main(
     input_dirs: List[Path],
     output_dir: Path,
-    translation_pairs: bool = True,
+    bidirectional: bool = True,
     keep_intermediates: bool = False
 ):
     """
@@ -75,7 +90,7 @@ def main(
     metadata = load_metadata_for_input_dirs(input_dirs)
 
     # Step 2: Validate the translation pairs
-    if translation_pairs:
+    if bidirectional:
         validate_translation_pairs(metadata)
 
     # Step 3: Extract the unique languages from the metadata
@@ -91,11 +106,11 @@ def main(
     copy_folders(input_dirs, intermediates_dir)
 
     # Step 5: Update the metadata files with the new file paths
-    for data in metadata:
-        update_metadata_file(intermediates_dir / data["directory"] / "metadata.json", data["directory"])
+    # for data in metadata:
+    #     update_metadata_file(intermediates_dir / data["directory"] / "metadata.json", data["directory"])
 
     # Step 6: Generate metadata for the model conversion process
-    generate_metadata(intermediates_dir, languages, metadata, translation_pairs)
+    generate_metadata(version, intermediates_dir, languages, metadata, bidirectional)
 
     # Step 7: Bundle the folders into a single .tar.gz file
     output_archive = bundle_output_dir / f"{"-".join(languages)}-bundle.tar.gz"
@@ -113,6 +128,6 @@ if __name__ == "__main__":
     main(
         input_dirs=args.input_dir,
         output_dir=args.output_dir,
-        translation_pairs=args.translation_pairs,
+        bidirectional=args.bidirectional,
         keep_intermediates=args.keep_intermediates,
     )

@@ -1,13 +1,13 @@
 package app.versta.translate.core.model
 
-import android.icu.text.Transliterator
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
-import app.versta.translate.adapter.outbound.RomanizationAdapter
+import app.versta.translate.adapter.outbound.TransliterationAdapter
 import app.versta.translate.core.entity.LanguagePair
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,41 +19,49 @@ class TextTranslationViewModel(
     private val _loadingProgress = MutableStateFlow<LoadingProgress>(LoadingProgress.Idle)
     val loadingProgress: StateFlow<LoadingProgress> = _loadingProgress.asStateFlow()
 
-    private val _sourceText = MutableStateFlow("")
-    val sourceText = _sourceText
+    private val _input = MutableStateFlow("")
+    val input = _input
 
-    private val _sourceTextRomanizated = MutableStateFlow("")
-    val sourceTextRomanizated = _sourceTextRomanizated
+    private val _inputTransliteration = MutableStateFlow("")
+    val inputTransliteration = _inputTransliteration
 
-    private val _translatedText = MutableStateFlow("")
-    val targetText = _translatedText
+    private val _translated = MutableStateFlow("")
+    val translated = _translated
 
-    private val _translatedTextRomanizated = MutableStateFlow("")
-    val targetTextRomanizated = _translatedTextRomanizated
+    private val _translatedTransliteration = MutableStateFlow("")
+    val translatedTransliteration = _translatedTransliteration
 
     private val languages = languagePreferenceRepository.getLanguagePair()
 
-    private var sourceTransliterator: RomanizationAdapter? = null
-    private var targetTransliterator: RomanizationAdapter? = null
+    private var _inputTransliterator: TransliterationAdapter? = null
+    private var _translationTransliterator: TransliterationAdapter? = null
 
-    fun setSourceText(text: String) {
-        _sourceText.value = text
-        _sourceTextRomanizated.value = sourceTransliterator?.transliterate(text) ?: ""
+    private val _transliterationScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+    fun setInput(text: String) {
+        _input.value = text
+
+        _transliterationScope.launch {
+            _inputTransliteration.value = _inputTransliterator?.transliterate(text) ?: ""
+        }
     }
 
-    fun clearSourceText() {
-        _sourceText.value = ""
-        _sourceTextRomanizated.value = ""
+    fun clearInput() {
+        _input.value = ""
+        _inputTransliteration.value = ""
     }
 
-    fun setTargetText(text: String) {
-        _translatedText.value = text
-        _translatedTextRomanizated.value = targetTransliterator?.transliterate(text) ?: ""
+    fun setTranslation(text: String) {
+        _translated.value = text
+
+        _transliterationScope.launch {
+            _translatedTransliteration.value = _translationTransliterator?.transliterate(text) ?: ""
+        }
     }
 
-    fun clearTargetText() {
-        _translatedText.value = ""
-        _translatedTextRomanizated.value = ""
+    fun clearTranslation() {
+        _translated.value = ""
+        _translatedTransliteration.value = ""
     }
 
     fun load(languages: LanguagePair) {
@@ -61,8 +69,9 @@ class TextTranslationViewModel(
             _loadingProgress.value = LoadingProgress.InProgress
 
             try {
-                sourceTransliterator = RomanizationAdapter(locale = languages.source.locale)
-                targetTransliterator = RomanizationAdapter(locale = languages.target.locale)
+                _inputTransliterator = TransliterationAdapter(locale = languages.source.locale)
+                _translationTransliterator =
+                    TransliterationAdapter(locale = languages.target.locale)
 
                 _loadingProgress.value = LoadingProgress.Completed
             } catch (e: Exception) {

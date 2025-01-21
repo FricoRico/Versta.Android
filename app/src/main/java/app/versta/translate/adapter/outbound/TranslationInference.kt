@@ -23,4 +23,6 @@ interface TranslationInference {
     ): Flow<LongArray>
 
     fun load(files: LanguageModelInferenceFiles)
+
+    fun close()
 }

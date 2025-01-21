@@ -1,9 +1,13 @@
 package app.versta.translate.core.entity
 
+import androidx.compose.ui.util.fastDistinctBy
 import app.versta.translate.bridge.inference.BeamSearch
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import kotlin.math.ln
 
-data class Beam(val sequence: LongArray, val score: Float) {
+data class Beam(val id: Int, val sequence: LongArray, val score: Float) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -26,18 +30,18 @@ data class Beam(val sequence: LongArray, val score: Float) {
 class BeamSearch(
     size: Int,
     private val padId: Long,
-    private val eosId: Long
+    private val eosId: Long,
 ) {
     private var _beams: List<Beam> = List(size) {
-        Beam(longArrayOf(padId), 1f)
+        Beam(it, longArrayOf(padId), -1e-9f)
     }
 
-    fun last(): LongArray {
-        return _beams.map { it.sequence.last() }.toLongArray()
+    fun ids(): IntArray {
+        return _beams.map { it.id }.toIntArray()
     }
 
-    fun lastTokenInBeam(beamIndex: Int): Long {
-        return _beams[beamIndex].sequence.last()
+    fun lastTokens(): Array<LongArray> {
+        return _beams.map { longArrayOf(it.sequence.last()) }.toTypedArray()
     }
 
     fun complete(): Boolean {
@@ -48,22 +52,54 @@ class BeamSearch(
         return _beams.maxByOrNull { it.score }?.sequence ?: longArrayOf()
     }
 
-    fun search(logits: DecoderLogits, beamsSize: Int) {
-        var newBeams = arrayOf<Beam>()
+    fun search(logits: DecoderLogits, size: Int) {
+        val beams = mutableListOf<Beam>()
+
         for (i in _beams.indices) {
-            // Retrieve top-k tokens for each beam independently
-            val topKIndices = BeamSearch.topKIndices(logits[i][0], 8)
+            val probabilities = BeamSearch.softmax(logits[i].last())
+            val indices = BeamSearch.minPIndices(probabilities, 1e-4f)
 
-            // Expand each beam with top-k tokens
-            for (token in topKIndices) {
-                val newSeq = _beams[i].sequence + token.toLong()
-                val logitValue = logits[i][0][token].coerceAtLeast(1e-9f)
-                val newScore = _beams[i].score + ln(logitValue)
+            for (token in indices) {
+                val sequence = _beams[i].sequence + token.toLong()
+                val logit = probabilities[token].coerceAtLeast(-1e-9f)
+                val score = _beams[i].score + ln(logit)
 
-                newBeams = newBeams.plus(Beam(newSeq, newScore))
+                beams.add(Beam(i, sequence, score))
             }
         }
 
-        _beams = newBeams.sortedByDescending { it.score }.take(beamsSize).toMutableList()
+        _beams = beams.fastDistinctBy { it.hashCode() }.sortedByDescending { it.score }.take(size)
+    }
+
+    fun transposeCache(shape: LongArray, buffer: FloatBuffer, count: Int): FloatBuffer {
+        val ids = _beams.map { it.id }.toIntArray()
+
+        val batches = shape.first().toInt()
+        val chunks = (count / batches)
+
+        val cached = FloatArray(count)
+        buffer.rewind()
+        buffer.get(cached)
+
+        val transposed = FloatArray(count)
+
+        for (index in ids.indices) {
+            val target = ids[index]
+
+            val source = target * chunks
+            val destination = index * chunks
+
+            System.arraycopy(cached, source, transposed, destination, chunks)
+        }
+
+        val byteBuffer = ByteBuffer
+            .allocateDirect(count * 4)
+            .order(ByteOrder.nativeOrder())
+
+        val floatBuffer = byteBuffer.asFloatBuffer()
+        floatBuffer.put(transposed)
+        floatBuffer.rewind()
+
+        return floatBuffer
     }
 }

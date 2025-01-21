@@ -17,7 +17,7 @@ sqldelight {
 
 android {
     namespace = "app.versta.translate"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "app.versta.translate"
@@ -39,6 +39,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
+        }
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -55,8 +59,6 @@ android {
         kotlinCompilerExtensionVersion = "1.5.1"
     }
     packaging {
-        resources.excludes.add("META-INF/*")
-
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
@@ -101,6 +103,7 @@ dependencies {
     implementation(libs.appache.commons.compress)
     implementation(libs.kotlinx.serialization)
     implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.lucene.analyzers.kuromoji)
     implementation(libs.material.icons)
     implementation(libs.material.icons.extended)
     implementation(libs.mlkit.text.recognition.latin)
@@ -109,7 +112,6 @@ dependencies {
     implementation(libs.mlkit.text.recognition.japanese)
     implementation(libs.mlkit.text.recognition.korean)
     implementation(libs.navigation.compose)
-    implementation(libs.nicolas.raoul.jakaroma)
     implementation(libs.sqldelight.android)
     implementation(libs.sqldelight.coroutines)
 

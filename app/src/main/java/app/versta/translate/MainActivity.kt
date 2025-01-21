@@ -1,5 +1,7 @@
 package app.versta.translate
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -7,18 +9,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.ui.Modifier
-import app.versta.translate.ui.screen.Camera
-import app.versta.translate.ui.theme.TranslateTheme
-import android.Manifest
-import android.content.pm.PackageManager
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.core.content.ContextCompat
 import app.versta.translate.core.model.LanguageViewModel
@@ -26,10 +24,12 @@ import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.TextRecognitionViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
-import app.versta.translate.utils.FilePicker
 import app.versta.translate.ui.component.LanguageSelectionDrawer
 import app.versta.translate.ui.component.Router
 import app.versta.translate.ui.component.TranslatorLoadingProgressDialog
+import app.versta.translate.ui.screen.Camera
+import app.versta.translate.ui.theme.TranslateTheme
+import app.versta.translate.utils.FilePicker
 import app.versta.translate.utils.viewModelFactory
 
 open class MainActivity : ComponentActivity() {
@@ -42,7 +42,7 @@ open class MainActivity : ComponentActivity() {
             viewModelFactory {
                 LanguageViewModel(
                     modelExtractor = MainApplication.module.extractor,
-                    languageDatabaseRepository = MainApplication.module.languageRepository,
+                    languageRepository = MainApplication.module.languageRepository,
                     languagePreferenceRepository = MainApplication.module.languagePreferenceRepository
                 )
             }

@@ -6,6 +6,7 @@ import java.util.Locale
 
 data class Language(val locale: Locale) {
     val name: String = locale.displayLanguage
+    val isoCode: String = locale.language
 
     fun getFlagDrawable(context: Context): Int {
         return context.resources.getIdentifier(locale.language, "drawable", context.packageName)

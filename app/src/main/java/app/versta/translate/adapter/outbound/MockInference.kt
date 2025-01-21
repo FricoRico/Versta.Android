@@ -30,4 +30,8 @@ class MockInference: TranslationInference {
     override fun load(files: LanguageModelInferenceFiles) {
         return
     }
+
+    override fun close() {
+        return
+    }
 }

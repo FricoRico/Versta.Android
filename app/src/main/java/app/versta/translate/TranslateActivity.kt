@@ -12,7 +12,7 @@ class TranslateActivity : MainActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         if (intent.action == Intent.ACTION_PROCESS_TEXT) {
             val selectedText = intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT) ?: ""
-            textTranslationViewModel.setSourceText(selectedText)
+            textTranslationViewModel.setInput(selectedText)
         }
 
         super.onCreate(savedInstanceState)

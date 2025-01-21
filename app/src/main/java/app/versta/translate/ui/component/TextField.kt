@@ -28,8 +28,8 @@ object TextFieldDefaults {
         cursorColor: Color = MaterialTheme.colorScheme.primary,
         unfocusedLabelColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
         focusedLabelColor: Color = MaterialTheme.colorScheme.primary,
-        focusedPlaceholderColor: Color = MaterialTheme.colorScheme.onSurface.lighten(0.2f),
-        unfocusedPlaceholderColor: Color = MaterialTheme.colorScheme.onSurface.lighten(0.2f),
+        focusedPlaceholderColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.lighten(0.4f),
+        unfocusedPlaceholderColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.lighten(0.4f),
     ) = MaterialTextFieldDefaults.colors(
         unfocusedContainerColor = unfocusedContainerColor,
         focusedContainerColor = focusedContainerColor,
@@ -55,8 +55,8 @@ object TextFieldDefaults {
         cursorColor: Color = MaterialTheme.colorScheme.onSurface,
         unfocusedLabelColor: Color = MaterialTheme.colorScheme.surfaceBright,
         focusedLabelColor: Color = MaterialTheme.colorScheme.primary,
-        focusedPlaceholderColor: Color = MaterialTheme.colorScheme.onSurface.lighten(0.2f),
-        unfocusedPlaceholderColor: Color = MaterialTheme.colorScheme.onSurface.lighten(0.2f),
+        focusedPlaceholderColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.lighten(0.4f),
+        unfocusedPlaceholderColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.lighten(0.4f),
     ) = colors(
         unfocusedContainerColor = unfocusedContainerColor,
         focusedContainerColor = focusedContainerColor,

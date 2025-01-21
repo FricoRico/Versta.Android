@@ -1,17 +1,19 @@
 package app.versta.translate.adapter.outbound
 
+import android.util.Log
+import app.versta.translate.core.entity.BundleMetadata
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageMetadata
 import app.versta.translate.core.entity.LanguageModelFiles
-import app.versta.translate.core.entity.LanguageModelInferenceFiles
-import app.versta.translate.core.entity.LanguageModelTokenizerFiles
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.ModelMetadata
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.executeAsListFlow
 import kotlinx.coroutines.flow.map
 import okio.Path.Companion.toPath
+import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.deleteRecursively
 import java.app.versta.translate.database.sqldelight.Language as LanguageDatabaseModel
 import java.app.versta.translate.database.sqldelight.LanguageModel as LanguageModelDatabaseModel
 
@@ -21,41 +23,42 @@ class LanguageDatabaseRepository(
     /**
      * Gets the languages available in the repository.
      */
-    override fun getLanguages() = database.languages.getAll().executeAsListFlow().map { results ->
-        results.map { mapLanguageDatabaseModelToLanguagePair(it) }
-    }
+    override fun getLanguages() = database.languages.getAll().executeAsListFlow()
+        .map { it.map { language -> mapLanguageDatabaseModelToLanguagePair(language) } }
 
     /**
      * Gets the source languages available in the repository.
      */
-    override fun getSourceLanguages() =
-        database.languages.getAllSourceLanguages().executeAsListFlow().map { results ->
-            results.map { mapSingleLanguageDatabaseModelToLanguage(it) }
-        }
+    override fun getSourceLanguages() = database.languages.getAllSourceLanguages().executeAsListFlow()
+        .map { it.map { mapSingleLanguageDatabaseModelToLanguage(it) } }
 
     /**
      * Gets the target languages for a given source language.
      */
     override fun getTargetLanguagesBySource(sourceLanguage: Language) =
-            database.languages.getAllBySourceLanguage(sourceLanguage.locale.language)
-                .executeAsListFlow().map { results ->
-                results.map { mapSingleLanguageDatabaseModelToLanguage(it) }
-            }
+        database.languages.getAllBySourceLanguage(sourceLanguage.locale.language).executeAsListFlow()
+            .map { it.map { language -> mapSingleLanguageDatabaseModelToLanguage(language) } }
 
     /**
      * Gets the language model files for a given language pair.
      */
     override fun getLanguageModel(languagePair: LanguagePair) =
-        database.languageModels.getAllByLanguageId(languagePair.id).executeAsListFlow().map { results ->
-            results.firstOrNull()?.let { mapLanguageModelDatabaseModelToLanguageModelFiles(it) }
-        }
+        mapLanguageModelDatabaseModelToLanguageModelFiles(
+            database.languageModels.getAllByLanguageId(
+                languagePair.id
+            ).executeAsOne()
+        )
 
     /**
      * Inserts a [LanguageMetadata] into the repository, ignoring if it already exists.
-     * @param metadata The metadata to insert.
+     * @param bundleMetadata The metadata of the bundle containing the language model.
+     * @param languageMetadata The metadata of the language model to insert.
      */
-    override fun insertLanguageOrIgnore(metadata: LanguageMetadata) {
-        val languageModel = mapLanguageMetadataToLanguageDatabaseModel(metadata)
+    override fun insertLanguageOrIgnore(
+        bundleMetadata: BundleMetadata, languageMetadata: LanguageMetadata
+    ) {
+        val languageModel =
+            mapLanguageMetadataToLanguageDatabaseModel(bundleMetadata, languageMetadata)
         insertLanguageDatabaseModelOrIgnore(data = languageModel)
     }
 
@@ -64,7 +67,7 @@ class LanguageDatabaseRepository(
      * @param metadata The metadata to insert or update.
      */
     override fun upsertLanguageModel(metadata: LanguageMetadata) {
-        val languageModel = mapLanguageMetadataToLanguageModelDatabaseModel(metadata)
+        val languageModel = mapLanguageMetadataToLanguageModelDatabaseModel(data = metadata)
         upsertLanguageModelDatabaseModel(data = languageModel)
     }
 
@@ -74,11 +77,48 @@ class LanguageDatabaseRepository(
      */
     override fun upsertLanguageModels(metadata: ModelMetadata) {
         database.languages.transaction {
-            metadata.languageMetadata.forEach { metadata ->
-                insertLanguageOrIgnore(metadata)
-                upsertLanguageModel(metadata)
+            metadata.languageMetadata.forEach {
+                insertLanguageOrIgnore(
+                    bundleMetadata = metadata.bundleMetadata, languageMetadata = it
+                )
+                upsertLanguageModel(metadata = it)
             }
         }
+    }
+
+    /**
+     * Deletes the language models in the repository by the source, including all related models.
+     * @param language The language to delete.
+     */
+    @OptIn(ExperimentalPathApi::class)
+    override fun deleteLanguageModelsBySourceLanguage(language: Language): List<LanguagePair> {
+        val languagePairs =
+            database.languages.getBySourceIncludingBidirecional(source = language.isoCode)
+                .executeAsList().map { mapLanguageDatabaseModelToLanguagePair(it) }
+        val languageIds = languagePairs.map { it.id }
+
+        database.languageModels.getAllByLanguageIds(languageIds = languageIds).executeAsList()
+            .map { it.path.toPath().toNioPath() }.distinct()
+            .forEach { it.deleteRecursively() }
+
+        database.languages.deleteByIds(ids = languageIds)
+
+        return languagePairs
+    }
+
+    /**
+     * Deletes the language models in the repository.
+     * @param languagePair The language pair to delete.
+     */
+    @OptIn(ExperimentalPathApi::class)
+    override fun deleteLanguageModel(languagePair: LanguagePair): LanguagePair {
+        database.languageModels.getAllByLanguageId(languageId = languagePair.id).executeAsList()
+            .map { it.path.toPath().toNioPath().parent }.distinct()
+            .forEach { it.deleteRecursively() }
+
+        database.languages.deleteById(id = languagePair.id)
+
+        return languagePair
     }
 
     /**
@@ -90,6 +130,7 @@ class LanguageDatabaseRepository(
             id = data.id,
             source = data.source,
             target = data.target,
+            bidirectional = data.bidirectional
         )
     }
 
@@ -103,23 +144,29 @@ class LanguageDatabaseRepository(
             baseModel = data.baseModel,
             architectures = data.architectures,
             path = data.path,
-            files = data.files
+            version = data.version,
         )
     }
 
     /**
      * Maps a [LanguageMetadata] to a [LanguageDatabaseModel].
-     * @param data The language metadata to map.
+     * @param languageMetadata The language metadata to map.
      */
-    private fun mapLanguageMetadataToLanguageDatabaseModel(data: LanguageMetadata): LanguageDatabaseModel {
-        val source = Language.fromIsoCode(data.sourceLanguage)
-        val target = Language.fromIsoCode(data.targetLanguage)
+    private fun mapLanguageMetadataToLanguageDatabaseModel(
+        bundleMetadata: BundleMetadata, languageMetadata: LanguageMetadata
+    ): LanguageDatabaseModel {
+        val source = Language.fromIsoCode(languageMetadata.sourceLanguage)
+        val target = Language.fromIsoCode(languageMetadata.targetLanguage)
+        val pair = LanguagePair(
+            source = source,
+            target = target,
+        )
 
-        return mapLanguagePairToLanguageDatabaseModel(
-            data = LanguagePair(
-                source = source,
-                target = target
-            )
+        return LanguageDatabaseModel(
+            id = pair.id,
+            source = source.locale.language,
+            target = target.locale.language,
+            bidirectional = bundleMetadata.bidirectional
         )
     }
 
@@ -132,7 +179,7 @@ class LanguageDatabaseRepository(
         val target = Language.fromIsoCode(data.targetLanguage)
         val pair = LanguagePair(
             source = source,
-            target = target
+            target = target,
         )
 
         return LanguageModelDatabaseModel(
@@ -140,39 +187,19 @@ class LanguageDatabaseRepository(
             baseModel = data.baseModel,
             architectures = data.architectures.map { it.value },
             path = data.root?.absolutePathString() ?: "",
-            files = data.files
+            version = data.version,
         )
     }
 
-    private fun mapLanguageModelDatabaseModelToLanguageModelFiles(data: LanguageModelDatabaseModel): LanguageModelFiles {
+    private fun mapLanguageModelDatabaseModelToLanguageModelFiles(data: LanguageModelDatabaseModel): LanguageModelFiles? {
         val path = data.path.toPath().toNioPath()
 
-        return LanguageModelFiles(
-            path = path,
-            tokenizer = LanguageModelTokenizerFiles(
-                config = path.resolve(data.files["tokenizer"]?.get("config") ?: ""),
-                sourceVocabulary = path.resolve(data.files["tokenizer"]?.get("vocabulary_optimized") ?: ""),
-                targetVocabulary = null, // TODO: Target vocabulary not supported right now
-                source = path.resolve(data.files["tokenizer"]?.get("source") ?: ""),
-                target = path.resolve(data.files["tokenizer"]?.get("target") ?: "")
-            ),
-            inference = LanguageModelInferenceFiles(
-                encoder = path.resolve(data.files["inference"]?.get("encoder") ?: ""),
-                decoder = path.resolve(data.files["inference"]?.get("decoder") ?: "")
-            )
-        )
-    }
-
-    /**
-     * Maps a [LanguagePair] to a [LanguageDatabaseModel].
-     * @param data The language pair to map.
-     */
-    private fun mapLanguagePairToLanguageDatabaseModel(data: LanguagePair): LanguageDatabaseModel {
-        return LanguageDatabaseModel(
-            id = data.id,
-            source = data.source.locale.language,
-            target = data.target.locale.language
-        )
+        try {
+            return LanguageModelFiles.load(path = path)
+        } catch (e: Exception) {
+            Log.e("LanguageDatabaseRepository", "Failed to load language model files", e)
+            return null
+        }
     }
 
     /**
@@ -192,8 +219,7 @@ class LanguageDatabaseRepository(
         val target = Language.fromIsoCode(data.target)
 
         return LanguagePair(
-            source = source,
-            target = target
+            source = source, target = target
         )
     }
 }

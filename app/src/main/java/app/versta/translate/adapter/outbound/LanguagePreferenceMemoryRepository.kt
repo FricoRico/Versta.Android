@@ -49,10 +49,11 @@ class LanguagePreferenceMemoryRepository : LanguagePreferenceRepository {
      */
     override fun getLanguagePair(): Flow<LanguagePair?> {
         if (_sourceLanguage != null && _targetLanguage != null) {
-            return flowOf(LanguagePair(
-                source = _sourceLanguage!!,
-                target = _targetLanguage!!
-            ))
+            return flowOf(
+                LanguagePair(
+                    source = _sourceLanguage!!, target = _targetLanguage!!
+                )
+            )
         }
 
         return flowOf(null)
@@ -74,5 +75,15 @@ class LanguagePreferenceMemoryRepository : LanguagePreferenceRepository {
      */
     override suspend fun clearTargetLanguage() {
         _targetLanguage = null
+    }
+
+    /**
+     * Clears the language selection if the language pair is the same as the current one.
+     */
+    override suspend fun clearLanguageSelectionForPair(languagePair: LanguagePair) {
+        if (_sourceLanguage == languagePair.source || _targetLanguage == languagePair.target || _sourceLanguage == languagePair.source) {
+            _sourceLanguage = null
+            _targetLanguage = null
+        }
     }
 }

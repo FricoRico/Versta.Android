@@ -5,12 +5,16 @@ import ai.onnxruntime.OnnxTensorLike
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.TensorInfo
+import android.util.Log
+import app.versta.translate.bridge.inference.BeamSearch
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 // Shape: [batch_size, sequence_length, vocab_size]
 internal typealias DecoderLogits = Array<Array<FloatArray>>
 
 // Shape: [last_key_values, hidden_states]
-internal typealias DecoderCache = Map<String, OnnxTensorLike>
+internal typealias DecoderCache = Map<String, OnnxTensor>
 
 class DecoderInput(
     private val ortEnvironment: OrtEnvironment,
@@ -27,8 +31,11 @@ class DecoderInput(
 
     fun get(
         inputIds: Array<LongArray>,
-        cache: DecoderCache?
+        cache: DecoderCache? = null
     ): Map<String, OnnxTensorLike?> {
+        _inputIdsTensor?.close()
+        _useCacheTensor?.close()
+
         _inputIdsTensor = OnnxTensor.createTensor(ortEnvironment, inputIds)
         _useCacheTensor =
             OnnxTensor.createTensor(ortEnvironment, booleanArrayOf(cache?.isNotEmpty() ?: false))
@@ -57,9 +64,10 @@ class DecoderInput(
 
 class DecoderOutput {
     private val _cacheRegex = "present.\\d".toRegex()
-    private val _cache = mutableMapOf<String, OnnxTensorLike>()
+    private val _cache = mutableMapOf<String, OnnxTensor>()
     val cache: DecoderCache
         get() = _cache
+
 
     @Suppress("UNCHECKED_CAST")
     fun parse(outputs: OrtSession.Result): DecoderLogits? {
@@ -69,6 +77,10 @@ class DecoderOutput {
         updateCache(outputs)
 
         return logits
+    }
+
+    fun close() {
+        _cache.values.forEach { it.close() }
     }
 
     private fun updateCache(outputs: OrtSession.Result) {
@@ -81,6 +93,7 @@ class DecoderOutput {
                 val info = output.value.info as TensorInfo
 
                 if (info.shape[2] >= 512) {
+                    close()
                     _cache.clear()
                     continue
                 }
@@ -92,7 +105,8 @@ class DecoderOutput {
 
             val key = output.key.replace("present", "past_key_values")
             if (output.value is OnnxTensorLike) {
-                _cache[key] = output.value as OnnxTensorLike
+                _cache[key]?.close()
+                _cache[key] = output.value as OnnxTensor
             }
         }
     }

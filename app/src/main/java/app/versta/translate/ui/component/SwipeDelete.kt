@@ -21,57 +21,55 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import app.versta.translate.R
 import app.versta.translate.ui.theme.spacing
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
-fun <T> SwipeDelete(
-    item: T,
-    onDelete: (T) -> Unit,
-    animationDuration: Int = 500,
-    content: @Composable (T) -> Unit
+fun SwipeDelete(
+    onSwipeToDeleteRequested: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
 ) {
-    var isRemoved by remember {
-        mutableStateOf(false)
-    }
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+
     val state = rememberSwipeToDismissBoxState(
+        positionalThreshold = {
+            with(density) {
+                configuration.screenWidthDp.dp.toPx() / 2f
+            }
+        },
         confirmValueChange = { value ->
             if (value == SwipeToDismissBoxValue.EndToStart) {
-                isRemoved = true
-                true
-            } else {
-                false
+                onSwipeToDeleteRequested()
             }
+
+            false
         }
     )
 
-    LaunchedEffect(key1 = isRemoved) {
-        if(isRemoved) {
-            delay(animationDuration.toLong())
-            onDelete(item)
-        }
-    }
-
-    AnimatedVisibility(
-        visible = !isRemoved,
-        exit = shrinkVertically(
-            animationSpec = tween(durationMillis = animationDuration),
-            shrinkTowards = Alignment.Top
-        ) + fadeOut()
-    ) {
-        SwipeToDismissBox (
-            state = state,
-            backgroundContent = {
-                DeleteBackground(swipeDismissState = state)
-            },
-            content = { content(item) },
-            enableDismissFromStartToEnd = false
-        )
-    }
+    SwipeToDismissBox(
+        state = state,
+        backgroundContent = {
+            DeleteBackground(swipeDismissState = state)
+        },
+        content = { content() },
+        enableDismissFromStartToEnd = false,
+        modifier = modifier
+    )
 }
 
 @Composable
@@ -79,7 +77,7 @@ fun DeleteBackground(
     swipeDismissState: SwipeToDismissBoxState
 ) {
     val color = if (swipeDismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
-        Color.Red
+        MaterialTheme.colorScheme.error
     } else Color.Transparent
 
     Box(
@@ -91,8 +89,8 @@ fun DeleteBackground(
     ) {
         Icon(
             imageVector = Icons.Outlined.Delete,
-            contentDescription = "Remove",
-            tint = Color.White
+            contentDescription = stringResource(R.string.remove),
+            tint = MaterialTheme.colorScheme.onError,
         )
     }
 }

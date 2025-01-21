@@ -9,7 +9,7 @@ enum class Screens (
     private val args: List<String> = emptyList(),
     val statusBarStyle: StatusBarStyle = StatusBarStyle.Light
 ) {
-    Home,
+    Home(statusBarStyle = StatusBarStyle.Dark),
     Camera,
     Settings(statusBarStyle = StatusBarStyle.Dark),
     LanguageSettings(statusBarStyle = StatusBarStyle.Dark),

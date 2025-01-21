@@ -1,8 +1,6 @@
 package app.versta.translate.ui.component
 
 import android.content.Context
-import android.graphics.drawable.shapes.Shape
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -30,12 +28,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -60,11 +57,10 @@ fun LanguageSelector(
 ) {
     val context = LocalContext.current
 
-    val sourceLanguage = languageViewModel.sourceLanguage.collectAsStateWithLifecycle(null)
-    val targetLanguage = languageViewModel.targetLanguage.collectAsStateWithLifecycle(null)
+    val sourceLanguage by languageViewModel.sourceLanguage.collectAsStateWithLifecycle(null)
+    val targetLanguage by languageViewModel.targetLanguage.collectAsStateWithLifecycle(null)
 
-    val canSwapLanguages = languageViewModel.canSwapLanguages.collectAsStateWithLifecycle(false)
-
+    val canSwapLanguages by languageViewModel.canSwapLanguages.collectAsStateWithLifecycle(false)
 
     Box(
         modifier = Modifier
@@ -81,7 +77,7 @@ fun LanguageSelector(
         ) {
             LanguageSelectorButton(
                 context = context,
-                language = sourceLanguage.value,
+                language = sourceLanguage,
                 text = "Select language",
                 placeholder = "From",
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Source) },
@@ -102,7 +98,7 @@ fun LanguageSelector(
 
             LanguageSelectorButton(
                 context = context,
-                language = targetLanguage.value,
+                language = targetLanguage,
                 text = "Select language",
                 placeholder = "To",
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Target) },
@@ -133,7 +129,7 @@ fun LanguageSelector(
                 color = MaterialTheme.colorScheme.surface,
            )
             FilledIconButton(
-                enabled = canSwapLanguages.value,
+                enabled = canSwapLanguages,
                 onClick = {
                     languageViewModel.swapLanguages().invokeOnCompletion {
                         onLanguageSwap()
@@ -224,7 +220,7 @@ fun LanguageSelectorPreview() {
     return LanguageSelector(
         languageViewModel = LanguageViewModel(
             modelExtractor = TarExtractor(LocalContext.current),
-            languageDatabaseRepository = LanguageMemoryRepository(),
+            languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
         ),
     )

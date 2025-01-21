@@ -2,12 +2,12 @@ package app.versta.translate.adapter.outbound
 
 import java.util.Locale
 
-interface RomanizationTransliterator {
+interface Transliteration {
     fun transliterate(text: String): String
 }
 
-class RomanizationAdapter(locale: Locale) {
-    private var _transliterator: RomanizationTransliterator? = null
+class TransliterationAdapter(locale: Locale) {
+    private var _transliterator: Transliteration? = null
     private val _latinRegex = Regex("^[\\p{IsLatin}\\p{Punct}\\p{Digit}\\s]+$")
 
     fun transliterate(text: String): String {

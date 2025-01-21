@@ -11,6 +11,8 @@ def convert_model_to_onnx(model_name: str, export_dir: Path):
     """
     task = "text2text-generation-with-past"
 
+    print(f"Exporting {model_name} to ONNX format...")
+
     main_export(
         model_name,
         output=export_dir,
@@ -18,4 +20,5 @@ def convert_model_to_onnx(model_name: str, export_dir: Path):
         framework="pt",
         for_ort=True,
         opset=20,
+        library_name="transformers",
     )

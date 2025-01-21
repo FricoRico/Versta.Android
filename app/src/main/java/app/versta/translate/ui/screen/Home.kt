@@ -2,13 +2,16 @@ package app.versta.translate.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.MicNone
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,11 +34,13 @@ import app.versta.translate.ui.component.ButtonCard
 import app.versta.translate.ui.component.ButtonCardDefaults
 import app.versta.translate.ui.component.LanguageSelector
 import app.versta.translate.ui.component.ScaffoldLargeHeader
+import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.TranslationTextField
 import app.versta.translate.ui.component.TrialLicenseCard
 import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.TarExtractor
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Home(
     navController: NavHostController,
@@ -43,12 +48,10 @@ fun Home(
     languageViewModel: LanguageViewModel,
     textTranslationViewModel: TextTranslationViewModel
 ) {
-    val scrollBehavior = rememberScrollState()
-
     return ScaffoldLargeHeader(
         title = {
             Text(
-                text = "Welcome back",
+                text = stringResource(R.string.app_name),
             )
         },
         actions = {
@@ -58,49 +61,60 @@ fun Home(
                 Icon(Icons.Outlined.Settings, stringResource(R.string.settings))
             }
         },
-        content = { _, scrollConnection ->
-            Column(
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarPrimaryColor(),
+        content = { insets, scrollConnection ->
+            LazyColumn(
                 modifier = Modifier
-                    .verticalScroll(scrollBehavior)
                     .nestedScroll(scrollConnection)
-                    .padding(top = MaterialTheme.spacing.small)
-                    .padding(horizontal = MaterialTheme.spacing.small)
+                    .padding(top = MaterialTheme.spacing.small + MaterialTheme.spacing.extraSmall)
+                    .padding(horizontal = MaterialTheme.spacing.small),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+                contentPadding = PaddingValues(bottom = insets.asPaddingValues().calculateBottomPadding() + MaterialTheme.spacing.small)
             ) {
-                LanguageSelector(languageViewModel = languageViewModel)
+                item {
+                    LanguageSelector(languageViewModel = languageViewModel)
+                }
 
-                TranslationTextField(
-                    textTranslationViewModel = textTranslationViewModel,
-                    onSubmit = {
-                        navController.navigate(Screens.TextTranslation())
-                    },
-                    onClear = {
-                        textTranslationViewModel.clearSourceText()
-                        textTranslationViewModel.clearTargetText()
-                    }
-                )
+                item {
+                    TranslationTextField(
+                        textTranslationViewModel = textTranslationViewModel,
+                        onSubmit = {
+                            navController.navigate(Screens.TextTranslation())
+                        },
+                        onClear = {
+                            textTranslationViewModel.clearInput()
+                            textTranslationViewModel.clearTranslation()
+                        }
+                    )
+                }
 
-                TrialLicenseCard(
-                    licenseViewModel = licenseViewModel,
-                )
+                item {
+                    TrialLicenseCard(
+                        licenseViewModel = licenseViewModel,
+                    )
+                }
 
-                ButtonCard(
-                    onClick = {
-                        navController.navigate(Screens.Camera())
-                    },
-                    title = "Vision",
-                    subtitle = "Use your camera to translate",
-                    icon = Icons.Outlined.CameraAlt,
-                    colors = ButtonCardDefaults.colorsPrimary(),
-                )
+                item {
+                    ButtonCard(
+                        onClick = {
+                            navController.navigate(Screens.Camera())
+                        },
+                        title = "Vision",
+                        subtitle = "Use your camera to translate",
+                        icon = Icons.Outlined.CameraAlt,
+                        colors = ButtonCardDefaults.colorsPrimary(),
+                    )
+                }
 
-                ButtonCard(
-                    onClick = { /*TODO*/ },
-                    title = "Voice",
-                    subtitle = "Translate a conversation",
-                    icon = Icons.Outlined.MicNone,
-                    colors = ButtonCardDefaults.colorsSecondary(),
-                )
+                item {
+                    ButtonCard(
+                        onClick = { /*TODO*/ },
+                        title = "Voice",
+                        subtitle = "Translate a conversation",
+                        icon = Icons.Outlined.MicNone,
+                        colors = ButtonCardDefaults.colorsSecondary(),
+                    )
+                }
             }
         }
     )
@@ -117,7 +131,7 @@ private fun HomePreview() {
         ),
         languageViewModel = LanguageViewModel(
             modelExtractor = TarExtractor(LocalContext.current),
-            languageDatabaseRepository = LanguageMemoryRepository(),
+            languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository()
         )
     )

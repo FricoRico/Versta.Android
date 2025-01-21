@@ -41,4 +41,9 @@ interface LanguagePreferenceRepository {
      * Clears the target language in the data store.
      */
     suspend fun clearTargetLanguage()
+
+    /**
+     * Clears the language selection if the language pair is the same as the current one.
+     */
+    suspend fun clearLanguageSelectionForPair(languagePair: LanguagePair)
 }

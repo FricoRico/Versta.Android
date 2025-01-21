@@ -20,6 +20,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Translate"
+rootProject.name = "Versta"
 include(":app")
  

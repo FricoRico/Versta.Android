@@ -60,19 +60,21 @@ def load_metadata_for_input_dirs(input_dirs: List[Path]) -> List[BundleMetadata]
 
     return metadata
 
-def generate_metadata(output_dir: Path, languages: List[str], language_metadata: List[BundleMetadata], language_pairs: bool) -> Path:
+def generate_metadata(version: str, output_dir: Path, languages: List[str], language_metadata: List[BundleMetadata], bidirectional: bool) -> Path:
     """
     Generates a metadata file for the model conversion process.
 
     Args:
+        version (str): Version of the model conversion process.
         output_dir (Path): Path to the directory where the metadata file will be saved.
         languages (List[str]): List of languages supported by the model.
         metadata (List[BundleMetadata]): List of BundleMetadata dictionaries containing source and target language pairs.
-        language_pairs (bool): Flag to indicate if the metadata contains language pairs.
+        bidirectional (bool): Flag to indicate if the metadata contains bidirectional language pairs.
     """
     metadata = {
+        "version": version,
         "languages": languages or [],
-        "language_pairs": language_pairs,
+        "bidirectional": bidirectional,
         "metadata": language_metadata or []
     }
 

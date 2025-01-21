@@ -91,6 +91,24 @@ class LanguagePreferenceDataStoreRepository(
     }
 
     /**
+     * Clears the language selection if the language pair is the same as the current one.
+     */
+    override suspend fun clearLanguageSelectionForPair(languagePair: LanguagePair) {
+        dataStore.edit { preferences ->
+            val sourceLanguage = preferences[SOURCE_LANGUAGE_KEY]
+            val targetLanguage = preferences[TARGET_LANGUAGE_KEY]
+
+            if (sourceLanguage == mapLanguageEntityToIsoCode(languagePair.source) ||
+                targetLanguage == mapLanguageEntityToIsoCode(languagePair.target) ||
+                sourceLanguage == mapLanguageEntityToIsoCode(languagePair.source)
+            ) {
+                preferences.remove(SOURCE_LANGUAGE_KEY)
+                preferences.remove(TARGET_LANGUAGE_KEY)
+            }
+        }
+    }
+
+    /**
      * Maps a [Language] to an ISO code.
      * @param language The language to map.
      */

@@ -3,14 +3,12 @@ import kotlin.collections.List;
 import kotlin.collections.Map;
 
 CREATE TABLE LanguageModel (
-    languageId TEXT NOT NULL PRIMARY KEY,
+    languageId TEXT NOT NULL PRIMARY KEY REFERENCES Language(id) ON DELETE CASCADE,
     baseModel TEXT NOT NULL,
     architectures TEXT AS List<String> NOT NULL,
     path TEXT NOT NULL,
-    files TEXT AS Map<String, Map<String, String>> NOT NULL
+    version TEXT NOT NULL
 );
-
-CREATE INDEX languageModelLanguageId ON LanguageModel(languageId);
 
 getAll:
 SELECT * FROM LanguageModel;
@@ -18,11 +16,14 @@ SELECT * FROM LanguageModel;
 getAllByLanguageId:
 SELECT * FROM LanguageModel WHERE languageId = :languageId;
 
+getAllByLanguageIds:
+SELECT * FROM LanguageModel WHERE languageId IN :languageIds;
+
 upsert {
     UPDATE LanguageModel SET
         architectures = :architectures,
         path = :path,
-        files = :files
+        version = :version
     WHERE languageId = :languageId AND baseModel = :baseModel;
 
     INSERT OR IGNORE INTO LanguageModel (
@@ -30,15 +31,18 @@ upsert {
         baseModel,
         architectures,
         path,
-        files
+        version
     ) VALUES (
         :languageId,
         :baseModel,
         :architectures,
         :path,
-        :files
+        :version
     );
 }
+
+deleteById:
+DELETE FROM LanguageModel WHERE languageId = :languageId;
 
 removeNotIn:
 DELETE FROM LanguageModel WHERE languageId NOT IN :languageIds;

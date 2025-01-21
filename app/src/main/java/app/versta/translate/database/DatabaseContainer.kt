@@ -21,7 +21,6 @@ class DatabaseContainer(
         driver = driver,
         LanguageModelAdapter = LanguageModel.Adapter(
             architecturesAdapter = ListOfStringsAdapter,
-            filesAdapter = MapOfStringsAdapter,
         ),
     )
 
@@ -42,15 +41,4 @@ val ListOfStringsAdapter = object : ColumnAdapter<List<String>, String> {
         }
 
     override fun encode(value: List<String>) = Json.encodeToString(value)
-}
-
-val MapOfStringsAdapter = object : ColumnAdapter<Map<String, Map<String, String>>, String> {
-    override fun decode(databaseValue: String) =
-        if (databaseValue.isEmpty()) {
-            mapOf()
-        } else {
-            Json.decodeFromString<Map<String, Map<String, String>>>(databaseValue)
-        }
-
-    override fun encode(value: Map<String, Map<String, String>>) = Json.encodeToString(value)
 }

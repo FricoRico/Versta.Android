@@ -25,13 +25,13 @@
         android:largeHeap="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Translate"
+        android:theme="@style/Versta.Theme"
         tools:targetApi="35">
         <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait"
             android:exported="true"
-            android:theme="@style/Theme.Translate">
+            android:theme="@style/Versta.Theme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -43,7 +43,7 @@
             android:screenOrientation="portrait"
             android:exported="true"
             android:label="Translate"
-            android:theme="@style/Theme.Translate">
+            android:theme="@style/Versta.Theme">
             <intent-filter>
                 <data android:mimeType="text/plain"/>
 

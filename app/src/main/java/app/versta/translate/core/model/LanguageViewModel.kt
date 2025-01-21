@@ -14,6 +14,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -86,9 +87,11 @@ enum class LanguageType {
 @OptIn(ExperimentalCoroutinesApi::class)
 class LanguageViewModel(
     private val modelExtractor: ModelExtractor,
-    private val languageDatabaseRepository: LanguageRepository,
+    private val languageRepository: LanguageRepository,
     private val languagePreferenceRepository: LanguagePreferenceRepository
 ) : ViewModel() {
+    private val _serializer = Json { ignoreUnknownKeys = true }
+
     private val _languageSelectionState = MutableStateFlow<LanguageType?>(null)
     val languageSelectionState: StateFlow<LanguageType?> = _languageSelectionState
 
@@ -102,12 +105,12 @@ class LanguageViewModel(
         source != null && target != null
     }
 
-    val availableLanguages = languageDatabaseRepository.getLanguages()
-    val sourceLanguages = languageDatabaseRepository.getSourceLanguages()
+    val availableLanguages = languageRepository.getLanguages()
+    val sourceLanguages = languageRepository.getSourceLanguages()
     val targetLanguages = sourceLanguage
         .flatMapLatest {
             if (it != null) {
-                languageDatabaseRepository.getTargetLanguagesBySource(it)
+                languageRepository.getTargetLanguagesBySource(it)
             } else {
                 flowOf(emptyList())
             }
@@ -137,12 +140,11 @@ class LanguageViewModel(
 
             // If the current target language is not available for the new source language, clear the
             // current target language.
-            languageDatabaseRepository.getTargetLanguagesBySource(language)
-                .collectLatest { languages ->
-                    if (languages.none { it == targetLanguage.first() }) {
-                        clearTargetLanguage()
-                    }
+            languageRepository.getTargetLanguagesBySource(language).collectLatest { languages ->
+                if (languages.none { it == targetLanguage.first() }) {
+                    clearTargetLanguage()
                 }
+            }
         }
     }
 
@@ -207,11 +209,19 @@ class LanguageViewModel(
 
                 val metadata = readMetadata(output)
 
-                languageDatabaseRepository.upsertLanguageModels(metadata)
+                languageRepository.upsertLanguageModels(metadata)
                 _progressState.value = ExtractionProgress.Completed(metadata)
             } catch (e: Exception) {
                 output?.deleteRecursively()
                 _progressState.value = ExtractionProgress.Error(e)
+            }
+        }
+    }
+
+    fun deleteBySource(language: Language) {
+        viewModelScope.launch {
+            languageRepository.deleteLanguageModelsBySourceLanguage(language).forEach {
+                languagePreferenceRepository.clearLanguageSelectionForPair(it)
             }
         }
     }
@@ -221,7 +231,8 @@ class LanguageViewModel(
      */
     private fun readMetadata(output: File): ModelMetadata {
         val bundleMetadataFile = File(output, "metadata.json")
-        val bundleMetadata = Json.decodeFromString<BundleMetadata>(bundleMetadataFile.readText())
+        val bundleMetadata =
+            _serializer.decodeFromString<BundleMetadata>(bundleMetadataFile.readText())
 
         // TODO: Improve error handling
         if (!bundleMetadata.isValid()) {
@@ -230,9 +241,11 @@ class LanguageViewModel(
 
         val languageMetadata = bundleMetadata.metadata.map {
             val languageMetadataFile = File(output.resolve(it.directory), "metadata.json")
-            Json.decodeFromString<LanguageMetadata>(languageMetadataFile.readText()).setRootPath(
-                path = output.toPath()
-            )
+
+            _serializer.decodeFromString<LanguageMetadata>(languageMetadataFile.readText())
+                .setRootPath(
+                    path = output.resolve(it.directory).toPath()
+                )
         }
 
         // TODO: Improve error handling
