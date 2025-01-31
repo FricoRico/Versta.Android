@@ -4,6 +4,7 @@ import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OnnxTensorLike
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
+import app.versta.translate.utils.TensorUtils
 
 // Shape: [sequence_length, hidden_size]
 internal typealias EncoderHiddenStates = Array<FloatArray>
@@ -23,21 +24,28 @@ class EncoderInput(ortEnvironment: OrtEnvironment, inputIds: LongArray, attentio
         )
     }
 
-    fun close() {
-        _inputIdsTensor.close()
-        _attentionMaskTensor.close()
+    fun destroy() {
+        TensorUtils.closeTensor(_inputIdsTensor)
+        TensorUtils.closeTensor(_attentionMaskTensor)
     }
 }
 
 class EncoderOutput {
+    private var _output: OrtSession.Result? = null
+
     @Suppress("UNCHECKED_CAST")
     fun parse(output: OrtSession.Result): EncoderHiddenStates? {
+        _output = output
+
         val outputLastHiddenStates = output.get("last_hidden_state") ?: return null
 
         // Shape: [batch_size, sequence_length, hidden_size]
         val lastHiddenStates = outputLastHiddenStates.get().value as Array<EncoderHiddenStates>
-        output.close()
 
         return lastHiddenStates.first()
+    }
+
+    fun destroy() {
+        TensorUtils.closeTensor(_output)
     }
 }

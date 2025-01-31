@@ -1,10 +1,11 @@
 package app.versta.translate.core.entity
 
+import android.util.Log
 import androidx.compose.ui.util.fastDistinctBy
 import app.versta.translate.bridge.inference.BeamSearch
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
+import kotlinx.coroutines.asCoroutineDispatcher
 import java.nio.FloatBuffer
+import java.util.concurrent.Executors
 import kotlin.math.ln
 
 data class Beam(val id: Int, val sequence: LongArray, val score: Float) {
@@ -28,16 +29,13 @@ data class Beam(val id: Int, val sequence: LongArray, val score: Float) {
 }
 
 class BeamSearch(
-    size: Int,
+    beamSize: Int,
+    private val minP: Float,
     private val padId: Long,
     private val eosId: Long,
 ) {
-    private var _beams: List<Beam> = List(size) {
+    private var _beams: List<Beam> = List(beamSize) {
         Beam(it, longArrayOf(padId), -1e-9f)
-    }
-
-    fun ids(): IntArray {
-        return _beams.map { it.id }.toIntArray()
     }
 
     fun lastTokens(): Array<LongArray> {
@@ -52,12 +50,12 @@ class BeamSearch(
         return _beams.maxByOrNull { it.score }?.sequence ?: longArrayOf()
     }
 
-    fun search(logits: DecoderLogits, size: Int) {
+    fun search(logits: DecoderLogits, size: Int): IntArray {
         val beams = mutableListOf<Beam>()
 
         for (i in _beams.indices) {
             val probabilities = BeamSearch.softmax(logits[i].last())
-            val indices = BeamSearch.minPIndices(probabilities, 1e-4f)
+            val indices = BeamSearch.minPIndices(probabilities, minP)
 
             for (token in indices) {
                 val sequence = _beams[i].sequence + token.toLong()
@@ -69,37 +67,6 @@ class BeamSearch(
         }
 
         _beams = beams.fastDistinctBy { it.hashCode() }.sortedByDescending { it.score }.take(size)
-    }
-
-    fun transposeCache(shape: LongArray, buffer: FloatBuffer, count: Int): FloatBuffer {
-        val ids = _beams.map { it.id }.toIntArray()
-
-        val batches = shape.first().toInt()
-        val chunks = (count / batches)
-
-        val cached = FloatArray(count)
-        buffer.rewind()
-        buffer.get(cached)
-
-        val transposed = FloatArray(count)
-
-        for (index in ids.indices) {
-            val target = ids[index]
-
-            val source = target * chunks
-            val destination = index * chunks
-
-            System.arraycopy(cached, source, transposed, destination, chunks)
-        }
-
-        val byteBuffer = ByteBuffer
-            .allocateDirect(count * 4)
-            .order(ByteOrder.nativeOrder())
-
-        val floatBuffer = byteBuffer.asFloatBuffer()
-        floatBuffer.put(transposed)
-        floatBuffer.rewind()
-
-        return floatBuffer
+        return _beams.map { it.id }.toIntArray()
     }
 }

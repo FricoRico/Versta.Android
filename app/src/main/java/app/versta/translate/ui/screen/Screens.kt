@@ -14,7 +14,8 @@ enum class Screens (
     Settings(statusBarStyle = StatusBarStyle.Dark),
     LanguageSettings(statusBarStyle = StatusBarStyle.Dark),
     LanguageImport(statusBarStyle = StatusBarStyle.Dark),
-    TextTranslation;
+    TextTranslation,
+    TranslationSettings(statusBarStyle = StatusBarStyle.Dark);
 
     operator fun invoke(): String {
         val argList = StringBuilder()

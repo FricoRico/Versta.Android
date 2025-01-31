@@ -16,7 +16,7 @@ import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.TextRecognitionViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
-import app.versta.translate.ui.screen.Camera
+import app.versta.translate.ui.screen.CameraTranslation
 import app.versta.translate.ui.screen.Home
 import app.versta.translate.ui.screen.LanguageImport
 import app.versta.translate.ui.screen.LanguageSettings
@@ -24,6 +24,7 @@ import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.screen.Settings
 import app.versta.translate.ui.screen.StatusBarStyle
 import app.versta.translate.ui.screen.TextTranslation
+import app.versta.translate.ui.screen.TranslationSettings
 
 @Composable
 fun Router(
@@ -73,7 +74,8 @@ fun Router(
             )
         }
         composable(Screens.Camera()) {
-            Camera(
+            CameraTranslation(
+                navController = navController,
                 textRecognitionViewModel = textRecognitionViewModel,
                 translationViewModel = translationViewModel
             )
@@ -102,6 +104,12 @@ fun Router(
                 languageViewModel = languageViewModel,
                 translationViewModel = translationViewModel,
                 textTranslationViewModel = textTranslationViewModel
+            )
+        }
+        composable(Screens.TranslationSettings()) {
+            TranslationSettings(
+                navController = navController,
+                translationViewModel = translationViewModel
             )
         }
     }

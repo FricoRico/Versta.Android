@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.MicNone
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -25,7 +27,7 @@ import app.versta.translate.R
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.ui.component.ListDivider
 import app.versta.translate.ui.component.ScaffoldLargeHeader
-import app.versta.translate.ui.component.SettingsListItem
+import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.component.TrialLicenseCard
 import app.versta.translate.ui.theme.spacing
 
@@ -61,7 +63,7 @@ fun Settings(
                 )
             ) {
                 item {
-                    SettingsListItem(
+                    SettingsButtonItem(
                         headlineContent = "Languages",
                         supportingContent = "Import languages, download languages",
                         onClick = {
@@ -79,10 +81,12 @@ fun Settings(
                 }
 
                 item {
-                    SettingsListItem(
+                    SettingsButtonItem(
                         headlineContent = "Translation",
                         supportingContent = "Manage history, translator fine-tuning",
-                        onClick = {/*TODO*/ },
+                        onClick = {
+                            navController.navigate(Screens.TranslationSettings())
+                        },
                         leadingContent = {
                             Icon(
                                 Icons.Outlined.Language,
@@ -103,22 +107,46 @@ fun Settings(
                 ListDivider()
 
                 item {
-                    SettingsListItem(
-                        headlineContent = "Account",
-                        supportingContent = "Sign in, sign out, manage account settings",
+                    SettingsButtonItem(
+                        headlineContent = "Vision",
+                        supportingContent = "Configure camera, object tracking",
                         onClick = {/*TODO*/ },
+                        leadingContent = {
+                            Icon(
+                                Icons.Outlined.CameraAlt,
+                                contentDescription = "Camera",
+                            )
+                        },
                         index = 0,
                         groupSize = 2
                     )
                 }
 
                 item {
-                    SettingsListItem(
-                        headlineContent = "Feedback",
-                        supportingContent = "Send feedback, report a problem",
+                    SettingsButtonItem(
+                        headlineContent = "Voice",
+                        supportingContent = "Microphone settings, transcription",
                         onClick = {/*TODO*/ },
+                        leadingContent = {
+                            Icon(
+                                Icons.Outlined.MicNone,
+                                contentDescription = "Microphone",
+                            )
+                        },
                         index = 1,
                         groupSize = 2
+                    )
+                }
+
+                ListDivider()
+
+                item {
+                    SettingsButtonItem(
+                        headlineContent = "About",
+                        supportingContent = "Version, privacy policy, contributions",
+                        onClick = {/*TODO*/ },
+                        index = 0,
+                        groupSize = 1
                     )
                 }
             }

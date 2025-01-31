@@ -1,12 +1,14 @@
 package app.versta.translate.ui.component
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -16,6 +18,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -30,7 +33,6 @@ import androidx.compose.ui.unit.sp
 import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.darken
 import app.versta.translate.utils.lighten
-import kotlinx.coroutines.Deferred
 
 object SettingsDefaults {
     val DefaultDisabledAlpha = 0.38f
@@ -149,13 +151,14 @@ object SettingsDefaults {
 }
 
 @Composable
-fun SettingsListItem(
+fun SettingsButtonItem(
     headlineContent: String,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
     onSwipeToDelete: (() -> Unit)? = null,
     supportingContent: String = "",
     leadingContent: @Composable (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
+    underlineContent: @Composable (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     colors: ListItemColors = SettingsDefaults.colors(),
     tonalElevation: Dp = ListItemDefaults.Elevation,
@@ -184,11 +187,12 @@ fun SettingsListItem(
                 .clip(borderRadius)
                 .then(modifier),
         ) {
-            SettingsListItemContent(
+            SettingsButtonItemContent(
                 headlineContent = headlineContent,
                 supportingContent = supportingContent,
                 leadingContent = leadingContent,
                 trailingContent = trailingContent,
+                underlineContent = underlineContent,
                 colors = colors,
                 tonalElevation = tonalElevation,
                 shadowElevation = shadowElevation,
@@ -202,11 +206,12 @@ fun SettingsListItem(
                 .clip(borderRadius)
                 .then(modifier),
         ) {
-            SettingsListItemContent(
+            SettingsButtonItemContent(
                 headlineContent = headlineContent,
                 supportingContent = supportingContent,
                 leadingContent = leadingContent,
                 trailingContent = trailingContent,
+                underlineContent = underlineContent,
                 colors = colors,
                 tonalElevation = tonalElevation,
                 shadowElevation = shadowElevation,
@@ -217,49 +222,82 @@ fun SettingsListItem(
 }
 
 @Composable
-private fun SettingsListItemContent(
+private fun SettingsButtonItemContent(
     headlineContent: String,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
     supportingContent: String = "",
     leadingContent: @Composable (() -> Unit)?,
     trailingContent: @Composable (() -> Unit)?,
+    underlineContent: @Composable (() -> Unit)?,
     colors: ListItemColors,
     tonalElevation: Dp,
     shadowElevation: Dp,
 ) {
-    ListItem(
-        headlineContent = {
-            Text(
-                text = headlineContent,
-                style = MaterialTheme.typography.bodyLarge,
-                fontSize = 18.sp,
-            )
-        },
-        supportingContent = {
-            if (supportingContent.isNotEmpty()) {
-                Text(
-                    text = supportingContent,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-        },
-        leadingContent = leadingContent,
-        trailingContent = trailingContent,
+    Surface(
+        color = colors.containerColor,
+        contentColor = colors.headlineColor,
         tonalElevation = tonalElevation,
         shadowElevation = shadowElevation,
-        colors = colors,
         modifier = Modifier
-            .defaultMinSize(minHeight = 96.dp)
-            .clickable {
-                onClick()
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
+    ) {
+        Column(
+            modifier = Modifier
+                .defaultMinSize(minHeight = 96.dp)
+                .fillMaxWidth()
+                .padding(
+                    vertical = MaterialTheme.spacing.large,
+                    horizontal = MaterialTheme.spacing.large,
+                ),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+            ) {
+                if (leadingContent != null) {
+                    leadingContent()
+                }
+
+                if (headlineContent.isNotEmpty() || supportingContent.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        if (headlineContent.isNotEmpty()) {
+                            Text(
+                                text = headlineContent,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = colors.headlineColor,
+                                fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                            )
+                        }
+
+                        if (supportingContent.isNotEmpty()) {
+                            Text(
+                                text = supportingContent,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = colors.supportingTextColor,
+                            )
+                        }
+                    }
+                }
+
+                if (trailingContent != null) {
+                    trailingContent()
+                }
             }
-    )
+
+            if (underlineContent != null) {
+                underlineContent()
+            }
+        }
+    }
 }
 
 @Composable
 @Preview(showBackground = true)
-private fun SettingsListItemPreview() {
-    SettingsListItem(
+private fun SettingsButtonItemPreview() {
+    SettingsButtonItem(
         headlineContent = "Languages",
         supportingContent = "Import languages, download languages",
         leadingContent = {

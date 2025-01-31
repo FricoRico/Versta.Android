@@ -1,13 +1,10 @@
 package app.versta.translate.adapter.outbound
 
-import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtLoggingLevel
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.extensions.OrtxPackage
-import android.util.Log
 import app.versta.translate.core.entity.BeamSearch
-import app.versta.translate.core.entity.DecoderCache
 import app.versta.translate.core.entity.LanguageModelInferenceFiles
 import app.versta.translate.core.entity.DecoderInput
 import app.versta.translate.core.entity.DecoderOutput
@@ -15,32 +12,18 @@ import app.versta.translate.core.entity.EncoderAttentionMasks
 import app.versta.translate.core.entity.EncoderHiddenStates
 import app.versta.translate.core.entity.EncoderInput
 import app.versta.translate.core.entity.EncoderOutput
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.io.File
 import kotlin.io.path.pathString
 
-class MarianInference(
-    threadCount: Int = 4,
-) : TranslationInference {
+class MarianInference : TranslationInference {
     private val ortEnvironment =
         OrtEnvironment.getEnvironment(OrtLoggingLevel.ORT_LOGGING_LEVEL_FATAL,
             "OpusInference",
             OrtEnvironment.ThreadingOptions().apply {
                 setGlobalSpinControl(false)
             })
-
-    private val sessionOptions = OrtSession.SessionOptions().apply {
-        setCPUArenaAllocator(true)
-        setMemoryPatternOptimization(true)
-        setInterOpNumThreads(threadCount)
-        addXnnpack(mapOf("intra_op_num_threads" to threadCount.toString()))
-        registerCustomOpLibrary(OrtxPackage.getLibraryPath())
-    }
 
     private var encoderSession: OrtSession? = null
     private var decoderSession: OrtSession? = null
@@ -69,7 +52,8 @@ class MarianInference(
             e.printStackTrace()
             throw e
         } finally {
-            encoderInput.close()
+            encoderInput.destroy()
+            encoderOutput.destroy()
         }
     }
 
@@ -79,6 +63,7 @@ class MarianInference(
         attentionMask: EncoderAttentionMasks,
         eosId: Long,
         padId: Long,
+        minP: Float,
         beamsSize: Int,
         maxSequenceLength: Int,
     ): LongArray {
@@ -87,7 +72,8 @@ class MarianInference(
         }
 
         val beams = BeamSearch(
-            size = beamsSize,
+            beamSize = beamsSize,
+            minP = minP,
             padId = padId,
             eosId = eosId
         )
@@ -99,7 +85,6 @@ class MarianInference(
         )
 
         val decoderOutput = DecoderOutput()
-        val tempCacheTensors = mutableListOf<OnnxTensor>()
 
         try {
             for (step in 0 until maxSequenceLength) {
@@ -107,30 +92,22 @@ class MarianInference(
                     break
                 }
 
-                val inputIds = beams.lastTokens()
-                val cache = decoderOutput.cache.map { (key, value) ->
-                    val shape = value.info.shape
-                    val buffer = value.floatBuffer
-                    val count = value.info.numElements.toInt()
-
-                    val transposed = beams.transposeCache(shape, buffer, count)
-                    val tensor = OnnxTensor.createTensor(ortEnvironment, transposed, shape)
-
-                    tempCacheTensors.add(tensor)
-
-                    key to tensor
-                }.toMap()
-
                 val inputs = decoderInput.get(
-                    inputIds = inputIds,
-                    cache = cache
+                    inputIds = beams.lastTokens(),
+                    cache = decoderOutput.cache
                 )
-                val output = decoderOutput.parse(decoderSession!!.run(inputs)) ?: break
 
-                beams.search(
-                    logits = output,
+                decoderOutput.close()
+                val output = decoderSession!!.run(inputs)
+                val logits = decoderOutput.parse(output) ?: break
+                decoderInput.close()
+
+                val ids = beams.search(
+                    logits = logits,
                     size = beamsSize,
                 )
+
+                decoderOutput.cache(output, ids)
             }
 
             return beams.best()
@@ -138,10 +115,8 @@ class MarianInference(
             e.printStackTrace()
             throw e
         } finally {
-            Log.d(TAG, "Closing all caches including decoder cache size: ${tempCacheTensors.size}")
-            decoderInput.close()
-            decoderOutput.close()
-            tempCacheTensors.forEach { it.close() }
+            decoderInput.destroy()
+            decoderOutput.destroy()
         }
     }
 
@@ -150,6 +125,7 @@ class MarianInference(
         attentionMask: EncoderAttentionMasks,
         eosId: Long,
         padId: Long,
+        minP: Float,
         beamsSize: Int,
         maxSequenceLength: Int,
     ): Flow<LongArray> {
@@ -159,7 +135,8 @@ class MarianInference(
 
         return flow {
             val beams = BeamSearch(
-                size = beamsSize,
+                beamSize = beamsSize,
+                minP = minP,
                 padId = padId,
                 eosId = eosId,
             )
@@ -171,7 +148,6 @@ class MarianInference(
             )
 
             val decoderOutput = DecoderOutput()
-            val tempCacheTensors = mutableListOf<OnnxTensor>()
 
             try {
                 for (step in 0 until maxSequenceLength) {
@@ -179,24 +155,22 @@ class MarianInference(
                         break
                     }
 
-                    val inputIds = beams.lastTokens()
-                    val cache = transposeDecoderCache(decoderOutput.cache, beams)
-                    tempCacheTensors.forEach { it.close() }
-                    tempCacheTensors.clear()
-
-                    tempCacheTensors.addAll(cache.values)
-
                     val inputs = decoderInput.get(
-                        inputIds = inputIds,
-                        cache = cache
+                        inputIds = beams.lastTokens(),
+                        cache = decoderOutput.cache
                     )
-                    val output =
-                        decoderOutput.parse(decoderSession!!.run(inputs)) ?: break
 
-                    beams.search(
-                        logits = output,
+                    decoderOutput.close()
+                    val output = decoderSession!!.run(inputs)
+                    val logits = decoderOutput.parse(output) ?: break
+                    decoderInput.close()
+
+                    val ids = beams.search(
+                        logits = logits,
                         size = beamsSize,
                     )
+
+                    decoderOutput.cache(output, ids)
 
                     emit(beams.best())
                 }
@@ -204,11 +178,8 @@ class MarianInference(
                 e.printStackTrace()
                 throw e
             } finally {
-                Log.d(TAG, "Closing all caches including decoder cache size: ${tempCacheTensors.size}")
-                decoderInput.close()
-                decoderOutput.close()
-                tempCacheTensors.forEach { it.close() }
-                tempCacheTensors.clear()
+                decoderInput.destroy()
+                decoderOutput.destroy()
             }
         }
     }
@@ -218,7 +189,8 @@ class MarianInference(
         attentionMask: LongArray,
         eosId: Long,
         padId: Long,
-        beams: Int,
+        minP: Float,
+        beamSize: Int,
         maxSequenceLength: Int
     ): LongArray {
         val encoderHiddenStates = encode(
@@ -231,7 +203,8 @@ class MarianInference(
             attentionMask = attentionMask,
             eosId = eosId,
             padId = padId,
-            beamsSize = beams,
+            minP = minP,
+            beamsSize = beamSize,
             maxSequenceLength = maxSequenceLength
         )
     }
@@ -241,7 +214,8 @@ class MarianInference(
         attentionMask: LongArray,
         eosId: Long,
         padId: Long,
-        beams: Int,
+        minP: Float,
+        beamSize: Int,
         maxSequenceLength: Int
     ): Flow<LongArray> {
         val encoderHiddenStates = encode(
@@ -254,45 +228,33 @@ class MarianInference(
             attentionMask = attentionMask,
             eosId = eosId,
             padId = padId,
-            beamsSize = beams,
+            minP = minP,
+            beamsSize = beamSize,
             maxSequenceLength = maxSequenceLength
         )
     }
 
-    private suspend fun transposeDecoderCache(
-        cache: DecoderCache,
-        beams: BeamSearch,
-    ): Map<String, OnnxTensor> = coroutineScope {
-        return@coroutineScope cache.map { (key, value) ->
-            async(Dispatchers.Default) {
-                val shape = value.info.shape
-                val buffer = value.floatBuffer
-                val count = value.info.numElements.toInt()
-
-                val transposed = beams.transposeCache(shape, buffer, count)
-
-                transposed.clear()
-
-                key to OnnxTensor.createTensor(ortEnvironment, transposed, shape)
-            }
-        }.awaitAll().toMap()
-    }
-
-    override fun load(files: LanguageModelInferenceFiles) {
+    override fun load(files: LanguageModelInferenceFiles, threads: Int) {
         close()
 
         val encoderFile = File(files.encoder.pathString).readBytes()
         val decoderFile = File(files.decoder.pathString).readBytes()
+        val options = OrtSession.SessionOptions().apply {
+            setCPUArenaAllocator(true)
+            setMemoryPatternOptimization(true)
+            setInterOpNumThreads(1)
+            addXnnpack(mapOf("intra_op_num_threads" to threads.toString()))
+            addConfigEntry("kOrtSessionOptionsConfigAllowIntraOpSpinning", "0")
+            registerCustomOpLibrary(OrtxPackage.getLibraryPath())
+        }
 
-        encoderSession = ortEnvironment.createSession(encoderFile, sessionOptions)
-        decoderSession = ortEnvironment.createSession(decoderFile, sessionOptions)
+        encoderSession = ortEnvironment.createSession(encoderFile, options)
+        decoderSession = ortEnvironment.createSession(decoderFile, options)
     }
 
     override fun close() {
         encoderSession?.close()
         decoderSession?.close()
-
-        ortEnvironment.close()
     }
 
     companion object {

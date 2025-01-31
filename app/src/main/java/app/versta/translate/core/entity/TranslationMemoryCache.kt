@@ -1,6 +1,6 @@
 package app.versta.translate.core.entity
 
-class TranslationMemoryCache(private val maxSize: Int = 64) {
+class TranslationMemoryCache(private val maxSize: Int) {
     private val languagePairCaches = mutableMapOf<String, LinkedHashMap<Int, String>>()
 
     private fun getCacheKeyForLanguagePair(languages: LanguagePair): String {

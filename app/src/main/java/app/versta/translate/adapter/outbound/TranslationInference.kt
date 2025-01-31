@@ -9,8 +9,9 @@ interface TranslationInference {
         attentionMask: LongArray,
         eosId: Long,
         padId: Long,
-        beams: Int = 6,
-        maxSequenceLength: Int = 128
+        minP: Float,
+        beamSize: Int,
+        maxSequenceLength: Int
     ): LongArray
 
     fun runAsFlow(
@@ -18,11 +19,12 @@ interface TranslationInference {
         attentionMask: LongArray,
         eosId: Long,
         padId: Long,
-        beams: Int = 6,
-        maxSequenceLength: Int = 128
+        minP: Float,
+        beamSize: Int,
+        maxSequenceLength: Int
     ): Flow<LongArray>
 
-    fun load(files: LanguageModelInferenceFiles)
+    fun load(files: LanguageModelInferenceFiles, threads: Int)
 
     fun close()
 }

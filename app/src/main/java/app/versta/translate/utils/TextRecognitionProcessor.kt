@@ -12,26 +12,72 @@ import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.TextRecognizerOptionsInterface
 
 
-class TextRecognitionProcessor(textRecognizerOptions: TextRecognizerOptionsInterface, private val frameProcessor: (ImageProxy, Text) -> Unit):
+class TextRecognitionProcessor(
+    textRecognizerOptions: TextRecognizerOptionsInterface,
+    private val preProcessing: () -> Unit = {},
+    private val onFrameProcessed: (Text, Long) -> Unit
+) :
     ImageAnalysis.Analyzer {
-    private val textRecognizer: TextRecognizer = TextRecognition.getClient(textRecognizerOptions)
+    private val _textRecognizer: TextRecognizer = TextRecognition.getClient(textRecognizerOptions)
+    private var _shouldUpdate = true
+
+    private val bufferSize = 16
+    private val stabilityThreshold = 3
+    private val temporalBuffer = ArrayDeque<String>(bufferSize)
 
     @OptIn(ExperimentalGetImage::class)
     override fun analyze(imageProxy: ImageProxy) {
-        val mediaImage = imageProxy.image
-        if (mediaImage != null) {
-            val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+        val mediaImage = imageProxy.image ?: return
+        val image = InputImage.fromMediaImage(mediaImage, 0)
 
-            textRecognizer.process(image)
-                .addOnSuccessListener { visionText ->
-                    frameProcessor(imageProxy, visionText)
-
-                    imageProxy.close()
-                }
-                .addOnFailureListener { e ->
-                    Log.e(TAG, "Text recognition failed", e)
-                }
+        if (!_shouldUpdate) {
+            imageProxy.close()
+            return
         }
+
+        preProcessing()
+        _textRecognizer.process(image)
+            .addOnSuccessListener { visionText ->
+                addToBuffer(visionText.text)
+
+                if (isStable()) {
+                    Log.d(TAG, "Text recognition stable")
+                    _shouldUpdate = false
+                }
+
+                onFrameProcessed(visionText, imageProxy.imageInfo.timestamp)
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Text recognition failed", e)
+            }
+            .addOnCompleteListener {
+                imageProxy.close()
+            }
+    }
+
+    private fun sanitizeText(text: String): String {
+        return text.trimIndent().replace("\\s+".toRegex(), " ").lowercase()
+    }
+
+    private fun addToBuffer(text: String) {
+        if (temporalBuffer.size >= bufferSize) {
+            temporalBuffer.removeFirst()
+        }
+
+        temporalBuffer.add(text)
+    }
+
+    private fun isStable(): Boolean {
+        Log.d(TAG, "Checking if text recognition is stable, ${temporalBuffer.size}")
+
+        return temporalBuffer.count {
+            sanitizeText(it) == sanitizeText(temporalBuffer.last())
+        } >= stabilityThreshold
+    }
+
+    fun shouldUpdate() {
+        temporalBuffer.clear()
+        _shouldUpdate = true
     }
 
     companion object {

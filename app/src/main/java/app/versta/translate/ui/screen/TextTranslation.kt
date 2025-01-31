@@ -55,11 +55,12 @@ import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.MockInference
 import app.versta.translate.adapter.outbound.MockTokenizer
+import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.LanguageSelector
-import app.versta.translate.ui.component.ModalBottomSheetScaffold
+import app.versta.translate.ui.component.ScaffoldModalBottomSheet
 import app.versta.translate.ui.component.TextField
 import app.versta.translate.ui.component.TextFieldDefaults
 import app.versta.translate.ui.theme.FilledIconButtonDefaults
@@ -159,6 +160,7 @@ fun TextTranslation(
     }
 
     fun onShare(output: String) {
+        // TODO: Improve share intent
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, output)
@@ -184,7 +186,7 @@ fun TextTranslation(
         translate(input)
     }
 
-    ModalBottomSheetScaffold(
+    ScaffoldModalBottomSheet(
         topBar = {
             CenterAlignedTopAppBar(
                 navigationIcon = {
@@ -226,6 +228,7 @@ fun TextTranslation(
                         input = input,
                         transliteration = inputTransliteration,
                         modifier = Modifier
+                            .weight(1f)
                             .padding(top = MaterialTheme.spacing.small)
                             .padding(start = MaterialTheme.spacing.medium),
                         onValueChange = {
@@ -253,7 +256,7 @@ fun TextTranslation(
         scaffoldState = scaffoldState,
         sheetPeekHeight = BottomSheetDefaults.SheetPeekHeight + MaterialTheme.spacing.large,
         sheetContent = {
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .padding(MaterialTheme.spacing.small)
                     .padding(
@@ -263,22 +266,29 @@ fun TextTranslation(
                             .calculateBottomPadding()
                     )
             ) {
-                TextTranslationOutput(
-                    translation = translated,
-                    transliteration = translatedTransliteration,
-                )
+                item {
+                    TextTranslationOutput(
+                        modifier = Modifier
+                            .padding(horizontal = MaterialTheme.spacing.large)
+                            .padding(top = MaterialTheme.spacing.large),
+                        translation = translated,
+                        transliteration = translatedTransliteration,
+                    )
+                }
 
-                TextTranslationOutputButtonRow(
-                    onCopy = {
-                        onCopy(translated)
-                    },
-                    onShare = {
-                        onShare(translated)
-                    },
-                    modifier = Modifier
-                        .padding(horizontal = MaterialTheme.spacing.small)
-                        .padding(bottom = MaterialTheme.spacing.small),
-                )
+                item {
+                    TextTranslationOutputButtonRow(
+                        onCopy = {
+                            onCopy(translated)
+                        },
+                        onShare = {
+                            onShare(translated)
+                        },
+                        modifier = Modifier
+                            .padding(horizontal = MaterialTheme.spacing.small)
+                            .padding(top = MaterialTheme.spacing.medium, bottom = MaterialTheme.spacing.small),
+                    )
+                }
             }
         }
     )
@@ -376,28 +386,22 @@ fun TextTranslationOutput(
     transliteration: String,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .then(modifier)
+            .then(modifier),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.large)
     ) {
-        item {
-            Text(
-                text = translation,
-                modifier = Modifier
-                    .padding(MaterialTheme.spacing.large),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-        item {
-            Text(
-                text = transliteration,
-                modifier = Modifier
-                    .padding(MaterialTheme.spacing.large),
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
+        Text(
+            text = translation,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Text(
+            text = transliteration,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.bodySmall
+        )
     }
 }
 
@@ -455,7 +459,8 @@ fun TextTranslationPreview() {
             tokenizer = MockTokenizer(),
             model = MockInference(),
             languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            translationPreferenceRepository = TranslationPreferenceMemoryRepository()
         )
     )
 }

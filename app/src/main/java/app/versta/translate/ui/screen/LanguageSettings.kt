@@ -56,7 +56,7 @@ import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.ui.component.ListDivider
 import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.SettingsDefaults
-import app.versta.translate.ui.component.SettingsListItem
+import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.TarExtractor
 
@@ -75,79 +75,82 @@ fun LanguageSettings(
 
     var languageToBeDeleted by remember { mutableStateOf<Language?>(null) }
 
-    ScaffoldLargeHeader(title = {
-        Text(
-            text = "Languages",
-        )
-    }, navigationIcon = {
-        IconButton(onClick = {
-            navController.popBackStack()
-        }) {
-            Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
-        }
-    }, content = { insets, scrollConnection ->
-        LazyColumn(
-            modifier = Modifier
-                .nestedScroll(scrollConnection)
-                .padding(horizontal = MaterialTheme.spacing.small)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(
-                top = MaterialTheme.spacing.small + MaterialTheme.spacing.extraSmall,
-                bottom = insets.asPaddingValues()
-                    .calculateBottomPadding() + MaterialTheme.spacing.small
+    ScaffoldLargeHeader(
+        title = {
+            Text(
+                text = "Languages",
             )
-        ) {
-            item {
-                SettingsListItem(
-                    headlineContent = "Get more languages",
-                    supportingContent = "Download or import new language",
-                    onClick = {
-                        navController.navigate(Screens.LanguageImport())
-                    },
-                    leadingContent = {
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    MaterialTheme.colorScheme.onPrimaryContainer,
-                                    MaterialTheme.shapes.extraLarge
-                                )
-                                .padding(MaterialTheme.spacing.small),
-                        ) {
-                            Icon(
-                                Icons.Filled.Download,
-                                contentDescription = "License",
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                            )
-                        }
-                    },
-                    colors = SettingsDefaults.colorsPrimary(),
+        },
+        navigationIcon = {
+            IconButton(onClick = {
+                navController.popBackStack()
+            }) {
+                Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
+            }
+        },
+        content = { insets, scrollConnection ->
+            LazyColumn(
+                modifier = Modifier
+                    .nestedScroll(scrollConnection)
+                    .padding(horizontal = MaterialTheme.spacing.small)
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(
+                    top = MaterialTheme.spacing.small + MaterialTheme.spacing.extraSmall,
+                    bottom = insets.asPaddingValues()
+                        .calculateBottomPadding() + MaterialTheme.spacing.small
                 )
+            ) {
+                item {
+                    SettingsButtonItem(
+                        headlineContent = "Get more languages",
+                        supportingContent = "Download or import new language",
+                        onClick = {
+                            navController.navigate(Screens.LanguageImport())
+                        },
+                        leadingContent = {
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        MaterialTheme.colorScheme.onPrimaryContainer,
+                                        MaterialTheme.shapes.extraLarge
+                                    )
+                                    .padding(MaterialTheme.spacing.small),
+                            ) {
+                                Icon(
+                                    Icons.Filled.Download,
+                                    contentDescription = "License",
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                )
+                            }
+                        },
+                        colors = SettingsDefaults.colorsPrimary(),
+                    )
+                }
+
+                ListDivider()
+
+                Languages(context = context,
+                    sourceLanguages = sourceLanguages,
+                    availableLanguages = availableLanguages,
+                    onClick = { language ->
+//                        navController.navigate(Screens.LanguageSelection(language.locale.language))
+                    },
+                    onSwipeToDelete = { language ->
+                        languageToBeDeleted = language
+                    })
             }
 
-            ListDivider()
-
-            Languages(context = context,
-                sourceLanguages = sourceLanguages,
+            LanguageDeletionConfirmationDialog(context = context,
+                language = languageToBeDeleted,
                 availableLanguages = availableLanguages,
-                onClick = { language ->
-//                        navController.navigate(Screens.LanguageSelection(language.locale.language))
+                onConfirmation = {
+                    languageViewModel.deleteBySource(it)
+                    languageToBeDeleted = null
                 },
-                onSwipeToDelete = { language ->
-                    languageToBeDeleted = language
+                onDismissRequest = {
+                    languageToBeDeleted = null
                 })
-        }
-
-        LanguageDeletionConfirmationDialog(context = context,
-            language = languageToBeDeleted,
-            availableLanguages = availableLanguages,
-            onConfirmation = {
-                languageViewModel.deleteBySource(it)
-                languageToBeDeleted = null
-            },
-            onDismissRequest = {
-                languageToBeDeleted = null
-            })
-    })
+        })
 }
 
 @Composable
@@ -283,7 +286,7 @@ private fun LazyListScope.Languages(
         val availableTargetLanguages =
             remember { availableLanguages.count { it.source == language } }
 
-        SettingsListItem(index = index,
+        SettingsButtonItem(index = index,
             groupSize = sourceLanguages.size,
             headlineContent = language.name,
             supportingContent = stringResource(

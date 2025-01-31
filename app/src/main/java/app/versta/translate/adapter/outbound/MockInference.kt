@@ -10,7 +10,8 @@ class MockInference: TranslationInference {
         attentionMask: LongArray,
         eosId: Long,
         padId: Long,
-        beams: Int,
+        minP: Float,
+        beamSize: Int,
         maxSequenceLength: Int
     ): LongArray {
         return LongArray(0)
@@ -21,13 +22,14 @@ class MockInference: TranslationInference {
         attentionMask: LongArray,
         eosId: Long,
         padId: Long,
-        beams: Int,
+        minP: Float,
+        beamSize: Int,
         maxSequenceLength: Int
     ): Flow<LongArray> {
         return flowOf(LongArray(0))
     }
 
-    override fun load(files: LanguageModelInferenceFiles) {
+    override fun load(files: LanguageModelInferenceFiles, threads: Int) {
         return
     }
 

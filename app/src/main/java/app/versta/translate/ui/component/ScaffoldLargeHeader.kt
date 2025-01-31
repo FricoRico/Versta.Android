@@ -51,6 +51,21 @@ object ScaffoldLargeHeaderDefaults {
     )
 
     @Composable
+    fun topAppBarSecondaryColor(
+        containerColor: Color = MaterialTheme.colorScheme.secondary,
+        scrolledContainerColor: Color = containerColor,
+        titleContentColor: Color = MaterialTheme.colorScheme.onSecondary,
+        actionIconContentColor: Color = titleContentColor,
+        navigationIconContentColor: Color = titleContentColor,
+    ) = TopAppBarDefaults.topAppBarColors(
+        containerColor = containerColor,
+        scrolledContainerColor = scrolledContainerColor,
+        titleContentColor = titleContentColor,
+        actionIconContentColor = actionIconContentColor,
+        navigationIconContentColor = navigationIconContentColor,
+    )
+
+    @Composable
     fun topAppBarInverseSurfaceColor(
         containerColor: Color = MaterialTheme.colorScheme.inverseSurface,
         scrolledContainerColor: Color = containerColor,

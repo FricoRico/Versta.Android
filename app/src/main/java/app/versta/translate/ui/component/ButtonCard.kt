@@ -170,7 +170,7 @@ fun ButtonCard(
 }
 
 @Composable
-@Preview
+@Preview(showBackground = true)
 fun ButtonCardPreview() {
     ButtonCard(
         onClick = {},

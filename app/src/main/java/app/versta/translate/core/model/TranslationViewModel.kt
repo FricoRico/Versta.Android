@@ -1,20 +1,24 @@
 package app.versta.translate.core.model
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
 import app.versta.translate.adapter.outbound.TranslationInference
+import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
 import app.versta.translate.adapter.outbound.TranslationTokenizer
 import app.versta.translate.core.entity.LanguageModelFiles
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.TranslationMemoryCache
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -40,89 +44,161 @@ class TranslationViewModel(
     private val model: TranslationInference,
     private val languageRepository: LanguageRepository,
     private val languagePreferenceRepository: LanguagePreferenceRepository,
+    private val translationPreferenceRepository: TranslationPreferenceRepository,
 ) : ViewModel() {
-    // TODO: Make this a configuration option
-    private val _cacheSize: Int = 64
-    private val _sentenceBatching = false
-    private val _numOfBeams = 3
-    private val _cacheEnabled = false
+    val cacheSize = translationPreferenceRepository.getCacheSize().distinctUntilChanged()
+    val cacheEnabled = translationPreferenceRepository.getCacheEnabled().distinctUntilChanged()
+    val beamSize = translationPreferenceRepository.getNumberOfBeams().distinctUntilChanged()
+    val maxSequenceLength = translationPreferenceRepository.getMaxSequenceLength().distinctUntilChanged()
+    val minProbability = translationPreferenceRepository.getMinProbability().distinctUntilChanged()
+    val threadCount = translationPreferenceRepository.getThreadCount().distinctUntilChanged()
+
+    private lateinit var _cache: TranslationMemoryCache
+    private val _queue = Mutex()
+
+    val languages = languagePreferenceRepository.getLanguagePair().distinctUntilChanged()
+    private val _languageModels = languages.filterNotNull().mapLatest { data ->
+        languageRepository.getLanguageModel(data)
+    }
 
     private val _loadingProgress = MutableStateFlow<LoadingProgress>(LoadingProgress.Idle)
     val loadingProgress: StateFlow<LoadingProgress> = _loadingProgress.asStateFlow()
 
-    private val translationCache = TranslationMemoryCache(_cacheSize)
-    private val queue = Mutex()
-
-    val languages = languagePreferenceRepository.getLanguagePair()
-
-    private val loadModelFlow = languages.filterNotNull().mapLatest { data ->
-        languageRepository.getLanguageModel(data)
+    /**
+     * Sets the cache size.
+     */
+    fun setCacheSize(size: Int): Job {
+        return viewModelScope.launch {
+            translationPreferenceRepository.setCacheSize(size)
+        }
     }
 
+    /**
+     * Sets the cache enabled state.
+     */
+    fun setCacheEnabled(enabled: Boolean): Job {
+        return viewModelScope.launch {
+            translationPreferenceRepository.setCacheEnabled(enabled)
+        }
+    }
+
+    /**
+     * Sets the number of beams.
+     */
+    fun setBeamSize(beams: Int): Job {
+        return viewModelScope.launch {
+            translationPreferenceRepository.setNumberOfBeams(beams)
+        }
+    }
+
+    /**
+     * Sets the maximum sequence length.
+     */
+    fun setMaxSequenceLength(length: Int): Job {
+        return viewModelScope.launch {
+            translationPreferenceRepository.setMaxSequenceLength(length)
+        }
+    }
+
+    /**
+     * Sets the minimum probability.
+     */
+    fun setMinProbability(probability: Float): Job {
+        return viewModelScope.launch {
+            translationPreferenceRepository.setMinProbability(probability)
+        }
+    }
+
+    /**
+     * Sets the thread count.
+     */
+    fun setThreadCount(count: Int): Job {
+        return viewModelScope.launch {
+            translationPreferenceRepository.setThreadCount(count)
+        }
+    }
+
+    /**
+     * Translates the input text to the target language, returning the result as a flow. If the
+     * translation is already in the cache, it will be returned immediately.
+     */
     fun translateAsFlow(input: String, languages: LanguagePair): Flow<String> {
         val sanitized = sanitize(input)
 
-        var cache = translationCache.get(sanitized, languages)
+        var cache = _cache.get(sanitized, languages)
         if (cache != null) {
             return flowOf(cache)
         }
 
         return flow {
-            queue.withLock {
+            _queue.withLock {
                 // Check to see if the translation is already in the cache, if so return it.
-                cache = translationCache.get(sanitized, languages)
+                cache = _cache.get(sanitized, languages)
 
                 if (cache != null) {
                     emit(cache!!)
                 }
 
                 val (inputIds, attentionMask) = tokenizer.encode(sanitized)
+                val minP = minProbability.first() * 100 / tokenizer.vocabSize
                 model.runAsFlow(
-                    inputIds,
-                    attentionMask,
-                    tokenizer.eosId,
-                    tokenizer.padId,
-                    _numOfBeams
+                    inputIds = inputIds,
+                    attentionMask = attentionMask,
+                    eosId = tokenizer.eosId,
+                    padId = tokenizer.padId,
+                    minP = minP,
+                    beamSize = beamSize.first(),
+                    maxSequenceLength = maxSequenceLength.first(),
                 ).collect { tokenIds ->
                     val outputText = tokenizer.decode(tokenIds)
                     emit(outputText)
 
-                    if (_cacheEnabled && tokenIds.last() == tokenizer.eosId) {
-                        translationCache.put(sanitized, outputText, languages)
+                    if (cacheEnabled.first() && tokenIds.last() == tokenizer.eosId) {
+                        _cache.put(sanitized, outputText, languages)
                     }
                 }
             }
         }
     }
 
+    /**
+     * Translates the input text to the target language. If the translation is already in the cache,
+     * it will be returned immediately.
+     */
     suspend fun translate(input: String, languages: LanguagePair): String {
         val sanitized = sanitize(input)
 
-        var cache = translationCache.get(sanitized, languages)
+        var cache = _cache.get(sanitized, languages)
         if (cache != null) {
             return cache
         }
 
-        return queue.withLock {
+        return _queue.withLock {
             // Check to see if the translation is already in the cache, if so return it.
-            cache = translationCache.get(sanitized, languages)
+            cache = _cache.get(sanitized, languages)
 
             if (cache != null) {
                 return cache!!
             }
 
             val (inputIds, attentionMask) = tokenizer.encode(sanitized)
+            val minP = minProbability.first() * 100 / tokenizer.vocabSize
             val tokenIds = model.run(
-                inputIds,
-                attentionMask,
-                tokenizer.eosId,
-                tokenizer.padId,
-                _numOfBeams
+                inputIds = inputIds,
+                attentionMask = attentionMask,
+                eosId = tokenizer.eosId,
+                padId = tokenizer.padId,
+                minP = minP,
+                beamSize = beamSize.first(),
+                maxSequenceLength = maxSequenceLength.first(),
             )
             tokenizer.decode(tokenIds)
         }
     }
 
+    /**
+     * Sanitizes the input string by removing any undefined characters.
+     */
     private fun sanitize(input: String): String {
         val filteredString = input.filter { it.isDefined() }
         val utf8Bytes = filteredString.toByteArray(Charsets.UTF_8)
@@ -130,13 +206,16 @@ class TranslationViewModel(
         return String(utf8Bytes, Charsets.UTF_8)
     }
 
+    /**
+     * Loads the model and tokenizer from the given files.
+     */
     fun load(files: LanguageModelFiles, languages: LanguagePair) {
         viewModelScope.launch(Dispatchers.IO) {
             _loadingProgress.value = LoadingProgress.InProgress
 
             try {
                 tokenizer.load(files.tokenizer, languages)
-                model.load(files.inference)
+                model.load(files.inference, threadCount.first())
 
                 _loadingProgress.value = LoadingProgress.Completed
             } catch (e: Exception) {
@@ -146,9 +225,18 @@ class TranslationViewModel(
         }
     }
 
-    init {
+    /**
+     * Reloads the model and tokenizer.
+     */
+    fun reload() {
         viewModelScope.launch {
-            loadModelFlow.collect {
+            cacheSize.collect { size ->
+                _cache = TranslationMemoryCache(size)
+            }
+        }
+
+        viewModelScope.launch {
+            _languageModels.collect {
                 val pair = languages.first()
 
                 if (it != null && pair != null) {
@@ -156,5 +244,9 @@ class TranslationViewModel(
                 }
             }
         }
+    }
+
+    init {
+        reload()
     }
 }

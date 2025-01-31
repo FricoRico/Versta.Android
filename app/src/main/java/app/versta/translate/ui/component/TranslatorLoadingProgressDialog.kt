@@ -12,9 +12,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
+import app.versta.translate.adapter.outbound.LanguagePreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.MockInference
 import app.versta.translate.adapter.outbound.MockTokenizer
+import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.core.model.LoadingProgress
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
@@ -56,7 +58,8 @@ fun TranslatorLoadingDialogPreview() {
             tokenizer = MockTokenizer(),
             model = MockInference(),
             languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            translationPreferenceRepository = TranslationPreferenceMemoryRepository()
         ),
         textTranslationViewModel = TextTranslationViewModel(
             languagePreferenceRepository = LanguagePreferenceMemoryRepository()

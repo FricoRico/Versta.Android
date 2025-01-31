@@ -128,6 +128,6 @@ fun TrialLicenseCard(
 @Preview
 private fun TrialLicenseCardPreview() {
         TrialLicenseCard(
-            licenseViewModel = TODO(),
+            licenseViewModel = LicenseViewModel()
         )
 }

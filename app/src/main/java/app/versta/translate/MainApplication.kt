@@ -5,11 +5,14 @@ import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
 import app.versta.translate.adapter.outbound.LanguageDatabaseRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceDataStoreRepository
+import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
 import app.versta.translate.core.model.ModelExtractor
 import app.versta.translate.adapter.outbound.MarianTokenizer
 import app.versta.translate.adapter.outbound.MarianInference
 import app.versta.translate.adapter.outbound.TranslationInference
+import app.versta.translate.adapter.outbound.TranslationPreferenceDataStoreRepository
+import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
 import app.versta.translate.adapter.outbound.TranslationTokenizer
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.TarExtractor
@@ -18,7 +21,8 @@ val Context.dataStore by preferencesDataStore(name = "preferences")
 
 interface ApplicationModuleInterface {
     val languageRepository: LanguageRepository
-    val languagePreferenceRepository: LanguagePreferenceDataStoreRepository
+    val languagePreferenceRepository: LanguagePreferenceRepository
+    val translatorPreferenceRepository: TranslationPreferenceRepository
 
     val extractor: ModelExtractor
     val tokenizer: TranslationTokenizer
@@ -32,8 +36,12 @@ class ApplicationModule(context: Context) : ApplicationModuleInterface {
         LanguageDatabaseRepository(database)
     }
 
-    override val languagePreferenceRepository: LanguagePreferenceDataStoreRepository by lazy {
+    override val languagePreferenceRepository: LanguagePreferenceRepository by lazy {
         LanguagePreferenceDataStoreRepository(context.dataStore)
+    }
+
+    override val translatorPreferenceRepository: TranslationPreferenceRepository by lazy {
+        TranslationPreferenceDataStoreRepository(context.dataStore)
     }
 
     override val extractor: ModelExtractor by lazy {

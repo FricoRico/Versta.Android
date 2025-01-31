@@ -11,6 +11,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 class TextTranslationViewModel(
@@ -31,13 +32,16 @@ class TextTranslationViewModel(
     private val _translatedTransliteration = MutableStateFlow("")
     val translatedTransliteration = _translatedTransliteration
 
-    private val languages = languagePreferenceRepository.getLanguagePair()
+    private val languages = languagePreferenceRepository.getLanguagePair().distinctUntilChanged()
 
     private var _inputTransliterator: TransliterationAdapter? = null
     private var _translationTransliterator: TransliterationAdapter? = null
 
     private val _transliterationScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
+    /**
+     * Set the input.
+     */
     fun setInput(text: String) {
         _input.value = text
 
@@ -46,11 +50,17 @@ class TextTranslationViewModel(
         }
     }
 
+    /**
+     * Clear the input.
+     */
     fun clearInput() {
         _input.value = ""
         _inputTransliteration.value = ""
     }
 
+    /**
+     * Set the translation.
+     */
     fun setTranslation(text: String) {
         _translated.value = text
 
@@ -59,11 +69,17 @@ class TextTranslationViewModel(
         }
     }
 
+    /**
+     * Clear the translation.
+     */
     fun clearTranslation() {
         _translated.value = ""
         _translatedTransliteration.value = ""
     }
 
+    /**
+     * Load the transliterator.
+     */
     fun load(languages: LanguagePair) {
         viewModelScope.launch(Dispatchers.IO) {
             _loadingProgress.value = LoadingProgress.InProgress
@@ -81,7 +97,10 @@ class TextTranslationViewModel(
         }
     }
 
-    init {
+    /**
+     * Reload the transliterator.
+     */
+    fun reload() {
         viewModelScope.launch {
             languages.collect {
                 if (it != null) {
@@ -89,5 +108,9 @@ class TextTranslationViewModel(
                 }
             }
         }
+    }
+
+    init {
+        reload()
     }
 }

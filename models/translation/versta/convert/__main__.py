@@ -6,8 +6,8 @@ from pathlib import Path
 from .config import get_source_language, get_target_language, get_architecture
 from .tokenizer import save_tokenizer, optimize_vocabulary
 from .quantize import quantize_model
-from .download import download_model
-from .convert_pt import convert_model_to_pt
+# from .download import download_model
+# from .convert_pt import convert_model_to_pt
 from .convert_onnx import convert_model_to_onnx
 from .convert_ort import convert_model_to_ort
 from .metadata import generate_metadata
@@ -89,12 +89,12 @@ def main(
     export_dir.mkdir(parents=True, exist_ok=True)
 
     # Check if the model is a direct download, then first down
-    if model.startswith("https"):
+    # if model.startswith("https"):
         # Step 1: Download the model files
-        downloaded_files = download_model(model, download_dir)
+        # downloaded_files = download_model(model, download_dir)
 
         # Step 2: Convert the model to PyTorch format
-        model = convert_model_to_pt(downloaded_files, export_dir, model_format)
+        # model = convert_model_to_pt(downloaded_files, export_dir, model_format)
 
     source_language = get_source_language(model)
     target_language = get_target_language(model)
