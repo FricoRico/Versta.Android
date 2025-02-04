@@ -1,11 +1,9 @@
 package app.versta.translate.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CameraAlt
@@ -38,7 +36,7 @@ import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.TranslationTextField
 import app.versta.translate.ui.component.TrialLicenseCard
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.utils.TarExtractor
+import app.versta.translate.adapter.inbound.ModelExtractorTar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -130,7 +128,7 @@ private fun HomePreview() {
             languagePreferenceRepository = LanguagePreferenceMemoryRepository()
         ),
         languageViewModel = LanguageViewModel(
-            modelExtractor = TarExtractor(LocalContext.current),
+            modelExtractor = ModelExtractorTar(LocalContext.current),
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository()
         )

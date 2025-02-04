@@ -47,10 +47,10 @@ import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.core.model.ExtractionProgress
 import app.versta.translate.core.model.LanguageViewModel
-import app.versta.translate.core.model.ModelFilePickerCallback
-import app.versta.translate.utils.FilePicker
+import app.versta.translate.adapter.inbound.ModelFilePickerLauncher
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.utils.TarExtractor
+import app.versta.translate.adapter.inbound.ModelExtractorTar
+import app.versta.translate.adapter.inbound.ModelFilePickerCallback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -222,7 +222,7 @@ fun SelectionScreen(
                     shape = MaterialTheme.shapes.large,
                     contentPadding = PaddingValues(MaterialTheme.spacing.medium),
                     onClick = {
-                        FilePicker.openFilePicker(listener)
+                        ModelFilePickerLauncher.openFilePicker(listener)
                     },
                 ) {
                     Text(
@@ -293,7 +293,7 @@ fun LanguageImportPreview() {
     LanguageImport(
         navController = rememberNavController(),
         languageViewModel = LanguageViewModel(
-            modelExtractor = TarExtractor(LocalContext.current),
+            modelExtractor = ModelExtractorTar(LocalContext.current),
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
         )

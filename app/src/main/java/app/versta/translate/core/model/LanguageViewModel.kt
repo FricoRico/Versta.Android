@@ -3,6 +3,8 @@ package app.versta.translate.core.model
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.versta.translate.adapter.inbound.ModelExtractor
+import app.versta.translate.adapter.inbound.ModelExtractorProgressListener
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
 import app.versta.translate.core.entity.BundleMetadata
@@ -14,7 +16,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -26,47 +27,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.io.File
 
-interface ModelExtractor {
-    /**
-     * Extracts the contents of a compressed archive file from a given Uri into the app's local storage.
-     * @param uri The Uri of the zip file to extract.
-     * @param outputDir The local directory where the contents should be extracted.
-     * @param extractToDirectory Whether to extract the contents to a directory with the same name as the compressed file.
-     */
-    fun extract(
-        uri: Uri,
-        outputDir: File,
-        extractToDirectory: Boolean = true,
-        listener: ModelExtractorProgressListener? = null
-    ): File
-}
-
-interface ModelExtractorProgressListener {
-    /**
-     * Callback for progress updates during extraction.
-     * @param file The file currently being extracted.
-     * @param extracted The number of files that have been extracted so far.
-     * @param total The total number of files in the archive.
-     */
-    fun onProgressUpdate(file: File, extracted: Int, total: Int)
-}
 
 
-interface ModelFilePicker {
-    /**
-     * Opens a file picker to select a file.
-     * @param listener The callback to be invoked when a file is picked.
-     */
-    fun openFilePicker(listener: ModelFilePickerCallback, fileTypes: Array<String> = arrayOf("*/*"))
-}
-
-interface ModelFilePickerCallback {
-    /**
-     * Callback for when a file has been picked.
-     * @param uri The Uri of the picked file.
-     */
-    fun onFilePicked(uri: Uri)
-}
 
 sealed class ExtractionProgress {
     data object Idle : ExtractionProgress()

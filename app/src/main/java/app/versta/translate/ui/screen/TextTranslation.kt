@@ -65,7 +65,7 @@ import app.versta.translate.ui.component.TextField
 import app.versta.translate.ui.component.TextFieldDefaults
 import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.utils.TarExtractor
+import app.versta.translate.adapter.inbound.ModelExtractorTar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -451,7 +451,7 @@ fun TextTranslationPreview() {
             languagePreferenceRepository = LanguagePreferenceMemoryRepository()
         ),
         languageViewModel = LanguageViewModel(
-            modelExtractor = TarExtractor(LocalContext.current),
+            modelExtractor = ModelExtractorTar(LocalContext.current),
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository()
         ),

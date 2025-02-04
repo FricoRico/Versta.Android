@@ -1,17 +1,15 @@
-package app.versta.translate.utils
+package app.versta.translate.adapter.inbound
 
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
-import app.versta.translate.core.model.ModelExtractorProgressListener
-import app.versta.translate.core.model.ModelExtractor
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 
-class TarExtractor(private val context: Context) : ModelExtractor {
+class ModelExtractorTar(private val context: Context) : ModelExtractor {
     /**
      * Extracts the contents of a .tar.gz file from a given Uri into the app's local storage.
      * @param uri The Uri of the .tar.gz file to extract.
@@ -152,6 +150,6 @@ class TarExtractor(private val context: Context) : ModelExtractor {
     }
 
     companion object {
-        private val TAG: String = TarExtractor::class.java.simpleName
+        private val TAG: String = ModelExtractorTar::class.java.simpleName
     }
 }

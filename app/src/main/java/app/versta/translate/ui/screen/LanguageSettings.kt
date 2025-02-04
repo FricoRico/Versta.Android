@@ -58,7 +58,7 @@ import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.SettingsDefaults
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.utils.TarExtractor
+import app.versta.translate.adapter.inbound.ModelExtractorTar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -312,7 +312,7 @@ private fun PreviewLanguageSettings() {
     LanguageSettings(
         navController = rememberNavController(),
         languageViewModel = LanguageViewModel(
-            modelExtractor = TarExtractor(LocalContext.current),
+            modelExtractor = ModelExtractorTar(LocalContext.current),
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository()
         ),

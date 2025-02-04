@@ -1,13 +1,11 @@
-package app.versta.translate.utils
+package app.versta.translate.adapter.inbound
 
 import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import app.versta.translate.core.model.ModelFilePicker
-import app.versta.translate.core.model.ModelFilePickerCallback
 
-object FilePicker: ModelFilePicker {
+object ModelFilePickerLauncher: ModelFilePicker {
     private var filePicker: ActivityResultLauncher<Array<String>>? = null
     private var filePickerListener: ModelFilePickerCallback? = null
 

@@ -47,7 +47,7 @@ import app.versta.translate.core.entity.Language
 import app.versta.translate.core.model.LanguageType
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.utils.TarExtractor
+import app.versta.translate.adapter.inbound.ModelExtractorTar
 
 @Composable
 fun LanguageSelector(
@@ -219,7 +219,7 @@ fun LanguageSelectorButton(
 fun LanguageSelectorPreview() {
     return LanguageSelector(
         languageViewModel = LanguageViewModel(
-            modelExtractor = TarExtractor(LocalContext.current),
+            modelExtractor = ModelExtractorTar(LocalContext.current),
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
         ),

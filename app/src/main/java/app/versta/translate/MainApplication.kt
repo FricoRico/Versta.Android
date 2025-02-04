@@ -3,11 +3,11 @@ package app.versta.translate
 import android.app.Application
 import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
+import app.versta.translate.adapter.inbound.ModelExtractor
 import app.versta.translate.adapter.outbound.LanguageDatabaseRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
-import app.versta.translate.core.model.ModelExtractor
 import app.versta.translate.adapter.outbound.MarianTokenizer
 import app.versta.translate.adapter.outbound.MarianInference
 import app.versta.translate.adapter.outbound.TranslationInference
@@ -15,7 +15,7 @@ import app.versta.translate.adapter.outbound.TranslationPreferenceDataStoreRepos
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
 import app.versta.translate.adapter.outbound.TranslationTokenizer
 import app.versta.translate.database.DatabaseContainer
-import app.versta.translate.utils.TarExtractor
+import app.versta.translate.adapter.inbound.ModelExtractorTar
 
 val Context.dataStore by preferencesDataStore(name = "preferences")
 
@@ -45,7 +45,7 @@ class ApplicationModule(context: Context) : ApplicationModuleInterface {
     }
 
     override val extractor: ModelExtractor by lazy {
-        TarExtractor(context)
+        ModelExtractorTar(context)
     }
 
     override val tokenizer: TranslationTokenizer by lazy {
