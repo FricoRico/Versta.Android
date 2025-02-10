@@ -1,8 +1,0 @@
-onnxruntime>=1.19,<1.20
-onnxruntime-tools>=1.7,<1.8
-
-sacremoses>=0.1,<0.2
-optimum[exporters]>=1.22,<1.23
-transformers>=4.44,<4.45
-
-pycountry>=24.6,<24.7
