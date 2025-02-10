@@ -1,7 +1,11 @@
 package app.versta.translate.ui.screen
 
+import android.content.res.Configuration.ORIENTATION_LANDSCAPE
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +23,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
@@ -37,6 +43,14 @@ fun Settings(
     navController: NavController,
     licenseViewModel: LicenseViewModel
 ) {
+    val orientation = LocalContext.current.resources.configuration.orientation
+
+    val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
+        MaterialTheme.spacing.medium
+    } else {
+        MaterialTheme.spacing.small
+    }
+
     return ScaffoldLargeHeader(
         title = {
             Text(
@@ -53,13 +67,12 @@ fun Settings(
         content = { insets, scrollConnection ->
             LazyColumn(
                 modifier = Modifier
-                    .nestedScroll(scrollConnection)
-                    .padding(horizontal = MaterialTheme.spacing.small)
-                    .fillMaxSize(),
+                    .nestedScroll(scrollConnection),
                 contentPadding = PaddingValues(
-                    top = MaterialTheme.spacing.small + MaterialTheme.spacing.extraSmall,
-                    bottom = insets.asPaddingValues()
-                        .calculateBottomPadding() + MaterialTheme.spacing.small
+                    top = landscapeContentPadding + MaterialTheme.spacing.extraSmall,
+                    bottom = insets.calculateBottomPadding() + landscapeContentPadding,
+                    start = landscapeContentPadding,
+                    end = landscapeContentPadding
                 )
             ) {
                 item {

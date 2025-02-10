@@ -1,45 +1,20 @@
 package app.versta.translate.core.model
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.versta.translate.adapter.inbound.ModelExtractor
-import app.versta.translate.adapter.inbound.ModelExtractorProgressListener
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
-import app.versta.translate.core.entity.BundleMetadata
 import app.versta.translate.core.entity.Language
-import app.versta.translate.core.entity.LanguageMetadata
-import app.versta.translate.core.entity.ModelMetadata
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
-import java.io.File
-
-
-
-
-sealed class ExtractionProgress {
-    data object Idle : ExtractionProgress()
-    data object Started : ExtractionProgress()
-
-    data class InProgress(val current: String, val extracted: Int, val total: Int) :
-        ExtractionProgress()
-
-    data class Completed(val metadata: ModelMetadata) : ExtractionProgress()
-    data class Error(val exception: Exception) : ExtractionProgress()
-}
 
 enum class LanguageType {
     Source,
@@ -48,17 +23,11 @@ enum class LanguageType {
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LanguageViewModel(
-    private val modelExtractor: ModelExtractor,
     private val languageRepository: LanguageRepository,
     private val languagePreferenceRepository: LanguagePreferenceRepository
 ) : ViewModel() {
-    private val _serializer = Json { ignoreUnknownKeys = true }
-
     private val _languageSelectionState = MutableStateFlow<LanguageType?>(null)
     val languageSelectionState: StateFlow<LanguageType?> = _languageSelectionState
-
-    private val _progressState = MutableStateFlow<ExtractionProgress>(ExtractionProgress.Idle)
-    val progressState: StateFlow<ExtractionProgress> = _progressState.asStateFlow()
 
     val sourceLanguage = languagePreferenceRepository.getSourceLanguage()
     val targetLanguage = languagePreferenceRepository.getTargetLanguage()
@@ -137,48 +106,6 @@ class LanguageViewModel(
         }
     }
 
-    /**
-     * Listener for extraction progress updates.
-     */
-    private val importListener: ModelExtractorProgressListener =
-        object : ModelExtractorProgressListener {
-            override fun onProgressUpdate(file: File, extracted: Int, total: Int) {
-                _progressState.update {
-                    ExtractionProgress.InProgress(
-                        current = file.name,
-                        extracted = extracted,
-                        total = total
-                    )
-                }
-            }
-        }
-
-    /**
-     * Imports a model from the given Uri.
-     */
-    fun import(uri: Uri, outputDir: File) {
-        viewModelScope.launch(Dispatchers.IO) {
-            _progressState.value = ExtractionProgress.Started
-
-            var output: File? = null
-
-            try {
-                output = modelExtractor.extract(
-                    uri = uri,
-                    outputDir = outputDir,
-                    listener = importListener
-                )
-
-                val metadata = readMetadata(output)
-
-                languageRepository.upsertLanguageModels(metadata)
-                _progressState.value = ExtractionProgress.Completed(metadata)
-            } catch (e: Exception) {
-                output?.deleteRecursively()
-                _progressState.value = ExtractionProgress.Error(e)
-            }
-        }
-    }
 
     fun deleteBySource(language: Language) {
         viewModelScope.launch {
@@ -186,38 +113,5 @@ class LanguageViewModel(
                 languagePreferenceRepository.clearLanguageSelectionForPair(it)
             }
         }
-    }
-
-    /**
-     * Reads the metadata file from the extracted model.
-     */
-    private fun readMetadata(output: File): ModelMetadata {
-        val bundleMetadataFile = File(output, "metadata.json")
-        val bundleMetadata =
-            _serializer.decodeFromString<BundleMetadata>(bundleMetadataFile.readText())
-
-        // TODO: Improve error handling
-        if (!bundleMetadata.isValid()) {
-            throw Exception("Invalid metadata file")
-        }
-
-        val languageMetadata = bundleMetadata.metadata.map {
-            val languageMetadataFile = File(output.resolve(it.directory), "metadata.json")
-
-            _serializer.decodeFromString<LanguageMetadata>(languageMetadataFile.readText())
-                .setRootPath(
-                    path = output.resolve(it.directory).toPath()
-                )
-        }
-
-        // TODO: Improve error handling
-        if (languageMetadata.any { !it.isValid() }) {
-            throw Exception("Invalid language metadata file")
-        }
-
-        return ModelMetadata(
-            bundleMetadata = bundleMetadata,
-            languageMetadata = languageMetadata
-        )
     }
 }

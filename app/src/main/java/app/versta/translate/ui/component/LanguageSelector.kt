@@ -47,7 +47,6 @@ import app.versta.translate.core.entity.Language
 import app.versta.translate.core.model.LanguageType
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.adapter.inbound.ModelExtractorTar
 
 @Composable
 fun LanguageSelector(
@@ -122,11 +121,17 @@ fun LanguageSelector(
             modifier = Modifier
                 .matchParentSize(),
         ) {
+            val dividerColor = if (canSwapLanguages) {
+                MaterialTheme.colorScheme.surface
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerHighest
+            }
+
            VerticalDivider(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(MaterialTheme.spacing.small),
-                color = MaterialTheme.colorScheme.surface,
+                color = dividerColor,
            )
             FilledIconButton(
                 enabled = canSwapLanguages,
@@ -139,6 +144,8 @@ fun LanguageSelector(
                 colors = IconButtonDefaults.filledIconButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = MaterialTheme.colorScheme.onSurface,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 1f),
+                    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .3f),
                 ),
             ) {
                 Icon(
@@ -219,7 +226,6 @@ fun LanguageSelectorButton(
 fun LanguageSelectorPreview() {
     return LanguageSelector(
         languageViewModel = LanguageViewModel(
-            modelExtractor = ModelExtractorTar(LocalContext.current),
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
         ),

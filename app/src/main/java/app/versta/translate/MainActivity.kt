@@ -18,7 +18,8 @@ import app.versta.translate.ui.component.LanguageSelectionDrawer
 import app.versta.translate.ui.component.Router
 import app.versta.translate.ui.component.TranslatorLoadingProgressDialog
 import app.versta.translate.ui.theme.TranslateTheme
-import app.versta.translate.adapter.inbound.ModelFilePickerLauncher
+import app.versta.translate.adapter.inbound.ModelFilePicker
+import app.versta.translate.core.model.LanguageImportViewModel
 import app.versta.translate.utils.viewModelFactory
 
 open class MainActivity : ComponentActivity() {
@@ -26,9 +27,19 @@ open class MainActivity : ComponentActivity() {
         factoryProducer = {
             viewModelFactory {
                 LanguageViewModel(
-                    modelExtractor = MainApplication.module.extractor,
                     languageRepository = MainApplication.module.languageRepository,
                     languagePreferenceRepository = MainApplication.module.languagePreferenceRepository
+                )
+            }
+        }
+    )
+
+    private val languageImportViewModel by viewModels<LanguageImportViewModel>(
+        factoryProducer = {
+            viewModelFactory {
+                LanguageImportViewModel(
+                    modelExtractor = MainApplication.module.extractor,
+                    languageRepository = MainApplication.module.languageRepository
                 )
             }
         }
@@ -77,7 +88,7 @@ open class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        ModelFilePickerLauncher.registerForActivity(this)
+        ModelFilePicker.registerForActivity(this)
 
         enableEdgeToEdge()
         setContent {
@@ -87,6 +98,7 @@ open class MainActivity : ComponentActivity() {
                 ) {
                     Router(
                         languageViewModel = languageViewModel,
+                        languageImportViewModel = languageImportViewModel,
                         licenseViewModel = licenseViewModel,
                         textTranslationViewModel = textTranslationViewModel,
                         textRecognitionViewModel = textRecognitionViewModel,

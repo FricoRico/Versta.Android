@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Versta</string>
+    <string name="app_name" translatable="false">Versta</string>
     <string name="settings">Settings</string>
     <string name="back">Back</string>
     <string name="swap_languages">Swap languages</string>
@@ -11,6 +11,23 @@
     <string name="share">Share</string>
     <string name="copy">Copy</string>
     <string name="flag">%1$s flag</string>
-    <string name="target_languages_available">%1$s target languages available</string>
     <string name="remove">Remove</string>
+    <string name="target_languages_available">%1$s target languages available</string>
+    <string name="language_import_title">Finding your language</string>
+    <string name="language_import_introduction">To add a new language, you\'ll need a language file from our website. Choose an option to get started.</string>
+    <string name="language_import_file_type_explanation">No need to extract it — just pick the .tar.gz file as it is.</string>
+    <string name="language_import_file_type">.tar.gz</string>
+    <string name="language_import_complete_title">All done!</string>
+    <string name="language_import_complete_explanation">The language models have been successfully imported and are now ready for use. You can start translating!</string>
+    <string name="language_import_failed_title">Ooh darn!</string>
+    <string name="language_import_failed_explanation">An unexpected error occurred while importing the language model. This may be due to a corrupted file or an issue with the model itself.</string>
+    <string name="language_import_failed_extra_help">Try again with a different file, or file an issue on GitHub if the problem persists.</string>
+    <string name="language_analysis_explanation">Great! The following languages will be imported, and you\'ll be able to use them in your translations.</string>
+    <string name="language_analysis_title">Ready to import</string>
+    <string name="language_analysis_failed_explanation">An error occurred. There appears to be an issue with the selected file. Please try uploading a different file.</string>
+    <string name="language_analysis_failed_title">Whoops!</string>
+    <string name="language_analysis_approve">Import languages</string>
+    <string name="get_file">Get a new file</string>
+    <string name="choose_file">Choose an existing file</string>
+    <string name="unknown_error">Unknown error</string>
 </resources>

@@ -46,7 +46,7 @@ class LanguageDatabaseRepository(
         mapLanguageModelDatabaseModelToLanguageModelFiles(
             database.languageModels.getAllByLanguageId(
                 languagePair.id
-            ).executeAsOne()
+            ).executeAsOneOrNull()
         )
 
     /**
@@ -191,7 +191,15 @@ class LanguageDatabaseRepository(
         )
     }
 
-    private fun mapLanguageModelDatabaseModelToLanguageModelFiles(data: LanguageModelDatabaseModel): LanguageModelFiles? {
+    /**
+     * Maps a [LanguageModelDatabaseModel] to a [LanguageModelFiles].
+     * @param data The language model database model to map.
+     */
+    private fun mapLanguageModelDatabaseModelToLanguageModelFiles(data: LanguageModelDatabaseModel?): LanguageModelFiles? {
+        if (data == null) {
+            return null
+        }
+
         val path = data.path.toPath().toNioPath()
 
         try {

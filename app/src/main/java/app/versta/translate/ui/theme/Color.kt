@@ -1,5 +1,6 @@
 package app.versta.translate.ui.theme
 
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -39,6 +40,36 @@ object FilledIconButtonDefaults {
         contentColor = contentColor,
         disabledContainerColor = disabledContainerColor,
         disabledContentColor = disabledContentColor,
+    )
+
+}
+
+object ButtonDefaults {
+
+    @Composable
+    fun tertiaryButtonColors(
+        containerColor: Color = MaterialTheme.colorScheme.tertiary,
+        contentColor: Color = MaterialTheme.colorScheme.onTertiary,
+        disabledContainerColor: Color = MaterialTheme.colorScheme.tertiaryContainer,
+        disabledContentColor: Color = MaterialTheme.colorScheme.onTertiaryContainer,
+    ) = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+            disabledContainerColor = disabledContainerColor,
+            disabledContentColor = disabledContentColor
+        )
+
+    @Composable
+    fun transparentButtonColors(
+        containerColor: Color = Color.Transparent,
+        contentColor: Color = MaterialTheme.colorScheme.onSurface,
+        disabledContainerColor: Color = Color.Transparent,
+        disabledContentColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
+    ) = ButtonDefaults.buttonColors(
+        containerColor = containerColor,
+        contentColor = contentColor,
+        disabledContainerColor = disabledContainerColor,
+        disabledContentColor = disabledContentColor
     )
 
 }

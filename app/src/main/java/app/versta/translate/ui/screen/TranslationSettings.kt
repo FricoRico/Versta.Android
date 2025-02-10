@@ -1,9 +1,13 @@
 package app.versta.translate.ui.screen
 
+import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.icu.text.DecimalFormat
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,6 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
@@ -57,6 +63,14 @@ fun TranslationSettings(
     navController: NavController,
     translationViewModel: TranslationViewModel,
 ) {
+    val orientation = LocalContext.current.resources.configuration.orientation
+
+    val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
+        MaterialTheme.spacing.medium
+    } else {
+        MaterialTheme.spacing.small
+    }
+
     val maxThreadCount = remember { Runtime.getRuntime().availableProcessors() }
     val cacheSizeOptions = remember { listOf(16, 32, 64, 128, 256, 512, Int.MAX_VALUE) }
     val sequenceLengthOptions = remember { listOf(16, 32, 64, 128, 256, 512) }
@@ -110,13 +124,12 @@ fun TranslationSettings(
         content = { insets, scrollConnection ->
             LazyColumn(
                 modifier = Modifier
-                    .nestedScroll(scrollConnection)
-                    .padding(horizontal = MaterialTheme.spacing.small)
-                    .fillMaxSize(),
+                    .nestedScroll(scrollConnection),
                 contentPadding = PaddingValues(
-                    top = MaterialTheme.spacing.small + MaterialTheme.spacing.extraSmall,
-                    bottom = insets.asPaddingValues()
-                        .calculateBottomPadding() + MaterialTheme.spacing.small
+                    top = landscapeContentPadding + MaterialTheme.spacing.extraSmall,
+                    bottom = insets.calculateBottomPadding() + landscapeContentPadding,
+                    start = landscapeContentPadding,
+                    end = landscapeContentPadding
                 )
             ) {
                 item {

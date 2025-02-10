@@ -1,8 +1,11 @@
 package app.versta.translate.ui.screen
 
+import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -18,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
@@ -36,7 +40,6 @@ import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.TranslationTextField
 import app.versta.translate.ui.component.TrialLicenseCard
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.adapter.inbound.ModelExtractorTar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +49,14 @@ fun Home(
     languageViewModel: LanguageViewModel,
     textTranslationViewModel: TextTranslationViewModel
 ) {
+    val orientation = LocalContext.current.resources.configuration.orientation
+
+    val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
+        MaterialTheme.spacing.medium
+    } else {
+        MaterialTheme.spacing.small
+    }
+
     return ScaffoldLargeHeader(
         title = {
             Text(
@@ -63,11 +74,14 @@ fun Home(
         content = { insets, scrollConnection ->
             LazyColumn(
                 modifier = Modifier
-                    .nestedScroll(scrollConnection)
-                    .padding(top = MaterialTheme.spacing.small + MaterialTheme.spacing.extraSmall)
-                    .padding(horizontal = MaterialTheme.spacing.small),
+                    .nestedScroll(scrollConnection),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                contentPadding = PaddingValues(bottom = insets.asPaddingValues().calculateBottomPadding() + MaterialTheme.spacing.small)
+                contentPadding = PaddingValues(
+                    top = landscapeContentPadding + MaterialTheme.spacing.extraSmall,
+                    bottom = insets.calculateBottomPadding() + landscapeContentPadding,
+                    start = landscapeContentPadding,
+                    end = landscapeContentPadding
+                )
             ) {
                 item {
                     LanguageSelector(languageViewModel = languageViewModel)
@@ -128,7 +142,6 @@ private fun HomePreview() {
             languagePreferenceRepository = LanguagePreferenceMemoryRepository()
         ),
         languageViewModel = LanguageViewModel(
-            modelExtractor = ModelExtractorTar(LocalContext.current),
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository()
         )

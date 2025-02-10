@@ -3,7 +3,7 @@ package app.versta.translate.adapter.inbound
 import android.net.Uri
 import java.io.File
 
-interface ModelExtractorProgressListener {
+interface ExtractionProgressListener {
     /**
      * Callback for progress updates during extraction.
      * @param file The file currently being extracted.
@@ -13,7 +13,7 @@ interface ModelExtractorProgressListener {
     fun onProgressUpdate(file: File, extracted: Int, total: Int)
 }
 
-interface ModelExtractor {
+interface CompressedFileExtractor {
     /**
      * Extracts the contents of a compressed archive file from a given Uri into the app's local storage.
      * @param uri The Uri of the zip file to extract.
@@ -24,6 +24,13 @@ interface ModelExtractor {
         uri: Uri,
         outputDir: File,
         extractToDirectory: Boolean = true,
-        listener: ModelExtractorProgressListener? = null
+        listener: ExtractionProgressListener? = null
     ): File
+
+    /**
+     * Opens a file from a compressed archive file.
+     * @param uri The Uri of the archive file.
+     * @param fileName The name of the file to open.
+     */
+    fun openFile(uri: Uri, fileName: String): File?
 }

@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +21,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContent
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
@@ -37,8 +41,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
@@ -82,7 +88,7 @@ fun ScaffoldModalBottomSheet(
     val screenHeightDp = configuration.screenHeightDp.dp
     val statusBarHeight: Dp =
         WindowInsets.safeContent.asPaddingValues().calculateTopPadding() +
-        WindowInsets.safeContent.asPaddingValues().calculateBottomPadding()
+                WindowInsets.safeContent.asPaddingValues().calculateBottomPadding()
 
     val bottomSheetMaxHeight = screenHeightDp - statusBarHeight
 
@@ -94,6 +100,8 @@ fun ScaffoldModalBottomSheet(
         animationSpec = TweenSpec(),
         label = "drawerBackgroundColor"
     )
+
+    val contentPadding = WindowInsets.safeDrawing.asPaddingValues()
 
     BottomSheetScaffold(
         topBar = {
@@ -122,11 +130,19 @@ fun ScaffoldModalBottomSheet(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = bottomPadding)
-                    .consumeWindowInsets(innerPadding)
+                    .padding(
+                        start = contentPadding.calculateStartPadding(layoutDirection = LocalLayoutDirection.current),
+                        end = contentPadding.calculateEndPadding(layoutDirection = LocalLayoutDirection.current),
+                        bottom = bottomPadding
+                    )
             ) {
                 content()
+            }
 
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
                 Scrim(
                     color = BottomSheetDefaults.ScrimColor,
                     onDismissRequest = {
@@ -167,7 +183,12 @@ fun ScaffoldModalBottomSheet(
 }
 
 @Composable
-fun BoxScope.Scrim(color: Color, onDismissRequest: () -> Unit, visible: Boolean, modifier: Modifier = Modifier) {
+fun BoxScope.Scrim(
+    color: Color,
+    onDismissRequest: () -> Unit,
+    visible: Boolean,
+    modifier: Modifier = Modifier
+) {
     if (color.isSpecified) {
         val alpha by
         animateFloatAsState(
@@ -190,12 +211,13 @@ fun BoxScope.Scrim(color: Color, onDismissRequest: () -> Unit, visible: Boolean,
             } else {
                 Modifier
             }
-            Canvas(
-                Modifier
-                    .matchParentSize()
-                    .then(dismissSheet)
-            ) {
-                drawRect(color = color, alpha = alpha.coerceIn(0f, 1f))
-            }
+        Canvas(
+            Modifier
+                .matchParentSize()
+                .then(dismissSheet)
+                .then(modifier)
+        ) {
+            drawRect(color = color, alpha = alpha.coerceIn(0f, 1f))
+        }
     }
 }

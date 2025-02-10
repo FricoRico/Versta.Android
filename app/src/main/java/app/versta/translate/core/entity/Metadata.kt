@@ -14,12 +14,29 @@ class BundleMetadata(
     val version: String = "",
     val metadata: List<LanguageModel>,
     val bidirectional: Boolean,
-    private val languages: List<String>
+    val languages: List<String>
 ) {
     fun isValid() =
         languages.isNotEmpty()
             && (if (bidirectional) languages.size % 2 == 0 else true)
             && metadata.isNotEmpty()
+
+    fun languagePairs(): List<LanguagePair> {
+        return metadata.map {
+            val source = Language.fromIsoCode(it.sourceLanguage)
+            val target = Language.fromIsoCode(it.targetLanguage)
+
+            LanguagePair(source, target)
+        }
+    }
+
+    fun distinctLanguagePairs(): List<LanguagePair> {
+        return languagePairs().distinctBy { pair ->
+            listOf(pair.source, pair.target)
+                .sortedBy { it.isoCode }
+                .joinToString("-")
+        }
+    }
 }
 
 @Serializable

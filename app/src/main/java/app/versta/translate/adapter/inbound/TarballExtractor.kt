@@ -9,7 +9,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 
-class ModelExtractorTar(private val context: Context) : ModelExtractor {
+class TarballExtractor(private val context: Context) : CompressedFileExtractor {
     /**
      * Extracts the contents of a .tar.gz file from a given Uri into the app's local storage.
      * @param uri The Uri of the .tar.gz file to extract.
@@ -20,7 +20,7 @@ class ModelExtractorTar(private val context: Context) : ModelExtractor {
         uri: Uri,
         outputDir: File,
         extractToDirectory: Boolean,
-        listener: ModelExtractorProgressListener?
+        listener: ExtractionProgressListener?
     ): File {
         var file: File? = null
 
@@ -35,6 +35,30 @@ class ModelExtractorTar(private val context: Context) : ModelExtractor {
                 file.delete()
             }
         }
+    }
+
+    /**
+     * Opens a file from a compressed archive file.
+     * @param uri The Uri of the archive file.
+     * @param fileName The name of the file to open.
+     */
+    override fun openFile(uri: Uri, fileName: String): File? {
+        TarArchiveInputStream(GzipCompressorInputStream(context.contentResolver.openInputStream(uri))).use { input ->
+            var entry = input.nextEntry
+
+            while (entry != null) {
+                if (entry.name == fileName) {
+                    val metadataBytes = input.readBytes()
+                    return File.createTempFile(fileName, null, context.cacheDir).apply {
+                        writeBytes(metadataBytes)
+                    }
+                }
+
+                entry = input.nextEntry
+            }
+        }
+
+        return null
     }
 
     /**
@@ -64,7 +88,7 @@ class ModelExtractorTar(private val context: Context) : ModelExtractor {
         file: File,
         outputDir: File,
         extractToDirectory: Boolean,
-        listener: ModelExtractorProgressListener?
+        listener: ExtractionProgressListener?
     ): File {
         val total = if (listener != null) getTotalEntries(file) else 0
         val extractionDir = if (extractToDirectory) {
@@ -77,7 +101,7 @@ class ModelExtractorTar(private val context: Context) : ModelExtractor {
         }
 
         TarArchiveInputStream(GzipCompressorInputStream(FileInputStream(file))).use { input ->
-            var entry = input.nextTarEntry
+            var entry = input.nextEntry
             var extracted = 0
 
             while (entry != null) {
@@ -97,7 +121,7 @@ class ModelExtractorTar(private val context: Context) : ModelExtractor {
                     listener.onProgressUpdate(path, extracted, total)
                 }
 
-                entry = input.nextTarEntry
+                entry = input.nextEntry
             }
         }
 
@@ -141,7 +165,7 @@ class ModelExtractorTar(private val context: Context) : ModelExtractor {
         var totalEntries = 0
 
         TarArchiveInputStream(GzipCompressorInputStream(FileInputStream(file))).use { input ->
-            while (input.nextTarEntry != null) {
+            while (input.nextEntry != null) {
                 totalEntries++
             }
         }
@@ -150,6 +174,6 @@ class ModelExtractorTar(private val context: Context) : ModelExtractor {
     }
 
     companion object {
-        private val TAG: String = ModelExtractorTar::class.java.simpleName
+        private val TAG: String = TarballExtractor::class.java.simpleName
     }
 }

@@ -1,6 +1,7 @@
 package app.versta.translate.ui.screen
 
 import android.content.Context
+import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -8,6 +9,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -40,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -58,7 +62,7 @@ import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.SettingsDefaults
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.theme.spacing
-import app.versta.translate.adapter.inbound.ModelExtractorTar
+import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,6 +71,15 @@ fun LanguageSettings(
     languageViewModel: LanguageViewModel,
 ) {
     val context = LocalContext.current
+
+    val orientation = context.resources.configuration.orientation
+
+    val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
+        MaterialTheme.spacing.medium
+    } else {
+        MaterialTheme.spacing.small
+    }
+
 
     val sourceLanguages by languageViewModel.sourceLanguages.collectAsStateWithLifecycle(emptyList())
     val availableLanguages by languageViewModel.availableLanguages.collectAsStateWithLifecycle(
@@ -88,16 +101,16 @@ fun LanguageSettings(
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
             }
         },
+        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarSecondaryColor(),
         content = { insets, scrollConnection ->
             LazyColumn(
                 modifier = Modifier
-                    .nestedScroll(scrollConnection)
-                    .padding(horizontal = MaterialTheme.spacing.small)
-                    .fillMaxSize(),
+                    .nestedScroll(scrollConnection),
                 contentPadding = PaddingValues(
-                    top = MaterialTheme.spacing.small + MaterialTheme.spacing.extraSmall,
-                    bottom = insets.asPaddingValues()
-                        .calculateBottomPadding() + MaterialTheme.spacing.small
+                    top = landscapeContentPadding + MaterialTheme.spacing.extraSmall,
+                    bottom = insets.calculateBottomPadding() + landscapeContentPadding,
+                    start = landscapeContentPadding,
+                    end = landscapeContentPadding
                 )
             ) {
                 item {
@@ -119,7 +132,7 @@ fun LanguageSettings(
                                 Icon(
                                     Icons.Filled.Download,
                                     contentDescription = "License",
-                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    tint = MaterialTheme.colorScheme.primaryContainer,
                                 )
                             }
                         },
@@ -312,7 +325,6 @@ private fun PreviewLanguageSettings() {
     LanguageSettings(
         navController = rememberNavController(),
         languageViewModel = LanguageViewModel(
-            modelExtractor = ModelExtractorTar(LocalContext.current),
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository()
         ),
