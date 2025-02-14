@@ -249,7 +249,7 @@ private fun SettingsButtonItemContent(
                     vertical = MaterialTheme.spacing.large,
                     horizontal = MaterialTheme.spacing.large,
                 ),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium, Alignment.CenterVertically),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

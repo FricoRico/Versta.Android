@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -40,8 +41,8 @@ fun Router(
     val navController = rememberNavController()
 
     val view = LocalView.current
-    val activity = view.context as ComponentActivity
-    val window = activity.window
+    val activity = remember { view.context as ComponentActivity }
+    val window = remember { activity.window }
 
     DisposableEffect(Unit) {
         val listener = NavController.OnDestinationChangedListener { _, destination, _ ->

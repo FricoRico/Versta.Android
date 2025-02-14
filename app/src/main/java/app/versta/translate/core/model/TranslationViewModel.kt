@@ -64,6 +64,9 @@ class TranslationViewModel(
     private val _loadingProgress = MutableStateFlow<LoadingProgress>(LoadingProgress.Idle)
     val loadingProgress: StateFlow<LoadingProgress> = _loadingProgress.asStateFlow()
 
+    val _translationInProgress = MutableStateFlow(false)
+    val translationInProgress: StateFlow<Boolean> = _translationInProgress.asStateFlow()
+
     /**
      * Sets the cache size.
      */
@@ -141,6 +144,8 @@ class TranslationViewModel(
 
                 val (inputIds, attentionMask) = tokenizer.encode(sanitized)
                 val minP = minProbability.first() * 100 / tokenizer.vocabSize
+
+                _translationInProgress.value = true
                 model.runAsFlow(
                     inputIds = inputIds,
                     attentionMask = attentionMask,
@@ -157,6 +162,7 @@ class TranslationViewModel(
                         _cache.put(sanitized, outputText, languages)
                     }
                 }
+                _translationInProgress.value = false
             }
         }
     }
@@ -183,6 +189,8 @@ class TranslationViewModel(
 
             val (inputIds, attentionMask) = tokenizer.encode(sanitized)
             val minP = minProbability.first() * 100 / tokenizer.vocabSize
+
+            _translationInProgress.value = true
             val tokenIds = model.run(
                 inputIds = inputIds,
                 attentionMask = attentionMask,
@@ -192,8 +200,19 @@ class TranslationViewModel(
                 beamSize = beamSize.first(),
                 maxSequenceLength = maxSequenceLength.first(),
             )
+            _translationInProgress.value = false
+
             tokenizer.decode(tokenIds)
+
         }
+    }
+
+    /**
+     * Cancels the current translation.
+     */
+    fun cancelTranslation() {
+        model.cancel()
+        _translationInProgress.value = false
     }
 
     /**

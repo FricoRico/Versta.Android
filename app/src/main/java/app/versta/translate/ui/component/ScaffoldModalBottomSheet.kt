@@ -1,11 +1,14 @@
 package app.versta.translate.ui.component
 
+import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -14,7 +17,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -22,7 +24,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
@@ -35,13 +36,18 @@ import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.isSpecified
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -53,19 +59,21 @@ import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.versta.translate.R
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScaffoldModalBottomSheet(
-    sheetContent: @Composable ColumnScope.() -> Unit,
     modifier: Modifier = Modifier,
     scaffoldState: BottomSheetScaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             skipHiddenState = false,
         )
     ),
+    sheetContent: @Composable ColumnScope.() -> Unit,
+    sheetBottomBar: @Composable (() -> Unit)? = null,
     sheetPeekHeight: Dp = BottomSheetDefaults.SheetPeekHeight,
     sheetMaxWidth: Dp = BottomSheetDefaults.SheetMaxWidth,
     sheetShape: Shape = BottomSheetDefaults.ExpandedShape,
@@ -85,12 +93,13 @@ fun ScaffoldModalBottomSheet(
 
     val configuration = LocalConfiguration.current
 
-    val screenHeightDp = configuration.screenHeightDp.dp
+    val screenHeightDp = remember { configuration.screenHeightDp.dp }
+
     val statusBarHeight: Dp =
         WindowInsets.safeContent.asPaddingValues().calculateTopPadding() +
                 WindowInsets.safeContent.asPaddingValues().calculateBottomPadding()
 
-    val bottomSheetMaxHeight = screenHeightDp - statusBarHeight
+    val bottomSheetMaxHeight = remember { screenHeightDp - statusBarHeight }
 
     val isVisible = scaffoldState.bottomSheetState.targetValue != SheetValue.Hidden
     val isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
@@ -180,6 +189,25 @@ fun ScaffoldModalBottomSheet(
         containerColor = containerColor,
         contentColor = contentColor
     )
+
+
+    if (sheetBottomBar != null) {
+        AnimatedVisibility(
+            visible = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
+        ) {
+            Column(
+                verticalArrangement = Arrangement.Bottom,
+                modifier = Modifier
+                    .padding(
+                        bottom = WindowInsets.navigationBars.asPaddingValues()
+                            .calculateBottomPadding()
+                    )
+                    .fillMaxSize()
+            ) {
+                sheetBottomBar()
+            }
+        }
+    }
 }
 
 @Composable

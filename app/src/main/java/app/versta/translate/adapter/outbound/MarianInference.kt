@@ -5,6 +5,7 @@ import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtLoggingLevel
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.extensions.OrtxPackage
+import android.util.Log
 import app.versta.translate.bridge.inference.BeamSearch
 import app.versta.translate.core.entity.LanguageModelInferenceFiles
 import app.versta.translate.core.entity.DecoderInput
@@ -28,6 +29,8 @@ class MarianInference : TranslationInference {
 
     private var encoderSession: OrtSession? = null
     private var decoderSession: OrtSession? = null
+
+    private var runInference = false
 
     private fun encode(
         inputIds: LongArray, attentionMask: LongArray
@@ -90,8 +93,12 @@ class MarianInference : TranslationInference {
             beamSearch = beamSearch
         )
 
+        var step = 0
+
         try {
-            for (step in 0 until maxSequenceLength) {
+            while (runInference && step < maxSequenceLength) {
+                step++
+
                 if (beamSearch.complete()) {
                     break
                 }
@@ -103,10 +110,6 @@ class MarianInference : TranslationInference {
 
                 val outputs = decoderSession!!.run(inputs)
                 decoderInput.close()
-                val logits = outputs.get("logits").get()
-                if (logits !is OnnxTensor) {
-                    throw IllegalStateException("Logits is not a tensor")
-                }
 
                 decoderOutput.search(outputs)
                 decoderOutput.cache(outputs)
@@ -156,8 +159,12 @@ class MarianInference : TranslationInference {
                 beamSearch = beamSearch
             )
 
+            var step = 0
+
             try {
-                for (step in 0 until maxSequenceLength) {
+                while (runInference && step < maxSequenceLength) {
+                    step++
+
                     if (beamSearch.complete()) {
                         break
                     }
@@ -196,6 +203,8 @@ class MarianInference : TranslationInference {
         beamSize: Int,
         maxSequenceLength: Int,
     ): LongArray {
+        runInference = true
+
         val encoderHiddenStates = encode(
             inputIds = inputIds,
             attentionMask = attentionMask
@@ -222,6 +231,8 @@ class MarianInference : TranslationInference {
         beamSize: Int,
         maxSequenceLength: Int,
     ): Flow<LongArray> {
+        runInference = true
+
         val encoderHiddenStates = encode(
             inputIds = inputIds,
             attentionMask = attentionMask
@@ -238,6 +249,11 @@ class MarianInference : TranslationInference {
         )
     }
 
+    override fun cancel() {
+        Log.d(TAG, "Canceling inference")
+        runInference = false
+    }
+
     override fun load(files: LanguageModelInferenceFiles, threads: Int) {
         close()
 
@@ -250,7 +266,6 @@ class MarianInference : TranslationInference {
             addXnnpack(mapOf("intra_op_num_threads" to threads.toString()))
             addConfigEntry("kOrtSessionOptionsConfigAllowIntraOpSpinning", "0")
             registerCustomOpLibrary(OrtxPackage.getLibraryPath())
-            addNnapi()
         }
 
         encoderSession = ortEnvironment.createSession(encoderFile, options)

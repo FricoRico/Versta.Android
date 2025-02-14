@@ -24,6 +24,8 @@ interface TranslationInference {
         maxSequenceLength: Int,
     ): Flow<LongArray>
 
+    fun cancel()
+
     fun load(files: LanguageModelInferenceFiles, threads: Int)
 
     fun close()

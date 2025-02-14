@@ -29,6 +29,10 @@ class MockInference: TranslationInference {
         return flowOf(LongArray(0))
     }
 
+    override fun cancel() {
+        return
+    }
+
     override fun load(files: LanguageModelInferenceFiles, threads: Int) {
         return
     }
