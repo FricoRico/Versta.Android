@@ -4,37 +4,8 @@ import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OnnxTensorLike
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
+import app.versta.translate.bridge.inference.BeamSearch
 import app.versta.translate.utils.TensorUtils
-import java.nio.FloatBuffer
-
-data class DecoderCacheEntry(
-    var buffer: FloatBuffer,
-    var shape: LongArray,
-) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as DecoderCacheEntry
-
-        if (buffer != other.buffer) return false
-        if (!shape.contentEquals(other.shape)) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = buffer.hashCode()
-        result = 31 * result + shape.contentHashCode()
-        return result
-    }
-}
-
-// Shape: [batch_size, sequence_length, vocab_size]
-internal typealias DecoderLogits = Array<Array<FloatArray>>
-
-// Shape: [last_key_values, hidden_states]
-internal typealias DecoderCache = Map<String, DecoderCacheEntry>
 
 class DecoderInput(
     private val ortEnvironment: OrtEnvironment,
@@ -49,14 +20,13 @@ class DecoderInput(
     private var _inputIdsTensor: OnnxTensorLike? = null
     private var _useCacheTensor: OnnxTensorLike? = null
 
-    private var _cacheTensors: Map<String, OnnxTensorLike?>? = null
-
     fun get(
         inputIds: Array<LongArray>,
-        cache: DecoderCache? = null
+        cache: Map<String, OnnxTensorLike>? = null
     ): Map<String, OnnxTensorLike?> {
         _inputIdsTensor = OnnxTensor.createTensor(ortEnvironment, inputIds)
-        _useCacheTensor = OnnxTensor.createTensor(ortEnvironment, booleanArrayOf(cache?.isNotEmpty() ?: false))
+        _useCacheTensor =
+            OnnxTensor.createTensor(ortEnvironment, booleanArrayOf(cache?.isNotEmpty() ?: false))
 
         val inputs = mutableMapOf(
             "input_ids" to _inputIdsTensor,
@@ -64,10 +34,7 @@ class DecoderInput(
             "encoder_hidden_states" to _encoderHiddenStatesTensor,
             "encoder_attention_mask" to _encoderAttentionMaskTensor,
         )
-        _cacheTensors = cache?.map { (key, value) ->
-            inputs[key] = OnnxTensor.createTensor(ortEnvironment, value.buffer, value.shape)
-            key to inputs[key]
-        }?.toMap()
+        inputs.putAll(cache ?: emptyMap())
 
         return inputs
     }
@@ -75,46 +42,36 @@ class DecoderInput(
     fun close() {
         TensorUtils.closeTensor(_inputIdsTensor)
         TensorUtils.closeTensor(_useCacheTensor)
-        TensorUtils.closeTensor(_cacheTensors)
     }
 
     fun destroy() {
         TensorUtils.closeTensor(_inputIdsTensor)
         TensorUtils.closeTensor(_useCacheTensor)
 
-        TensorUtils.closeTensor(_cacheTensors)
-
         TensorUtils.closeTensor(_encoderHiddenStatesTensor)
         TensorUtils.closeTensor(_encoderAttentionMaskTensor)
     }
 }
 
-class DecoderOutput {
-    private var _outputs : OrtSession.Result? = null
-
+class DecoderOutput(
+    private val ortEnvironment: OrtEnvironment,
+    private val beamSearch: BeamSearch
+) {
     private val _cacheRegex = "present.\\d".toRegex()
-    private val _cache = mutableMapOf<String, DecoderCacheEntry>()
-    val cache: DecoderCache
+    private val _cache = mutableMapOf<String, OnnxTensorLike>()
+    val cache: Map<String, OnnxTensorLike>
         get() = _cache
 
-    @Suppress("UNCHECKED_CAST")
-    fun parse(outputs: OrtSession.Result): DecoderLogits? {
-        _outputs = outputs
-
-        val outputLogits = outputs.get("logits").get()
-        if (outputLogits !is OnnxTensor) {
-            return null
+    fun search(outputs: OrtSession.Result) {
+        val tensor = outputs.get("logits").get()
+        if (tensor !is OnnxTensor) {
+            throw IllegalStateException("Logits is not a tensor")
         }
 
-        val logits = outputLogits.value
-        if (logits !is Array<*> || logits.isEmpty() || logits.isArrayOf<DecoderLogits>()) {
-            return null
-        }
-
-        return logits as DecoderLogits
+        beamSearch.search(tensor)
     }
 
-    fun cache(outputs: OrtSession.Result, ids: IntArray) {
+    fun cache(outputs: OrtSession.Result) {
         for (output in outputs) {
             if (!output.key.contains(_cacheRegex)) {
                 continue
@@ -132,32 +89,17 @@ class DecoderOutput {
                 continue
             }
 
-            val buffer = tensor.floatBuffer
-            val count = tensor.info.numElements
+            val buffer = beamSearch.transposeBuffer(tensor)
 
-            val transposed = FloatArray(count.toInt())
-            val size = (count / shape.first()).toInt()
+            TensorUtils.closeTensorBuffer(_cache[key])
+            TensorUtils.closeTensor(_cache[key])
 
-            ids.forEachIndexed { newIndex, oldIndex ->
-                buffer.position(oldIndex * size)
-                buffer.get(transposed, newIndex * size, size)
-            }
-
-            val cache = FloatBuffer.wrap(transposed)
-
-            _cache.merge(key, DecoderCacheEntry(cache, shape)) { _, entry ->
-                entry.buffer = cache
-                entry.shape = shape
-                entry
-            }
+            _cache[key] = OnnxTensor.createTensor(ortEnvironment, buffer.asFloatBuffer(), shape)
         }
     }
 
-    fun close() {
-        TensorUtils.closeTensor(_outputs)
-    }
-
     fun destroy() {
-        TensorUtils.closeTensor(_outputs)
+        TensorUtils.closeTensorBuffer(_cache)
+        TensorUtils.closeTensor(_cache)
     }
 }

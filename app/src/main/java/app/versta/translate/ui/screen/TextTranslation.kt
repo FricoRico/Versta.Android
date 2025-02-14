@@ -1,6 +1,7 @@
 package app.versta.translate.ui.screen
 
 import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -128,10 +129,13 @@ fun TextTranslation(
         translationScope.launch {
             if (languages == null) return@launch
 
+            val startTimestamp = System.currentTimeMillis()
             translationViewModel.translateAsFlow(input, languages!!)
                 .collect {
                     textTranslationViewModel.setTranslation(it)
                 }
+
+            Log.d("TextTranslation", "Translation took ${System.currentTimeMillis() - startTimestamp}ms")
         }
     }
 

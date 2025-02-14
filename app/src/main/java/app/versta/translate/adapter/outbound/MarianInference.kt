@@ -1,10 +1,11 @@
 package app.versta.translate.adapter.outbound
 
+import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtLoggingLevel
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.extensions.OrtxPackage
-import app.versta.translate.core.entity.BeamSearch
+import app.versta.translate.bridge.inference.BeamSearch
 import app.versta.translate.core.entity.LanguageModelInferenceFiles
 import app.versta.translate.core.entity.DecoderInput
 import app.versta.translate.core.entity.DecoderOutput
@@ -71,7 +72,7 @@ class MarianInference : TranslationInference {
             throw IllegalStateException("Encoder session is not loaded")
         }
 
-        val beams = BeamSearch(
+        val beamSearch = BeamSearch(
             beamSize = beamsSize,
             minP = minP,
             padId = padId,
@@ -84,33 +85,36 @@ class MarianInference : TranslationInference {
             encoderAttentionMask = Array(beamsSize) { attentionMask }
         )
 
-        val decoderOutput = DecoderOutput()
+        val decoderOutput = DecoderOutput(
+            ortEnvironment = ortEnvironment,
+            beamSearch = beamSearch
+        )
 
         try {
             for (step in 0 until maxSequenceLength) {
-                if (beams.complete()) {
+                if (beamSearch.complete()) {
                     break
                 }
 
                 val inputs = decoderInput.get(
-                    inputIds = beams.lastTokens(),
+                    inputIds = beamSearch.lastTokens(),
                     cache = decoderOutput.cache
                 )
 
-                decoderOutput.close()
-                val output = decoderSession!!.run(inputs)
-                val logits = decoderOutput.parse(output) ?: break
+                val outputs = decoderSession!!.run(inputs)
                 decoderInput.close()
+                val logits = outputs.get("logits").get()
+                if (logits !is OnnxTensor) {
+                    throw IllegalStateException("Logits is not a tensor")
+                }
 
-                val ids = beams.search(
-                    logits = logits,
-                    size = beamsSize,
-                )
+                decoderOutput.search(outputs)
+                decoderOutput.cache(outputs)
 
-                decoderOutput.cache(output, ids)
+                outputs.close()
             }
 
-            return beams.best()
+            return beamSearch.best()
         } catch (e: Exception) {
             e.printStackTrace()
             throw e
@@ -134,7 +138,7 @@ class MarianInference : TranslationInference {
         }
 
         return flow {
-            val beams = BeamSearch(
+            val beamSearch = BeamSearch(
                 beamSize = beamsSize,
                 minP = minP,
                 padId = padId,
@@ -147,32 +151,31 @@ class MarianInference : TranslationInference {
                 encoderAttentionMask = Array(beamsSize) { attentionMask }
             )
 
-            val decoderOutput = DecoderOutput()
+            val decoderOutput = DecoderOutput(
+                ortEnvironment = ortEnvironment,
+                beamSearch = beamSearch
+            )
 
             try {
                 for (step in 0 until maxSequenceLength) {
-                    if (beams.complete()) {
+                    if (beamSearch.complete()) {
                         break
                     }
 
                     val inputs = decoderInput.get(
-                        inputIds = beams.lastTokens(),
+                        inputIds = beamSearch.lastTokens(),
                         cache = decoderOutput.cache
                     )
 
-                    decoderOutput.close()
-                    val output = decoderSession!!.run(inputs)
-                    val logits = decoderOutput.parse(output) ?: break
+                    val outputs = decoderSession!!.run(inputs)
                     decoderInput.close()
 
-                    val ids = beams.search(
-                        logits = logits,
-                        size = beamsSize,
-                    )
+                    decoderOutput.search(outputs)
+                    decoderOutput.cache(outputs)
 
-                    decoderOutput.cache(output, ids)
+                    outputs.close()
 
-                    emit(beams.best())
+                    emit(beamSearch.best())
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -191,22 +194,23 @@ class MarianInference : TranslationInference {
         padId: Long,
         minP: Float,
         beamSize: Int,
-        maxSequenceLength: Int
+        maxSequenceLength: Int,
     ): LongArray {
         val encoderHiddenStates = encode(
             inputIds = inputIds,
             attentionMask = attentionMask
         )
 
-        return decode(
+        val tokens = decode(
             encoderHiddenStates = encoderHiddenStates,
             attentionMask = attentionMask,
             eosId = eosId,
             padId = padId,
             minP = minP,
             beamsSize = beamSize,
-            maxSequenceLength = maxSequenceLength
+            maxSequenceLength = maxSequenceLength,
         )
+        return tokens
     }
 
     override fun runAsFlow(
@@ -216,7 +220,7 @@ class MarianInference : TranslationInference {
         padId: Long,
         minP: Float,
         beamSize: Int,
-        maxSequenceLength: Int
+        maxSequenceLength: Int,
     ): Flow<LongArray> {
         val encoderHiddenStates = encode(
             inputIds = inputIds,
@@ -230,7 +234,7 @@ class MarianInference : TranslationInference {
             padId = padId,
             minP = minP,
             beamsSize = beamSize,
-            maxSequenceLength = maxSequenceLength
+            maxSequenceLength = maxSequenceLength,
         )
     }
 
@@ -246,6 +250,7 @@ class MarianInference : TranslationInference {
             addXnnpack(mapOf("intra_op_num_threads" to threads.toString()))
             addConfigEntry("kOrtSessionOptionsConfigAllowIntraOpSpinning", "0")
             registerCustomOpLibrary(OrtxPackage.getLibraryPath())
+            addNnapi()
         }
 
         encoderSession = ortEnvironment.createSession(encoderFile, options)

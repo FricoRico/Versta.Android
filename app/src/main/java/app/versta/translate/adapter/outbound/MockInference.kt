@@ -12,7 +12,7 @@ class MockInference: TranslationInference {
         padId: Long,
         minP: Float,
         beamSize: Int,
-        maxSequenceLength: Int
+        maxSequenceLength: Int,
     ): LongArray {
         return LongArray(0)
     }
@@ -24,7 +24,7 @@ class MockInference: TranslationInference {
         padId: Long,
         minP: Float,
         beamSize: Int,
-        maxSequenceLength: Int
+        maxSequenceLength: Int,
     ): Flow<LongArray> {
         return flowOf(LongArray(0))
     }

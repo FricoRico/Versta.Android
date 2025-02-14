@@ -15,6 +15,7 @@
 JNI_SRC_FILES := \
     $(SRC_DIR)/beam_search.cc \
     $(SRC_DIR)/sentence_piece.cc \
+    $(SRC_DIR)/tensor_utils.cc \
     $(SRC_DIR)/vocabulary.cc
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/src/sentencepiece/builtin_pb
@@ -23,9 +24,11 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/src/third_party/protobuf-lite
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/src/third_party/esaxx
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/src/third_party/darts_clone
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/src/third_party/absl
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/src/third_party/onnxruntime
 
 CORE_SRC_FILES := \
 	third_party/absl/flags/flag.cc \
+	third_party/onnxruntime/OrtJniUtil.c \
 	third_party/protobuf-lite/arena.cc \
     third_party/protobuf-lite/arenastring.cc \
     third_party/protobuf-lite/bytestream.cc \
