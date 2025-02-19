@@ -50,10 +50,10 @@ private val localeToScriptMapping = mapOf(
 )
 
 class GenericTransliterator(locale: Locale) : Transliteration {
-    private val _transliterator: Transliterator
+    private var _transliterator: Transliterator? = null
 
     override fun transliterate(text: String): String {
-        return _transliterator.transliterate(text)
+        return _transliterator?.transliterate(text) ?: ""
     }
 
     private fun isSupported(script: Int): Boolean {
@@ -65,17 +65,19 @@ class GenericTransliterator(locale: Locale) : Transliteration {
             ?: UScript.INVALID_CODE
     }
 
-    private fun mapInstance(locale: Locale): String {
+    private fun mapInstance(locale: Locale): String? {
         val script = scriptForLocale(locale)
 
         if (!isSupported(script)) {
-            return "Any-Latin"
+            return null
         }
 
         return scriptMapping.getValue(script)
     }
 
     init {
-        _transliterator = Transliterator.getInstance(mapInstance(locale))
+        mapInstance(locale)?.let {
+            _transliterator = Transliterator.getInstance(it)
+        }
     }
 }

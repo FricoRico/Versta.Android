@@ -8,7 +8,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,12 +16,9 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Stop
@@ -46,7 +42,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -71,6 +66,7 @@ import app.versta.translate.adapter.outbound.MockInference
 import app.versta.translate.adapter.outbound.MockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.core.model.LanguageViewModel
+import app.versta.translate.core.model.LoadingProgress
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.LanguageSelector
@@ -79,9 +75,6 @@ import app.versta.translate.ui.component.TextField
 import app.versta.translate.ui.component.TextFieldDefaults
 import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
@@ -93,11 +86,8 @@ fun TextTranslation(
     translationViewModel: TranslationViewModel,
     textTranslationViewModel: TextTranslationViewModel
 ) {
-    val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
-
-    var translateOnChange by remember { mutableStateOf(true) }
 
     val input by textTranslationViewModel.input.collectAsStateWithLifecycle("")
     val inputTransliteration by textTranslationViewModel.inputTransliteration.collectAsStateWithLifecycle(
@@ -106,6 +96,20 @@ fun TextTranslation(
     val translated by textTranslationViewModel.translated.collectAsStateWithLifecycle("")
     val translatedTransliteration by textTranslationViewModel.translatedTransliteration.collectAsStateWithLifecycle(
         ""
+    )
+
+    val translationLoadingProgress by translationViewModel.loadingProgress.collectAsStateWithLifecycle(
+        LoadingProgress.Idle
+    )
+    val transliterationLoadingProgress by textTranslationViewModel.loadingProgress.collectAsStateWithLifecycle(
+        LoadingProgress.Idle
+    )
+
+    val translationInProgress by translationViewModel.translationInProgress.collectAsStateWithLifecycle(
+        false
+    )
+    val translateOnInput by textTranslationViewModel.translateOnInput.collectAsStateWithLifecycle(
+        false
     )
 
     val languages by translationViewModel.languages.collectAsStateWithLifecycle(null)
@@ -124,12 +128,7 @@ fun TextTranslation(
     var bottomBarHeight by remember { mutableIntStateOf(0) }
     val translationBottomPadding = with(LocalDensity.current) { bottomBarHeight.toDp() }
 
-    val translationInProgress by translationViewModel.translationInProgress.collectAsStateWithLifecycle(
-        false
-    )
-    val translationScope = remember {
-        CoroutineScope(Dispatchers.Default + SupervisorJob())
-    }
+    val translationScope = rememberCoroutineScope()
 
     fun translate(input: String) {
         if (input.isEmpty()) {
@@ -195,34 +194,28 @@ fun TextTranslation(
         clearTranslation()
     }
 
-    fun onCopy(output: String) {
-        clipboardManager.setText(AnnotatedString(output))
+    fun onCopy() {
+        textTranslationViewModel.copyTranslatedText(context)
     }
 
-    fun onShare(output: String) {
-        // TODO: Improve share intent
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, output)
-        }
-        val chooser = Intent.createChooser(shareIntent, "Share this translation")
-        context.startActivity(chooser, null)
+    fun onShare() {
+        textTranslationViewModel.shareTranslatedText(context)
     }
 
     LaunchedEffect(languages) {
         clearTranslation()
     }
 
-    LaunchedEffect(input) {
-        if (!translateOnChange) {
+    LaunchedEffect(input, translationLoadingProgress, transliterationLoadingProgress) {
+        if (!translateOnInput) {
             return@LaunchedEffect
         }
 
-        if (input.isEmpty()) {
+        if (translationLoadingProgress != LoadingProgress.Completed || transliterationLoadingProgress != LoadingProgress.Completed) {
             return@LaunchedEffect
         }
 
-        translateOnChange = false
+        textTranslationViewModel.setTranslateOnInput(false)
         translate(input)
     }
 
@@ -231,7 +224,11 @@ fun TextTranslation(
             CenterAlignedTopAppBar(
                 navigationIcon = {
                     IconButton(onClick = {
-                        navController.popBackStack()
+                        navController.navigate(Screens.Home()) {
+                            popUpTo(navController.graph.startDestinationId) {
+                                inclusive = true
+                            }
+                        }
                     }) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
                     }
@@ -300,9 +297,11 @@ fun TextTranslation(
                     end = MaterialTheme.spacing.small,
                 ),
                 modifier = Modifier
-                    .padding(bottom = WindowInsets.navigationBars
-                        .asPaddingValues()
-                        .calculateBottomPadding() + translationBottomPadding)
+                    .padding(
+                        bottom = WindowInsets.navigationBars
+                            .asPaddingValues()
+                            .calculateBottomPadding() + translationBottomPadding
+                    )
             ) {
                 item {
                     TextTranslationOutput(
@@ -328,10 +327,10 @@ fun TextTranslation(
                     onCancel()
                 },
                 onCopy = {
-                    onCopy(translated)
+                    onCopy()
                 },
                 onShare = {
-                    onShare(translated)
+                    onShare()
                 },
             )
         }
@@ -340,11 +339,11 @@ fun TextTranslation(
 
 @Composable
 fun TextTranslationInputField(
+    modifier: Modifier = Modifier,
     input: String,
     transliteration: String,
     onValueChange: (String) -> Unit = {},
-    onSubmit: (String) -> Unit = {},
-    modifier: Modifier = Modifier
+    onSubmit: (String) -> Unit = {}
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
@@ -374,10 +373,10 @@ fun TextTranslationInputField(
 
 @Composable
 fun TextTranslationInputButtonRow(
+    modifier: Modifier = Modifier,
     onTranslate: () -> Unit,
     onClear: () -> Unit,
     onDictate: (() -> Unit)? = null,
-    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = Modifier
@@ -426,9 +425,9 @@ fun TextTranslationInputButtonRow(
 
 @Composable
 fun TextTranslationOutput(
+    modifier: Modifier = Modifier,
     translation: String,
-    transliteration: String,
-    modifier: Modifier = Modifier
+    transliteration: String
 ) {
     Column(
         modifier = Modifier
@@ -451,11 +450,11 @@ fun TextTranslationOutput(
 
 @Composable
 fun TextTranslationOutputButtonRow(
+    modifier: Modifier = Modifier,
     translationInProgress: Boolean,
     onCancel: () -> Unit,
     onCopy: () -> Unit,
-    onShare: () -> Unit,
-    modifier: Modifier = Modifier
+    onShare: () -> Unit
 ) {
     Row(
         modifier = Modifier

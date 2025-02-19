@@ -19,15 +19,15 @@ Java_app_versta_translate_bridge_tokenize_SentencePiece_constructor(JNIEnv *env,
 }
 
 JNIEXPORT void JNICALL
-Java_app_versta_translate_bridge_tokenize_SentencePiece_destructor(JNIEnv *env, jobject, jlong ptr) {
-    auto *instance = (SentencePieceProcessor *) ptr;
+Java_app_versta_translate_bridge_tokenize_SentencePiece_close(JNIEnv *env, jobject, jlong handle) {
+    auto *instance = (SentencePieceProcessor *) handle;
     delete instance;
 }
 
 JNIEXPORT void JNICALL
-Java_app_versta_translate_bridge_tokenize_SentencePiece_load(JNIEnv *env, jobject, jlong ptr,
+Java_app_versta_translate_bridge_tokenize_SentencePiece_load(JNIEnv *env, jobject, jlong handle,
                                                            jstring filename) {
-    auto *instance = (SentencePieceProcessor *) ptr;
+    auto *instance = (SentencePieceProcessor *) handle;
 
     jsize len = env->GetStringUTFLength(filename);
 
@@ -38,9 +38,9 @@ Java_app_versta_translate_bridge_tokenize_SentencePiece_load(JNIEnv *env, jobjec
 
 JNIEXPORT void JNICALL
 Java_app_versta_translate_bridge_tokenize_SentencePiece_loadFromSerializedProto(JNIEnv *env, jobject,
-                                                                              jlong ptr,
+                                                                              jlong handle,
                                                                               jbyteArray serialized) {
-    auto *instance = (SentencePieceProcessor *) ptr;
+    auto *instance = (SentencePieceProcessor *) handle;
 
     jsize len = env->GetArrayLength(serialized);
 
@@ -52,8 +52,8 @@ Java_app_versta_translate_bridge_tokenize_SentencePiece_loadFromSerializedProto(
 
 JNIEXPORT jobjectArray JNICALL
 Java_app_versta_translate_bridge_tokenize_SentencePiece_encodeAsPieces(JNIEnv *env, jobject,
-                                                                jlong ptr, jstring input) {
-    auto *instance = (SentencePieceProcessor *) ptr;
+                                                                       jlong handle, jstring input) {
+    auto *instance = (SentencePieceProcessor *) handle;
 
     std::vector<std::string> vec;
     jsize len = env->GetStringUTFLength(input);

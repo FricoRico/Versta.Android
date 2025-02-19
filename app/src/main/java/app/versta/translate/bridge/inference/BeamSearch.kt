@@ -10,7 +10,7 @@ class BeamSearch(
     minP: Float,
     padId: Long,
     eosId: Long
-) {
+) : AutoCloseable {
     private var handle: Long
 
     init {
@@ -55,9 +55,10 @@ class BeamSearch(
         return best(handle)
     }
 
-    fun close() {
+    override fun close() {
         if (handle == 0L) {
             Log.w(TAG, "BeamSearch is already closed")
+            return
         }
 
         close(handle)

@@ -42,6 +42,7 @@ import app.versta.translate.ui.theme.spacing
 @Composable
 fun LanguageSelectionDrawer(
     languageViewModel: LanguageViewModel,
+    modifier: Modifier = Modifier,
 ) {
     val languageSelection = languageViewModel.languageSelectionState.collectAsStateWithLifecycle()
 
@@ -64,7 +65,7 @@ fun LanguageSelectionDrawer(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(MaterialTheme.spacing.small)
-                    .padding(bottom = MaterialTheme.spacing.large)
+                    .padding(bottom = MaterialTheme.spacing.large).then(modifier)
             ) {
                 when (languageSelection.value) {
                     LanguageType.Source -> {
@@ -215,7 +216,7 @@ fun LanguageSelectionListItem(
         leadingContent = {
             Image(
                 painter = painterResource(flagDrawable),
-                contentDescription = "Flag",
+                contentDescription = "Flag of ${language.name}",
                 modifier = Modifier
                     .requiredSize(MaterialTheme.spacing.extraLarge)
                     .clip(MaterialTheme.shapes.extraLarge)

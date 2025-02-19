@@ -1,44 +1,52 @@
 package app.versta.translate.bridge.tokenize
 
-import app.versta.translate.bridge.tokenize.SentencePiece.constructor
-import app.versta.translate.bridge.tokenize.SentencePiece.destructor
-import app.versta.translate.bridge.tokenize.SentencePiece.encodeAsPieces
-import app.versta.translate.bridge.tokenize.SentencePiece.load
-import app.versta.translate.bridge.tokenize.SentencePiece.loadFromSerializedProto
+import android.util.Log
 
-internal object SentencePiece {
-    init {
-        System.loadLibrary("app_versta_translate_bridge")
-    }
-
-    external fun constructor(): Long
-    external fun destructor(spp: Long)
-    external fun load(spp: Long, filename: String)
-    external fun loadFromSerializedProto(spp: Long, serialized: ByteArray)
-    external fun encodeAsPieces(spp: Long, input: String): Array<String>
-}
-
-class SentencePieceProcessor : AutoCloseable {
-    private var instance: Long = 0
+class SentencePiece : AutoCloseable {
+    private var handle = 0L
 
     init {
-        instance = constructor()
+        handle = constructor()
+
+        if (handle == 0L) {
+            throw IllegalStateException("Failed to create SentencePieceProcessor")
+        }
     }
 
     override fun close() {
-        destructor(instance)
+        if (handle == 0L) {
+            Log.w(TAG, "SentencePiece is already closed")
+            return
+        }
+
+        close(handle)
+        handle = 0L
     }
 
     fun load(filename: String) {
-        load(instance, filename)
+        load(handle, filename)
     }
 
     fun loadFromSerializedProto(serialized: ByteArray) {
-        loadFromSerializedProto(instance, serialized)
+        loadFromSerializedProto(handle, serialized)
     }
 
     fun encodeAsPieces(input: String): List<String> {
-        val pieces = encodeAsPieces(instance, input)
+        val pieces = encodeAsPieces(handle, input)
         return pieces.toList()
+    }
+
+    private external fun constructor(): Long
+    private external fun close(handle: Long)
+    private external fun load(handle: Long, filename: String)
+    private external fun loadFromSerializedProto(handle: Long, serialized: ByteArray)
+    private external fun encodeAsPieces(handle: Long, input: String): Array<String>
+
+    companion object {
+        private val TAG: String = SentencePiece::class.java.simpleName
+
+        init {
+            System.loadLibrary("app_versta_translate_bridge")
+        }
     }
 }

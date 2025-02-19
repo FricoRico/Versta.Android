@@ -1,9 +1,11 @@
 package app.versta.translate.ui.component
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
@@ -31,30 +33,43 @@ import app.versta.translate.ui.screen.TranslationSettings
 
 @Composable
 fun Router(
+    startDestination: String? = null,
     languageViewModel: LanguageViewModel,
     languageImportViewModel: LanguageImportViewModel,
     licenseViewModel: LicenseViewModel,
+    translationViewModel: TranslationViewModel,
     textTranslationViewModel: TextTranslationViewModel,
     textRecognitionViewModel: TextRecognitionViewModel,
-    translationViewModel: TranslationViewModel,
 ) {
     val navController = rememberNavController()
 
     val view = LocalView.current
     val activity = remember { view.context as ComponentActivity }
     val window = remember { activity.window }
+    val darkTheme = isSystemInDarkTheme()
+
+    LaunchedEffect(startDestination) {
+        startDestination?.let {
+            navController.navigate(it) {
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
+                }
+            }
+        }
+    }
 
     DisposableEffect(Unit) {
         val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+            val statusBarColor = if (darkTheme) StatusBarStyle.Dark else StatusBarStyle.Light
             val statusBarStyle = destination.route?.let { route ->
                 Screens.valueOf(route).statusBarStyle
-            } ?: StatusBarStyle.Dark
+            } ?: statusBarColor
 
             val windowInsetsController = WindowCompat.getInsetsController(window, view)
             windowInsetsController.isAppearanceLightStatusBars =
-                statusBarStyle == StatusBarStyle.Dark
+                statusBarStyle == statusBarColor
             windowInsetsController.isAppearanceLightNavigationBars =
-                statusBarStyle == StatusBarStyle.Dark
+                statusBarStyle == statusBarColor
         }
 
         navController.addOnDestinationChangedListener(listener)
@@ -66,15 +81,15 @@ fun Router(
 
     return NavHost(
         navController = navController,
-        startDestination = Screens.Home(),
+        startDestination = startDestination ?: Screens.Home(),
         modifier = Modifier.fillMaxSize()
     ) {
         composable(Screens.Home()) {
             Home(
                 navController = navController,
-                textTranslationViewModel = textTranslationViewModel,
+                languageViewModel = languageViewModel,
                 licenseViewModel = licenseViewModel,
-                languageViewModel = languageViewModel
+                textTranslationViewModel = textTranslationViewModel
             )
         }
         composable(Screens.Camera()) {

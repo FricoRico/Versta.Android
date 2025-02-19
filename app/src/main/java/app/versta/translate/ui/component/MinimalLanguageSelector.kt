@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
 import app.versta.translate.adapter.inbound.TranslateBubbleShortcut
@@ -51,7 +53,7 @@ import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.ui.theme.spacing
 
 @Composable
-fun LanguageSelector(
+fun MinimalLanguageSelector(
     languageViewModel: LanguageViewModel,
     modifier: Modifier = Modifier,
     onLanguageSwap: () -> Unit = {},
@@ -84,11 +86,10 @@ fun LanguageSelector(
                     shape = MaterialTheme.shapes.extraLarge,
                 )
         ) {
-            LanguageSelectorButton(
+            MinimalLanguageSelectorButton(
                 context = context,
                 language = sourceLanguage,
                 text = "Select language",
-                placeholder = "From",
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Source) },
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(
@@ -105,11 +106,10 @@ fun LanguageSelector(
                 )
             )
 
-            LanguageSelectorButton(
+            MinimalLanguageSelectorButton(
                 context = context,
                 language = targetLanguage,
                 text = "Select language",
-                placeholder = "To",
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Target) },
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(
@@ -150,7 +150,9 @@ fun LanguageSelector(
                         onLanguageSwap()
                     }
                 },
-                modifier = Modifier.align(Alignment.Center),
+                modifier = Modifier
+                    .size(MaterialTheme.spacing.extraLarge)
+                    .align(Alignment.Center),
                 colors = IconButtonDefaults.filledIconButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = MaterialTheme.colorScheme.onSurface,
@@ -161,6 +163,7 @@ fun LanguageSelector(
                 Icon(
                     imageVector = Icons.Outlined.SyncAlt,
                     contentDescription = stringResource(R.string.swap_languages),
+                    modifier = Modifier.size(MaterialTheme.spacing.medium),
                 )
             }
         }
@@ -168,15 +171,14 @@ fun LanguageSelector(
 }
 
 @Composable
-fun LanguageSelectorButton(
-    modifier: Modifier = Modifier,
+fun MinimalLanguageSelectorButton(
     context: Context,
     language: Language?,
     text: String,
-    placeholder: String,
     onClick: () -> Unit,
     contentPadding: PaddingValues = PaddingValues(MaterialTheme.spacing.large, MaterialTheme.spacing.medium),
-    shape: CornerBasedShape = MaterialTheme.shapes.extraLarge
+    shape: CornerBasedShape = MaterialTheme.shapes.extraLarge,
+    modifier: Modifier = Modifier
 ) {
     val flagDrawable = language?.getFlagDrawable(context)
 
@@ -193,17 +195,6 @@ fun LanguageSelectorButton(
             .then(modifier),
     ) {
         Column {
-            Text(
-                text = placeholder,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                modifier = Modifier.padding(
-                    bottom = MaterialTheme.spacing.small,
-                    end = MaterialTheme.spacing.small,
-                )
-            )
-
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
@@ -219,7 +210,6 @@ fun LanguageSelectorButton(
                     )
                 }
 
-
                 Text(
                     text = language?.name ?: text,
                     style = MaterialTheme.typography.labelLarge,
@@ -233,8 +223,8 @@ fun LanguageSelectorButton(
 
 @Composable
 @Preview(showBackground = true)
-fun LanguageSelectorPreview() {
-    return LanguageSelector(
+fun MinimalLanguageSelectorPreview() {
+    return MinimalLanguageSelector(
         languageViewModel = LanguageViewModel(
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),

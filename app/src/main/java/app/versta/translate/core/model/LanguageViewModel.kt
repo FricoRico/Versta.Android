@@ -2,6 +2,7 @@ package app.versta.translate.core.model
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.versta.translate.adapter.inbound.TranslateBubbleShortcut
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
 import app.versta.translate.core.entity.Language
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -29,15 +31,15 @@ class LanguageViewModel(
     private val _languageSelectionState = MutableStateFlow<LanguageType?>(null)
     val languageSelectionState: StateFlow<LanguageType?> = _languageSelectionState
 
-    val sourceLanguage = languagePreferenceRepository.getSourceLanguage()
-    val targetLanguage = languagePreferenceRepository.getTargetLanguage()
+    val sourceLanguage = languagePreferenceRepository.getSourceLanguage().distinctUntilChanged()
+    val targetLanguage = languagePreferenceRepository.getTargetLanguage().distinctUntilChanged()
 
     val canSwapLanguages = sourceLanguage.combine(targetLanguage) { source, target ->
         source != null && target != null
     }
 
-    val availableLanguages = languageRepository.getLanguages()
-    val sourceLanguages = languageRepository.getSourceLanguages()
+    val availableLanguages = languageRepository.getLanguages().distinctUntilChanged()
+    val sourceLanguages = languageRepository.getSourceLanguages().distinctUntilChanged()
     val targetLanguages = sourceLanguage
         .flatMapLatest {
             if (it != null) {

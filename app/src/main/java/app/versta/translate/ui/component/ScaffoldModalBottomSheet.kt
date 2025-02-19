@@ -93,13 +93,12 @@ fun ScaffoldModalBottomSheet(
 
     val configuration = LocalConfiguration.current
 
-    val screenHeightDp = remember { configuration.screenHeightDp.dp }
-
+    val screenHeightDp = configuration.screenHeightDp.dp
     val statusBarHeight: Dp =
         WindowInsets.safeContent.asPaddingValues().calculateTopPadding() +
                 WindowInsets.safeContent.asPaddingValues().calculateBottomPadding()
 
-    val bottomSheetMaxHeight = remember { screenHeightDp - statusBarHeight }
+    val bottomSheetMaxHeight = screenHeightDp - statusBarHeight
 
     val isVisible = scaffoldState.bottomSheetState.targetValue != SheetValue.Hidden
     val isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
@@ -189,7 +188,6 @@ fun ScaffoldModalBottomSheet(
         containerColor = containerColor,
         contentColor = contentColor
     )
-
 
     if (sheetBottomBar != null) {
         AnimatedVisibility(

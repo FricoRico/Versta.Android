@@ -4,6 +4,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import app.versta.translate.MainApplication
+import app.versta.translate.adapter.inbound.TranslateBubbleShortcut
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguagePair
 import kotlinx.coroutines.flow.Flow

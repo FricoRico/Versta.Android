@@ -1,6 +1,9 @@
 package app.versta.translate.ui.screen
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.asPaddingValues
@@ -18,6 +21,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -29,9 +33,13 @@ import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
+import app.versta.translate.adapter.outbound.MockInference
+import app.versta.translate.adapter.outbound.MockTokenizer
+import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
+import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.ButtonCard
 import app.versta.translate.ui.component.ButtonCardDefaults
 import app.versta.translate.ui.component.LanguageSelector
@@ -40,8 +48,13 @@ import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.TranslationTextField
 import app.versta.translate.ui.component.TrialLicenseCard
 import app.versta.translate.ui.theme.spacing
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionState
+import com.google.accompanist.permissions.PermissionStatus
+import com.google.accompanist.permissions.rememberPermissionState
 
-@OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("InlinedApi")
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun Home(
     navController: NavHostController,
@@ -51,11 +64,28 @@ fun Home(
 ) {
     val orientation = LocalContext.current.resources.configuration.orientation
 
+    val notificationPermissionState = rememberPermissionState(
+        Manifest.permission.POST_NOTIFICATIONS
+    )
+
+    LaunchedEffect(notificationPermissionState) {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
+            return@LaunchedEffect
+        }
+
+        if (notificationPermissionState.status == PermissionStatus.Granted) {
+            return@LaunchedEffect
+        }
+
+        notificationPermissionState.launchPermissionRequest()
+    }
+
     val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
         MaterialTheme.spacing.medium
     } else {
         MaterialTheme.spacing.small
     }
+
 
     return ScaffoldLargeHeader(
         title = {
@@ -84,13 +114,16 @@ fun Home(
                 )
             ) {
                 item {
-                    LanguageSelector(languageViewModel = languageViewModel)
+                    LanguageSelector(
+                        languageViewModel = languageViewModel,
+                    )
                 }
 
                 item {
                     TranslationTextField(
                         textTranslationViewModel = textTranslationViewModel,
                         onSubmit = {
+                            textTranslationViewModel.setTranslateOnInput(true)
                             navController.navigate(Screens.TextTranslation())
                         },
                         onClear = {

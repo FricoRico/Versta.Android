@@ -1,5 +1,9 @@
 package app.versta.translate.core.model
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
@@ -12,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class TextTranslationViewModel(
@@ -28,6 +33,9 @@ class TextTranslationViewModel(
 
     private val _translated = MutableStateFlow("")
     val translated = _translated
+
+    private val _translateOnInput = MutableStateFlow(false)
+    val translateOnInput = _translateOnInput
 
     private val _translatedTransliteration = MutableStateFlow("")
     val translatedTransliteration = _translatedTransliteration
@@ -78,6 +86,13 @@ class TextTranslationViewModel(
     }
 
     /**
+     * Enable or disable automatic translation on input.
+     */
+    fun setTranslateOnInput(value: Boolean) {
+        _translateOnInput.value = value
+    }
+
+    /**
      * Load the transliterator.
      */
     fun load(languages: LanguagePair) {
@@ -94,6 +109,32 @@ class TextTranslationViewModel(
                 e.printStackTrace()
                 _loadingProgress.value = LoadingProgress.Error(e)
             }
+        }
+    }
+
+    /**
+     * Copy the translated text.
+     */
+    fun copyTranslatedText(context: Context) {
+        viewModelScope.launch {
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("Translated text", translated.first())
+            clipboard.setPrimaryClip(clip)
+        }
+    }
+
+    /**
+     * Share the translated text.
+     */
+    fun shareTranslatedText(context: Context) {
+        viewModelScope.launch {
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, translated.first())
+            }
+
+            val chooser = Intent.createChooser(shareIntent, "Share this translation")
+            context.startActivity(chooser, null)
         }
     }
 

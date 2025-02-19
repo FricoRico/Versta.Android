@@ -1,33 +1,46 @@
 package app.versta.translate
 
+import android.app.Activity
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import app.versta.translate.adapter.inbound.ModelFilePicker
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
+import app.versta.translate.MainApplication.Companion.TRANSLATION_NOTIFICATION_CHANNEL_ID
 import app.versta.translate.adapter.inbound.TranslateBubbleNotification
 import app.versta.translate.adapter.inbound.TranslateBubbleShortcut
-import app.versta.translate.core.model.LanguageImportViewModel
+import app.versta.translate.adapter.inbound.TranslateNotification
 import app.versta.translate.core.model.LanguageViewModel
-import app.versta.translate.core.model.LicenseViewModel
-import app.versta.translate.core.model.TextRecognitionViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
+import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.LanguageSelectionDrawer
-import app.versta.translate.ui.component.Router
 import app.versta.translate.ui.component.TranslatorLoadingProgressDialog
-import app.versta.translate.ui.screen.Screens
+import app.versta.translate.ui.screen.MinimalTextTranslation
 import app.versta.translate.ui.theme.TranslateTheme
+import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.viewModelFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
-open class MainActivity : ComponentActivity() {
+class BubbleActivity : ComponentActivity() {
     private val languageViewModel by viewModels<LanguageViewModel>(
         factoryProducer = {
             viewModelFactory {
@@ -39,59 +52,36 @@ open class MainActivity : ComponentActivity() {
         }
     )
 
-    private val languageImportViewModel by viewModels<LanguageImportViewModel>(
-        factoryProducer = {
-            viewModelFactory {
-                LanguageImportViewModel(
-                    modelExtractor = MainApplication.module.extractor,
-                    languageRepository = MainApplication.module.languageRepository
-                )
+    private val updateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent != null) {
+                handleStartupAndResume(intent)
             }
         }
-    )
+    }
 
-    private val textRecognitionViewModel by viewModels<TextRecognitionViewModel>(
-        factoryProducer = {
-            viewModelFactory {
-                TextRecognitionViewModel()
-            }
-        }
-    )
-
-    private val licenseViewModel by viewModels<LicenseViewModel>(
-        factoryProducer = {
-            viewModelFactory {
-                LicenseViewModel()
-            }
-        }
-    )
-
-    private var initialRoute by mutableStateOf<String?>(null)
-
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        ModelFilePicker.registerForActivity(this)
+        registerReceiver(updateReceiver, IntentFilter(TRANSLATION_NOTIFICATION_CHANNEL_ID), RECEIVER_EXPORTED)
+
         TranslateBubbleShortcut.registerForActivity(this)
         TranslateBubbleNotification.registerForActivity(this)
 
         handleStartupAndResume(intent)
+        handleTargetLanguageUpdate(this)
 
-        enableEdgeToEdge()
         setContent {
             TranslateTheme {
                 Surface (
                     color = MaterialTheme.colorScheme.background,
                     contentColor = MaterialTheme.colorScheme.onBackground,
                 ) {
-                    Router(
-                        startDestination = initialRoute,
+                    MinimalTextTranslation(
                         languageViewModel = languageViewModel,
-                        languageImportViewModel = languageImportViewModel,
-                        licenseViewModel = licenseViewModel,
-                        translationViewModel = MainApplication.module.translationViewModel,
                         textTranslationViewModel = MainApplication.module.textTranslationViewModel,
-                        textRecognitionViewModel = textRecognitionViewModel
+                        translationViewModel = MainApplication.module.translationViewModel
                     )
 
                     TranslatorLoadingProgressDialog(
@@ -99,16 +89,21 @@ open class MainActivity : ComponentActivity() {
                         textTranslationViewModel = MainApplication.module.textTranslationViewModel
                     )
 
-                    LanguageSelectionDrawer(languageViewModel = languageViewModel)
+                    LanguageSelectionDrawer(
+                        languageViewModel = languageViewModel,
+                        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium)
+                    )
                 }
             }
         }
     }
 
-    override fun onResume() {
-        super.onResume()
+    override fun onDestroy() {
+        super.onDestroy()
 
-        handleStartupAndResume(intent)
+        unregisterReceiver(updateReceiver)
+
+        super.finish()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -118,14 +113,20 @@ open class MainActivity : ComponentActivity() {
     }
 
     private fun handleStartupAndResume(intent: Intent) {
-        TranslateBubbleNotification.clearNotification(this)
-
         val input = intent.getStringExtra("input")
         if (input != null) {
-            MainApplication.module.textTranslationViewModel.setTranslateOnInput(true)
             MainApplication.module.textTranslationViewModel.setInput(input)
+        }
+    }
 
-            initialRoute = Screens.TextTranslation()
+    private fun handleTargetLanguageUpdate(activity: Activity) {
+        lifecycleScope.launch {
+            languageViewModel.targetLanguage.conflate().filterNotNull().collect {
+                val text = MainApplication.module.textTranslationViewModel.input.first()
+
+                TranslateBubbleShortcut.updateShortcutIcon(activity, it)
+                TranslateBubbleNotification.showNotification(activity, text)
+            }
         }
     }
 

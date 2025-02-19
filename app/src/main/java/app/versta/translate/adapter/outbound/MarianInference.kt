@@ -14,8 +14,11 @@ import app.versta.translate.core.entity.EncoderAttentionMasks
 import app.versta.translate.core.entity.EncoderHiddenStates
 import app.versta.translate.core.entity.EncoderInput
 import app.versta.translate.core.entity.EncoderOutput
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import java.io.File
 import kotlin.io.path.pathString
 
@@ -191,7 +194,7 @@ class MarianInference : TranslationInference {
                 decoderInput.destroy()
                 decoderOutput.destroy()
             }
-        }
+        }.flowOn(Dispatchers.Default)
     }
 
     override fun run(
@@ -250,7 +253,6 @@ class MarianInference : TranslationInference {
     }
 
     override fun cancel() {
-        Log.d(TAG, "Canceling inference")
         runInference = false
     }
 
@@ -262,7 +264,7 @@ class MarianInference : TranslationInference {
         val options = OrtSession.SessionOptions().apply {
             setCPUArenaAllocator(true)
             setMemoryPatternOptimization(true)
-            setInterOpNumThreads(1)
+            setIntraOpNumThreads(1)
             addXnnpack(mapOf("intra_op_num_threads" to threads.toString()))
             addConfigEntry("kOrtSessionOptionsConfigAllowIntraOpSpinning", "0")
             registerCustomOpLibrary(OrtxPackage.getLibraryPath())

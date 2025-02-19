@@ -15,22 +15,25 @@
         tools:node="remove" />
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".MainApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:largeHeap="true"
         android:roundIcon="@mipmap/ic_launcher_round"
+        android:largeHeap="true"
         android:supportsRtl="true"
-        android:enableOnBackInvokedCallback="true"
+        android:launchMode="singleTask"
         android:theme="@style/Versta.Theme"
         tools:targetApi="35">
         <meta-data
-                android:name="firebase_analytics_collection_deactivated"
-                android:value="true"/>
+            android:name="firebase_analytics_collection_deactivated"
+            android:value="true" />
 
         <activity
             android:name=".MainActivity"
@@ -43,12 +46,19 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".TranslateActivity"
+        <activity
+            android:name=".BubbleActivity"
+            android:exported="true"
+            android:largeHeap="true"
+            android:theme="@style/Versta.Theme" />
+
+        <activity
+            android:name=".adapter.inbound.TranslateNotificationActivity"
             android:exported="true"
             android:label="Translate"
-            android:theme="@style/Versta.Theme">
+            android:theme="@style/Versta.Invisible">
             <intent-filter>
-                <data android:mimeType="text/plain"/>
+                <data android:mimeType="text/plain" />
 
                 <action android:name="android.intent.action.PROCESS_TEXT" />
                 <category android:name="android.intent.category.DEFAULT" />
