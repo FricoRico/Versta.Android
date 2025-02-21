@@ -2,7 +2,6 @@ package app.versta.translate
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,9 +18,9 @@ import app.versta.translate.core.model.LanguageImportViewModel
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.TextRecognitionViewModel
-import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.ui.component.LanguageSelectionDrawer
 import app.versta.translate.ui.component.Router
+import app.versta.translate.ui.component.TranslationErrorAlertDialog
 import app.versta.translate.ui.component.TranslatorLoadingProgressDialog
 import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.theme.TranslateTheme
@@ -97,6 +96,10 @@ open class MainActivity : ComponentActivity() {
                     TranslatorLoadingProgressDialog(
                         translationViewModel = MainApplication.module.translationViewModel,
                         textTranslationViewModel = MainApplication.module.textTranslationViewModel
+                    )
+
+                    TranslationErrorAlertDialog(
+                        translationViewModel = MainApplication.module.translationViewModel,
                     )
 
                     LanguageSelectionDrawer(languageViewModel = languageViewModel)

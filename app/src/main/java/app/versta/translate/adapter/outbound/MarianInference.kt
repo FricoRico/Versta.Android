@@ -75,7 +75,7 @@ class MarianInference : TranslationInference {
         maxSequenceLength: Int,
     ): LongArray {
         if (decoderSession == null) {
-            throw IllegalStateException("Encoder session is not loaded")
+            throw IllegalStateException("Decoder session is not loaded")
         }
 
         val beamSearch = BeamSearch(
@@ -140,7 +140,7 @@ class MarianInference : TranslationInference {
         maxSequenceLength: Int,
     ): Flow<LongArray> {
         if (decoderSession == null) {
-            throw IllegalStateException("Encoder session is not loaded")
+            throw IllegalStateException("Decoder session is not loaded")
         }
 
         return flow {

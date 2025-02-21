@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -71,6 +72,9 @@ class TranslationViewModel(
 
     private val _translationInProgress = MutableStateFlow(false)
     val translationInProgress: StateFlow<Boolean> = _translationInProgress.asStateFlow()
+
+    private val _translationError = MutableStateFlow<Throwable?>(null)
+    val translationError: StateFlow<Throwable?> = _translationError.asStateFlow()
 
     private val _loadMutex = Mutex()
 
@@ -129,6 +133,21 @@ class TranslationViewModel(
     }
 
     /**
+     * Sets the translation error.
+     */
+    fun setTranslationError(throwable: Throwable) {
+        _translationInProgress.value = false
+        _translationError.value = throwable
+    }
+
+    /**
+     * Clears the translation error.
+     */
+    fun clearTranslationError() {
+        _translationError.value = null
+    }
+
+    /**
      * Translates the input text to the target language, returning the result as a flow. If the
      * translation is already in the cache, it will be returned immediately.
      */
@@ -162,21 +181,24 @@ class TranslationViewModel(
                 beamSize = beamSize.first(),
                 maxSequenceLength = maxSequenceLength.first(),
             )
-                .debounce(1000L/120)
+                .debounce(1000L / 120)
                 .conflate()
-                .map { tokenIds ->
-                val outputText = tokenizer.decode(tokenIds)
-
-                if (tokenIds.last() == tokenizer.eosId) {
-                    _translationInProgress.value = false
-
-                    if (cacheEnabled.first()) {
-                        _cache.put(sanitized, outputText, languages)
-                    }
+                .catch {
+                    setTranslationError(it)
                 }
+                .map { tokenIds ->
+                    val outputText = tokenizer.decode(tokenIds)
 
-                outputText
-            }
+                    if (tokenIds.last() == tokenizer.eosId) {
+                        _translationInProgress.value = false
+
+                        if (cacheEnabled.first()) {
+                            _cache.put(sanitized, outputText, languages)
+                        }
+                    }
+
+                    outputText
+                }
         }
     }
 
@@ -192,7 +214,7 @@ class TranslationViewModel(
             return cache
         }
 
-        return _queue.withLock {
+        _queue.withLock {
             // Check to see if the translation is already in the cache, if so return it.
             cache = _cache.get(sanitized, languages)
 
@@ -200,23 +222,27 @@ class TranslationViewModel(
                 return cache!!
             }
 
-            val (inputIds, attentionMask) = tokenizer.encode(sanitized)
-            val minP = minProbability.first() * 100 / tokenizer.vocabSize
+            try {
+                val (inputIds, attentionMask) = tokenizer.encode(sanitized)
+                val minP = minProbability.first() * 100 / tokenizer.vocabSize
 
-            _translationInProgress.value = true
-            val tokenIds = model.run(
-                inputIds = inputIds,
-                attentionMask = attentionMask,
-                eosId = tokenizer.eosId,
-                padId = tokenizer.padId,
-                minP = minP,
-                beamSize = beamSize.first(),
-                maxSequenceLength = maxSequenceLength.first(),
-            )
-            _translationInProgress.value = false
+                _translationInProgress.value = true
+                val tokenIds = model.run(
+                    inputIds = inputIds,
+                    attentionMask = attentionMask,
+                    eosId = tokenizer.eosId,
+                    padId = tokenizer.padId,
+                    minP = minP,
+                    beamSize = beamSize.first(),
+                    maxSequenceLength = maxSequenceLength.first(),
+                )
+                _translationInProgress.value = false
 
-            tokenizer.decode(tokenIds)
-
+                return tokenizer.decode(tokenIds)
+            } catch (e: Exception) {
+                setTranslationError(e)
+                return ""
+            }
         }
     }
 

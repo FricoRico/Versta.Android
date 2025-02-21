@@ -88,20 +88,10 @@ fun MinimalTextTranslation(
         translationScope.launch {
             if (languages == null) return@launch
 
-            val startTimestamp = System.currentTimeMillis()
             translationViewModel.translateAsFlow(input, languages!!)
-                .catch {
-                    // TODO: Show error message for translation failure
-                    Log.e("TextTranslation", "Translation failed", it)
-                }
                 .collect {
                     textTranslationViewModel.setTranslation(it)
                 }
-
-            Log.d(
-                "TextTranslation",
-                "Translation took ${System.currentTimeMillis() - startTimestamp}ms"
-            )
         }
     }
 

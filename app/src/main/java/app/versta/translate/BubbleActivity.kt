@@ -28,6 +28,7 @@ import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.LanguageSelectionDrawer
+import app.versta.translate.ui.component.TranslationErrorAlertDialog
 import app.versta.translate.ui.component.TranslatorLoadingProgressDialog
 import app.versta.translate.ui.screen.MinimalTextTranslation
 import app.versta.translate.ui.theme.TranslateTheme
@@ -87,6 +88,10 @@ class BubbleActivity : ComponentActivity() {
                     TranslatorLoadingProgressDialog(
                         translationViewModel = MainApplication.module.translationViewModel,
                         textTranslationViewModel = MainApplication.module.textTranslationViewModel
+                    )
+
+                    TranslationErrorAlertDialog(
+                        translationViewModel = MainApplication.module.translationViewModel,
                     )
 
                     LanguageSelectionDrawer(

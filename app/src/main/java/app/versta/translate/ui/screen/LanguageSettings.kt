@@ -190,7 +190,7 @@ private fun LanguageDeletionConfirmationDialog(
             tint = MaterialTheme.colorScheme.error
         )
     }, title = {
-        Text(text = "Delete ${language.name}")
+        Text(text = stringResource(R.string.delete_language_title, language.name))
     }, text = {
         LazyColumn(
             modifier = Modifier.heightIn(max = 320.dp),
