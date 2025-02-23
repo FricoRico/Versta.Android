@@ -156,8 +156,10 @@ fun Settings(
                 item {
                     SettingsButtonItem(
                         headlineContent = "About",
-                        supportingContent = "Version, privacy policy, contributions",
-                        onClick = {/*TODO*/ },
+                        supportingContent = "Version, privacy policy, attributions",
+                        onClick = {
+                            navController.navigate(Screens.About())
+                        },
                         index = 0,
                         groupSize = 1
                     )

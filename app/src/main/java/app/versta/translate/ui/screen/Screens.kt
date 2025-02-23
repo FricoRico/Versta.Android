@@ -15,7 +15,11 @@ enum class Screens (
     LanguageSettings(statusBarStyle = StatusBarStyle.Dark),
     LanguageImport(statusBarStyle = StatusBarStyle.Dark),
     TextTranslation,
-    TranslationSettings(statusBarStyle = StatusBarStyle.Dark);
+    TranslationSettings(statusBarStyle = StatusBarStyle.Dark),
+    About(statusBarStyle = StatusBarStyle.Dark),
+    LanguageAttributions(statusBarStyle = StatusBarStyle.Dark),
+    ThirdParty(statusBarStyle = StatusBarStyle.Dark),
+    PrivacyPolicy(statusBarStyle = StatusBarStyle.Dark);
 
     operator fun invoke(): String {
         val argList = StringBuilder()

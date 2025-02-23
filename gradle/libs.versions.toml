@@ -8,6 +8,7 @@ lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.10.0"
 composeBom = "2025.02.00"
 
+aboutLibraries = "11.6.3"
 accompanistPermissions = "0.37.0"
 androidComposeAnimation = "1.7.8"
 androidComposeMaterial3 = "1.4.0-alpha06"
@@ -38,6 +39,9 @@ androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 
+about-libraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
+about-libraries-compose-core = { module = "com.mikepenz:aboutlibraries-compose", version.ref = "aboutLibraries" }
+about-libraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
 accomanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanistPermissions" }
 androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "androidCameraX" }
 androidx-camera-compose = { group = "androidx.camera", name = "camera-compose", version.ref = "androidCameraX" }
@@ -69,6 +73,7 @@ onnxruntime = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android
 onnxruntime-extensions = { group = "com.microsoft.onnxruntime", name = "onnxruntime-extensions-android", version.ref = "onnxRuntimeExtensions" }
 
 [plugins]
+about-libraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibraries" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

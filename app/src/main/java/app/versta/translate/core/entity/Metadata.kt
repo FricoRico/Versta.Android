@@ -12,7 +12,7 @@ enum class ModelArchitecture(val value: String) {
 @Serializable
 class BundleMetadata(
     val version: String = "",
-    val metadata: List<LanguageModel>,
+    val metadata: List<LanguageModelMetadata>,
     val bidirectional: Boolean,
     val languages: List<String>
 ) {
@@ -40,7 +40,7 @@ class BundleMetadata(
 }
 
 @Serializable
-data class LanguageModel(
+data class LanguageModelMetadata(
     val directory: String,
     @SerialName("source_language")
     val sourceLanguage: String,

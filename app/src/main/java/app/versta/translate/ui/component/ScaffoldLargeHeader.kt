@@ -1,21 +1,14 @@
 package app.versta.translate.ui.component
 
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,13 +16,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +31,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.versta.translate.ui.theme.spacing
 
@@ -75,6 +68,21 @@ object ScaffoldLargeHeaderDefaults {
     )
 
     @Composable
+    fun topAppBarTertiaryColor(
+        containerColor: Color = MaterialTheme.colorScheme.tertiary,
+        scrolledContainerColor: Color = containerColor,
+        titleContentColor: Color = MaterialTheme.colorScheme.onTertiary,
+        actionIconContentColor: Color = titleContentColor,
+        navigationIconContentColor: Color = titleContentColor,
+    ) = TopAppBarDefaults.topAppBarColors(
+        containerColor = containerColor,
+        scrolledContainerColor = scrolledContainerColor,
+        titleContentColor = titleContentColor,
+        actionIconContentColor = actionIconContentColor,
+        navigationIconContentColor = navigationIconContentColor,
+    )
+
+    @Composable
     fun topAppBarInverseSurfaceColor(
         containerColor: Color = MaterialTheme.colorScheme.inverseSurface,
         scrolledContainerColor: Color = containerColor,
@@ -96,7 +104,10 @@ fun ScaffoldLargeHeader(
     title: @Composable () -> Unit = {},
     actions: @Composable (RowScope.() -> Unit) = {},
     navigationIcon: @Composable (() -> Unit) = {},
+    header: @Composable ((insets: PaddingValues, scrollConnection: NestedScrollConnection) -> Unit)? = null,
     content: @Composable (insets: PaddingValues, scrollConnection: NestedScrollConnection) -> Unit = { _, _ -> },
+    collapsedHeight: Dp = Dp.Unspecified,
+    expandedHeight: Dp = Dp.Unspecified,
     topAppBarColors: TopAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarInverseSurfaceColor(),
     containerColor: Color = MaterialTheme.colorScheme.background,
     contentColor: Color = contentColorFor(containerColor),
@@ -137,12 +148,14 @@ fun ScaffoldLargeHeader(
                 navigationIcon = navigationIcon,
                 scrollBehavior = scrollBehavior,
                 colors = topAppBarColors,
+                collapsedHeight = collapsedHeight,
+                expandedHeight = expandedHeight
             )
         },
         containerColor = topAppBarColors.containerColor,
         contentColor = contentColor,
         content = { innerPadding ->
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(
@@ -150,10 +163,17 @@ fun ScaffoldLargeHeader(
                         end = innerPadding.calculateEndPadding(LocalLayoutDirection.current) + landscapeInnerPadding
                     )
             ) {
+                Surface(
+                    color = Color.Transparent,
+                    contentColor = topAppBarColors.titleContentColor
+                ) {
+                    header?.invoke(innerPadding, scrollBehavior.nestedScrollConnection)
+                }
+
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = innerPadding.calculateTopPadding())
+                        .padding(top = if (header == null) { innerPadding.calculateTopPadding() } else { 0.dp })
                         .background(
                             color = containerColor,
                             shape = roundedCornerShape

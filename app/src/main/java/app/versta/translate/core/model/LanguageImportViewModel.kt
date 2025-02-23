@@ -10,7 +10,6 @@ import app.versta.translate.core.entity.BundleMetadata
 import app.versta.translate.core.entity.LanguageAnalysisProgress
 import app.versta.translate.core.entity.LanguageImportProgress
 import app.versta.translate.core.entity.LanguageMetadata
-import app.versta.translate.core.entity.LanguageModel
 import app.versta.translate.core.entity.ModelMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

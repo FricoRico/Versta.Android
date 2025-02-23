@@ -2,7 +2,6 @@ package app.versta.translate.core.model
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.versta.translate.adapter.inbound.TranslateBubbleShortcut
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
 import app.versta.translate.core.entity.Language
@@ -39,6 +38,8 @@ class LanguageViewModel(
     }
 
     val availableLanguages = languageRepository.getLanguages().distinctUntilChanged()
+    val availableLanguagePairs = languageRepository.getLanguagePairs().distinctUntilChanged()
+
     val sourceLanguages = languageRepository.getSourceLanguages().distinctUntilChanged()
     val targetLanguages = sourceLanguage
         .flatMapLatest {

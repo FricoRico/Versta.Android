@@ -2,4 +2,7 @@
 <resources>
     <string name="site_url" translatable="false">https://versta.app</string>
     <string name="language_models_url" translatable="false">%1$s/models/languages</string>
+    <string name="license_url" translatable="false">%1$s/license</string>
+
+    <string name="hugginface_url" translatable="false">https://huggingface.co/%1$s</string>
 </resources>

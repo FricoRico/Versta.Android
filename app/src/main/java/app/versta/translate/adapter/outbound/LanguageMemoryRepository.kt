@@ -7,8 +7,11 @@ import app.versta.translate.core.entity.LanguageModelFiles
 import app.versta.translate.core.entity.LanguageModelInferenceFiles
 import app.versta.translate.core.entity.LanguageModelTokenizerFiles
 import app.versta.translate.core.entity.LanguagePair
+import app.versta.translate.core.entity.LanguagePairWithModelFiles
+import app.versta.translate.core.entity.ModelArchitecture
 import app.versta.translate.core.entity.ModelMetadata
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlin.io.path.Path
 
@@ -38,7 +41,10 @@ class LanguageMemoryRepository : LanguageRepository {
                 source = _mockPath,
                 target = _mockPath,
             ),
+            baseModel = "Helsinki-NLP/opus-mt-en-ja",
             path = _mockPath,
+            architectures = listOf(ModelArchitecture.MarianMTModel),
+            version = "v1.0.0",
             inference = LanguageModelInferenceFiles(
                 encoder = _mockPath,
                 decoder = _mockPath,
@@ -49,12 +55,29 @@ class LanguageMemoryRepository : LanguageRepository {
     /**
      * Gets the languages available in the repository.
      */
-    override fun getLanguages() = flowOf(_languages)
+    override fun getLanguagePairs() = flowOf(_languages)
 
     /**
      * Gets the source languages available in the repository.
      */
     override fun getSourceLanguages() = flowOf(_languages.map { it.source }.distinct())
+
+    /**
+     * Gets the language models metadata available in the repository.
+     */
+    override fun getLanguages(): Flow<List<LanguagePairWithModelFiles>> = flow {
+        emit(
+            _languages.map {
+                val files = _languageModels[it.id] ?: return@map null
+
+                LanguagePairWithModelFiles(
+                    sourceLocale = it.source.locale,
+                    targetLocale = it.target.locale,
+                    files = files
+                )
+            }.filterNotNull()
+        )
+    }
 
     /**
      * Gets the target languages for a given source language.
@@ -106,6 +129,7 @@ class LanguageMemoryRepository : LanguageRepository {
         _languageModels[LanguagePair(sourceLanguage, targetLanguage).toString()] =
             LanguageModelFiles(
                 path = path,
+                baseModel = metadata.baseModel,
                 tokenizer = LanguageModelTokenizerFiles(
                     config = Path(metadata.files.tokenizer.config),
                     sourceVocabulary = Path(metadata.files.tokenizer.sourceVocabulary),
@@ -113,6 +137,8 @@ class LanguageMemoryRepository : LanguageRepository {
                     source = Path(metadata.files.tokenizer.source),
                     target = Path(metadata.files.tokenizer.target)
                 ),
+                architectures = metadata.architectures,
+                version = metadata.version,
                 inference = LanguageModelInferenceFiles(
                     encoder = Path(metadata.files.inference.encoder),
                     decoder = Path(metadata.files.inference.decoder)

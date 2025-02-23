@@ -1,4 +1,5 @@
 plugins {
+    alias(libs.plugins.about.libraries)
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -13,6 +14,11 @@ sqldelight {
             srcDirs.setFrom("src/main")
         }
     }
+}
+
+aboutLibraries {
+    offlineMode = true
+    duplicationMode = com.mikepenz.aboutlibraries.plugin.DuplicateMode.MERGE
 }
 
 android {
@@ -92,6 +98,9 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
 
+    implementation(libs.about.libraries.core)
+    implementation(libs.about.libraries.compose.core)
+    implementation(libs.about.libraries.compose.m3)
     implementation(libs.accomanist.permissions)
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.compose)

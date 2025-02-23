@@ -6,11 +6,14 @@ import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageMetadata
 import app.versta.translate.core.entity.LanguageModelFiles
 import app.versta.translate.core.entity.LanguagePair
+import app.versta.translate.core.entity.LanguagePairWithModelFiles
 import app.versta.translate.core.entity.ModelMetadata
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.executeAsListFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import okio.Path.Companion.toPath
+import java.util.Locale
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.deleteRecursively
@@ -23,20 +26,40 @@ class LanguageDatabaseRepository(
     /**
      * Gets the languages available in the repository.
      */
-    override fun getLanguages() = database.languages.getAll().executeAsListFlow()
+    override fun getLanguagePairs() = database.languages.getAll().executeAsListFlow()
         .map { it.map { language -> mapLanguageDatabaseModelToLanguagePair(language) } }
 
     /**
      * Gets the source languages available in the repository.
      */
-    override fun getSourceLanguages() = database.languages.getAllSourceLanguages().executeAsListFlow()
-        .map { it.map { mapSingleLanguageDatabaseModelToLanguage(it) } }
+    override fun getSourceLanguages() =
+        database.languages.getAllSourceLanguages().executeAsListFlow()
+            .map { it.map { language -> mapSingleLanguageDatabaseModelToLanguage(language) } }
+
+    /**
+     * Gets the language models metadata available in the repository.
+     */
+    override fun getLanguages(): Flow<List<LanguagePairWithModelFiles>> =
+        database.languages.getAll().executeAsListFlow().map {
+            it.map { language ->
+                val languageModel = mapLanguageModelDatabaseModelToLanguageModelFiles(
+                    data = database.languageModels.getAllByLanguageId(language.id).executeAsOneOrNull()
+                ) ?: return@map null
+
+                LanguagePairWithModelFiles(
+                    sourceLocale = Locale.forLanguageTag(language.source),
+                    targetLocale = Locale.forLanguageTag(language.target),
+                    files = languageModel
+                )
+            }.filterNotNull()
+        }
 
     /**
      * Gets the target languages for a given source language.
      */
     override fun getTargetLanguagesBySource(sourceLanguage: Language) =
-        database.languages.getAllBySourceLanguage(sourceLanguage.locale.language).executeAsListFlow()
+        database.languages.getAllBySourceLanguage(sourceLanguage.locale.language)
+            .executeAsListFlow()
             .map { it.map { language -> mapSingleLanguageDatabaseModelToLanguage(language) } }
 
     /**

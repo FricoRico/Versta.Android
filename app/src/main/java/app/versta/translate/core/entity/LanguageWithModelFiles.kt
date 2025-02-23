@@ -4,11 +4,23 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.nio.file.Path
+import java.util.Locale
 import kotlin.io.path.exists
+
+data class LanguagePairWithModelFiles(
+    private val sourceLocale: Locale,
+    private val targetLocale: Locale,
+    val files: LanguageModelFiles,
+) {
+    val pair = LanguagePair(source = Language.fromLocale(sourceLocale), target = Language.fromLocale(targetLocale))
+}
 
 @Serializable
 data class LanguageModelFiles(
     val path: Path,
+    val baseModel: String,
+    val architectures: List<ModelArchitecture>,
+    val version: String,
     val tokenizer: LanguageModelTokenizerFiles,
     val inference: LanguageModelInferenceFiles)
 {
@@ -27,6 +39,9 @@ data class LanguageModelFiles(
             val metadata = serializer.decodeFromString<LanguageMetadata>(metadataFile.readText())
             val files = LanguageModelFiles(
                 path = path,
+                baseModel = metadata.baseModel,
+                architectures = metadata.architectures,
+                version = metadata.version,
                 tokenizer = LanguageModelTokenizerFiles(
                     config = path.resolve(metadata.files.tokenizer.config),
                     sourceVocabulary = path.resolve(metadata.files.tokenizer.sourceVocabulary),

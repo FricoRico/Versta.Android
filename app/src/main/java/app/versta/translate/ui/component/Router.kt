@@ -14,17 +14,20 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import app.versta.translate.MainApplication
 import app.versta.translate.core.model.LanguageImportViewModel
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.TextRecognitionViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
+import app.versta.translate.ui.screen.About
+import app.versta.translate.ui.screen.ThirdParty
 import app.versta.translate.ui.screen.CameraTranslation
 import app.versta.translate.ui.screen.Home
+import app.versta.translate.ui.screen.LanguageAttributions
 import app.versta.translate.ui.screen.LanguageImport
 import app.versta.translate.ui.screen.LanguageSettings
+import app.versta.translate.ui.screen.PrivacyPolicy
 import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.screen.Settings
 import app.versta.translate.ui.screen.StatusBarStyle
@@ -129,6 +132,27 @@ fun Router(
             TranslationSettings(
                 navController = navController,
                 translationViewModel = translationViewModel
+            )
+        }
+        composable(Screens.About()) {
+            About(
+                navController = navController
+            )
+        }
+        composable(Screens.LanguageAttributions()) {
+            LanguageAttributions(
+                navController = navController,
+                languageViewModel = languageViewModel
+            )
+        }
+        composable(Screens.ThirdParty()) {
+            ThirdParty(
+                navController = navController
+            )
+        }
+        composable(Screens.PrivacyPolicy()) {
+            PrivacyPolicy(
+                navController = navController
             )
         }
     }
