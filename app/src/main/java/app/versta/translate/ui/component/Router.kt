@@ -136,7 +136,8 @@ fun Router(
         }
         composable(Screens.About()) {
             About(
-                navController = navController
+                navController = navController,
+                licenseViewModel = licenseViewModel
             )
         }
         composable(Screens.LanguageAttributions()) {

@@ -2,30 +2,31 @@ package app.versta.translate
 
 import android.app.Application
 import android.content.Context
-import androidx.activity.viewModels
 import androidx.datastore.preferences.preferencesDataStore
 import app.versta.translate.adapter.inbound.CompressedFileExtractor
+import app.versta.translate.adapter.inbound.TarballExtractor
 import app.versta.translate.adapter.outbound.LanguageDatabaseRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
-import app.versta.translate.adapter.outbound.MarianTokenizer
+import app.versta.translate.adapter.outbound.LicenseDataStoreRepository
+import app.versta.translate.adapter.outbound.LicenseRepository
 import app.versta.translate.adapter.outbound.MarianInference
+import app.versta.translate.adapter.outbound.MarianTokenizer
 import app.versta.translate.adapter.outbound.TranslationInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
 import app.versta.translate.adapter.outbound.TranslationTokenizer
-import app.versta.translate.database.DatabaseContainer
-import app.versta.translate.adapter.inbound.TarballExtractor
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
-import app.versta.translate.utils.viewModelFactory
+import app.versta.translate.database.DatabaseContainer
 
 val Context.dataStore by preferencesDataStore(name = "preferences")
 
 interface ApplicationModuleInterface {
     val languageRepository: LanguageRepository
     val languagePreferenceRepository: LanguagePreferenceRepository
+    val licenseRepository: LicenseRepository
     val translatorPreferenceRepository: TranslationPreferenceRepository
 
     val translationViewModel: TranslationViewModel
@@ -45,6 +46,10 @@ class ApplicationModule(context: Context) : ApplicationModuleInterface {
 
     override val languagePreferenceRepository: LanguagePreferenceRepository by lazy {
         LanguagePreferenceDataStoreRepository(context.dataStore)
+    }
+
+    override val licenseRepository: LicenseRepository by lazy {
+        LicenseDataStoreRepository(context.dataStore)
     }
 
     override val translatorPreferenceRepository: TranslationPreferenceRepository by lazy {

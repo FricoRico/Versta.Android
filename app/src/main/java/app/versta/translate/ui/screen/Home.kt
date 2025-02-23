@@ -6,10 +6,6 @@ import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CameraAlt
@@ -25,7 +21,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
@@ -33,13 +28,10 @@ import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.adapter.outbound.MockInference
-import app.versta.translate.adapter.outbound.MockTokenizer
-import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
+import app.versta.translate.adapter.outbound.LicenseMemoryRepository
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
-import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.ButtonCard
 import app.versta.translate.ui.component.ButtonCardDefaults
 import app.versta.translate.ui.component.LanguageSelector
@@ -49,7 +41,6 @@ import app.versta.translate.ui.component.TranslationTextField
 import app.versta.translate.ui.component.TrialLicenseCard
 import app.versta.translate.ui.theme.spacing
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
 
@@ -170,7 +161,9 @@ fun Home(
 private fun HomePreview() {
     Home(
         navController = rememberNavController(),
-        licenseViewModel = LicenseViewModel(),
+        licenseViewModel = LicenseViewModel(
+            licenseRepository = LicenseMemoryRepository()
+        ),
         textTranslationViewModel = TextTranslationViewModel(
             languagePreferenceRepository = LanguagePreferenceMemoryRepository()
         ),

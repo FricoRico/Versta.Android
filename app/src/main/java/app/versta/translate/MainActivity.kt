@@ -19,6 +19,7 @@ import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.TextRecognitionViewModel
 import app.versta.translate.ui.component.LanguageSelectionDrawer
+import app.versta.translate.ui.component.LicenseDialog
 import app.versta.translate.ui.component.Router
 import app.versta.translate.ui.component.TranslationErrorAlertDialog
 import app.versta.translate.ui.component.TranslatorLoadingProgressDialog
@@ -60,7 +61,9 @@ open class MainActivity : ComponentActivity() {
     private val licenseViewModel by viewModels<LicenseViewModel>(
         factoryProducer = {
             viewModelFactory {
-                LicenseViewModel()
+                LicenseViewModel(
+                    licenseRepository = MainApplication.module.licenseRepository
+                )
             }
         }
     )
@@ -102,6 +105,10 @@ open class MainActivity : ComponentActivity() {
                         translationViewModel = MainApplication.module.translationViewModel,
                     )
 
+                    LicenseDialog(
+                        licenseViewModel = licenseViewModel
+                    )
+
                     LanguageSelectionDrawer(languageViewModel = languageViewModel)
                 }
             }
@@ -130,9 +137,5 @@ open class MainActivity : ComponentActivity() {
 
             initialRoute = Screens.TextTranslation()
         }
-    }
-
-    companion object {
-        private val TAG: String = MainActivity::class.java.simpleName
     }
 }

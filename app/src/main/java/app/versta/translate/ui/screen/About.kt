@@ -5,7 +5,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,8 +20,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,9 +31,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import app.versta.translate.R
+import app.versta.translate.adapter.outbound.LicenseMemoryRepository
+import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.ui.component.ListDivider
 import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
@@ -44,9 +45,11 @@ import app.versta.translate.ui.theme.spacing
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun About(
-    navController: NavController
+    navController: NavController, licenseViewModel: LicenseViewModel
 ) {
     val orientation = LocalContext.current.resources.configuration.orientation
+
+    val hasLicense by licenseViewModel.hasLicense.collectAsStateWithLifecycle(true)
 
     val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
         MaterialTheme.spacing.medium
@@ -88,15 +91,13 @@ fun About(
 
                 item {
                     Text(
-                        text = "Versta",
-                        style = MaterialTheme.typography.displaySmall
+                        text = "Versta", style = MaterialTheme.typography.displaySmall
                     )
                 }
 
                 item {
                     Text(
-                        text = "By Neurora",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "By Neurora", style = MaterialTheme.typography.bodyMedium
                     )
                 }
 
@@ -104,8 +105,7 @@ fun About(
 
                 item {
                     Text(
-                        text = "Version 1.0.0",
-                        style = MaterialTheme.typography.bodySmall
+                        text = "Version 1.0.0", style = MaterialTheme.typography.bodySmall
                     )
                 }
 
@@ -118,7 +118,11 @@ fun About(
                             .clip(MaterialTheme.shapes.extraLarge),
                     ) {
                         Text(
-                            text = "Trial License",
+                            text = if (hasLicense) {
+                                "Paid License"
+                            } else {
+                                "Trial License"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(
                                 vertical = MaterialTheme.spacing.extraSmall,
@@ -195,12 +199,15 @@ fun About(
                     )
                 }
             }
-        }
-    )
+        })
 }
 
 @Composable
 @Preview(showBackground = true)
 fun AboutPreview() {
-    About(navController = NavController(LocalContext.current))
+    About(
+        navController = NavController(LocalContext.current), licenseViewModel = LicenseViewModel(
+            licenseRepository = LicenseMemoryRepository()
+        )
+    )
 }

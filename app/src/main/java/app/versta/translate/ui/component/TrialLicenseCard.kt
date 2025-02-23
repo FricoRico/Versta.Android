@@ -1,7 +1,5 @@
 package app.versta.translate.ui.component
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,13 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.versta.translate.R
+import app.versta.translate.adapter.outbound.LicenseMemoryRepository
+import app.versta.translate.core.model.DialogState
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.shift
@@ -39,16 +36,9 @@ fun TrialLicenseCard(
     licenseViewModel: LicenseViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val isTrialLicense by licenseViewModel.isTrialLicense.collectAsStateWithLifecycle()
+    val hasLicense by licenseViewModel.hasLicense.collectAsStateWithLifecycle(true)
 
-    if (!isTrialLicense) return
-
-    val context = LocalContext.current
-
-    val onLicense = Intent(
-        Intent.ACTION_VIEW,
-        Uri.parse(stringResource(R.string.license_url, stringResource(R.string.site_url)))
-    )
+    if (hasLicense) return
 
     Card(
         modifier = Modifier
@@ -69,7 +59,7 @@ fun TrialLicenseCard(
             contentColor = MaterialTheme.colorScheme.onTertiary,
         ),
         onClick = {
-            context.startActivity(onLicense, null)
+            licenseViewModel.setLicenseDialogState(DialogState.Open)
         },
     ) {
         Row(
@@ -132,6 +122,8 @@ fun TrialLicenseCard(
 @Preview
 private fun TrialLicenseCardPreview() {
         TrialLicenseCard(
-            licenseViewModel = LicenseViewModel()
+            licenseViewModel = LicenseViewModel(
+                licenseRepository = LicenseMemoryRepository()
+            )
         )
 }
