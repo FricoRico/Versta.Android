@@ -41,9 +41,11 @@ struct Beam {
 
 class BeamSearch {
 public:
-    BeamSearch(int beamSize, float minP, int64_t padId, int64_t eosId) : beamSize(beamSize),
-                                                                         minP(minP),
-                                                                         eosId(eosId) {
+    BeamSearch(int beamSize, float minP, float repetitionPenalty, int64_t padId, int64_t eosId)
+            : beamSize(beamSize),
+              minP(minP),
+              repetitionPenalty(repetitionPenalty),
+              eosId(eosId) {
         beams.reserve(beamSize);
 
         for (int i = 0; i < beamSize; ++i) {
@@ -64,8 +66,10 @@ public:
             for (int token: indices) {
                 std::vector<int64_t> sequence = beams[i].sequence;
                 sequence.push_back(token);
+
                 float logit = std::max(probabilities[token], -1e-9f);
                 float score = beams[i].score + std::log(logit);
+                score = penalizeRepetition(sequence, score, repetitionPenalty);
 
                 newBeams.emplace_back(i, sequence, score);
             }
@@ -147,10 +151,27 @@ public:
         return indices;
     }
 
+    static float
+    penalizeRepetition(const std::vector<int64_t> &sequence, float score, float penalty) {
+        std::unordered_map<int64_t, int> wordFreq;
+        for (int64_t token: sequence) {
+            wordFreq[token]++;
+        }
+
+        for (const auto &pair: wordFreq) {
+            if (pair.second > 1) {
+                score -= penalty * static_cast<float>(pair.second - 1);
+            }
+        }
+
+        return score;
+    }
+
 private:
     std::vector<Beam> beams;
     size_t beamSize;
     float minP;
+    float repetitionPenalty;
     uint64_t eosId;
 };
 
@@ -166,10 +187,11 @@ Java_app_versta_translate_bridge_inference_BeamSearch_construct(
         jobject,
         jint beamSize,
         jfloat minP,
+        jfloat repetitionPenalty,
         jlong padId,
         jlong eosId
 ) {
-    auto beamSearch = std::make_unique<BeamSearch>(beamSize, minP, padId, eosId);
+    auto beamSearch = std::make_unique<BeamSearch>(beamSize, minP, repetitionPenalty, padId, eosId);
     jlong handle = ++instanceCounter;
     beamSearchInstances[handle] = std::move(beamSearch);
     return handle;

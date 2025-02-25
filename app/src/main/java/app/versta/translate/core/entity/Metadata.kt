@@ -101,7 +101,7 @@ data class LanguageModelFilesMetadata(
 @Serializable
 data class LanguageModelTokenizerFilesMetadata(
     val config: String,
-    @SerialName("vocabulary_optimized")
+    @SerialName("vocabulary")
     val sourceVocabulary: String,
     @SerialName("target_vocabulary")
     val targetVocabulary: String? = null,

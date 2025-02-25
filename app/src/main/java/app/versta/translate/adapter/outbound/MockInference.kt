@@ -11,6 +11,7 @@ class MockInference: TranslationInference {
         eosId: Long,
         padId: Long,
         minP: Float,
+        repetitionPenalty: Float,
         beamSize: Int,
         maxSequenceLength: Int,
     ): LongArray {
@@ -23,6 +24,7 @@ class MockInference: TranslationInference {
         eosId: Long,
         padId: Long,
         minP: Float,
+        repetitionPenalty: Float,
         beamSize: Int,
         maxSequenceLength: Int,
     ): Flow<LongArray> {

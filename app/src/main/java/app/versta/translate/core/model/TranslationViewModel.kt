@@ -57,6 +57,7 @@ class TranslationViewModel(
     val maxSequenceLength =
         translationPreferenceRepository.getMaxSequenceLength().distinctUntilChanged()
     val minProbability = translationPreferenceRepository.getMinProbability().distinctUntilChanged()
+    val repetitionPenalty = translationPreferenceRepository.getRepetitionPenalty().distinctUntilChanged()
     val threadCount = translationPreferenceRepository.getThreadCount().distinctUntilChanged()
 
     private lateinit var _cache: TranslationMemoryCache
@@ -124,6 +125,15 @@ class TranslationViewModel(
     }
 
     /**
+     * Sets the penalty for repeating tokens.
+     */
+    fun setRepetitionPenalty(penalty: Float): Job {
+        return viewModelScope.launch {
+            translationPreferenceRepository.setRepetitionPenalty(penalty)
+        }
+    }
+
+    /**
      * Sets the thread count.
      */
     fun setThreadCount(count: Int): Job {
@@ -178,6 +188,7 @@ class TranslationViewModel(
                 eosId = tokenizer.eosId,
                 padId = tokenizer.padId,
                 minP = minP,
+                repetitionPenalty = repetitionPenalty.first(),
                 beamSize = beamSize.first(),
                 maxSequenceLength = maxSequenceLength.first(),
             )
@@ -233,6 +244,7 @@ class TranslationViewModel(
                     eosId = tokenizer.eosId,
                     padId = tokenizer.padId,
                     minP = minP,
+                    repetitionPenalty = repetitionPenalty.first(),
                     beamSize = beamSize.first(),
                     maxSequenceLength = maxSequenceLength.first(),
                 )

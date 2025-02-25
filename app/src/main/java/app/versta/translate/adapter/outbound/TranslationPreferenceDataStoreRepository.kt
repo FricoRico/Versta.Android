@@ -124,6 +124,25 @@ class TranslationPreferenceDataStoreRepository(
         }
     }
 
+    /**
+     * Gets the penalty for repeating tokens.
+     */
+    override fun getRepetitionPenalty(): Flow<Float> {
+        return dataStore.data.map { preferences ->
+            preferences[REPETITION_PENALTY_KEY]?.toFloat() ?: DEFAULT_REPETITION_PENALTY
+        }
+    }
+
+    /**
+     * Sets the penalty for repeating tokens.
+     * @param penalty the penalty.
+     */
+    override suspend fun setRepetitionPenalty(penalty: Float) {
+        dataStore.edit { preferences ->
+            preferences[REPETITION_PENALTY_KEY] = penalty.toString()
+        }
+    }
+
     companion object {
         private val CACHE_SIZE_KEY = stringPreferencesKey("cache_size")
         private val CACHE_ENABLED_KEY = stringPreferencesKey("cache_enabled")
@@ -131,5 +150,6 @@ class TranslationPreferenceDataStoreRepository(
         private val THREAD_COUNT_KEY = stringPreferencesKey("thread_count")
         private val MAX_SEQUENCE_LENGTH_KEY = stringPreferencesKey("max_sequence_length")
         private val MIN_PROBABILITY_KEY = stringPreferencesKey("min_probability")
+        private val REPETITION_PENALTY_KEY = stringPreferencesKey("repetition_penalty")
     }
 }

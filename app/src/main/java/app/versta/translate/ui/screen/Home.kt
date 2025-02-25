@@ -18,11 +18,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
@@ -54,6 +56,8 @@ fun Home(
     textTranslationViewModel: TextTranslationViewModel
 ) {
     val orientation = LocalContext.current.resources.configuration.orientation
+
+    val hasLicense by licenseViewModel.hasLicense.collectAsStateWithLifecycle(false)
 
     val notificationPermissionState = rememberPermissionState(
         Manifest.permission.POST_NOTIFICATIONS
@@ -124,10 +128,12 @@ fun Home(
                     )
                 }
 
-                item {
-                    TrialLicenseCard(
-                        licenseViewModel = licenseViewModel,
-                    )
+                if (!hasLicense) {
+                    item {
+                        TrialLicenseCard(
+                            licenseViewModel = licenseViewModel,
+                        )
+                    }
                 }
 
                 item {

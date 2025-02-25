@@ -33,6 +33,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
@@ -53,7 +54,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -64,6 +69,7 @@ import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.MockInference
 import app.versta.translate.adapter.outbound.MockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
+import app.versta.translate.core.entity.WritingDirection
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LoadingProgress
 import app.versta.translate.core.model.TextTranslationViewModel
@@ -113,6 +119,8 @@ fun TextTranslation(
     )
 
     val languages by translationViewModel.languages.collectAsStateWithLifecycle(null)
+
+    val targetLanguage by languageViewModel.targetLanguage.collectAsStateWithLifecycle(null)
 
     val sheetScope = rememberCoroutineScope()
     val scaffoldState = rememberBottomSheetScaffoldState(
@@ -300,6 +308,7 @@ fun TextTranslation(
                             .padding(top = MaterialTheme.spacing.large),
                         translation = translated,
                         transliteration = translatedTransliteration,
+                        writingDirection = targetLanguage?.getWritingDirection() ?: WritingDirection.LTR
                     )
                 }
             }
@@ -335,6 +344,8 @@ fun TextTranslationInputField(
     onValueChange: (String) -> Unit = {},
     onSubmit: (String) -> Unit = {}
 ) {
+    val textStyle = LocalTextStyle.current.copy(textDirection = TextDirection.ContentOrLtr)
+
     Column(
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
         modifier = modifier
@@ -345,6 +356,7 @@ fun TextTranslationInputField(
                 .fillMaxWidth()
                 .defaultMinSize(minHeight = 192.dp),
             value = input,
+            textStyle = textStyle,
             onValueChange = onValueChange,
             onSubmit = { onSubmit(input) },
             colors = TextFieldDefaults.colorsTransparent()
@@ -353,7 +365,9 @@ fun TextTranslationInputField(
         if (transliteration.isNotEmpty()) {
             Text(
                 text = transliteration,
-                modifier = Modifier.padding(start = MaterialTheme.spacing.medium),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = MaterialTheme.spacing.medium),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,
             )
@@ -417,24 +431,36 @@ fun TextTranslationInputButtonRow(
 fun TextTranslationOutput(
     modifier: Modifier = Modifier,
     translation: String,
-    transliteration: String
+    transliteration: String,
+    writingDirection: WritingDirection
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(bottom = MaterialTheme.spacing.large)
             .then(modifier),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.large, Alignment.Bottom)
     ) {
         Text(
             text = translation,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = if (writingDirection == WritingDirection.RTL) {
+                TextAlign.End
+            } else {
+                TextAlign.Start
+            },
         )
 
-        Text(
-            text = transliteration,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.bodySmall
-        )
+        if (transliteration.isNotEmpty()) {
+            Text(
+                text = transliteration,
+                modifier = Modifier
+                    .fillMaxWidth(),
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
     }
 }
 

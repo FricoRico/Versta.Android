@@ -41,6 +41,7 @@ import app.versta.translate.adapter.outbound.DEFAULT_CACHE_SIZE
 import app.versta.translate.adapter.outbound.DEFAULT_MAX_SEQUENCE_LENGTH
 import app.versta.translate.adapter.outbound.DEFAULT_MIN_PROBABILITY
 import app.versta.translate.adapter.outbound.DEFAULT_NUMBER_OF_BEAMS
+import app.versta.translate.adapter.outbound.DEFAULT_REPETITION_PENALTY
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.MockInference
@@ -87,6 +88,9 @@ fun TranslationSettings(
     )
     val minProbability by translationViewModel.minProbability.collectAsStateWithLifecycle(
         DEFAULT_MIN_PROBABILITY
+    )
+    val repetitionPenalty by translationViewModel.repetitionPenalty.collectAsStateWithLifecycle(
+        DEFAULT_REPETITION_PENALTY
     )
     val threadCount by translationViewModel.threadCount.collectAsStateWithLifecycle(
         maxThreadCount / 2
@@ -268,6 +272,34 @@ fun TranslationSettings(
 
                                     val rounded = (it * 1000).roundToInt() / 1000f
                                     translationViewModel.setMinProbability(rounded)
+                                },
+                            )
+                        },
+                        groupSize = 5,
+                        index = 3
+                    )
+                }
+
+                item {
+                    SettingsButtonItem(
+                        headlineContent = "Word repetition penalty",
+                        supportingContent = "The penalty for repeating tokens in the translation. Higher values may reduce repeated words, but may introduce more context loss.",
+                        trailingContent = {
+                            Text(
+                                text = DecimalFormat("0.000").format(repetitionPenalty),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontSize = 22.sp
+                            )
+                        },
+                        underlineContent = {
+                            Slider(
+                                value = repetitionPenalty,
+                                valueRange = 0.0f..2.0f,
+                                onValueChange = {
+                                    settingsChanged = true
+
+                                    val rounded = (it * 1000).roundToInt() / 1000f
+                                    translationViewModel.setRepetitionPenalty(rounded)
                                 },
                             )
                         },

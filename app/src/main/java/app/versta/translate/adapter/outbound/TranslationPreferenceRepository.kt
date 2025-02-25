@@ -4,9 +4,10 @@ import kotlinx.coroutines.flow.Flow
 
 internal const val DEFAULT_CACHE_SIZE = 32
 internal const val DEFAULT_CACHE_ENABLED = true
-internal const val DEFAULT_NUMBER_OF_BEAMS = 4
+internal const val DEFAULT_NUMBER_OF_BEAMS = 3
 internal const val DEFAULT_MAX_SEQUENCE_LENGTH = 256
 internal const val DEFAULT_MIN_PROBABILITY = 0.2f
+internal const val DEFAULT_REPETITION_PENALTY = 0.3f
 
 interface TranslationPreferenceRepository {
     /**
@@ -74,4 +75,15 @@ interface TranslationPreferenceRepository {
      * @param probability The probability.
      */
     suspend fun setMinProbability(probability: Float)
+
+    /**
+     * Gets the penalty for repeating tokens.
+     */
+    fun getRepetitionPenalty(): Flow<Float>
+
+    /**
+     * Sets the penalty for repeating tokens.
+     * @param penalty the penalty.
+     */
+    suspend fun setRepetitionPenalty(penalty: Float)
 }

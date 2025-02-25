@@ -71,6 +71,7 @@ class MarianInference : TranslationInference {
         eosId: Long,
         padId: Long,
         minP: Float,
+        repetitionPenalty: Float,
         beamsSize: Int,
         maxSequenceLength: Int,
     ): LongArray {
@@ -81,6 +82,7 @@ class MarianInference : TranslationInference {
         val beamSearch = BeamSearch(
             beamSize = beamsSize,
             minP = minP,
+            repetitionPenalty = repetitionPenalty,
             padId = padId,
             eosId = eosId
         )
@@ -136,6 +138,7 @@ class MarianInference : TranslationInference {
         eosId: Long,
         padId: Long,
         minP: Float,
+        repetitionPenalty: Float,
         beamsSize: Int,
         maxSequenceLength: Int,
     ): Flow<LongArray> {
@@ -147,6 +150,7 @@ class MarianInference : TranslationInference {
             val beamSearch = BeamSearch(
                 beamSize = beamsSize,
                 minP = minP,
+                repetitionPenalty = repetitionPenalty,
                 padId = padId,
                 eosId = eosId,
             )
@@ -203,6 +207,7 @@ class MarianInference : TranslationInference {
         eosId: Long,
         padId: Long,
         minP: Float,
+        repetitionPenalty: Float,
         beamSize: Int,
         maxSequenceLength: Int,
     ): LongArray {
@@ -219,6 +224,7 @@ class MarianInference : TranslationInference {
             eosId = eosId,
             padId = padId,
             minP = minP,
+            repetitionPenalty = repetitionPenalty,
             beamsSize = beamSize,
             maxSequenceLength = maxSequenceLength,
         )
@@ -231,6 +237,7 @@ class MarianInference : TranslationInference {
         eosId: Long,
         padId: Long,
         minP: Float,
+        repetitionPenalty: Float,
         beamSize: Int,
         maxSequenceLength: Int,
     ): Flow<LongArray> {
@@ -247,6 +254,7 @@ class MarianInference : TranslationInference {
             eosId = eosId,
             padId = padId,
             minP = minP,
+            repetitionPenalty = repetitionPenalty,
             beamsSize = beamSize,
             maxSequenceLength = maxSequenceLength,
         )

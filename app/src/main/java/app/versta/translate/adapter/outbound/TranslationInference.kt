@@ -10,6 +10,7 @@ interface TranslationInference {
         eosId: Long,
         padId: Long,
         minP: Float,
+        repetitionPenalty: Float,
         beamSize: Int,
         maxSequenceLength: Int,
     ): LongArray
@@ -20,6 +21,7 @@ interface TranslationInference {
         eosId: Long,
         padId: Long,
         minP: Float,
+        repetitionPenalty: Float,
         beamSize: Int,
         maxSequenceLength: Int,
     ): Flow<LongArray>

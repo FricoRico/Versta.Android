@@ -10,6 +10,7 @@ class TranslationPreferenceMemoryRepository : TranslationPreferenceRepository {
     private var numberOfBeams = DEFAULT_NUMBER_OF_BEAMS
     private var maxSequenceLength = DEFAULT_MAX_SEQUENCE_LENGTH
     private var minProbability = DEFAULT_MIN_PROBABILITY
+    private var repetitionPenalty = DEFAULT_REPETITION_PENALTY
 
     /**
      * Gets the cache size.
@@ -87,5 +88,20 @@ class TranslationPreferenceMemoryRepository : TranslationPreferenceRepository {
      */
     override suspend fun setMinProbability(probability: Float) {
         minProbability = probability
+    }
+
+    /**
+     * Gets the penalty for repeating tokens.
+     */
+    override fun getRepetitionPenalty(): Flow<Float> {
+        return flowOf(repetitionPenalty)
+    }
+
+    /**
+     * Sets the penalty for repeating tokens.
+     * @param penalty the penalty.
+     */
+    override suspend fun setRepetitionPenalty(penalty: Float) {
+        repetitionPenalty = penalty
     }
 }

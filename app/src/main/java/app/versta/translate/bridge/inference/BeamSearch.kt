@@ -8,13 +8,14 @@ import java.nio.ByteBuffer
 class BeamSearch(
     beamSize: Int,
     minP: Float,
+    repetitionPenalty: Float,
     padId: Long,
     eosId: Long
 ) : AutoCloseable {
     private var handle: Long
 
     init {
-        handle = construct(beamSize, minP, padId, eosId)
+        handle = construct(beamSize, minP, repetitionPenalty, padId, eosId)
 
         if (handle == 0L) {
             throw RuntimeException("Failed to initialize BeamSearch")
@@ -65,7 +66,7 @@ class BeamSearch(
         handle = 0L
     }
 
-    private external fun construct(beamSize: Int, minP: Float, padId: Long, eosId: Long): Long
+    private external fun construct(beamSize: Int, minP: Float, repetitionPenalty: Float, padId: Long, eosId: Long): Long
 
     private external fun search(
         handle: Long,

@@ -2,6 +2,7 @@ package app.versta.translate.ui.component
 
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -11,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import app.versta.translate.utils.lighten
@@ -104,6 +106,7 @@ fun TextField(
     placeholder: String,
     onValueChange: (String) -> Unit,
     onSubmit: (() -> Unit)? = null,
+    textStyle: TextStyle = LocalTextStyle.current,
     colors: TextFieldColors = TextFieldDefaults.colors(),
     shape: Shape = MaterialTheme.shapes.medium,
     value: String = "",
@@ -127,6 +130,7 @@ fun TextField(
         placeholder = {
             Text(placeholder)
         },
+        textStyle = textStyle,
         maxLines = maxLines,
         enabled = enabled,
         colors = colors,
