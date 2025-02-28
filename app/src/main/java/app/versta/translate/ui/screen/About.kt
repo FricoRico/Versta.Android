@@ -61,7 +61,8 @@ fun About(
         navController.popBackStack()
     }
 
-    ScaffoldLargeHeader(topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarSecondaryColor(),
+    ScaffoldLargeHeader(
+        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowColor(),
         navigationIcon = {
             IconButton(onClick = {
                 onBackNavigation()

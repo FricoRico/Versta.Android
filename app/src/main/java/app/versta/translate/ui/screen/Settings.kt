@@ -27,7 +27,9 @@ import app.versta.translate.adapter.outbound.LicenseMemoryRepository
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.ui.component.ListDivider
 import app.versta.translate.ui.component.ScaffoldLargeHeader
+import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.SettingsButtonItem
+import app.versta.translate.ui.component.SettingsDefaults
 import app.versta.translate.ui.component.TrialLicenseCard
 import app.versta.translate.ui.theme.spacing
 
@@ -46,6 +48,7 @@ fun Settings(
     }
 
     return ScaffoldLargeHeader(
+        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowColor(),
         title = {
             Text(
                 text = "Settings",

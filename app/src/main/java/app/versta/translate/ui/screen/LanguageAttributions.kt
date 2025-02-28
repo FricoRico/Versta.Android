@@ -60,7 +60,8 @@ fun LanguageAttributions(
         navController.popBackStack()
     }
 
-    ScaffoldLargeHeader(topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarTertiaryColor(),
+    ScaffoldLargeHeader(
+        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
         title = {
             Text(
                 text = "Language Models",

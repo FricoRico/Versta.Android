@@ -38,7 +38,7 @@ object ScaffoldBottomPageDefaults {
 
     @Composable
     fun bottomPageColors(
-        containerColor: Color = MaterialTheme.colorScheme.surface,
+        containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
         contentColor: Color = MaterialTheme.colorScheme.onSurface,
     ) = BottomPageColors(
         containerColor = containerColor,

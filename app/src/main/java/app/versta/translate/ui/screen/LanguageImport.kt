@@ -110,8 +110,8 @@ fun LanguageImport(
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.tertiary,
-        contentColor = MaterialTheme.colorScheme.onTertiary,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -122,9 +122,9 @@ fun LanguageImport(
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.tertiary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onTertiary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onTertiary,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface,
                 ),
                 navigationIcon = {
                     IconButton(onClick = {
@@ -193,7 +193,7 @@ fun PageIndicator(pagerState: PagerState, modifier: Modifier = Modifier) {
     ) {
         repeat(pageCount) { iteration ->
             val color =
-                if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimary.copy(
+                if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(
                     alpha = 0.5f
                 )
             Box(
@@ -304,7 +304,6 @@ fun SelectionPage(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.large,
                     contentPadding = PaddingValues(MaterialTheme.spacing.medium),
-                    colors = ButtonDefaults.tertiaryButtonColors(),
                     onClick = {
                         ModelFilePicker.openFilePicker(onPickExistingFile)
                     },
@@ -573,7 +572,6 @@ fun AnalysisPage(
                         .fillMaxWidth(),
                     shape = MaterialTheme.shapes.large,
                     contentPadding = PaddingValues(MaterialTheme.spacing.medium),
-                    colors = ButtonDefaults.tertiaryButtonColors(),
                     onClick = {
                         onApprove(uri)
                     },

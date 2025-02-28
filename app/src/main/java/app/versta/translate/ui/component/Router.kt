@@ -1,6 +1,12 @@
 package app.versta.translate.ui.component
 
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -10,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -85,6 +92,10 @@ fun Router(
     return NavHost(
         navController = navController,
         startDestination = startDestination ?: Screens.Home(),
+        enterTransition = enterTransition(),
+        exitTransition = exitTransition(),
+        popEnterTransition = popEnterTransition(),
+        popExitTransition = popExitTransition(),
         modifier = Modifier.fillMaxSize()
     ) {
         composable(Screens.Home()) {
@@ -158,3 +169,38 @@ fun Router(
         }
     }
 }
+
+@Composable
+private fun enterTransition(duration: Int = 300): AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
+    {
+        slideIntoContainer(
+            AnimatedContentTransitionScope.SlideDirection.Left,
+            tween(duration)
+        ) + fadeIn(tween(duration))
+    }
+
+private fun popEnterTransition(duration: Int = 300): AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
+    {
+        slideIntoContainer(
+            AnimatedContentTransitionScope.SlideDirection.Right,
+            tween(duration)
+        ) + fadeIn(tween(duration))
+    }
+
+@Composable
+private fun exitTransition(duration: Int = 300): AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
+    {
+        slideOutOfContainer(
+            AnimatedContentTransitionScope.SlideDirection.Left,
+            tween(duration)
+        ) + fadeOut(tween(duration))
+    }
+
+@Composable
+private fun popExitTransition(duration: Int = 300): AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
+    {
+        slideOutOfContainer(
+            AnimatedContentTransitionScope.SlideDirection.Right,
+            tween(duration)
+        ) + fadeOut(tween(duration))
+    }

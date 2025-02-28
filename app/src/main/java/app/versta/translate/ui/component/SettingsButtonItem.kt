@@ -39,19 +39,15 @@ object SettingsDefaults {
 
     @Composable
     fun colors(
-        containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+        containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
         headlineColor: Color = MaterialTheme.colorScheme.onSurface,
+        supportingColor: Color = headlineColor.lighten(0.2f),
         leadingIconColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-        overlineColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-        supportingColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-        trailingIconColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-        disabledHeadlineColor: Color = MaterialTheme.colorScheme.onSurface.copy(DefaultDisabledAlpha),
-        disabledLeadingIconColor: Color = MaterialTheme.colorScheme.onSurface.copy(
-            DefaultDisabledAlpha
-        ),
-        disabledTrailingIconColor: Color = MaterialTheme.colorScheme.onSurface.copy(
-            DefaultDisabledAlpha
-        ),
+        overlineColor: Color = leadingIconColor,
+        trailingIconColor: Color = leadingIconColor,
+        disabledHeadlineColor: Color = headlineColor.copy(DefaultDisabledAlpha),
+        disabledLeadingIconColor: Color = disabledHeadlineColor,
+        disabledTrailingIconColor: Color = disabledHeadlineColor,
     ) = ListItemDefaults.colors(
         containerColor = containerColor,
         headlineColor = headlineColor,
@@ -68,19 +64,13 @@ object SettingsDefaults {
     fun colorsInverted(
         containerColor: Color = MaterialTheme.colorScheme.inverseSurface,
         headlineColor: Color = MaterialTheme.colorScheme.inverseOnSurface,
+        supportingColor: Color = headlineColor.lighten(0.2f),
         leadingIconColor: Color = MaterialTheme.colorScheme.inverseOnSurface.lighten(0.3f),
-        overlineColor: Color = MaterialTheme.colorScheme.inverseOnSurface.lighten(0.3f),
-        supportingColor: Color = MaterialTheme.colorScheme.inverseOnSurface.lighten(0.3f),
-        trailingIconColor: Color = MaterialTheme.colorScheme.inverseOnSurface.lighten(0.3f),
-        disabledHeadlineColor: Color = MaterialTheme.colorScheme.inverseOnSurface.copy(
-            DefaultDisabledAlpha
-        ),
-        disabledLeadingIconColor: Color = MaterialTheme.colorScheme.inverseOnSurface.copy(
-            DefaultDisabledAlpha
-        ),
-        disabledTrailingIconColor: Color = MaterialTheme.colorScheme.inverseOnSurface.copy(
-            DefaultDisabledAlpha
-        ),
+        overlineColor: Color = leadingIconColor,
+        trailingIconColor: Color = leadingIconColor,
+        disabledHeadlineColor: Color = headlineColor.copy(DefaultDisabledAlpha),
+        disabledLeadingIconColor: Color = disabledHeadlineColor,
+        disabledTrailingIconColor: Color = disabledHeadlineColor,
     ) = ListItemDefaults.colors(
         containerColor = containerColor,
         headlineColor = headlineColor,
@@ -97,17 +87,13 @@ object SettingsDefaults {
     fun colorsPrimary(
         containerColor: Color = MaterialTheme.colorScheme.primary,
         headlineColor: Color = MaterialTheme.colorScheme.onPrimary,
+        supportingColor: Color = headlineColor.lighten(0.2f),
         leadingIconColor: Color = MaterialTheme.colorScheme.onPrimary.darken(0.2f),
-        overlineColor: Color = MaterialTheme.colorScheme.onPrimary.darken(0.2f),
-        supportingColor: Color = MaterialTheme.colorScheme.onPrimary.darken(0.2f),
-        trailingIconColor: Color = MaterialTheme.colorScheme.onPrimary.darken(0.2f),
-        disabledHeadlineColor: Color = MaterialTheme.colorScheme.onPrimary.copy(DefaultDisabledAlpha),
-        disabledLeadingIconColor: Color = MaterialTheme.colorScheme.onPrimary.copy(
-            DefaultDisabledAlpha
-        ),
-        disabledTrailingIconColor: Color = MaterialTheme.colorScheme.onPrimary.copy(
-            DefaultDisabledAlpha
-        ),
+        overlineColor: Color = leadingIconColor,
+        trailingIconColor: Color = leadingIconColor,
+        disabledHeadlineColor: Color = headlineColor.copy(DefaultDisabledAlpha),
+        disabledLeadingIconColor: Color = disabledHeadlineColor,
+        disabledTrailingIconColor: Color = disabledHeadlineColor,
     ) = ListItemDefaults.colors(
         containerColor = containerColor,
         headlineColor = headlineColor,
@@ -124,19 +110,13 @@ object SettingsDefaults {
     fun colorsSecondary(
         containerColor: Color = MaterialTheme.colorScheme.secondary,
         headlineColor: Color = MaterialTheme.colorScheme.onSecondary,
+        supportingColor: Color = headlineColor.lighten(0.2f),
         leadingIconColor: Color = MaterialTheme.colorScheme.onSecondary.lighten(0.2f),
-        overlineColor: Color = MaterialTheme.colorScheme.onSecondary.lighten(0.2f),
-        supportingColor: Color = MaterialTheme.colorScheme.onSecondary.lighten(0.2f),
-        trailingIconColor: Color = MaterialTheme.colorScheme.onSecondary.lighten(0.2f),
-        disabledHeadlineColor: Color = MaterialTheme.colorScheme.onSecondary.copy(
-            DefaultDisabledAlpha
-        ),
-        disabledLeadingIconColor: Color = MaterialTheme.colorScheme.onSecondary.copy(
-            DefaultDisabledAlpha
-        ),
-        disabledTrailingIconColor: Color = MaterialTheme.colorScheme.onSecondary.copy(
-            DefaultDisabledAlpha
-        ),
+        overlineColor: Color = leadingIconColor,
+        trailingIconColor: Color = leadingIconColor,
+        disabledHeadlineColor: Color = headlineColor.copy(DefaultDisabledAlpha),
+        disabledLeadingIconColor: Color = disabledHeadlineColor,
+        disabledTrailingIconColor: Color = disabledHeadlineColor,
     ) = ListItemDefaults.colors(
         containerColor = containerColor,
         headlineColor = headlineColor,
@@ -148,6 +128,30 @@ object SettingsDefaults {
         disabledLeadingIconColor = disabledLeadingIconColor,
         disabledTrailingIconColor = disabledTrailingIconColor,
     )
+
+    @Composable
+    fun colorsTertiary(
+        containerColor: Color = MaterialTheme.colorScheme.tertiary,
+        headlineColor: Color = MaterialTheme.colorScheme.onTertiary,
+        supportingColor: Color = headlineColor.lighten(0.2f),
+        leadingIconColor: Color = MaterialTheme.colorScheme.onTertiary.lighten(0.2f),
+        overlineColor: Color = leadingIconColor,
+        trailingIconColor: Color = leadingIconColor,
+        disabledHeadlineColor: Color = headlineColor.copy(DefaultDisabledAlpha),
+        disabledLeadingIconColor: Color = disabledHeadlineColor,
+        disabledTrailingIconColor: Color = disabledHeadlineColor,
+    ) = ListItemDefaults.colors(
+        containerColor = containerColor,
+        headlineColor = headlineColor,
+        leadingIconColor = leadingIconColor,
+        overlineColor = overlineColor,
+        supportingColor = supportingColor,
+        trailingIconColor = trailingIconColor,
+        disabledHeadlineColor = disabledHeadlineColor,
+        disabledLeadingIconColor = disabledLeadingIconColor,
+        disabledTrailingIconColor = disabledTrailingIconColor,
+    )
+
 }
 
 @Composable

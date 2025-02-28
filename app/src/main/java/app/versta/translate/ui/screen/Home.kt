@@ -83,6 +83,8 @@ fun Home(
 
 
     return ScaffoldLargeHeader(
+        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarSurfaceColor(),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
         title = {
             Text(
                 text = stringResource(R.string.app_name),
@@ -95,7 +97,6 @@ fun Home(
                 Icon(Icons.Outlined.Settings, stringResource(R.string.settings))
             }
         },
-        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarPrimaryColor(),
         content = { insets, scrollConnection ->
             LazyColumn(
                 modifier = Modifier

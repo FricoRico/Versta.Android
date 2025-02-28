@@ -96,6 +96,51 @@ object ScaffoldLargeHeaderDefaults {
         actionIconContentColor = actionIconContentColor,
         navigationIconContentColor = navigationIconContentColor,
     )
+
+    @Composable
+    fun topAppBarSurfaceColor(
+        containerColor: Color = MaterialTheme.colorScheme.surface,
+        scrolledContainerColor: Color = containerColor,
+        titleContentColor: Color = MaterialTheme.colorScheme.onSurface,
+        actionIconContentColor: Color = titleContentColor,
+        navigationIconContentColor: Color = titleContentColor,
+    ) = TopAppBarDefaults.topAppBarColors(
+        containerColor = containerColor,
+        scrolledContainerColor = scrolledContainerColor,
+        titleContentColor = titleContentColor,
+        actionIconContentColor = actionIconContentColor,
+        navigationIconContentColor = navigationIconContentColor,
+    )
+
+    @Composable
+    fun topAppBarsurfaceContainerLowColor(
+        containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        scrolledContainerColor: Color = containerColor,
+        titleContentColor: Color = MaterialTheme.colorScheme.onSurface,
+        actionIconContentColor: Color = titleContentColor,
+        navigationIconContentColor: Color = titleContentColor,
+    ) = TopAppBarDefaults.topAppBarColors(
+        containerColor = containerColor,
+        scrolledContainerColor = scrolledContainerColor,
+        titleContentColor = titleContentColor,
+        actionIconContentColor = actionIconContentColor,
+        navigationIconContentColor = navigationIconContentColor,
+    )
+
+    @Composable
+    fun topAppBarsurfaceContainerLowestColor(
+        containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        scrolledContainerColor: Color = containerColor,
+        titleContentColor: Color = MaterialTheme.colorScheme.onSurface,
+        actionIconContentColor: Color = titleContentColor,
+        navigationIconContentColor: Color = titleContentColor,
+    ) = TopAppBarDefaults.topAppBarColors(
+        containerColor = containerColor,
+        scrolledContainerColor = scrolledContainerColor,
+        titleContentColor = titleContentColor,
+        actionIconContentColor = actionIconContentColor,
+        navigationIconContentColor = navigationIconContentColor,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -109,7 +154,7 @@ fun ScaffoldLargeHeader(
     collapsedHeight: Dp = Dp.Unspecified,
     expandedHeight: Dp = Dp.Unspecified,
     topAppBarColors: TopAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarInverseSurfaceColor(),
-    containerColor: Color = MaterialTheme.colorScheme.background,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     contentColor: Color = contentColorFor(containerColor),
 ) {
     val orientation = LocalContext.current.resources.configuration.orientation

@@ -57,7 +57,7 @@ class MarianTokenizer(
     }
 
     private fun removeLanguageCode(text: String): Pair<List<String>, String> {
-        val match = languageCodeRegex.matchEntire(text)
+        val match = languageCodeRegex.find(text)
         val code = if (match != null) listOf(match.groupValues[0]) else emptyList()
         return Pair(code, languageCodeRegex.replace(text, ""))
     }

@@ -112,7 +112,8 @@ fun TranslationSettings(
         onBackNavigation()
     }
 
-    ScaffoldLargeHeader(topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarSecondaryColor(),
+    ScaffoldLargeHeader(
+        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
         title = {
             Text(
                 text = "Translation",

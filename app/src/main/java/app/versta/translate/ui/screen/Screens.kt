@@ -9,17 +9,17 @@ enum class Screens (
     private val args: List<String> = emptyList(),
     val statusBarStyle: StatusBarStyle = StatusBarStyle.Light
 ) {
-    Home(statusBarStyle = StatusBarStyle.Dark),
+    Home,
     Camera,
-    Settings(statusBarStyle = StatusBarStyle.Dark),
-    LanguageSettings(statusBarStyle = StatusBarStyle.Dark),
-    LanguageImport(statusBarStyle = StatusBarStyle.Dark),
+    Settings,
+    LanguageSettings,
+    LanguageImport,
     TextTranslation,
-    TranslationSettings(statusBarStyle = StatusBarStyle.Dark),
-    About(statusBarStyle = StatusBarStyle.Dark),
-    LanguageAttributions(statusBarStyle = StatusBarStyle.Dark),
-    ThirdParty(statusBarStyle = StatusBarStyle.Dark),
-    PrivacyPolicy(statusBarStyle = StatusBarStyle.Dark);
+    TranslationSettings,
+    About,
+    LanguageAttributions,
+    ThirdParty,
+    PrivacyPolicy;
 
     operator fun invoke(): String {
         val argList = StringBuilder()

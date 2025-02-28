@@ -84,6 +84,7 @@ fun LanguageSettings(
     var languageToBeDeleted by remember { mutableStateOf<Language?>(null) }
 
     ScaffoldLargeHeader(
+        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
         title = {
             Text(
                 text = "Languages",
@@ -96,7 +97,6 @@ fun LanguageSettings(
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
             }
         },
-        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarSecondaryColor(),
         content = { insets, scrollConnection ->
             LazyColumn(
                 modifier = Modifier
@@ -119,7 +119,7 @@ fun LanguageSettings(
                             Box(
                                 modifier = Modifier
                                     .background(
-                                        MaterialTheme.colorScheme.onPrimaryContainer,
+                                        MaterialTheme.colorScheme.secondaryContainer,
                                         MaterialTheme.shapes.extraLarge
                                     )
                                     .padding(MaterialTheme.spacing.small),
@@ -127,11 +127,11 @@ fun LanguageSettings(
                                 Icon(
                                     Icons.Filled.Download,
                                     contentDescription = "License",
-                                    tint = MaterialTheme.colorScheme.primaryContainer,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 )
                             }
                         },
-                        colors = SettingsDefaults.colorsPrimary(),
+                        colors = SettingsDefaults.colorsSecondary(),
                     )
                 }
 
