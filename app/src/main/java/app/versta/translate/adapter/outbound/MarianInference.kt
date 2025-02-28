@@ -1,21 +1,18 @@
 package app.versta.translate.adapter.outbound
 
-import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtLoggingLevel
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.extensions.OrtxPackage
-import android.util.Log
 import app.versta.translate.bridge.inference.BeamSearch
-import app.versta.translate.core.entity.LanguageModelInferenceFiles
 import app.versta.translate.core.entity.DecoderInput
 import app.versta.translate.core.entity.DecoderOutput
 import app.versta.translate.core.entity.EncoderAttentionMasks
 import app.versta.translate.core.entity.EncoderHiddenStates
 import app.versta.translate.core.entity.EncoderInput
 import app.versta.translate.core.entity.EncoderOutput
+import app.versta.translate.core.entity.LanguageModelInferenceFiles
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -272,7 +269,9 @@ class MarianInference : TranslationInference {
         val options = OrtSession.SessionOptions().apply {
             setCPUArenaAllocator(true)
             setMemoryPatternOptimization(true)
+            setInterOpNumThreads(threads)
             setIntraOpNumThreads(1)
+            addWebGPU()
             addXnnpack(mapOf("intra_op_num_threads" to threads.toString()))
             addConfigEntry("kOrtSessionOptionsConfigAllowIntraOpSpinning", "0")
             registerCustomOpLibrary(OrtxPackage.getLibraryPath())
@@ -285,6 +284,14 @@ class MarianInference : TranslationInference {
     override fun close() {
         encoderSession?.close()
         decoderSession?.close()
+    }
+
+    private fun OrtSession.SessionOptions.addWebGPU(providerOptions: Map<String, String> = emptyMap()) {
+        val webGPUProviderName = "WebGPU"
+
+        val addExecutionProvider = this::class.java.getDeclaredMethod("addExecutionProvider", String::class.java, Map::class.java)
+        addExecutionProvider.isAccessible = true
+        addExecutionProvider(this, webGPUProviderName, providerOptions)
     }
 
     companion object {
