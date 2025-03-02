@@ -99,9 +99,19 @@ public:
     }
 
     [[nodiscard]] bool complete() const {
-        return std::all_of(beams.begin(), beams.end(), [this](const Beam &beam) {
-            return beam.sequence.back() == eosId;
-        });
+        if (!beams.empty() && beams.front().sequence.back() == eosId) {
+            return true;
+        }
+
+        auto topN = static_cast<size_t>(std::ceil(beamSize / 2));
+        size_t completedBeams = 0;
+        for (size_t i = 0; i < std::min(beams.size(), topN); ++i) {
+            if (beams[i].sequence.back() == eosId) {
+                completedBeams++;
+            }
+        }
+
+        return completedBeams == topN;
     }
 
     [[nodiscard]] std::vector<int64_t> best() const {
