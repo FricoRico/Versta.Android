@@ -30,6 +30,8 @@
     <string name="language_settings_title">Languages</string>
     <string name="language_settings_get_more_title">Get more languages</string>
     <string name="language_settings_get_more_description">Download or import new language</string>
+    <string name="language_settings_no_languages">No languages imported</string>
+    <string name="language_settings_language_import_hint">Download and import languages to start translating</string>
     <string name="get_file">Get a new file</string>
     <string name="choose_file">Choose an existing file</string>
     <string name="unknown_error">Unknown error</string>
