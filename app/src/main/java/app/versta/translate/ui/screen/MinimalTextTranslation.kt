@@ -206,7 +206,7 @@ fun MinimalTextTranslationOutputButtonRow(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Stop,
-                        contentDescription = "Cancel"
+                        contentDescription = stringResource(R.string.cancel)
                     )
                 }
             }

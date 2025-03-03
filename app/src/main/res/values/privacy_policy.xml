@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="information_collection_title">Information We Collect</string>
+    <string name="information_collection_paragraph">%1$s does not collect any personal data from its users. The app is designed to function entirely offline, and as such, it does not require an internet connection to operate.</string>
+    <string name="internet_permissions_title">No Internet Permissions</string>
+    <string name="internet_permission_paragraph">%1$s does not request or require any internet permissions in the Android manifest. This means the app cannot access the internet from your device, ensuring that no data is sent or received without your explicit action.</string>
+    <string name="analytics_title">No Analytics</string>
+    <string name="analytics_paragraph">%1$s does not use any analytics services. We do not track or collect data about your usage of the app.</string>
+    <string name="logging_title">Logs</string>
+    <string name="logging_paragraph">%1$s generates logs to help diagnose and fix issues. These logs are stored locally on your device and are not automatically shared with us. You have the option to export these logs and share them with us if you encounter an issue and choose to report it on our GitHub repository. The logs do not contain any personal data or translations.</string>
+    <string name="translation_models_title">Translation Models</string>
+    <string name="translation_models_paragraph">The translation models used %1$s are downloaded separately through your browser and are not tied to the app\'s functionality. This ensures that your translations remain private and are not sent to any external servers.</string>
+    <string name="changes_title">Changes to This Privacy Policy</string>
+    <string name="changes_paragraph">We are committed to maintaining the highest standards of privacy and will not make changes to this Privacy Policy that negatively impact your privacy rights. If we make any updates to this Privacy Policy, they will be to enhance your privacy protections or to comply with changes in the law. We will notify you of any changes by posting the updated Privacy Policy on this page. You are advised to review this Privacy Policy periodically for any updates. Changes to this Privacy Policy are effective when they are posted on this page, and we will ensure that any revisions uphold our commitment to your privacy.</string>
+    <string name="questions_title">Contact Us</string>
+    <string name="questions_paragraph">If you have any questions about this Privacy Policy, please contact us through our GitHub repository.</string>
+</resources>

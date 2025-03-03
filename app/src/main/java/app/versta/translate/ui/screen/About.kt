@@ -1,5 +1,7 @@
 package app.versta.translate.ui.screen
 
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.PaddingValues
@@ -42,12 +44,14 @@ import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.theme.spacing
 
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun About(
     navController: NavController, licenseViewModel: LicenseViewModel
 ) {
     val orientation = LocalContext.current.resources.configuration.orientation
+    val version = LocalContext.current.packageManager?.getPackageInfo(LocalContext.current.packageName, 0)?.versionName ?: "x.x.x"
 
     val hasLicense by licenseViewModel.hasLicense.collectAsStateWithLifecycle(true)
 
@@ -82,7 +86,7 @@ fun About(
                 item {
                     Image(
                         imageVector = ImageVector.vectorResource(R.drawable.ic_launcher_background),
-                        contentDescription = "Versta Icon",
+                        contentDescription = stringResource(R.string.icon_description, stringResource(R.string.app_name)),
                         modifier = Modifier
                             .padding(bottom = MaterialTheme.spacing.large)
                             .size(MaterialTheme.spacing.extraLarge * 3)
@@ -92,13 +96,13 @@ fun About(
 
                 item {
                     Text(
-                        text = "Versta", style = MaterialTheme.typography.displaySmall
+                        text = stringResource(R.string.app_name), style = MaterialTheme.typography.displaySmall
                     )
                 }
 
                 item {
                     Text(
-                        text = "By Neurora", style = MaterialTheme.typography.bodyMedium
+                        text = stringResource(R.string.neurora_attribution), style = MaterialTheme.typography.bodyMedium
                     )
                 }
 
@@ -106,7 +110,7 @@ fun About(
 
                 item {
                     Text(
-                        text = "Version 1.0.0", style = MaterialTheme.typography.bodySmall
+                        text = stringResource(R.string.version_number, version), style = MaterialTheme.typography.bodySmall
                     )
                 }
 
@@ -120,9 +124,9 @@ fun About(
                     ) {
                         Text(
                             text = if (hasLicense) {
-                                "Paid License"
+                                stringResource(R.string.paid_license_badge)
                             } else {
-                                "Trial License"
+                                stringResource(R.string.trial_license_badge)
                             },
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(
@@ -148,8 +152,8 @@ fun About(
             ) {
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Language models",
-                        supportingContent = "Attributions for language models",
+                        headlineContent = stringResource(R.string.about_language_models_title),
+                        supportingContent = stringResource(R.string.about_language_models_description),
                         onClick = {
                             navController.navigate(Screens.LanguageAttributions())
                         },
@@ -166,8 +170,8 @@ fun About(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Third-party",
-                        supportingContent = "Acknowledgements and third-party licenses",
+                        headlineContent = stringResource(R.string.about_third_party_title),
+                        supportingContent = stringResource(R.string.about_third_party_description),
                         onClick = {
                             navController.navigate(Screens.ThirdParty())
                         },
@@ -184,8 +188,8 @@ fun About(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Privacy policy",
-                        supportingContent = "Our commitment to your privacy",
+                        headlineContent = stringResource(R.string.about_privacy_policy_title),
+                        supportingContent = stringResource(R.string.about_privacy_policy_description),
                         onClick = {
                             navController.navigate(Screens.PrivacyPolicy())
                         },

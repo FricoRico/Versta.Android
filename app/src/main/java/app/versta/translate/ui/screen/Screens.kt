@@ -28,10 +28,4 @@ enum class Screens (
         }
         return name + argList
     }
-
-    fun withArgs(vararg args: Any): String {
-        val destination = StringBuilder()
-        args.forEach { arg -> destination.append("/$arg") }
-        return name + destination
-    }
 }

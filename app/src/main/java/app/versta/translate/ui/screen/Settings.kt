@@ -51,7 +51,7 @@ fun Settings(
         topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowColor(),
         title = {
             Text(
-                text = "Settings",
+                text = stringResource(R.string.settings_title),
             )
         },
         navigationIcon = {
@@ -74,15 +74,15 @@ fun Settings(
             ) {
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Languages",
-                        supportingContent = "Import languages, download languages",
+                        headlineContent = stringResource(R.string.settings_languages_title),
+                        supportingContent = stringResource(R.string.settings_languages_description),
                         onClick = {
                             navController.navigate(Screens.LanguageSettings())
                         },
                         leadingContent = {
                             Icon(
                                 Icons.Outlined.Translate,
-                                contentDescription = "Languages",
+                                contentDescription = null,
                             )
                         },
                         index = 0,
@@ -92,15 +92,15 @@ fun Settings(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Translation",
-                        supportingContent = "Manage history, translator fine-tuning",
+                        headlineContent = stringResource(R.string.settings_translation_title),
+                        supportingContent = stringResource(R.string.settings_translation_description),
                         onClick = {
                             navController.navigate(Screens.TranslationSettings())
                         },
                         leadingContent = {
                             Icon(
                                 Icons.Outlined.Language,
-                                contentDescription = "Translation",
+                                contentDescription = null,
                             )
                         },
                         index = 1,
@@ -118,13 +118,13 @@ fun Settings(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Vision",
-                        supportingContent = "Configure camera, object tracking",
+                        headlineContent = stringResource(R.string.settings_vision_title),
+                        supportingContent = stringResource(R.string.settings_vision_description),
                         onClick = {/*TODO*/ },
                         leadingContent = {
                             Icon(
                                 Icons.Outlined.CameraAlt,
-                                contentDescription = "Camera",
+                                contentDescription = null,
                             )
                         },
                         index = 0,
@@ -134,13 +134,13 @@ fun Settings(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Voice",
-                        supportingContent = "Microphone settings, transcription",
+                        headlineContent = stringResource(R.string.settings_voice_title),
+                        supportingContent = stringResource(R.string.settings_voice_description),
                         onClick = {/*TODO*/ },
                         leadingContent = {
                             Icon(
                                 Icons.Outlined.MicNone,
-                                contentDescription = "Microphone",
+                                contentDescription = null,
                             )
                         },
                         index = 1,
@@ -152,8 +152,8 @@ fun Settings(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = "About",
-                        supportingContent = "Version, privacy policy, attributions",
+                        headlineContent = stringResource(R.string.settings_about_title),
+                        supportingContent = stringResource(R.string.settings_about_description),
                         onClick = {
                             navController.navigate(Screens.About())
                         },

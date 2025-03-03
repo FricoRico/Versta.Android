@@ -3,13 +3,7 @@ package app.versta.translate.ui.screen
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.icu.text.DecimalFormat
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -28,7 +22,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
@@ -116,7 +109,7 @@ fun TranslationSettings(
         topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
         title = {
             Text(
-                text = "Translation",
+                text = stringResource(R.string.translation_settings_title),
             )
         },
         navigationIcon = {
@@ -139,14 +132,14 @@ fun TranslationSettings(
             ) {
                 item {
                     SettingsHeaderItem(
-                        headlineContent = "History", groupSize = 3, index = 0
+                        headlineContent = stringResource(R.string.translation_settings_history_headline), groupSize = 3, index = 0
                     )
                 }
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Remember translations",
-                        supportingContent = "Save for later reference, and avoid re-translating the same text.",
+                        headlineContent = stringResource(R.string.translation_settings_history_toggle_title),
+                        supportingContent = stringResource(R.string.translation_settings_history_toggle_description),
                         onClick = {
                             settingsChanged = true
                             translationViewModel.setCacheEnabled(!cacheEnabled)
@@ -167,8 +160,8 @@ fun TranslationSettings(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = "History size",
-                        supportingContent = "How many translations to keep, only the newest will be saved.",
+                        headlineContent = stringResource(R.string.translation_settings_history_size_title),
+                        supportingContent = stringResource(R.string.translation_settings_history_size_description),
                         trailingContent = {
                             Text(
                                 text = if (cacheSize != Int.MAX_VALUE) cacheSize.toString() else "∞",
@@ -195,14 +188,14 @@ fun TranslationSettings(
 
                 item {
                     SettingsHeaderItem(
-                        headlineContent = "Translation", groupSize = 5, index = 0
+                        headlineContent = stringResource(R.string.translation_settings_inference_headline), groupSize = 5, index = 0
                     )
                 }
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Beam size",
-                        supportingContent = "The number of translations to consider during decoding. Higher values may improve translation quality, but will be slower.",
+                        headlineContent = stringResource(R.string.translation_settings_inference_beam_size_title),
+                        supportingContent = stringResource(R.string.translation_settings_inference_beam_size_description),
                         trailingContent = {
                             Text(
                                 text = beamSize.toString(),
@@ -228,8 +221,8 @@ fun TranslationSettings(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Max sequence length",
-                        supportingContent = "The maximum length of the input sequence. Longer text may be truncated.",
+                        headlineContent = stringResource(R.string.translation_settings_inference_max_length_title),
+                        supportingContent = stringResource(R.string.translation_settings_inference_max_length_description),
                         trailingContent = {
                             Text(
                                 text = maxSequenceLength.toString(),
@@ -254,8 +247,8 @@ fun TranslationSettings(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Minimum probability",
-                        supportingContent = "The minimum probability for a token to be considered during decoding. Lower values may improve translation quality, but may introduce more errors.",
+                        headlineContent = stringResource(R.string.translation_settings_inference_min_p_title),
+                        supportingContent = stringResource(R.string.translation_settings_inference_min_p_description),
                         trailingContent = {
                             Text(
                                 text = DecimalFormat("0.000").format(minProbability),
@@ -283,8 +276,8 @@ fun TranslationSettings(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Word repetition penalty",
-                        supportingContent = "The penalty for repeating tokens in the translation. Higher values may reduce repeated words, but may introduce more context loss.",
+                        headlineContent = stringResource(R.string.translation_settings_inference_repetition_penalty_title),
+                        supportingContent = stringResource(R.string.translation_settings_inference_repetition_penalty_description),
                         trailingContent = {
                             Text(
                                 text = DecimalFormat("0.000").format(repetitionPenalty),
@@ -311,8 +304,8 @@ fun TranslationSettings(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Thread count",
-                        supportingContent = "Limit the number of threads used for translation. Higher values may improve performance, but may impact other processes like voice input.",
+                        headlineContent = stringResource(R.string.translation_settings_inference_thread_limit_title),
+                        supportingContent = stringResource(R.string.translation_settings_inference_thread_limit_description),
                         trailingContent = {
                             Text(
                                 text = threadCount.toString(),

@@ -29,10 +29,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.versta.translate.R
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.model.LanguageType
 import app.versta.translate.core.model.LanguageViewModel
@@ -65,7 +67,8 @@ fun LanguageSelectionDrawer(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(MaterialTheme.spacing.small)
-                    .padding(bottom = MaterialTheme.spacing.large).then(modifier)
+                    .padding(bottom = MaterialTheme.spacing.large)
+                    .then(modifier)
             ) {
                 when (languageSelection.value) {
                     LanguageType.Source -> {
@@ -113,7 +116,7 @@ fun LanguageSelectionSourceLanguage(
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             Text(
-                text = "Select source language",
+                text = stringResource(R.string.select_source_language),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = MaterialTheme.spacing.large)
             )
@@ -152,7 +155,7 @@ fun LanguageSelectionTargetLanguage(
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             Text(
-                text = "Select target language",
+                text = stringResource(R.string.select_target_language),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = MaterialTheme.spacing.large)
             )
@@ -180,13 +183,13 @@ fun LanguageSelectionNoItems() {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
         Column {
             Text(
-                text = "No languages available",
+                text = stringResource(R.string.no_languages_available),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
-                text = "You can import a new language through the settings",
+                text = stringResource(R.string.language_import_hint),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -216,7 +219,9 @@ fun LanguageSelectionListItem(
         leadingContent = {
             Image(
                 painter = painterResource(flagDrawable),
-                contentDescription = "Flag of ${language.name}",
+                contentDescription = stringResource(
+                    R.string.flag, language.name
+                ),
                 modifier = Modifier
                     .requiredSize(MaterialTheme.spacing.extraLarge)
                     .clip(MaterialTheme.shapes.extraLarge)

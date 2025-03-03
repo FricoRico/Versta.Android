@@ -49,32 +49,32 @@ fun PrivacyPolicy(
 
     val privacyPolicyContent = listOf(
         PrivacyPolicyParagraph(
-            title = "Information We Collect",
-            content = "Versta does not collect any personal data from its users. The app is designed to function entirely offline, and as such, it does not require an internet connection to operate."
+            title = stringResource(R.string.information_collection_title),
+            content = stringResource(R.string.information_collection_paragraph, stringResource(R.string.app_name))
         ),
         PrivacyPolicyParagraph(
-            title = "No Internet Permissions",
-            content = "Versta does not request or require any internet permissions in the Android manifest. This means the app cannot access the internet from your device, ensuring that no data is sent or received without your explicit action."
+            title = stringResource(R.string.internet_permissions_title),
+            content = stringResource(R.string.internet_permission_paragraph,stringResource(R.string.app_name))
         ),
         PrivacyPolicyParagraph(
-            title = "No Analytics",
-            content = "Versta does not use any analytics services. We do not track or collect data about your usage of the app."
+            title = stringResource(R.string.analytics_title),
+            content = stringResource(R.string.analytics_paragraph, stringResource(R.string.app_name))
         ),
         PrivacyPolicyParagraph(
-            title = "Logs",
-            content = "Versta generates logs to help diagnose and fix issues. These logs are stored locally on your device and are not automatically shared with us. You have the option to export these logs and share them with us if you encounter an issue and choose to report it on our GitHub repository. The logs do not contain any personal data or translations."
+            title = stringResource(R.string.logging_title),
+            content = stringResource(R.string.logging_paragraph,stringResource(R.string.app_name))
         ),
         PrivacyPolicyParagraph(
-            title = "Translation Models",
-            content = "The translation models used in Versta are downloaded separately through your browser and are not tied to the app's functionality. This ensures that your translations remain private and are not sent to any external servers."
+            title = stringResource(R.string.translation_models_title),
+            content = stringResource(R.string.translation_models_paragraph, stringResource(R.string.app_name))
         ),
         PrivacyPolicyParagraph(
-            title = "Changes to This Privacy Policy",
-            content = "We are committed to maintaining the highest standards of privacy and will not make changes to this Privacy Policy that negatively impact your privacy rights. If we make any updates to this Privacy Policy, they will be to enhance your privacy protections or to comply with changes in the law. We will notify you of any changes by posting the updated Privacy Policy on this page. You are advised to review this Privacy Policy periodically for any updates. Changes to this Privacy Policy are effective when they are posted on this page, and we will ensure that any revisions uphold our commitment to your privacy."
+            title = stringResource(R.string.changes_title),
+            content = stringResource(R.string.changes_paragraph)
         ),
         PrivacyPolicyParagraph(
-            title = "Contact Us",
-            content = "If you have any questions about this Privacy Policy, please contact us through our GitHub repository."
+            title = stringResource(R.string.questions_title),
+            content = stringResource(R.string.questions_paragraph)
         )
     )
 
@@ -82,7 +82,7 @@ fun PrivacyPolicy(
         topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
         title = {
             Text(
-                text = "Privacy Policy",
+                text = stringResource(R.string.privacy_policy_title),
             )
         },
         navigationIcon = {

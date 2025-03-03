@@ -219,7 +219,7 @@ fun BoxScope.Scrim(
         val alpha by
         animateFloatAsState(
             targetValue = if (visible) 1f else 0f, animationSpec = TweenSpec(),
-            label = "scrim-alpha"
+            label = "scrimAlpha"
         )
         val closeSheet = stringResource(R.string.close_sheet)
         val dismissSheet =

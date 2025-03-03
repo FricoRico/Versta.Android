@@ -1,7 +1,6 @@
 package app.versta.translate.ui.screen
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
@@ -46,7 +45,6 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
 
-@SuppressLint("InlinedApi")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun Home(
@@ -142,8 +140,8 @@ fun Home(
                         onClick = {
                             navController.navigate(Screens.Camera())
                         },
-                        title = "Vision",
-                        subtitle = "Use your camera to translate",
+                        title = stringResource(R.string.home_vision_title),
+                        subtitle = stringResource(R.string.home_vision_description),
                         icon = Icons.Outlined.CameraAlt,
                         colors = ButtonCardDefaults.colorsPrimary(),
                     )
@@ -152,8 +150,8 @@ fun Home(
                 item {
                     ButtonCard(
                         onClick = { /*TODO*/ },
-                        title = "Voice",
-                        subtitle = "Translate a conversation",
+                        title = stringResource(R.string.home_voice_title),
+                        subtitle = stringResource(R.string.home_voice_description),
                         icon = Icons.Outlined.MicNone,
                         colors = ButtonCardDefaults.colorsSecondary(),
                     )

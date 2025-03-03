@@ -45,7 +45,7 @@ fun ThirdParty(
         topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
         title = {
             Text(
-                text = "Third-party Libraries",
+                text = stringResource(R.string.third_party_title),
             )
         },
         navigationIcon = {
@@ -61,6 +61,9 @@ fun ThirdParty(
                     .nestedScroll(scrollConnection),
                 padding = LibraryDefaults.libraryPadding(
                     badgePadding = PaddingValues(top = MaterialTheme.spacing.small),
+                ),
+                colors = LibraryDefaults.libraryColors(
+                    backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                 ),
                 contentPadding = PaddingValues(
                     top = landscapeContentPadding + MaterialTheme.spacing.extraSmall,

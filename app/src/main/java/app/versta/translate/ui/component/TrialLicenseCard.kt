@@ -21,10 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.versta.translate.R
 import app.versta.translate.adapter.outbound.LicenseMemoryRepository
 import app.versta.translate.core.model.DialogState
 import app.versta.translate.core.model.LicenseViewModel
@@ -79,7 +81,7 @@ fun TrialLicenseCard(
             ) {
                 Icon(
                     Icons.Filled.Bolt,
-                    contentDescription = "License",
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.tertiary.shift(-30f, 1.2f, 0.9f),
                 )
             }
@@ -87,14 +89,14 @@ fun TrialLicenseCard(
                 modifier = Modifier.fillMaxWidth(0.8f) // 65% of the width
             ) {
                 Text(
-                    text = "Trial license",
+                    text = stringResource(R.string.trial_license_title),
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1,
                     style = MaterialTheme.typography.titleSmall,
                     fontSize = 18.sp,
                 )
                 Text(
-                    text = "You are currently on a trial license, support the project by upgrading.",
+                    text = stringResource(R.string.trial_license_description),
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 2,
                     style = MaterialTheme.typography.bodySmall,
@@ -110,7 +112,7 @@ fun TrialLicenseCard(
             ) {
                 Icon(
                     Icons.AutoMirrored.Outlined.CallMade,
-                    contentDescription = "Open in browser",
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onTertiaryContainer,
                 )
             }

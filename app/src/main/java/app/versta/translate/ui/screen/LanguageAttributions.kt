@@ -64,7 +64,7 @@ fun LanguageAttributions(
         topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
         title = {
             Text(
-                text = "Language Models",
+                text = stringResource(R.string.language_models_title)
             )
         },
         navigationIcon = {
@@ -92,6 +92,7 @@ fun LanguageAttributions(
                     )
 
                     Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
                         onClick = {
                             context.startActivity(onClick, null)
                         },

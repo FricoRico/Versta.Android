@@ -87,8 +87,8 @@ fun LanguageSelector(
             LanguageSelectorButton(
                 context = context,
                 language = sourceLanguage,
-                text = "Select language",
-                placeholder = "From",
+                text = stringResource(R.string.select_language),
+                placeholder = stringResource(R.string.select_language_from),
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Source) },
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(
@@ -108,8 +108,8 @@ fun LanguageSelector(
             LanguageSelectorButton(
                 context = context,
                 language = targetLanguage,
-                text = "Select language",
-                placeholder = "To",
+                text = stringResource(R.string.select_language),
+                placeholder = stringResource(R.string.select_language_to),
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Target) },
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(
@@ -212,7 +212,9 @@ fun LanguageSelectorButton(
                 if (flagDrawable != null) {
                     Image(
                         painter = painterResource(flagDrawable),
-                        contentDescription = "Flag",
+                        contentDescription = stringResource(
+                            R.string.flag, language.name
+                        ),
                         modifier = Modifier
                             .requiredSize(MaterialTheme.spacing.large)
                             .clip(MaterialTheme.shapes.large)

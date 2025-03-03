@@ -16,11 +16,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.versta.translate.R
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.MockInference
@@ -63,24 +65,24 @@ fun TranslationErrorAlertDialog(
                 item {
                     Icon(
                         Icons.Outlined.Error,
-                        contentDescription = "Warning",
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
                 
                 item {
-                    Text(text = "Translation error", style = MaterialTheme.typography.headlineSmall)
+                    Text(text = stringResource(R.string.translation_error_title), style = MaterialTheme.typography.headlineSmall)
                 }
 
                 item {
                     Text(
-                        text = "Something went wrong during translation. Please file a bug report.",
+                        text = stringResource(R.string.translation_error_description),
                     )
                 }
                 
                 item {
                     Text(
-                        text = translationError?.message ?: "Unknown error",
+                        text = translationError?.message ?: stringResource(R.string.unknown_error),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Light,
                         fontStyle = FontStyle.Italic,
@@ -96,7 +98,7 @@ fun TranslationErrorAlertDialog(
                             contentColor = MaterialTheme.colorScheme.primary
                         ),
                     ) {
-                        Text(text = "Dismiss")
+                        Text(text = stringResource(R.string.dismiss))
                     }
                 }
             }

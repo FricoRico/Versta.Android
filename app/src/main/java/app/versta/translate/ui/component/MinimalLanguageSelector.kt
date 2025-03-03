@@ -89,7 +89,7 @@ fun MinimalLanguageSelector(
             MinimalLanguageSelectorButton(
                 context = context,
                 language = sourceLanguage,
-                text = "Select language",
+                text = stringResource(R.string.select_language),
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Source) },
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(
@@ -109,7 +109,7 @@ fun MinimalLanguageSelector(
             MinimalLanguageSelectorButton(
                 context = context,
                 language = targetLanguage,
-                text = "Select language",
+                text = stringResource(R.string.select_language),
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Target) },
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(
@@ -203,7 +203,9 @@ fun MinimalLanguageSelectorButton(
                 if (flagDrawable != null) {
                     Image(
                         painter = painterResource(flagDrawable),
-                        contentDescription = "Flag",
+                        contentDescription = stringResource(
+                            R.string.flag, language.name
+                        ),
                         modifier = Modifier
                             .requiredSize(MaterialTheme.spacing.large)
                             .clip(MaterialTheme.shapes.large)

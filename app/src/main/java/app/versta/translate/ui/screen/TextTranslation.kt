@@ -353,7 +353,7 @@ fun TextTranslationInputField(
         modifier = modifier
     ) {
         TextField(
-            placeholder = "Type something",
+            placeholder = stringResource(R.string.text_translation_placeholder),
             modifier = Modifier
                 .fillMaxWidth()
                 .defaultMinSize(minHeight = 192.dp),
@@ -497,7 +497,7 @@ fun TextTranslationOutputButtonRow(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Stop,
-                        contentDescription = "Cancel"
+                        contentDescription = stringResource(R.string.cancel)
                     )
                 }
             }

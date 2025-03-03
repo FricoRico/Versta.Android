@@ -87,7 +87,7 @@ fun LanguageSettings(
         topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
         title = {
             Text(
-                text = "Languages",
+                text = stringResource(R.string.language_settings_title),
             )
         },
         navigationIcon = {
@@ -110,8 +110,8 @@ fun LanguageSettings(
             ) {
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Get more languages",
-                        supportingContent = "Download or import new language",
+                        headlineContent = stringResource(R.string.language_settings_get_more_title),
+                        supportingContent = stringResource(R.string.language_settings_get_more_description),
                         onClick = {
                             navController.navigate(Screens.LanguageImport())
                         },
@@ -126,7 +126,7 @@ fun LanguageSettings(
                             ) {
                                 Icon(
                                     Icons.Filled.Download,
-                                    contentDescription = "License",
+                                    contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 )
                             }
@@ -181,7 +181,7 @@ private fun LanguageDeletionConfirmationDialog(
     }, icon = {
         Icon(
             Icons.Outlined.Error,
-            contentDescription = "Warning",
+            contentDescription = null,
             tint = MaterialTheme.colorScheme.error
         )
     }, title = {
@@ -193,7 +193,7 @@ private fun LanguageDeletionConfirmationDialog(
         ) {
             item {
                 Text(
-                    text = "Are you sure you want to remove ${language.name}? This will delete the following translation options:",
+                    text = stringResource(R.string.delete_language_description, language.name),
                     modifier = Modifier.padding(bottom = MaterialTheme.spacing.medium)
                 )
             }
@@ -268,13 +268,13 @@ private fun LanguageDeletionConfirmationDialog(
         TextButton(onClick = {
             onConfirmation(language)
         }) {
-            Text("Confirm")
+            Text(text = stringResource(R.string.confirm))
         }
     }, dismissButton = {
         TextButton(onClick = {
             onDismissRequest()
         }) {
-            Text("Dismiss")
+            Text(text = stringResource(R.string.dismiss))
         }
     })
 }

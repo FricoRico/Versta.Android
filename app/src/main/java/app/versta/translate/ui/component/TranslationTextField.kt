@@ -20,9 +20,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.versta.translate.R
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.ui.theme.spacing
@@ -49,7 +51,7 @@ fun TranslationTextField(
                 .fillMaxWidth()
         ) {
             TextField(
-                placeholder = "Type something",
+                placeholder = stringResource(R.string.text_translation_placeholder),
                 modifier = Modifier
                     .padding(top = MaterialTheme.spacing.small)
                     .padding(horizontal = MaterialTheme.spacing.small)
@@ -87,7 +89,7 @@ fun TranslationTextField(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Close,
-                            contentDescription = "Clear"
+                            contentDescription = stringResource(R.string.clear)
                         )
                     }
                     FilledIconButton(
@@ -102,7 +104,7 @@ fun TranslationTextField(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.MicNone,
-                            contentDescription = "Dictate"
+                            contentDescription = stringResource(R.string.dictate)
                         )
                     }
                 }
@@ -119,7 +121,7 @@ fun TranslationTextField(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
-                        contentDescription = "Translate"
+                        contentDescription = stringResource(R.string.translate)
                     )
                 }
             }
