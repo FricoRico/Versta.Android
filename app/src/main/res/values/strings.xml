@@ -48,6 +48,8 @@
     <string name="dismiss">Dismiss</string>
     <string name="confirm">Confirm</string>
     <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="version">Version %1$s</string>
     <string name="text_translation_placeholder">Type something</string>
     <string name="trial_license_title">Trial license</string>
     <string name="trial_license_description">You are currently on a trial license, support the project by upgrading.</string>
@@ -100,7 +102,7 @@
     <string name="license_upgrade_title">Upgrading license</string>
     <string name="license_upgrade_thank_you">Thank you for considering a license!</string>
     <string name="license_upgrade_explanation">A license doesn\'t unlock new features but supports ongoing development. Your contribution helps us add new languages, improve existing ones, and introduce exciting features.</string>
-    <string name="license_upgrade_hint">After purchase, confirm with the \'I Have a License\' button.</string>
+    <string name="license_upgrade_hint">After purchase, confirm with the \'I have a license\' button.</string>
     <string name="license_upgrade_hint_highlight">\'I have a license\'</string>
     <string name="license_upgrade_has_license">I have a license</string>
     <string name="license_uprade_buy_license">Buy license</string>
