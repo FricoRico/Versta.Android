@@ -16,7 +16,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -25,7 +24,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.LicenseMemoryRepository
 import app.versta.translate.core.model.DialogState
@@ -38,10 +36,6 @@ fun TrialLicenseCard(
     licenseViewModel: LicenseViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val hasLicense by licenseViewModel.hasLicense.collectAsStateWithLifecycle(true)
-
-    if (hasLicense) return
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -121,7 +115,7 @@ fun TrialLicenseCard(
 }
 
 @Composable
-@Preview
+@Preview(showBackground = true)
 private fun TrialLicenseCardPreview() {
         TrialLicenseCard(
             licenseViewModel = LicenseViewModel(

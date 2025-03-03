@@ -3,7 +3,6 @@
     <string name="settings">Settings</string>
     <string name="back">Back</string>
     <string name="swap_languages">Swap languages</string>
-    <string name="close_sheet">Close sheet</string>
     <string name="translator">Translator</string>
     <string name="translate">Translate</string>
     <string name="clear">Clear</string>
@@ -98,4 +97,15 @@
     <string name="translation_settings_inference_repetition_penalty_description">The penalty for repeating tokens in the translation. Higher values may reduce repeated words, but may introduce more context loss.</string>
     <string name="translation_settings_inference_thread_limit_title">Thread count</string>
     <string name="translation_settings_inference_thread_limit_description">Limit the number of threads used for translation. Higher values may improve performance, but may impact other processes like voice input.</string>
+    <string name="license_upgrade_title">Upgrading license</string>
+    <string name="license_upgrade_thank_you">Thank you for considering a license!</string>
+    <string name="license_upgrade_explanation">A license doesn\'t unlock new features but supports ongoing development. Your contribution helps us add new languages, improve existing ones, and introduce exciting features.</string>
+    <string name="license_upgrade_hint">After purchase, confirm with the \'I Have a License\' button.</string>
+    <string name="license_upgrade_hint_highlight">\'I have a license\'</string>
+    <string name="license_upgrade_has_license">I have a license</string>
+    <string name="license_uprade_buy_license">Buy license</string>
+    <string name="license_confirmation_title">Thank you!</string>
+    <string name="license_confirmation_making_a_difference">Your purchase makes a real difference.</string>
+    <string name="license_confirmation_contribution_perks">With your support, we can continue to improve and expand %1$s, making it even better for you and others.</string>
+    <string name="license_confirmation_thank_you">Thank you for choosing to support our work!</string>
 </resources>

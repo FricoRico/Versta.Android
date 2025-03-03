@@ -86,8 +86,7 @@ fun LanguageSettings(
 
     var languageToBeDeleted by remember { mutableStateOf<Language?>(null) }
 
-    ScaffoldLargeHeader(
-        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
+    ScaffoldLargeHeader(topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
         title = {
             Text(
                 text = stringResource(R.string.language_settings_title),
@@ -207,107 +206,112 @@ private fun LanguageDeletionConfirmationDialog(
     val flagDrawable = remember { language.getFlagDrawable(context) }
     val targetLanguages = availableLanguages.filter { it.source == language }.map { it.target }
 
-    AlertDialog(onDismissRequest = {
-        onDismissRequest()
-    }, icon = {
-        Icon(
-            Icons.Outlined.Error,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.error
-        )
-    }, title = {
-        Text(text = stringResource(R.string.delete_language_title, language.name))
-    }, text = {
-        LazyColumn(
-            modifier = Modifier.heightIn(max = 320.dp),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall)
-        ) {
-            item {
-                Text(
-                    text = stringResource(R.string.delete_language_description, language.name),
-                    modifier = Modifier.padding(bottom = MaterialTheme.spacing.medium)
-                )
-            }
-
-            items(targetLanguages, key = { it.locale }) { targetLanguage ->
-                val targetFlagDrawable = remember { targetLanguage.getFlagDrawable(context) }
-                val isBirectional =
-                    remember { availableLanguages.any { it.source == targetLanguage && it.target == language } }
-
-                Box(
-                    modifier = Modifier.padding(
-                        vertical = MaterialTheme.spacing.extraSmall,
-                        horizontal = MaterialTheme.spacing.small
+    AlertDialog(onDismissRequest = { onDismissRequest() },
+        shape = MaterialTheme.shapes.extraLarge,
+        icon = {
+            Icon(
+                Icons.Outlined.Error,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error
+            )
+        },
+        title = {
+            Text(text = stringResource(R.string.delete_language_title, language.name))
+        },
+        text = {
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 320.dp),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall)
+            ) {
+                item {
+                    Text(
+                        text = stringResource(R.string.delete_language_description, language.name),
+                        modifier = Modifier.padding(bottom = MaterialTheme.spacing.medium)
                     )
-                ) {
-                    Icon(
-                        if (isBirectional) Icons.Outlined.SyncAlt else Icons.AutoMirrored.Outlined.ArrowForward,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .size(16.dp),
-                        contentDescription = null,
-                    )
+                }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                items(targetLanguages, key = { it.locale }) { targetLanguage ->
+                    val targetFlagDrawable = remember { targetLanguage.getFlagDrawable(context) }
+                    val isBidirectional =
+                        remember { availableLanguages.any { it.source == targetLanguage && it.target == language } }
+
+                    Box(
+                        modifier = Modifier.padding(
+                            vertical = MaterialTheme.spacing.extraSmall,
+                            horizontal = MaterialTheme.spacing.small
+                        )
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(
-                                space = MaterialTheme.spacing.small,
-                            )
-                        ) {
-                            Image(
-                                painter = painterResource(flagDrawable),
-                                contentDescription = stringResource(
-                                    R.string.flag, language.name
-                                ),
-                                modifier = Modifier
-                                    .requiredSize(MaterialTheme.spacing.medium)
-                                    .clip(MaterialTheme.shapes.extraLarge)
-                            )
-
-                            Text(text = language.name)
-                        }
+                        Icon(
+                            if (isBidirectional) Icons.Outlined.SyncAlt else Icons.AutoMirrored.Outlined.ArrowForward,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(16.dp),
+                            contentDescription = null,
+                        )
 
                         Row(
+                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(
-                                space = MaterialTheme.spacing.small,
-                            )
+                            horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            Text(text = targetLanguage.name)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(
+                                    space = MaterialTheme.spacing.small,
+                                )
+                            ) {
+                                Image(
+                                    painter = painterResource(flagDrawable),
+                                    contentDescription = stringResource(
+                                        R.string.flag, language.name
+                                    ),
+                                    modifier = Modifier
+                                        .requiredSize(MaterialTheme.spacing.medium)
+                                        .clip(MaterialTheme.shapes.extraLarge)
+                                )
 
-                            Image(
-                                painter = painterResource(targetFlagDrawable),
-                                contentDescription = stringResource(
-                                    R.string.flag, targetLanguage.name
-                                ),
-                                modifier = Modifier
-                                    .requiredSize(MaterialTheme.spacing.medium)
-                                    .clip(MaterialTheme.shapes.extraLarge)
-                            )
+                                Text(text = language.name)
+                            }
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(
+                                    space = MaterialTheme.spacing.small,
+                                )
+                            ) {
+                                Text(text = targetLanguage.name)
+
+                                Image(
+                                    painter = painterResource(targetFlagDrawable),
+                                    contentDescription = stringResource(
+                                        R.string.flag, targetLanguage.name
+                                    ),
+                                    modifier = Modifier
+                                        .requiredSize(MaterialTheme.spacing.medium)
+                                        .clip(MaterialTheme.shapes.extraLarge)
+                                )
+                            }
+
                         }
-
                     }
                 }
             }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onConfirmation(language)
+            }) {
+                Text(text = stringResource(R.string.confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = {
+                onDismissRequest()
+            }) {
+                Text(text = stringResource(R.string.dismiss))
+            }
         }
-    }, confirmButton = {
-        TextButton(onClick = {
-            onConfirmation(language)
-        }) {
-            Text(text = stringResource(R.string.confirm))
-        }
-    }, dismissButton = {
-        TextButton(onClick = {
-            onDismissRequest()
-        }) {
-            Text(text = stringResource(R.string.dismiss))
-        }
-    })
+    )
 }
 
 private fun LazyListScope.Languages(
@@ -321,7 +325,8 @@ private fun LazyListScope.Languages(
         return
     }
 
-    items(sourceLanguages.size,
+    items(
+        sourceLanguages.size,
         key = { index -> sourceLanguages[index].locale.language }) { index ->
         val language = remember { sourceLanguages[index] }
 

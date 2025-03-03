@@ -53,8 +53,6 @@ fun Home(
     languageViewModel: LanguageViewModel,
     textTranslationViewModel: TextTranslationViewModel
 ) {
-    val orientation = LocalContext.current.resources.configuration.orientation
-
     val hasLicense by licenseViewModel.hasLicense.collectAsStateWithLifecycle(false)
 
     val notificationPermissionState = rememberPermissionState(
@@ -73,6 +71,7 @@ fun Home(
         notificationPermissionState.launchPermissionRequest()
     }
 
+    val orientation = LocalContext.current.resources.configuration.orientation
     val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
         MaterialTheme.spacing.medium
     } else {

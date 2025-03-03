@@ -31,10 +31,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
+import app.versta.translate.adapter.outbound.LanguageMemoryRepository
+import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.model.LanguageType
 import app.versta.translate.core.model.LanguageViewModel
@@ -56,45 +59,47 @@ fun LanguageSelectionDrawer(
 
     val context = LocalContext.current
 
-    if (drawerOpenedState) {
-        ModalBottomSheet(
-            sheetState = drawerState,
-            onDismissRequest = { languageViewModel.setLanguageSelectionState(null) },
-            modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
-            containerColor = MaterialTheme.colorScheme.surface,
+    if (!drawerOpenedState) {
+        return
+    }
+
+    ModalBottomSheet(
+        sheetState = drawerState,
+        onDismissRequest = { languageViewModel.setLanguageSelectionState(null) },
+        modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(MaterialTheme.spacing.small)
+                .padding(bottom = MaterialTheme.spacing.large)
+                .then(modifier)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(MaterialTheme.spacing.small)
-                    .padding(bottom = MaterialTheme.spacing.large)
-                    .then(modifier)
-            ) {
-                when (languageSelection.value) {
-                    LanguageType.Source -> {
-                        LanguageSelectionSourceLanguage(
-                            context = context,
-                            languages = sourceLanguages,
-                            onClick = {
-                                languageViewModel.setSourceLanguage(it)
-                                languageViewModel.setLanguageSelectionState(null)
-                            }
-                        )
-                    }
-
-                    LanguageType.Target -> {
-                        LanguageSelectionTargetLanguage(
-                            context = context,
-                            languages = targetLanguages,
-                            onClick = {
-                                languageViewModel.setTargetLanguage(it)
-                                languageViewModel.setLanguageSelectionState(null)
-                            }
-                        )
-                    }
-
-                    else -> {}
+            when (languageSelection.value) {
+                LanguageType.Source -> {
+                    LanguageSelectionSourceLanguage(
+                        context = context,
+                        languages = sourceLanguages,
+                        onClick = {
+                            languageViewModel.setSourceLanguage(it)
+                            languageViewModel.setLanguageSelectionState(null)
+                        }
+                    )
                 }
+
+                LanguageType.Target -> {
+                    LanguageSelectionTargetLanguage(
+                        context = context,
+                        languages = targetLanguages,
+                        onClick = {
+                            languageViewModel.setTargetLanguage(it)
+                            languageViewModel.setLanguageSelectionState(null)
+                        }
+                    )
+                }
+
+                else -> {}
             }
         }
     }
@@ -236,5 +241,18 @@ fun LanguageSelectionListItem(
                 onClick = { onClick() },
             )
             .then(modifier),
+    )
+}
+
+@Composable
+@Preview(showBackground = true)
+fun LanguageSelectionDrawerPreview() {
+    LanguageSelectionDrawer(
+        languageViewModel = LanguageViewModel(
+            languageRepository = LanguageMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+        ).apply {
+            setLanguageSelectionState(LanguageType.Source)
+        },
     )
 }

@@ -19,10 +19,11 @@ import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.TextRecognitionViewModel
 import app.versta.translate.ui.component.LanguageSelectionDrawer
-import app.versta.translate.ui.component.LicenseDialog
+import app.versta.translate.ui.component.TrialLicenseDrawer
 import app.versta.translate.ui.component.Router
 import app.versta.translate.ui.component.TranslationErrorAlertDialog
 import app.versta.translate.ui.component.TranslatorLoadingProgressDialog
+import app.versta.translate.ui.component.TrialLicenseConfirmationDialog
 import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.theme.TranslateTheme
 import app.versta.translate.utils.viewModelFactory
@@ -105,7 +106,10 @@ open class MainActivity : ComponentActivity() {
                         translationViewModel = MainApplication.module.translationViewModel,
                     )
 
-                    LicenseDialog(
+                    TrialLicenseDrawer(
+                        licenseViewModel = licenseViewModel
+                    )
+                    TrialLicenseConfirmationDialog(
                         licenseViewModel = licenseViewModel
                     )
 

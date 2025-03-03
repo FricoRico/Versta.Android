@@ -1,7 +1,5 @@
 package app.versta.translate.ui.screen
 
-import android.content.pm.PackageInfo
-import android.content.pm.PackageManager
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.PaddingValues
@@ -116,8 +114,8 @@ fun About(
 
                 item {
                     Surface(
-                        color = MaterialTheme.colorScheme.surface,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.inverseSurface,
+                        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
                         modifier = Modifier
                             .padding(top = MaterialTheme.spacing.extraSmall)
                             .clip(MaterialTheme.shapes.extraLarge),

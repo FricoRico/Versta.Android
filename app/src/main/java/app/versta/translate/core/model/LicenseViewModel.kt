@@ -10,7 +10,8 @@ import kotlinx.coroutines.launch
 
 enum class DialogState {
     Open,
-    Closed
+    Closed,
+    Confirm
 }
 
 class LicenseViewModel(

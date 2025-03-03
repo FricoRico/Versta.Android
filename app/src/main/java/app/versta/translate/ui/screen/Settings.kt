@@ -15,11 +15,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
@@ -29,7 +31,6 @@ import app.versta.translate.ui.component.ListDivider
 import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.SettingsButtonItem
-import app.versta.translate.ui.component.SettingsDefaults
 import app.versta.translate.ui.component.TrialLicenseCard
 import app.versta.translate.ui.theme.spacing
 
@@ -39,8 +40,9 @@ fun Settings(
     navController: NavController,
     licenseViewModel: LicenseViewModel
 ) {
-    val orientation = LocalContext.current.resources.configuration.orientation
+    val hasLicense by licenseViewModel.hasLicense.collectAsStateWithLifecycle(false)
 
+    val orientation = LocalContext.current.resources.configuration.orientation
     val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
         MaterialTheme.spacing.medium
     } else {
@@ -108,10 +110,12 @@ fun Settings(
                     )
                 }
 
-                ListDivider()
+                if (!hasLicense) {
+                    ListDivider()
 
-                item {
-                    TrialLicenseCard(licenseViewModel = licenseViewModel)
+                    item {
+                        TrialLicenseCard(licenseViewModel = licenseViewModel)
+                    }
                 }
 
                 ListDivider()
