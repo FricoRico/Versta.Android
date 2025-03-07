@@ -8,7 +8,7 @@ class MosesPunctuationNormalizerTest {
 
     @Test
     fun testMosesNormalizeDocuments() {
-        val moses = MosesPunctuationNormalizer()
+        val moses = MosesPunctuationNormalizer(lang = "en")
         val inputs = listOf(
             "The United States in 1805 (color map)                 _Facing_     193",
             "=Formation of the Constitution.=--(1) The plans before the convention,",
@@ -64,6 +64,7 @@ class MosesPunctuationNormalizerTest {
     @Test
     fun testNormalizationPipeline() {
         val mosesNormUnicode = MosesPunctuationNormalizer(
+            lang = "en",
             preReplaceUnicodePunctuation = true,
             postRemoveControlChars = true
         )
@@ -74,7 +75,7 @@ class MosesPunctuationNormalizerTest {
 
     @Test
     fun testMosesNormalizeWithPerlParity() {
-        val mosesPerlParity = MosesPunctuationNormalizer(perlParity = true)
+        val mosesPerlParity = MosesPunctuationNormalizer(lang = "en", perlParity = true)
         val text = "from the ‘bad bank’, Northern, wala\u00A0«\u00A0dox ci jawwu Les «\u00A0wagonways\u00A0»\u00A0étaient construits"
         val expected = "from the 'bad bank,\" Northern, wala \"dox ci jawwu Les \"wagonways\" étaient construits"
         assertEquals(expected, mosesPerlParity.normalize(text))
