@@ -111,6 +111,7 @@ dependencies {
     implementation(libs.androidx.compose.animation)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.splash.screen)
     implementation(libs.boof.cv.android)
     implementation(libs.boof.cv.core)
     implementation(libs.boof.cv.geo)

@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <style name="Versta.Theme.SplashScreen" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="postSplashScreenTheme">@style/Versta.Theme</item>
+    </style>
+
     <style name="Versta.Theme" parent="android:Theme.Material.Light.NoActionBar" />
 
-    <style name="Versta.Invisible"  parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Versta.Invisible" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowContentOverlay">@null</item>

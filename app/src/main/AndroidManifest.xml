@@ -29,7 +29,7 @@
         android:largeHeap="true"
         android:supportsRtl="true"
         android:launchMode="singleTask"
-        android:theme="@style/Versta.Theme"
+        android:theme="@style/Versta.Theme.SplashScreen"
         tools:targetApi="35">
         <meta-data
             android:name="firebase_analytics_collection_deactivated"
@@ -38,7 +38,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Versta.Theme">
+            android:theme="@style/Versta.Theme.SplashScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

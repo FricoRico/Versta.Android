@@ -15,6 +15,7 @@ androidComposeMaterial3 = "1.4.0-alpha06"
 androidDataStore = "1.1.2"
 androidCameraX = "1.5.0-alpha05"
 androidBoofCv = "1.1.7"
+androidSplashScreen = "1.0.0"
 appacheCommonsCompress = "1.27.1"
 composeLifecycle = "2.8.7"
 mlKitTextRecognition = "16.0.1"
@@ -52,6 +53,7 @@ androidx-camera-view = { group = "androidx.camera", name = "camera-view", versio
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "androidComposeMaterial3" }
 androidx-compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "androidComposeAnimation" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "androidDataStore" }
+androidx-splash-screen = { group = "androidx.core", name = "core-splashscreen", version.ref = "androidSplashScreen" }
 appache-commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "appacheCommonsCompress" }
 boof-cv-android = { group = "org.boofcv", name = "boofcv-android", version.ref = "androidBoofCv" }
 boof-cv-core = { group = "org.boofcv", name = "boofcv-core", version.ref = "androidBoofCv" }
