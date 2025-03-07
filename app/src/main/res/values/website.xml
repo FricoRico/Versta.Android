@@ -5,4 +5,8 @@
     <string name="license_url" translatable="false">%1$s/license</string>
 
     <string name="hugginface_url" translatable="false">https://huggingface.co/%1$s</string>
+
+    <string name="github_url" translatable="false">https://github.com</string>
+    <string name="github_repo_url" translatable="false">%1$s/FricoRico/Versta.Android</string>
+    <string name="github_issues_url" translatable="false">%1$s/FricoRico/Versta.Android/issues</string>
 </resources>

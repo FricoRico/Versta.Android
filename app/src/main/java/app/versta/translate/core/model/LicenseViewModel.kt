@@ -32,6 +32,15 @@ class LicenseViewModel(
     }
 
     /**
+     * Resets the license status.
+     */
+    fun resetLicense() {
+        viewModelScope.launch {
+            licenseRepository.setLicense(false)
+        }
+    }
+
+    /**
      * Shows the license dialog.
      */
     fun setLicenseDialogState(state: DialogState) {

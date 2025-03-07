@@ -15,6 +15,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import app.versta.translate.adapter.inbound.ModelFilePicker
 import app.versta.translate.adapter.inbound.TranslateBubbleNotification
 import app.versta.translate.adapter.inbound.TranslateBubbleShortcut
+import app.versta.translate.adapter.outbound.LogFileSaver
 import app.versta.translate.core.model.LanguageImportViewModel
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
@@ -28,6 +29,7 @@ import app.versta.translate.ui.component.TrialLicenseConfirmationDialog
 import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.theme.TranslateTheme
 import app.versta.translate.utils.viewModelFactory
+import timber.log.Timber
 
 open class MainActivity : ComponentActivity() {
     private val languageViewModel by viewModels<LanguageViewModel>(
@@ -73,16 +75,16 @@ open class MainActivity : ComponentActivity() {
     private var initialRoute by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
-
         super.onCreate(savedInstanceState)
 
         ModelFilePicker.registerForActivity(this)
+        LogFileSaver.registerForActivity(this)
         TranslateBubbleShortcut.registerForActivity(this)
         TranslateBubbleNotification.registerForActivity(this)
 
         handleStartupAndResume(intent)
 
+        installSplashScreen()
         enableEdgeToEdge()
         setContent {
             TranslateTheme {
@@ -97,7 +99,8 @@ open class MainActivity : ComponentActivity() {
                         licenseViewModel = licenseViewModel,
                         translationViewModel = MainApplication.module.translationViewModel,
                         textTranslationViewModel = MainApplication.module.textTranslationViewModel,
-                        textRecognitionViewModel = textRecognitionViewModel
+                        textRecognitionViewModel = textRecognitionViewModel,
+                        loggingViewModel = MainApplication.module.loggingViewModel
                     )
 
                     TranslatorLoadingProgressDialog(
@@ -144,5 +147,9 @@ open class MainActivity : ComponentActivity() {
 
             initialRoute = Screens.TextTranslation()
         }
+    }
+
+    companion object {
+        private val TAG = MainActivity::class.java.simpleName
     }
 }

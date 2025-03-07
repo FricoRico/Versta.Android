@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import timber.log.Timber
 import java.io.File
 
 class LanguageImportViewModel(
@@ -74,6 +75,7 @@ class LanguageImportViewModel(
             } catch (e: Exception) {
                 output?.deleteRecursively()
                 _importProgressState.value = LanguageImportProgress.Error(e)
+                Timber.tag(TAG).e(e)
             }
         }
     }
@@ -87,7 +89,6 @@ class LanguageImportViewModel(
                     ?: throw Exception("Metadata file not found")
                 val bundleMetadata = _serializer.decodeFromString<BundleMetadata>(output.readText())
 
-                // TODO: Improve error handling
                 if (!bundleMetadata.isValid()) {
                     throw Exception("Invalid metadata file")
                 }
@@ -96,6 +97,7 @@ class LanguageImportViewModel(
                     LanguageAnalysisProgress.Completed(bundleMetadata, uri)
             } catch (e: Exception) {
                 _analysisProgressState.value = LanguageAnalysisProgress.Error(e)
+                Timber.tag(TAG).e(e)
             }
         }
     }
@@ -108,7 +110,6 @@ class LanguageImportViewModel(
         val bundleMetadata =
             _serializer.decodeFromString<BundleMetadata>(bundleMetadataFile.readText())
 
-        // TODO: Improve error handling
         if (!bundleMetadata.isValid()) {
             throw Exception("Invalid metadata file")
         }
@@ -122,7 +123,6 @@ class LanguageImportViewModel(
                 )
         }
 
-        // TODO: Improve error handling
         if (languageMetadata.any { !it.isValid() }) {
             throw Exception("Invalid language metadata file")
         }
@@ -131,5 +131,9 @@ class LanguageImportViewModel(
             bundleMetadata = bundleMetadata,
             languageMetadata = languageMetadata
         )
+    }
+
+    companion object {
+        private val TAG: String = LanguageImportViewModel::class.java.simpleName
     }
 }

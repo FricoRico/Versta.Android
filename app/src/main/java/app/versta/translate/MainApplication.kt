@@ -17,9 +17,14 @@ import app.versta.translate.adapter.outbound.TranslationInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
 import app.versta.translate.adapter.outbound.TranslationTokenizer
+import app.versta.translate.core.model.LoggingViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.database.DatabaseContainer
+import app.versta.translate.utils.FileLoggingTree
+import timber.log.Timber
+import timber.log.Timber.Forest.plant
+
 
 val Context.dataStore by preferencesDataStore(name = "preferences")
 
@@ -31,6 +36,7 @@ interface ApplicationModuleInterface {
 
     val translationViewModel: TranslationViewModel
     val textTranslationViewModel: TextTranslationViewModel
+    val loggingViewModel: LoggingViewModel
 
     val extractor: CompressedFileExtractor
     val tokenizer: TranslationTokenizer
@@ -54,6 +60,10 @@ class ApplicationModule(context: Context) : ApplicationModuleInterface {
 
     override val translatorPreferenceRepository: TranslationPreferenceRepository by lazy {
         TranslationPreferenceDataStoreRepository(context.dataStore)
+    }
+
+    override val loggingViewModel: LoggingViewModel by lazy {
+        LoggingViewModel(context.getExternalFilesDir(null))
     }
 
     override val translationViewModel: TranslationViewModel by lazy {
@@ -90,7 +100,17 @@ class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        handleLogging()
+
         module = ApplicationModule(this)
+    }
+
+    private fun handleLogging() {
+        if (BuildConfig.DEBUG) {
+            plant(Timber.DebugTree())
+        }
+
+        plant(FileLoggingTree(getExternalFilesDir(null)))
     }
 
     companion object {

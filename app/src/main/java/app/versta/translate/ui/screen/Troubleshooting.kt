@@ -1,29 +1,43 @@
 package app.versta.translate.ui.screen
 
+import android.content.Intent
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
+import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Attribution
+import androidx.compose.material.icons.outlined.CreditCardOff
+import androidx.compose.material.icons.outlined.DataObject
 import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.MicNone
-import androidx.compose.material.icons.outlined.Translate
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.LicenseMemoryRepository
 import app.versta.translate.core.model.LicenseViewModel
@@ -31,34 +45,48 @@ import app.versta.translate.ui.component.ListDivider
 import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.SettingsButtonItem
-import app.versta.translate.ui.component.TrialLicenseCard
 import app.versta.translate.ui.theme.spacing
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Settings(
+fun Troubleshooting(
     navController: NavController,
     licenseViewModel: LicenseViewModel
 ) {
-    val hasLicense by licenseViewModel.hasLicense.collectAsStateWithLifecycle(false)
+    val context = LocalContext.current
+    val orientation = context.resources.configuration.orientation
 
-    val orientation = LocalContext.current.resources.configuration.orientation
     val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
         MaterialTheme.spacing.medium
     } else {
         MaterialTheme.spacing.small
     }
 
-    return ScaffoldLargeHeader(
+    fun onBackNavigation() {
+        navController.popBackStack()
+    }
+
+    fun onResetLicense() {
+        licenseViewModel.resetLicense()
+        Toast.makeText(context, context.getString(R.string.license_reset), Toast.LENGTH_SHORT).show()
+    }
+
+    val onReportIssue = Intent(
+        Intent.ACTION_VIEW,
+        stringResource(R.string.github_issues_url, stringResource(R.string.github_url)).toUri()
+    )
+
+    ScaffoldLargeHeader(
         topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowColor(),
         title = {
             Text(
-                text = stringResource(R.string.settings_title),
+                text = stringResource(R.string.troubleshooting_title),
             )
         },
         navigationIcon = {
             IconButton(onClick = {
-                navController.popBackStack()
+                onBackNavigation()
             }) {
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
             }
@@ -66,6 +94,7 @@ fun Settings(
         content = { insets, scrollConnection ->
             LazyColumn(
                 modifier = Modifier
+                    .fillMaxSize()
                     .nestedScroll(scrollConnection),
                 contentPadding = PaddingValues(
                     top = landscapeContentPadding + MaterialTheme.spacing.extraSmall,
@@ -76,14 +105,14 @@ fun Settings(
             ) {
                 item {
                     SettingsButtonItem(
-                        headlineContent = stringResource(R.string.settings_languages_title),
-                        supportingContent = stringResource(R.string.settings_languages_description),
+                        headlineContent = stringResource(R.string.troubleshooting_application_logs_title),
+                        supportingContent = stringResource(R.string.troubleshooting_application_logs_description),
                         onClick = {
-                            navController.navigate(Screens.LanguageSettings())
+                            navController.navigate(Screens.ApplicationLogs())
                         },
                         leadingContent = {
                             Icon(
-                                Icons.Outlined.Translate,
+                                Icons.Outlined.DataObject,
                                 contentDescription = null,
                             )
                         },
@@ -94,56 +123,14 @@ fun Settings(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = stringResource(R.string.settings_translation_title),
-                        supportingContent = stringResource(R.string.settings_translation_description),
+                        headlineContent = stringResource(R.string.troubleshooting_report_issue_title),
+                        supportingContent = stringResource(R.string.troubleshooting_report_issue_description),
                         onClick = {
-                            navController.navigate(Screens.TranslationSettings())
+                            context.startActivity(onReportIssue)
                         },
                         leadingContent = {
                             Icon(
-                                Icons.Outlined.Language,
-                                contentDescription = null,
-                            )
-                        },
-                        index = 1,
-                        groupSize = 2
-                    )
-                }
-
-                if (!hasLicense) {
-                    ListDivider()
-
-                    item {
-                        TrialLicenseCard(licenseViewModel = licenseViewModel)
-                    }
-                }
-
-                ListDivider()
-
-                item {
-                    SettingsButtonItem(
-                        headlineContent = stringResource(R.string.settings_vision_title),
-                        supportingContent = stringResource(R.string.settings_vision_description),
-                        onClick = {/*TODO*/ },
-                        leadingContent = {
-                            Icon(
-                                Icons.Outlined.CameraAlt,
-                                contentDescription = null,
-                            )
-                        },
-                        index = 0,
-                        groupSize = 2
-                    )
-                }
-
-                item {
-                    SettingsButtonItem(
-                        headlineContent = stringResource(R.string.settings_voice_title),
-                        supportingContent = stringResource(R.string.settings_voice_description),
-                        onClick = {/*TODO*/ },
-                        leadingContent = {
-                            Icon(
-                                Icons.Outlined.MicNone,
+                                Icons.Outlined.Attribution,
                                 contentDescription = null,
                             )
                         },
@@ -156,39 +143,32 @@ fun Settings(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = stringResource(R.string.settings_about_title),
-                        supportingContent = stringResource(R.string.settings_about_description),
+                        headlineContent = stringResource(R.string.troubleshooting_reset_license_title),
+                        supportingContent = stringResource(R.string.troubleshooting_reset_license_description),
                         onClick = {
-                            navController.navigate(Screens.About())
+                            onResetLicense()
+                        },
+                        leadingContent = {
+                            Icon(
+                                Icons.Outlined.CreditCardOff,
+                                contentDescription = null,
+                            )
                         },
                         index = 0,
-                        groupSize = 2
-                    )
-                }
-
-                item {
-                    SettingsButtonItem(
-                        headlineContent = stringResource(R.string.settings_troubleshooting_title),
-                        supportingContent = stringResource(R.string.settings_troubleshooting_description),
-                        onClick = {
-                            navController.navigate(Screens.Troubleshooting())
-                        },
-                        index = 1,
-                        groupSize = 2
+                        groupSize = 1
                     )
                 }
             }
-        }
-    )
+        })
 }
 
 @Composable
-@Preview
-fun SettingsPreview() {
-    return Settings(
-        navController = rememberNavController(),
+@Preview(showBackground = true)
+fun TroubleshootingPreview() {
+    Troubleshooting(
+        navController = NavController(LocalContext.current),
         licenseViewModel = LicenseViewModel(
-            licenseRepository = LicenseMemoryRepository()
+            LicenseMemoryRepository()
         )
     )
 }

@@ -3,6 +3,7 @@ package app.versta.translate.bridge.inference
 import ai.onnxruntime.OnnxTensor
 import android.util.Log
 import app.versta.translate.utils.TensorUtils
+import timber.log.Timber
 import java.nio.ByteBuffer
 
 class BeamSearch(
@@ -58,7 +59,7 @@ class BeamSearch(
 
     override fun close() {
         if (handle == 0L) {
-            Log.w(TAG, "BeamSearch is already closed")
+            Timber.tag(TAG).w("BeamSearch is already closed")
             return
         }
 

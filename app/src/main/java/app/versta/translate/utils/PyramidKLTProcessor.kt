@@ -22,6 +22,7 @@ import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import georegression.struct.point.Point2D_F64
 import org.ddogleg.struct.DogArray
+import timber.log.Timber
 
 
 class PyramidKLTProcessor(
@@ -72,14 +73,14 @@ class PyramidKLTProcessor(
             .addOnSuccessListener { trackedFrame ->
                 val changeDelta = getChangeDelta(trackedFrame)
                 if (changeDelta > significantChangeThreshold) {
-                    Log.d(TAG, "Change delta: $changeDelta, ${_spawned.size}")
+                    Timber.tag(TAG).d("Change delta: $changeDelta, ${_spawned.size}")
 
                     onSignificantChange()
                 }
 
                 onFrameProcessed(trackedFrame.toList(), imageProxy.imageInfo.timestamp)
             }.addOnFailureListener {
-                Log.e(TAG, "Pyramid KLT failed", it)
+                Timber.tag(TAG).e(it, "Pyramid KLT failed")
             }.addOnCompleteListener {
                 if (_shouldResetOnNextIteration) {
                     reset()

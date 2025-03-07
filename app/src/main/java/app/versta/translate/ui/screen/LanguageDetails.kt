@@ -42,6 +42,9 @@ import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.theme.spacing
+import timber.log.Timber
+
+internal const val TAG = "LanguageDetails"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +55,7 @@ fun LanguageDetails(
     val argument = navController.currentBackStackEntry?.arguments?.getString("sourceLanguage")
     if (argument == null) {
         navController.popBackStack()
-        // TODO: Add log entry
+        Timber.tag(TAG).e("Missing source language argument")
         return
     }
 

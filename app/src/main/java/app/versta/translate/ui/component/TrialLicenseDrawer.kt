@@ -44,6 +44,7 @@ import app.versta.translate.ui.theme.ButtonDefaults
 import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.annotateSentence
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +60,7 @@ fun TrialLicenseDrawer(
 
     val onBuyLicense = Intent(
         Intent.ACTION_VIEW,
-        Uri.parse(stringResource(R.string.license_url, stringResource(R.string.site_url)))
+        stringResource(R.string.license_url, stringResource(R.string.site_url)).toUri()
     )
     
     fun onConfirmLicense() {

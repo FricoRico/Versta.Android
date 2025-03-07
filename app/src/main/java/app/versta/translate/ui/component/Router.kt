@@ -24,10 +24,12 @@ import androidx.navigation.compose.rememberNavController
 import app.versta.translate.core.model.LanguageImportViewModel
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
+import app.versta.translate.core.model.LoggingViewModel
 import app.versta.translate.core.model.TextRecognitionViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.screen.About
+import app.versta.translate.ui.screen.ApplicationLogs
 import app.versta.translate.ui.screen.CameraTranslation
 import app.versta.translate.ui.screen.Home
 import app.versta.translate.ui.screen.LanguageAttributions
@@ -41,6 +43,7 @@ import app.versta.translate.ui.screen.StatusBarStyle
 import app.versta.translate.ui.screen.TextTranslation
 import app.versta.translate.ui.screen.ThirdParty
 import app.versta.translate.ui.screen.TranslationSettings
+import app.versta.translate.ui.screen.Troubleshooting
 
 @Composable
 fun Router(
@@ -51,6 +54,7 @@ fun Router(
     translationViewModel: TranslationViewModel,
     textTranslationViewModel: TextTranslationViewModel,
     textRecognitionViewModel: TextRecognitionViewModel,
+    loggingViewModel: LoggingViewModel
 ) {
     val navController = rememberNavController()
 
@@ -172,6 +176,18 @@ fun Router(
         composable(Screens.PrivacyPolicy()) {
             PrivacyPolicy(
                 navController = navController
+            )
+        }
+        composable(Screens.Troubleshooting()) {
+            Troubleshooting(
+                navController = navController,
+                licenseViewModel = licenseViewModel
+            )
+        }
+        composable(Screens.ApplicationLogs()) {
+            ApplicationLogs(
+                navController = navController,
+                loggingViewModel = loggingViewModel
             )
         }
     }

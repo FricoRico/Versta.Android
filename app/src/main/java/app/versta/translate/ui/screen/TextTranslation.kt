@@ -151,12 +151,10 @@ fun TextTranslation(
         translationScope.launch {
             if (languages == null) return@launch
 
-            val startTime = System.currentTimeMillis()
             translationViewModel.translateAsFlow(input, languages!!)
                 .collect {
                     textTranslationViewModel.setTranslation(it)
                 }
-            Log.d("Translation", "Time: ${System.currentTimeMillis() - startTime} ms")
         }
     }
 

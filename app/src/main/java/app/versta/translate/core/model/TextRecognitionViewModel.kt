@@ -38,6 +38,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import timber.log.Timber
 import java.util.concurrent.Executors
 import kotlin.math.atan2
 
@@ -98,7 +99,7 @@ class TextRecognitionViewModel : ViewModel() {
     }
 
     private fun onSignificantChange() {
-        Log.d("PyramidKLT", "Significant change detected")
+        Timber.tag(TAG).d("Significant change detected")
         _textRecognitionProcessor.shouldUpdate()
     }
 
@@ -270,6 +271,10 @@ class TextRecognitionViewModel : ViewModel() {
             PointF(points[4], points[5]),
             PointF(points[6], points[7])
         )
+    }
+
+    companion object {
+        private val TAG = TextRecognitionViewModel::class.java.simpleName
     }
 
 //    private val _stableBlocks = MutableStateFlow<List<TrackedTextBlock>>(emptyList())

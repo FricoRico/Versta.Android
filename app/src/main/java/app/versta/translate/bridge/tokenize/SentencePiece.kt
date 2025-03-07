@@ -1,6 +1,6 @@
 package app.versta.translate.bridge.tokenize
 
-import android.util.Log
+import timber.log.Timber
 
 class SentencePiece : AutoCloseable {
     private var handle = 0L
@@ -9,13 +9,14 @@ class SentencePiece : AutoCloseable {
         handle = constructor()
 
         if (handle == 0L) {
+            Timber.tag(TAG).e("Failed to create SentencePieceProcessor")
             throw IllegalStateException("Failed to create SentencePieceProcessor")
         }
     }
 
     override fun close() {
         if (handle == 0L) {
-            Log.w(TAG, "SentencePiece is already closed")
+            Timber.tag(TAG).w("SentencePiece is already closed")
             return
         }
 

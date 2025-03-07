@@ -22,7 +22,9 @@ enum class Screens (
     About,
     LanguageAttributions,
     ThirdParty,
-    PrivacyPolicy;
+    PrivacyPolicy,
+    Troubleshooting,
+    ApplicationLogs;
 
     operator fun invoke(): String {
         val argList = StringBuilder()

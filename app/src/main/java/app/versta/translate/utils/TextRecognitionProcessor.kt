@@ -10,6 +10,7 @@ import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.TextRecognizerOptionsInterface
+import timber.log.Timber
 
 
 class TextRecognitionProcessor(
@@ -41,14 +42,14 @@ class TextRecognitionProcessor(
                 addToBuffer(visionText.text)
 
                 if (isStable()) {
-                    Log.d(TAG, "Text recognition stable")
+                    Timber.tag(TAG).d("Text recognition stable")
                     _shouldUpdate = false
                 }
 
                 onFrameProcessed(visionText, imageProxy.imageInfo.timestamp)
             }
             .addOnFailureListener { e ->
-                Log.e(TAG, "Text recognition failed", e)
+                Timber.tag(TAG).e(e, "Text recognition failed")
             }
             .addOnCompleteListener {
                 imageProxy.close()
@@ -68,7 +69,7 @@ class TextRecognitionProcessor(
     }
 
     private fun isStable(): Boolean {
-        Log.d(TAG, "Checking if text recognition is stable, ${temporalBuffer.size}")
+        Timber.tag(TAG).d("Checking if text recognition is stable, ${temporalBuffer.size}")
 
         return temporalBuffer.count {
             sanitizeText(it) == sanitizeText(temporalBuffer.last())

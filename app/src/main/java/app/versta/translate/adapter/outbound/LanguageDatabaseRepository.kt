@@ -13,6 +13,7 @@ import app.versta.translate.utils.executeAsListFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import okio.Path.Companion.toPath
+import timber.log.Timber
 import java.util.Locale
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.absolutePathString
@@ -228,7 +229,7 @@ class LanguageDatabaseRepository(
         try {
             return LanguageModelFiles.load(path = path)
         } catch (e: Exception) {
-            Log.e("LanguageDatabaseRepository", "Failed to load language model files", e)
+            Timber.tag(TAG).e(e, "Failed to load language model files")
             return null
         }
     }
@@ -252,5 +253,9 @@ class LanguageDatabaseRepository(
         return LanguagePair(
             source = source, target = target
         )
+    }
+
+    companion object {
+        private val TAG: String = LanguageDatabaseRepository::class.java.simpleName
     }
 }

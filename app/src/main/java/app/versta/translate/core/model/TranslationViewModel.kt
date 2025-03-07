@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import timber.log.Timber
 
 // TODO: Move to generic entity class
 sealed class LoadingProgress {
@@ -163,53 +164,60 @@ class TranslationViewModel(
      */
     @OptIn(FlowPreview::class)
     suspend fun translateAsFlow(input: String, languages: LanguagePair): Flow<String> {
-        val sanitized = sanitize(input)
+        try {
+            val sanitized = sanitize(input)
 
-        var cache = _cache.get(sanitized, languages)
-        if (cache != null) {
-            return flowOf(cache)
-        }
-
-        _queue.withLock {
-            // Check to see if the translation is already in the cache, if so return it.
-            cache = _cache.get(sanitized, languages)
-
+            var cache = _cache.get(sanitized, languages)
             if (cache != null) {
-                return flowOf(cache!!)
+                return flowOf(cache)
             }
 
-            val (inputIds, attentionMask) = tokenizer.encode(sanitized)
-            val minP = minProbability.first() * 100 / tokenizer.vocabSize
+            _queue.withLock {
+                // Check to see if the translation is already in the cache, if so return it.
+                cache = _cache.get(sanitized, languages)
 
-            _translationInProgress.value = true
-            return model.runAsFlow(
-                inputIds = inputIds,
-                attentionMask = attentionMask,
-                eosId = tokenizer.eosId,
-                padId = tokenizer.padId,
-                minP = minP,
-                repetitionPenalty = repetitionPenalty.first(),
-                beamSize = beamSize.first(),
-                maxSequenceLength = maxSequenceLength.first(),
-            )
-                .debounce(1000L / 120)
-                .conflate()
-                .catch {
-                    setTranslationError(it)
+                if (cache != null) {
+                    return flowOf(cache!!)
                 }
-                .map { tokenIds ->
-                    val outputText = tokenizer.decode(tokenIds)
 
-                    if (tokenIds.last() == tokenizer.eosId) {
-                        _translationInProgress.value = false
+                val (inputIds, attentionMask) = tokenizer.encode(sanitized)
+                val minP = minProbability.first() * 100 / tokenizer.vocabSize
 
-                        if (cacheEnabled.first()) {
-                            _cache.put(sanitized, outputText, languages)
-                        }
+                _translationInProgress.value = true
+                return model.runAsFlow(
+                    inputIds = inputIds,
+                    attentionMask = attentionMask,
+                    eosId = tokenizer.eosId,
+                    padId = tokenizer.padId,
+                    minP = minP,
+                    repetitionPenalty = repetitionPenalty.first(),
+                    beamSize = beamSize.first(),
+                    maxSequenceLength = maxSequenceLength.first(),
+                )
+                    .debounce(1000L / 120)
+                    .conflate()
+                    .catch {
+                        throw it
                     }
+                    .map { tokenIds ->
+                        val outputText = tokenizer.decode(tokenIds)
 
-                    outputText
-                }
+                        if (tokenIds.last() == tokenizer.eosId) {
+                            _translationInProgress.value = false
+
+                            if (cacheEnabled.first()) {
+                                _cache.put(sanitized, outputText, languages)
+                            }
+                        }
+
+                        outputText
+                    }
+            }
+        } catch (e: Exception) {
+            setTranslationError(e)
+            Timber.tag(TAG).e(e)
+
+            return flowOf("")
         }
     }
 
@@ -218,6 +226,7 @@ class TranslationViewModel(
      * it will be returned immediately.
      */
     suspend fun translate(input: String, languages: LanguagePair): String {
+        try {
         val sanitized = sanitize(input)
 
         var cache = _cache.get(sanitized, languages)
@@ -233,7 +242,7 @@ class TranslationViewModel(
                 return cache!!
             }
 
-            try {
+
                 val (inputIds, attentionMask) = tokenizer.encode(sanitized)
                 val minP = minProbability.first() * 100 / tokenizer.vocabSize
 
@@ -251,10 +260,12 @@ class TranslationViewModel(
                 _translationInProgress.value = false
 
                 return tokenizer.decode(tokenIds)
-            } catch (e: Exception) {
-                setTranslationError(e)
-                return ""
             }
+        } catch (e: Exception) {
+            setTranslationError(e)
+            Timber.tag(TAG).e(e)
+
+            return ""
         }
     }
 
@@ -292,7 +303,7 @@ class TranslationViewModel(
 
                     _loadingProgress.value = LoadingProgress.Completed
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Timber.tag(TAG).e(e)
                     _loadingProgress.value = LoadingProgress.Error(e)
                 }
             }

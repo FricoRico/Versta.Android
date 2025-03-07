@@ -82,6 +82,8 @@
     <string name="settings_voice_description">Microphone settings, transcription</string>
     <string name="settings_about_title">About</string>
     <string name="settings_about_description">Version, privacy policy, attributions</string>
+    <string name="settings_troubleshooting_title">Troubleshooting</string>
+    <string name="settings_troubleshooting_description">View logs, report an issue, advanced settings</string>
     <string name="translation_settings_title">Translation</string>
     <string name="translation_settings_history_headline">History</string>
     <string name="translation_settings_history_toggle_title">Remember translations</string>
@@ -110,4 +112,16 @@
     <string name="license_confirmation_making_a_difference">Your purchase makes a real difference.</string>
     <string name="license_confirmation_contribution_perks">With your support, we can continue to improve and expand %1$s, making it even better for you and others.</string>
     <string name="license_confirmation_thank_you">Thank you for choosing to support our work!</string>
+    <string name="troubleshooting_title">Troubleshooting</string>
+    <string name="troubleshooting_application_logs_title">Application logs</string>
+    <string name="troubleshooting_application_logs_description">View and save application logs</string>
+    <string name="troubleshooting_report_issue_title">Report an issue</string>
+    <string name="troubleshooting_report_issue_description">Send a report to the team on Github</string>
+    <string name="troubleshooting_reset_license_title">Reset license</string>
+    <string name="troubleshooting_reset_license_description">Deactivate current license</string>
+    <string name="license_reset">License has been reset</string>
+    <string name="application_logs_title">Application logs</string>
+    <string name="application_logs_clear">Clear logs</string>
+    <string name="application_logs_save">Save logs</string>
+    <string name="application_logs_empty">No logs available</string>
 </resources>

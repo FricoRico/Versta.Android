@@ -1,6 +1,7 @@
 package app.versta.translate.utils
 
 import android.util.Log
+import timber.log.Timber
 import java.util.Locale
 import java.util.MissingResourceException
 
@@ -18,7 +19,7 @@ object LocaleUtils {
             try {
                 localeMap[locale.isO3Language] = locale
             } catch (e: MissingResourceException) {
-                Log.e(TAG, "Failed to get ISO 639-2 code for language $language")
+                Timber.tag(TAG).e("Failed to get ISO 639-2 code for language $language")
             }
         }
     }

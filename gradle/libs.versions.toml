@@ -17,10 +17,13 @@ androidCameraX = "1.5.0-alpha05"
 androidBoofCv = "1.1.7"
 androidSplashScreen = "1.0.0"
 appacheCommonsCompress = "1.27.1"
+aspectj = "1.9.22.1"
 composeLifecycle = "2.8.7"
 mlKitTextRecognition = "16.0.1"
 kotlinxSerialization = "1.8.0"
+kotlinReflect = "2.1.10"
 sqldelight = "2.0.2"
+timber = "5.0.1"
 materialIcons = "1.7.8"
 navigationCompose = "2.8.7"
 onnxRuntime = "1.20.0"
@@ -58,7 +61,9 @@ appache-commons-compress = { group = "org.apache.commons", name = "commons-compr
 boof-cv-android = { group = "org.boofcv", name = "boofcv-android", version.ref = "androidBoofCv" }
 boof-cv-core = { group = "org.boofcv", name = "boofcv-core", version.ref = "androidBoofCv" }
 boof-cv-geo = { group = "org.boofcv", name = "boofcv-geo", version.ref = "androidBoofCv" }
+jakewharton-timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlinReflect" }
 lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "composeLifecycle" }
 lucene-analyzers-kuromoji = { group = "org.apache.lucene", name = "lucene-analyzers-kuromoji", version.ref = "luceneAnalyzersKuromoji" }
 material-icons = { group = "androidx.compose.material", name = "material-icons-core", version.ref = "materialIcons" }

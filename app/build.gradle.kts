@@ -60,6 +60,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
@@ -116,7 +117,9 @@ dependencies {
     implementation(libs.boof.cv.core)
     implementation(libs.boof.cv.geo)
     implementation(libs.appache.commons.compress)
+    implementation(libs.jakewharton.timber)
     implementation(libs.kotlinx.serialization)
+    implementation(libs.kotlin.reflect)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lucene.analyzers.kuromoji)
     implementation(libs.material.icons)

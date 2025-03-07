@@ -1,11 +1,9 @@
 package app.versta.translate.adapter.outbound
 
-import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtLoggingLevel
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.extensions.OrtxPackage
-import android.util.Log
 import app.versta.translate.bridge.inference.BeamSearch
 import app.versta.translate.core.entity.LanguageModelInferenceFiles
 import app.versta.translate.core.entity.DecoderInput
@@ -15,14 +13,15 @@ import app.versta.translate.core.entity.EncoderHiddenStates
 import app.versta.translate.core.entity.EncoderInput
 import app.versta.translate.core.entity.EncoderOutput
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import timber.log.Timber
 import java.io.File
 import kotlin.io.path.pathString
 
 class MarianInference : TranslationInference {
+
     private val ortEnvironment =
         OrtEnvironment.getEnvironment(OrtLoggingLevel.ORT_LOGGING_LEVEL_FATAL,
             "OpusInference",
@@ -56,14 +55,13 @@ class MarianInference : TranslationInference {
 
             return output ?: throw IllegalStateException("Encoder output is null")
         } catch (e: Exception) {
-            e.printStackTrace()
+            Timber.e(e)
             throw e
         } finally {
             encoderInput.destroy()
             encoderOutput.destroy()
         }
     }
-
 
     private fun decode(
         encoderHiddenStates: EncoderHiddenStates,
@@ -124,7 +122,7 @@ class MarianInference : TranslationInference {
 
             return beamSearch.best()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Timber.e(e)
             throw e
         } finally {
             decoderInput.destroy()
@@ -192,7 +190,7 @@ class MarianInference : TranslationInference {
                     emit(beamSearch.best())
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Timber.e(e)
                 throw e
             } finally {
                 decoderInput.destroy()
