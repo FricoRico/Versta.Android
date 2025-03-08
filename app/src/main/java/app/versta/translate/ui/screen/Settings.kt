@@ -122,40 +122,6 @@ fun Settings(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = stringResource(R.string.settings_vision_title),
-                        supportingContent = stringResource(R.string.settings_vision_description),
-                        onClick = {/*TODO*/ },
-                        leadingContent = {
-                            Icon(
-                                Icons.Outlined.CameraAlt,
-                                contentDescription = null,
-                            )
-                        },
-                        index = 0,
-                        groupSize = 2
-                    )
-                }
-
-                item {
-                    SettingsButtonItem(
-                        headlineContent = stringResource(R.string.settings_voice_title),
-                        supportingContent = stringResource(R.string.settings_voice_description),
-                        onClick = {/*TODO*/ },
-                        leadingContent = {
-                            Icon(
-                                Icons.Outlined.MicNone,
-                                contentDescription = null,
-                            )
-                        },
-                        index = 1,
-                        groupSize = 2
-                    )
-                }
-
-                ListDivider()
-
-                item {
-                    SettingsButtonItem(
                         headlineContent = stringResource(R.string.settings_about_title),
                         supportingContent = stringResource(R.string.settings_about_description),
                         onClick = {

@@ -19,7 +19,6 @@ import app.versta.translate.adapter.outbound.LogFileSaver
 import app.versta.translate.core.model.LanguageImportViewModel
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
-import app.versta.translate.core.model.TextRecognitionViewModel
 import app.versta.translate.ui.component.LanguageSelectionDrawer
 import app.versta.translate.ui.component.TrialLicenseDrawer
 import app.versta.translate.ui.component.Router
@@ -50,14 +49,6 @@ open class MainActivity : ComponentActivity() {
                     modelExtractor = MainApplication.module.extractor,
                     languageRepository = MainApplication.module.languageRepository
                 )
-            }
-        }
-    )
-
-    private val textRecognitionViewModel by viewModels<TextRecognitionViewModel>(
-        factoryProducer = {
-            viewModelFactory {
-                TextRecognitionViewModel()
             }
         }
     )
@@ -99,7 +90,6 @@ open class MainActivity : ComponentActivity() {
                         licenseViewModel = licenseViewModel,
                         translationViewModel = MainApplication.module.translationViewModel,
                         textTranslationViewModel = MainApplication.module.textTranslationViewModel,
-                        textRecognitionViewModel = textRecognitionViewModel,
                         loggingViewModel = MainApplication.module.loggingViewModel
                     )
 

@@ -133,28 +133,6 @@ fun Home(
                         )
                     }
                 }
-
-                item {
-                    ButtonCard(
-                        onClick = {
-                            navController.navigate(Screens.Camera())
-                        },
-                        title = stringResource(R.string.home_vision_title),
-                        subtitle = stringResource(R.string.home_vision_description),
-                        icon = Icons.Outlined.CameraAlt,
-                        colors = ButtonCardDefaults.colorsPrimary(),
-                    )
-                }
-
-                item {
-                    ButtonCard(
-                        onClick = { /*TODO*/ },
-                        title = stringResource(R.string.home_voice_title),
-                        subtitle = stringResource(R.string.home_voice_description),
-                        icon = Icons.Outlined.MicNone,
-                        colors = ButtonCardDefaults.colorsSecondary(),
-                    )
-                }
             }
         }
     )

@@ -1,6 +1,5 @@
 package app.versta.translate.utils
 
-import android.util.Log
 import timber.log.Timber
 import java.util.Locale
 import java.util.MissingResourceException

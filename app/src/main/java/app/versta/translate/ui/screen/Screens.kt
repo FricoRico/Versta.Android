@@ -10,7 +10,6 @@ enum class Screens (
     val statusBarStyle: StatusBarStyle = StatusBarStyle.Light
 ) {
     Home,
-    Camera,
     Settings,
     LanguageSettings,
     LanguageImport,

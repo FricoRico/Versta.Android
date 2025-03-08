@@ -380,7 +380,6 @@ fun TextTranslationInputButtonRow(
     modifier: Modifier = Modifier,
     onTranslate: () -> Unit,
     onClear: () -> Unit,
-    onDictate: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
@@ -398,19 +397,6 @@ fun TextTranslationInputButtonRow(
                 Icon(
                     imageVector = Icons.Outlined.Close,
                     contentDescription = stringResource(R.string.clear)
-                )
-            }
-
-            FilledIconButton(
-                onClick = {
-                    onDictate?.invoke()
-                },
-                enabled = onDictate != null,
-                colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.MicNone,
-                    contentDescription = stringResource(R.string.dictate)
                 )
             }
         }

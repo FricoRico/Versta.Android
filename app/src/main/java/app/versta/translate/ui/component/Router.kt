@@ -25,12 +25,10 @@ import app.versta.translate.core.model.LanguageImportViewModel
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.LoggingViewModel
-import app.versta.translate.core.model.TextRecognitionViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.screen.About
 import app.versta.translate.ui.screen.ApplicationLogs
-import app.versta.translate.ui.screen.CameraTranslation
 import app.versta.translate.ui.screen.Home
 import app.versta.translate.ui.screen.LanguageAttributions
 import app.versta.translate.ui.screen.LanguageDetails
@@ -53,7 +51,6 @@ fun Router(
     licenseViewModel: LicenseViewModel,
     translationViewModel: TranslationViewModel,
     textTranslationViewModel: TextTranslationViewModel,
-    textRecognitionViewModel: TextRecognitionViewModel,
     loggingViewModel: LoggingViewModel
 ) {
     val navController = rememberNavController()
@@ -109,13 +106,6 @@ fun Router(
                 languageViewModel = languageViewModel,
                 licenseViewModel = licenseViewModel,
                 textTranslationViewModel = textTranslationViewModel
-            )
-        }
-        composable(Screens.Camera()) {
-            CameraTranslation(
-                navController = navController,
-                textRecognitionViewModel = textRecognitionViewModel,
-                translationViewModel = translationViewModel
             )
         }
         composable(Screens.Settings()) {

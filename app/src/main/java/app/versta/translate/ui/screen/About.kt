@@ -2,10 +2,12 @@ package app.versta.translate.ui.screen
 
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -25,12 +27,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import app.versta.translate.R
@@ -82,14 +87,30 @@ fun About(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 item {
-                    Image(
-                        imageVector = ImageVector.vectorResource(R.drawable.ic_launcher_background),
-                        contentDescription = stringResource(R.string.icon_description, stringResource(R.string.app_name)),
-                        modifier = Modifier
-                            .padding(bottom = MaterialTheme.spacing.large)
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.padding(bottom = MaterialTheme.spacing.large)
                             .size(MaterialTheme.spacing.extraLarge * 3)
                             .clip(MaterialTheme.shapes.extraExtraLarge),
-                    )
+                    ) {
+                        Image(
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_launcher_background),
+                            contentDescription = stringResource(
+                                R.string.icon_description,
+                                stringResource(R.string.app_name)
+                            ),
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary, BlendMode.Color)
+                        )
+                        Image(
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_launcher_foreground),
+                            contentDescription = stringResource(
+                                R.string.icon_description,
+                                stringResource(R.string.app_name)
+                            ),
+                            modifier = Modifier.requiredSize(144.dp),
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary, BlendMode.Color)
+                        )
+                    }
                 }
 
                 item {

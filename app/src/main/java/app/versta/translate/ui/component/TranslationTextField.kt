@@ -92,21 +92,6 @@ fun TranslationTextField(
                             contentDescription = stringResource(R.string.clear)
                         )
                     }
-                    FilledIconButton(
-                        onClick = {},
-                        enabled = false,
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            disabledContentColor = MaterialTheme.colorScheme.surfaceContainerLowest
-                        ),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.MicNone,
-                            contentDescription = stringResource(R.string.dictate)
-                        )
-                    }
                 }
                 FilledIconButton(
                     onClick = {
