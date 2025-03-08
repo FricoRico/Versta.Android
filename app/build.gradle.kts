@@ -1,3 +1,10 @@
+import java.io.FileInputStream
+import java.util.Properties
+
+val keystoreProperties = Properties().apply {
+    load(FileInputStream(rootProject.file("keystore.properties")))
+}
+
 plugins {
     alias(libs.plugins.about.libraries)
     alias(libs.plugins.android.application)
@@ -29,8 +36,8 @@ android {
         applicationId = "app.versta.translate"
         minSdk = 29
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -38,14 +45,22 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file("versta.keystore")
+            storePassword = keystoreProperties["storePassword"].toString()
+            keyAlias = "versta"
+            keyPassword = keystoreProperties["keyPassword"].toString()
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
