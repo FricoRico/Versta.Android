@@ -1,15 +1,13 @@
 package app.versta.translate.ui.screen
 
-import android.util.Log
+import android.view.HapticFeedbackConstants
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.AnimationConstants.DefaultDurationMillis
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,9 +25,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,7 +44,6 @@ import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.MinimalLanguageSelector
 import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 @Composable
@@ -56,6 +53,7 @@ fun MinimalTextTranslation(
     textTranslationViewModel: TextTranslationViewModel,
     autoTranslate: Boolean = true,
 ) {
+    val view = LocalView.current
     val context = LocalContext.current
 
     val input by textTranslationViewModel.input.collectAsStateWithLifecycle("")
@@ -91,6 +89,7 @@ fun MinimalTextTranslation(
             translationViewModel.translateAsFlow(input, languages!!)
                 .collect {
                     textTranslationViewModel.setTranslation(it)
+                    view.performHapticFeedback(HapticFeedbackConstants.TEXT_HANDLE_MOVE)
                 }
         }
     }

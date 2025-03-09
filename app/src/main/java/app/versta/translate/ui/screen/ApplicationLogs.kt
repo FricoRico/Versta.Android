@@ -113,7 +113,7 @@ fun ApplicationLogs(
                     }
                 }
 
-                items(logs.split("\n"), key = { it.hashCode() }) {
+                items(logs.split("\n")) {
                     Text(text = it)
                 }
             }

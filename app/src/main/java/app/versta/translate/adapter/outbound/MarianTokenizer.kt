@@ -65,7 +65,9 @@ class MarianTokenizer(
     override fun tokenize(text: String): List<String> {
         try {
             val (code, cleanText) = removeLanguageCode(text)
-            val pieces = encoder.encodeAsPieces(cleanText)
+            val normalized = normalize(cleanText)
+
+            val pieces = encoder.encodeAsPieces(normalized)
             return code + pieces
         } catch (e: Exception) {
             throw IllegalArgumentException("Tokenizing text: $text", e)

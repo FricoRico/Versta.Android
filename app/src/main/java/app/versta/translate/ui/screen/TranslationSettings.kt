@@ -280,7 +280,7 @@ fun TranslationSettings(
                         supportingContent = stringResource(R.string.translation_settings_inference_repetition_penalty_description),
                         trailingContent = {
                             Text(
-                                text = DecimalFormat("0.000").format(repetitionPenalty),
+                                text = DecimalFormat("0.00").format(repetitionPenalty),
                                 style = MaterialTheme.typography.labelLarge,
                                 fontSize = 22.sp
                             )
@@ -292,7 +292,7 @@ fun TranslationSettings(
                                 onValueChange = {
                                     settingsChanged = true
 
-                                    val rounded = (it * 1000).roundToInt() / 1000f
+                                    val rounded = (it * 100).roundToInt() / 100f
                                     translationViewModel.setRepetitionPenalty(rounded)
                                 },
                             )

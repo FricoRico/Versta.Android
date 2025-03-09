@@ -58,7 +58,8 @@ class TranslationViewModel(
     val maxSequenceLength =
         translationPreferenceRepository.getMaxSequenceLength().distinctUntilChanged()
     val minProbability = translationPreferenceRepository.getMinProbability().distinctUntilChanged()
-    val repetitionPenalty = translationPreferenceRepository.getRepetitionPenalty().distinctUntilChanged()
+    val repetitionPenalty =
+        translationPreferenceRepository.getRepetitionPenalty().distinctUntilChanged()
     val threadCount = translationPreferenceRepository.getThreadCount().distinctUntilChanged()
 
     private lateinit var _cache: TranslationMemoryCache
@@ -164,60 +165,54 @@ class TranslationViewModel(
      */
     @OptIn(FlowPreview::class)
     suspend fun translateAsFlow(input: String, languages: LanguagePair): Flow<String> {
-        try {
-            val sanitized = sanitize(input)
+        val sanitized = sanitize(input)
 
-            var cache = _cache.get(sanitized, languages)
+        var cache = _cache.get(sanitized, languages)
+        if (cache != null) {
+            return flowOf(cache)
+        }
+
+        _queue.withLock {
+            // Check to see if the translation is already in the cache, if so return it.
+            cache = _cache.get(sanitized, languages)
+
             if (cache != null) {
-                return flowOf(cache)
+                return flowOf(cache!!)
             }
 
-            _queue.withLock {
-                // Check to see if the translation is already in the cache, if so return it.
-                cache = _cache.get(sanitized, languages)
+            val (inputIds, attentionMask) = tokenizer.encode(sanitized)
+            val minP = minProbability.first() * 100 / tokenizer.vocabSize
 
-                if (cache != null) {
-                    return flowOf(cache!!)
+            _translationInProgress.value = true
+            return model.runAsFlow(
+                inputIds = inputIds,
+                attentionMask = attentionMask,
+                eosId = tokenizer.eosId,
+                padId = tokenizer.padId,
+                minP = minP,
+                repetitionPenalty = repetitionPenalty.first(),
+                beamSize = beamSize.first(),
+                maxSequenceLength = maxSequenceLength.first(),
+            )
+                .debounce(1000L / 120)
+                .conflate()
+                .catch { e ->
+                    setTranslationError(e)
+                    Timber.tag(TAG).e(e)
                 }
+                .map { tokenIds ->
+                    val outputText = tokenizer.decode(tokenIds)
 
-                val (inputIds, attentionMask) = tokenizer.encode(sanitized)
-                val minP = minProbability.first() * 100 / tokenizer.vocabSize
+                    if (tokenIds.last() == tokenizer.eosId) {
+                        _translationInProgress.value = false
 
-                _translationInProgress.value = true
-                return model.runAsFlow(
-                    inputIds = inputIds,
-                    attentionMask = attentionMask,
-                    eosId = tokenizer.eosId,
-                    padId = tokenizer.padId,
-                    minP = minP,
-                    repetitionPenalty = repetitionPenalty.first(),
-                    beamSize = beamSize.first(),
-                    maxSequenceLength = maxSequenceLength.first(),
-                )
-                    .debounce(1000L / 120)
-                    .conflate()
-                    .catch {
-                        throw it
-                    }
-                    .map { tokenIds ->
-                        val outputText = tokenizer.decode(tokenIds)
-
-                        if (tokenIds.last() == tokenizer.eosId) {
-                            _translationInProgress.value = false
-
-                            if (cacheEnabled.first()) {
-                                _cache.put(sanitized, outputText, languages)
-                            }
+                        if (cacheEnabled.first()) {
+                            _cache.put(sanitized, outputText, languages)
                         }
-
-                        outputText
                     }
-            }
-        } catch (e: Exception) {
-            setTranslationError(e)
-            Timber.tag(TAG).e(e)
 
-            return flowOf("")
+                    outputText
+                }
         }
     }
 
@@ -227,20 +222,20 @@ class TranslationViewModel(
      */
     suspend fun translate(input: String, languages: LanguagePair): String {
         try {
-        val sanitized = sanitize(input)
+            val sanitized = sanitize(input)
 
-        var cache = _cache.get(sanitized, languages)
-        if (cache != null) {
-            return cache
-        }
-
-        _queue.withLock {
-            // Check to see if the translation is already in the cache, if so return it.
-            cache = _cache.get(sanitized, languages)
-
+            var cache = _cache.get(sanitized, languages)
             if (cache != null) {
-                return cache!!
+                return cache
             }
+
+            _queue.withLock {
+                // Check to see if the translation is already in the cache, if so return it.
+                cache = _cache.get(sanitized, languages)
+
+                if (cache != null) {
+                    return cache!!
+                }
 
 
                 val (inputIds, attentionMask) = tokenizer.encode(sanitized)

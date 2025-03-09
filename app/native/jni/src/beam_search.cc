@@ -98,20 +98,40 @@ public:
         return tokens;
     }
 
-    [[nodiscard]] bool complete() const {
-        if (!beams.empty() && beams.front().sequence.back() == eosId) {
+    [[nodiscard]] bool complete(bool completeOnRepeat) const {
+        if (beams.empty()) {
+            return false;
+        }
+
+        if (std::find(beams.front().sequence.begin(), beams.front().sequence.end(), eosId) != beams.front().sequence.end()) {
             return true;
         }
 
-        auto topN = static_cast<size_t>(std::ceil(beamSize / 2));
+        auto topN = static_cast<size_t>(std::ceil(beamSize * 0.75));
         size_t completedBeams = 0;
         for (size_t i = 0; i < std::min(beams.size(), topN); ++i) {
-            if (beams[i].sequence.back() == eosId) {
+            const auto& sequence = beams[i].sequence;
+
+            if (std::find(sequence.begin(), sequence.end(), eosId) != sequence.end()) {
                 completedBeams++;
+                continue;
+            }
+
+            if (completeOnRepeat) {
+                std::unordered_set<int64_t> tokens;
+
+                for (auto it = sequence.rbegin(); it != sequence.rend(); ++it) {
+                    if (tokens.find(*it) != tokens.end()) {
+                        completedBeams++;
+                        break;
+                    }
+
+                    tokens.insert(*it);
+                }
             }
         }
 
-        return completedBeams == topN;
+        return completedBeams >= topN;
     }
 
     [[nodiscard]] std::vector<int64_t> best() const {
@@ -259,13 +279,14 @@ JNIEXPORT jobjectArray JNICALL Java_app_versta_translate_bridge_inference_BeamSe
 JNIEXPORT jboolean JNICALL Java_app_versta_translate_bridge_inference_BeamSearch_complete(
         JNIEnv *env,
         jobject,
-        jlong handle
+        jlong handle,
+        jboolean completeOnRepeat
 ) {
     auto beamSearch = beamSearchInstances[handle].get();
     if (!beamSearch) {
         return JNI_FALSE;
     }
-    return beamSearch->complete() ? JNI_TRUE : JNI_FALSE;
+    return beamSearch->complete(completeOnRepeat) ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jlongArray JNICALL Java_app_versta_translate_bridge_inference_BeamSearch_best(

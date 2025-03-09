@@ -16,7 +16,7 @@ class BeamSearch(
     private var handle: Long
 
     init {
-        handle = construct(beamSize, minP, repetitionPenalty, padId, eosId)
+        handle = construct(beamSize, minP, repetitionPenalty / 10, padId, eosId)
 
         if (handle == 0L) {
             throw RuntimeException("Failed to initialize BeamSearch")
@@ -49,8 +49,8 @@ class BeamSearch(
         return lastTokens(handle)
     }
 
-    fun complete(): Boolean {
-        return complete(handle)
+    fun complete(completeOnRepeat: Boolean): Boolean {
+        return complete(handle, completeOnRepeat)
     }
 
     fun best(): LongArray {
@@ -81,7 +81,7 @@ class BeamSearch(
         tensorHandle: Long,
     ): ByteBuffer
     private external fun lastTokens(handle: Long): Array<LongArray>
-    private external fun complete(handle: Long): Boolean
+    private external fun complete(handle: Long, completeOnRepeat: Boolean): Boolean
     private external fun best(handle: Long): LongArray
     private external fun close(handle: Long): Boolean
 

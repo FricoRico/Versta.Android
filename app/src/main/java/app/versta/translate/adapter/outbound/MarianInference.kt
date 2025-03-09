@@ -72,6 +72,7 @@ class MarianInference : TranslationInference {
         repetitionPenalty: Float,
         beamsSize: Int,
         maxSequenceLength: Int,
+        completeOnRepeat: Boolean
     ): LongArray {
         if (decoderSession == null) {
             throw IllegalStateException("Decoder session is not loaded")
@@ -102,8 +103,8 @@ class MarianInference : TranslationInference {
             while (runInference && step < maxSequenceLength) {
                 step++
 
-                if (beamSearch.complete()) {
-                    break
+                if (beamSearch.complete(completeOnRepeat)) {
+                    break;
                 }
 
                 val inputs = decoderInput.get(
@@ -120,7 +121,13 @@ class MarianInference : TranslationInference {
                 outputs.close()
             }
 
-            return beamSearch.best()
+            val result = beamSearch.best().plus(eosId)
+
+            if (completeOnRepeat) {
+                return distinct(result)
+            }
+
+            return result
         } catch (e: Exception) {
             Timber.e(e)
             throw e
@@ -139,6 +146,7 @@ class MarianInference : TranslationInference {
         repetitionPenalty: Float,
         beamsSize: Int,
         maxSequenceLength: Int,
+        completeOnRepeat: Boolean
     ): Flow<LongArray> {
         if (decoderSession == null) {
             throw IllegalStateException("Decoder session is not loaded")
@@ -170,7 +178,15 @@ class MarianInference : TranslationInference {
                 while (runInference && step < maxSequenceLength) {
                     step++
 
-                    if (beamSearch.complete()) {
+                    if (beamSearch.complete(completeOnRepeat)) {
+                        val result = beamSearch.best().plus(eosId)
+
+                        if (completeOnRepeat) {
+                            emit(distinct(result))
+                            break
+                        }
+
+                        emit(result)
                         break
                     }
 
@@ -195,6 +211,7 @@ class MarianInference : TranslationInference {
             } finally {
                 decoderInput.destroy()
                 decoderOutput.destroy()
+
             }
         }.flowOn(Dispatchers.Default)
     }
@@ -211,6 +228,11 @@ class MarianInference : TranslationInference {
     ): LongArray {
         runInference = true
 
+        // This is a workaround for the issue with various models that are overfitting on the
+        // training data, and start repeating when translating single words. This is a temporary
+        // solution until we can start retraining the models.
+        val completeOnRepeat = inputIds.size <= 2
+
         val encoderHiddenStates = encode(
             inputIds = inputIds,
             attentionMask = attentionMask
@@ -225,6 +247,7 @@ class MarianInference : TranslationInference {
             repetitionPenalty = repetitionPenalty,
             beamsSize = beamSize,
             maxSequenceLength = maxSequenceLength,
+            completeOnRepeat = completeOnRepeat
         )
         return tokens
     }
@@ -241,6 +264,11 @@ class MarianInference : TranslationInference {
     ): Flow<LongArray> {
         runInference = true
 
+        // This is a workaround for the issue with various models that are overfitting on the
+        // training data, and start repeating when translating single words. This is a temporary
+        // solution until we can start retraining the models.
+        val completeOnRepeat = inputIds.size <= 4
+
         val encoderHiddenStates = encode(
             inputIds = inputIds,
             attentionMask = attentionMask
@@ -255,7 +283,22 @@ class MarianInference : TranslationInference {
             repetitionPenalty = repetitionPenalty,
             beamsSize = beamSize,
             maxSequenceLength = maxSequenceLength,
+            completeOnRepeat = completeOnRepeat
         )
+    }
+
+    private fun distinct(tokens: LongArray): LongArray {
+        val deduplicated = mutableListOf<Long>()
+        var lastToken = -1L
+
+        for (token in tokens) {
+            if (token != lastToken) {
+                deduplicated.add(token)
+                lastToken = token
+            }
+        }
+
+        return deduplicated.toLongArray()
     }
 
     override fun cancel() {
