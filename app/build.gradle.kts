@@ -91,8 +91,9 @@ android {
         noCompress += "spm"
     }
     externalNativeBuild {
-        ndkBuild {
-            path("native/jni/Android.mk")
+        cmake {
+            path("native/jni/CMakeLists.txt")
+            version = "3.22.1"
         }
     }
     ndkVersion = "27.0.12077973"

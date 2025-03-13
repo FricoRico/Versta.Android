@@ -12,7 +12,7 @@
 #include <cstdint>
 #include <numeric>
 
-#include "OrtJniUtil.h"
+#include "../third_party/onnxruntime/OrtJniUtil.h"
 
 struct Beam {
     int id{};

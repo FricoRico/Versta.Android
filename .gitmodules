@@ -1,0 +1,4 @@
+[submodule "app/native/jni/src/sentencepiece"]
+	path = app/native/jni/third_party/sentencepiece
+	url = https://github.com/google/sentencepiece.git
+	branch = tags/v0.2.0

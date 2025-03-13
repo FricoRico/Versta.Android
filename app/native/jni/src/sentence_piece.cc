@@ -3,7 +3,8 @@
 //
 
 #include <jni.h>
-#include <sentencepiece/sentencepiece_processor.h>
+
+#include "sentencepiece/src/sentencepiece_processor.h"
 
 using sentencepiece::SentencePieceProcessor;
 using sentencepiece::util::Status;
