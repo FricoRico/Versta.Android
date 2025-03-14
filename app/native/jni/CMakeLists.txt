@@ -8,7 +8,7 @@ set(THIRD_PARTY_DIR "${CMAKE_SOURCE_DIR}/third_party")
 add_subdirectory(src)
 add_subdirectory(third_party)
 
-add_library(${CMAKE_PROJECT_NAME} SHARED ${SRC_FILES} ${THIRD_PARTY_FILES})
+add_library(${CMAKE_PROJECT_NAME} SHARED ${SRC_FILES})
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         $<BUILD_INTERFACE:${SRC_DIR}>

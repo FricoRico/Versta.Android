@@ -3,11 +3,12 @@
 //
 
 #include <jni.h>
+#include <cstdlib>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern "C" JNIEXPORT void JNICALL Java_app_versta_translate_bridge_inference_TensorUtils_closeBuffer(
+JNIEXPORT void JNICALL Java_app_versta_translate_bridge_inference_TensorUtils_closeBuffer(
         JNIEnv *env,
         jobject,
         jobject buffer

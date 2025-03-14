@@ -12,7 +12,7 @@
 #include <cstdint>
 #include <numeric>
 
-#include "../third_party/onnxruntime/OrtJniUtil.h"
+#include "ort_utils.cc"
 
 struct Beam {
     int id{};
@@ -76,8 +76,8 @@ public:
         }
 
         // Use unordered_set to remove duplicates
-        std::unordered_set < Beam, Beam::HashFunction >
-                                   uniqueBeams(newBeams.begin(), newBeams.end());
+        std::unordered_set<Beam, Beam::HashFunction>
+                uniqueBeams(newBeams.begin(), newBeams.end());
 
         // Sort beams by score
         std::vector<Beam> sortedBeams(uniqueBeams.begin(), uniqueBeams.end());
@@ -103,14 +103,15 @@ public:
             return false;
         }
 
-        if (std::find(beams.front().sequence.begin(), beams.front().sequence.end(), eosId) != beams.front().sequence.end()) {
+        if (std::find(beams.front().sequence.begin(), beams.front().sequence.end(), eosId) !=
+            beams.front().sequence.end()) {
             return true;
         }
 
         auto topN = static_cast<size_t>(std::ceil(beamSize * 0.75));
         size_t completedBeams = 0;
         for (size_t i = 0; i < std::min(beams.size(), topN); ++i) {
-            const auto& sequence = beams[i].sequence;
+            const auto &sequence = beams[i].sequence;
 
             if (std::find(sequence.begin(), sequence.end(), eosId) != sequence.end()) {
                 completedBeams++;
@@ -239,18 +240,19 @@ JNIEXPORT void JNICALL Java_app_versta_translate_bridge_inference_BeamSearch_sea
     auto *ortValue = (OrtValue *) tensorHandle;
 
     jfloat *logits = nullptr;
-    OrtErrorCode code = checkOrtStatus(env, api,
-                                       api->GetTensorMutableData(ortValue, (void **) &logits));
-    if (code != ORT_OK) {
+    try {
+        checkTensorStatus(env, api, api->GetTensorMutableData(ortValue, (void **) &logits));
+
+        auto beamSearch = beamSearchInstances[handle].get();
+        if (!beamSearch) {
+            return;
+        }
+
+        beamSearch->search(logits, size);
+    } catch (...) {
         return;
     }
 
-    auto beamSearch = beamSearchInstances[handle].get();
-    if (!beamSearch) {
-        return;
-    }
-
-    beamSearch->search(logits, size);
 }
 
 JNIEXPORT jobjectArray JNICALL Java_app_versta_translate_bridge_inference_BeamSearch_lastTokens(
@@ -332,37 +334,38 @@ Java_app_versta_translate_bridge_inference_BeamSearch_transposeBuffer(
 
     const auto *api = (const OrtApi *) apiHandle;
     auto *ortValue = (OrtValue *) tensorHandle;
-    JavaTensorTypeShape typeShape;
-    OrtErrorCode code = getTensorTypeShape(env, &typeShape, api, ortValue);
+    TensorShape typeShape;
 
-    if (code != ORT_OK) {
-        return nullptr;
-    }
-    size_t typeSize = onnxTypeSize(typeShape.onnxTypeEnum);
-    size_t sizeBytes = typeShape.elementCount * typeSize;
+    try {
+        getTensorShape(env, &typeShape, api, ortValue);
 
-    uint8_t *arr = nullptr;
-    code = checkOrtStatus(env, api, api->GetTensorMutableData(ortValue, (void **) &arr));
+        size_t tensorSize = getTensorSize(typeShape.onnxTypeEnum);
+        size_t sizeBytes = typeShape.elementCount * tensorSize;
 
-    if (code != ORT_OK) {
-        return nullptr;
-    }
+        uint8_t *arr = nullptr;
 
-    std::vector<int> indices = beamSearch->getTopBeamIds();
-    auto indicesLength = indices.size();
+        checkTensorStatus(env, api, api->GetTensorMutableData(ortValue, (void **) &arr));
 
-    auto *transposed = new uint8_t[sizeBytes];
 
-    size_t elementSize = sizeBytes / indicesLength;
+        std::vector<int> indices = beamSearch->getTopBeamIds();
+        auto indicesLength = indices.size();
+
+        auto *transposed = new uint8_t[sizeBytes];
+
+        size_t elementSize = sizeBytes / indicesLength;
 
 #pragma omp parallel for
-    for (size_t i = 0; i < indicesLength; ++i) {
-        auto oldIndex = indices[i];
-        auto newIndex = i;
-        std::memcpy(transposed + newIndex * elementSize, arr + oldIndex * elementSize, elementSize);
-    }
+        for (size_t i = 0; i < indicesLength; ++i) {
+            auto oldIndex = indices[i];
+            auto newIndex = i;
+            std::memcpy(transposed + newIndex * elementSize, arr + oldIndex * elementSize,
+                        elementSize);
+        }
 
-    return env->NewDirectByteBuffer(transposed, (jlong) sizeBytes);
+        return env->NewDirectByteBuffer(transposed, (jlong) sizeBytes);
+    } catch (...) {
+        return nullptr;
+    }
 }
 #ifdef __cplusplus
 }
