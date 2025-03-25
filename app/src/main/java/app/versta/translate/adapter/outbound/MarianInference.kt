@@ -1,17 +1,16 @@
 package app.versta.translate.adapter.outbound
 
 import ai.onnxruntime.OrtEnvironment
-import ai.onnxruntime.OrtLoggingLevel
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.extensions.OrtxPackage
 import app.versta.translate.bridge.inference.BeamSearch
 import app.versta.translate.core.entity.LanguageModelInferenceFiles
-import app.versta.translate.core.entity.DecoderInput
-import app.versta.translate.core.entity.DecoderOutput
+import app.versta.translate.core.entity.MarianDecoderInput
+import app.versta.translate.core.entity.MarianDecoderOutput
 import app.versta.translate.core.entity.EncoderAttentionMasks
 import app.versta.translate.core.entity.EncoderHiddenStates
-import app.versta.translate.core.entity.EncoderInput
-import app.versta.translate.core.entity.EncoderOutput
+import app.versta.translate.core.entity.MarianEncoderInput
+import app.versta.translate.core.entity.MarianEncoderOutput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -20,15 +19,7 @@ import timber.log.Timber
 import java.io.File
 import kotlin.io.path.pathString
 
-class MarianInference : TranslationInference {
-
-    private val ortEnvironment =
-        OrtEnvironment.getEnvironment(OrtLoggingLevel.ORT_LOGGING_LEVEL_FATAL,
-            "OpusInference",
-            OrtEnvironment.ThreadingOptions().apply {
-                setGlobalSpinControl(false)
-            })
-
+class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationInference {
     private var encoderSession: OrtSession? = null
     private var decoderSession: OrtSession? = null
 
@@ -41,13 +32,13 @@ class MarianInference : TranslationInference {
             throw IllegalStateException("Encoder session is not loaded")
         }
 
-        val encoderInput = EncoderInput(
+        val encoderInput = MarianEncoderInput(
             ortEnvironment = ortEnvironment,
             inputIds = inputIds,
             attentionMask = attentionMask
         )
 
-        val encoderOutput = EncoderOutput()
+        val encoderOutput = MarianEncoderOutput()
 
         try {
             val inputs = encoderInput.get()
@@ -55,7 +46,7 @@ class MarianInference : TranslationInference {
 
             return output ?: throw IllegalStateException("Encoder output is null")
         } catch (e: Exception) {
-            Timber.e(e)
+            Timber.tag(TAG).e(e)
             throw e
         } finally {
             encoderInput.destroy()
@@ -86,13 +77,13 @@ class MarianInference : TranslationInference {
             eosId = eosId
         )
 
-        val decoderInput = DecoderInput(
+        val decoderInput = MarianDecoderInput(
             ortEnvironment = ortEnvironment,
             encoderHiddenStates = Array(beamsSize) { encoderHiddenStates },
             encoderAttentionMask = Array(beamsSize) { attentionMask }
         )
 
-        val decoderOutput = DecoderOutput(
+        val decoderOutput = MarianDecoderOutput(
             ortEnvironment = ortEnvironment,
             beamSearch = beamSearch
         )
@@ -129,7 +120,7 @@ class MarianInference : TranslationInference {
 
             return result
         } catch (e: Exception) {
-            Timber.e(e)
+            Timber.tag(TAG).e(e)
             throw e
         } finally {
             decoderInput.destroy()
@@ -161,13 +152,13 @@ class MarianInference : TranslationInference {
                 eosId = eosId,
             )
 
-            val decoderInput = DecoderInput(
+            val decoderInput = MarianDecoderInput(
                 ortEnvironment = ortEnvironment,
                 encoderHiddenStates = Array(beamsSize) { encoderHiddenStates },
                 encoderAttentionMask = Array(beamsSize) { attentionMask }
             )
 
-            val decoderOutput = DecoderOutput(
+            val decoderOutput = MarianDecoderOutput(
                 ortEnvironment = ortEnvironment,
                 beamSearch = beamSearch
             )
@@ -206,7 +197,7 @@ class MarianInference : TranslationInference {
                     emit(beamSearch.best())
                 }
             } catch (e: Exception) {
-                Timber.e(e)
+                Timber.tag(TAG).e(e)
                 throw e
             } finally {
                 decoderInput.destroy()

@@ -4,7 +4,7 @@ import app.versta.translate.core.entity.LanguageModelInferenceFiles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
-class MockInference: TranslationInference {
+class TranslationMockInference: TranslationInference {
     override fun run(
         inputIds: LongArray,
         attentionMask: LongArray,

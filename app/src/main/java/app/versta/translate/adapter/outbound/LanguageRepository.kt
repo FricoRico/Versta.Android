@@ -1,12 +1,12 @@
 package app.versta.translate.adapter.outbound
 
-import app.versta.translate.core.entity.BundleMetadata
+import app.versta.translate.core.entity.LanguageBundleMetadata
 import app.versta.translate.core.entity.Language
-import app.versta.translate.core.entity.LanguageMetadata
+import app.versta.translate.core.entity.LanguageModelMetadata
 import app.versta.translate.core.entity.LanguageModelFiles
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.LanguagePairWithModelFiles
-import app.versta.translate.core.entity.ModelMetadata
+import app.versta.translate.core.entity.LanguageModel
 import kotlinx.coroutines.flow.Flow
 
 interface LanguageRepository {
@@ -36,23 +36,23 @@ interface LanguageRepository {
     fun getLanguageModel(languagePair: LanguagePair): LanguageModelFiles?
 
     /**
-     * Inserts a [LanguageMetadata] into the repository, ignoring if it already exists.
-     * @param bundleMetadata The metadata of the bundle containing the language model.
-     * @param languageMetadata The metadata of the language model to insert.
+     * Inserts a [LanguageModelMetadata] into the repository, ignoring if it already exists.
+     * @param languageBundleMetadata The metadata of the bundle containing the language model.
+     * @param languageModelMetadata The metadata of the language model to insert.
      */
-    fun insertLanguageOrIgnore(bundleMetadata: BundleMetadata, languageMetadata: LanguageMetadata)
+    fun insertLanguageOrIgnore(languageBundleMetadata: LanguageBundleMetadata, languageModelMetadata: LanguageModelMetadata)
 
     /**
      * Inserts or updates the language models in the repository.
      * @param metadata The metadata to insert or update.
      */
-    fun upsertLanguageModel(metadata: LanguageMetadata)
+    fun upsertLanguageModel(metadata: LanguageModelMetadata)
 
     /**
      * Inserts or updates the language models in the repository.
      * @param metadata The metadata to insert or update.
      */
-    fun upsertLanguageModels(metadata: ModelMetadata)
+    fun upsertLanguageModels(metadata: LanguageModel)
 
     /**
      * Deletes the language models in the repository by the source, including all related models.

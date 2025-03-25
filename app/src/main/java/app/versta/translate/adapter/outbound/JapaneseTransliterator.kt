@@ -24,7 +24,7 @@ class JapaneseTransliterator : Transliteration {
         return _transliterator.transliterate(converted)
     }
 
-    private fun convertToFurigana(text: String): String {
+    fun convertToFurigana(text: String): String {
         val tokenStream: TokenStream = _analyzer.tokenStream("", text)
         val tokens = mutableListOf<String>()
 
@@ -65,7 +65,15 @@ class JapaneseTransliterator : Transliteration {
             output.append(token)
         }
 
-        return output.toString()
+        return normalizeWhitespaces(output.toString())
+
+    }
+
+    private fun normalizeWhitespaces(text: String): String {
+        return text
+            .replace("[^\\S \\n]".toRegex(), " ")
+            .replace("  +".toRegex(), " ")
+            .replace("(?<=\\n) +(?=\\n)".toRegex(), "")
     }
 
     init {

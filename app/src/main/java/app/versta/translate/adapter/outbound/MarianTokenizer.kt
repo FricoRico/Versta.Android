@@ -70,7 +70,7 @@ class MarianTokenizer(
             val pieces = encoder.encodeAsPieces(normalized)
             return code + pieces
         } catch (e: Exception) {
-            throw IllegalArgumentException("Tokenizing text: $text", e)
+            throw IllegalArgumentException("Tokenizing text", e)
         }
     }
 

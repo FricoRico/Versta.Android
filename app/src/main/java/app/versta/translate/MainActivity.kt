@@ -20,15 +20,15 @@ import app.versta.translate.core.model.LanguageImportViewModel
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.ui.component.LanguageSelectionDrawer
-import app.versta.translate.ui.component.TrialLicenseDrawer
 import app.versta.translate.ui.component.Router
-import app.versta.translate.ui.component.TranslationErrorAlertDialog
-import app.versta.translate.ui.component.TranslatorLoadingProgressDialog
+import app.versta.translate.ui.component.ErrorAlertDialog
+import app.versta.translate.ui.component.ModelLoadingProgressDialog
 import app.versta.translate.ui.component.TrialLicenseConfirmationDialog
+import app.versta.translate.ui.component.TrialLicenseDrawer
 import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.theme.TranslateTheme
 import app.versta.translate.utils.viewModelFactory
-import timber.log.Timber
+import app.versta.translate.core.model.TextToSpeechImportViewModel
 
 open class MainActivity : ComponentActivity() {
     private val languageViewModel by viewModels<LanguageViewModel>(
@@ -48,6 +48,17 @@ open class MainActivity : ComponentActivity() {
                 LanguageImportViewModel(
                     modelExtractor = MainApplication.module.extractor,
                     languageRepository = MainApplication.module.languageRepository
+                )
+            }
+        }
+    )
+
+    private val textToSpeechImportViewModel by viewModels<TextToSpeechImportViewModel>(
+        factoryProducer = {
+            viewModelFactory {
+                TextToSpeechImportViewModel(
+                    modelExtractor = MainApplication.module.extractor,
+                    textToSpeechRepository = MainApplication.module.textToSpeechRepository
                 )
             }
         }
@@ -79,7 +90,7 @@ open class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TranslateTheme {
-                Surface (
+                Surface(
                     color = MaterialTheme.colorScheme.background,
                     contentColor = MaterialTheme.colorScheme.onBackground,
                 ) {
@@ -90,16 +101,20 @@ open class MainActivity : ComponentActivity() {
                         licenseViewModel = licenseViewModel,
                         translationViewModel = MainApplication.module.translationViewModel,
                         textTranslationViewModel = MainApplication.module.textTranslationViewModel,
+                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel,
+                        textToSpeechImportViewModel = textToSpeechImportViewModel,
                         loggingViewModel = MainApplication.module.loggingViewModel
                     )
 
-                    TranslatorLoadingProgressDialog(
+                    ModelLoadingProgressDialog(
                         translationViewModel = MainApplication.module.translationViewModel,
-                        textTranslationViewModel = MainApplication.module.textTranslationViewModel
+                        textTranslationViewModel = MainApplication.module.textTranslationViewModel,
+                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
                     )
 
-                    TranslationErrorAlertDialog(
+                    ErrorAlertDialog(
                         translationViewModel = MainApplication.module.translationViewModel,
+                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
                     )
 
                     TrialLicenseDrawer(

@@ -25,6 +25,8 @@ import app.versta.translate.core.model.LanguageImportViewModel
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.LoggingViewModel
+import app.versta.translate.core.model.TextToSpeechImportViewModel
+import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.screen.About
@@ -38,6 +40,8 @@ import app.versta.translate.ui.screen.PrivacyPolicy
 import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.screen.Settings
 import app.versta.translate.ui.screen.StatusBarStyle
+import app.versta.translate.ui.screen.TextToSpeechImport
+import app.versta.translate.ui.screen.TextToSpeechSettings
 import app.versta.translate.ui.screen.TextTranslation
 import app.versta.translate.ui.screen.ThirdParty
 import app.versta.translate.ui.screen.TranslationSettings
@@ -51,6 +55,8 @@ fun Router(
     licenseViewModel: LicenseViewModel,
     translationViewModel: TranslationViewModel,
     textTranslationViewModel: TextTranslationViewModel,
+    textToSpeechViewModel: TextToSpeechViewModel,
+    textToSpeechImportViewModel: TextToSpeechImportViewModel,
     loggingViewModel: LoggingViewModel
 ) {
     val navController = rememberNavController()
@@ -137,13 +143,26 @@ fun Router(
                 navController = navController,
                 languageViewModel = languageViewModel,
                 translationViewModel = translationViewModel,
-                textTranslationViewModel = textTranslationViewModel
+                textTranslationViewModel = textTranslationViewModel,
+                textToSpeechViewModel = textToSpeechViewModel
             )
         }
         composable(Screens.TranslationSettings()) {
             TranslationSettings(
                 navController = navController,
                 translationViewModel = translationViewModel
+            )
+        }
+        composable(Screens.TextToSpeechSettings()) {
+            TextToSpeechSettings(
+                navController = navController,
+                textToSpeechViewModel = textToSpeechViewModel
+            )
+        }
+        composable(Screens.TextToSpeechImport()) {
+            TextToSpeechImport(
+                navController = navController,
+                textToSpeechImportViewModel = textToSpeechImportViewModel
             )
         }
         composable(Screens.About()) {

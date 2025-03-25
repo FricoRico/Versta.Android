@@ -7,7 +7,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -15,27 +14,19 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import app.versta.translate.MainApplication.Companion.TRANSLATION_NOTIFICATION_CHANNEL_ID
 import app.versta.translate.adapter.inbound.TranslateBubbleNotification
 import app.versta.translate.adapter.inbound.TranslateBubbleShortcut
-import app.versta.translate.adapter.inbound.TranslateNotification
 import app.versta.translate.core.model.LanguageViewModel
-import app.versta.translate.core.model.TextTranslationViewModel
-import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.LanguageSelectionDrawer
-import app.versta.translate.ui.component.TranslationErrorAlertDialog
-import app.versta.translate.ui.component.TranslatorLoadingProgressDialog
+import app.versta.translate.ui.component.ErrorAlertDialog
+import app.versta.translate.ui.component.ModelLoadingProgressDialog
 import app.versta.translate.ui.screen.MinimalTextTranslation
 import app.versta.translate.ui.theme.TranslateTheme
 import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.viewModelFactory
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -82,16 +73,19 @@ class BubbleActivity : ComponentActivity() {
                     MinimalTextTranslation(
                         languageViewModel = languageViewModel,
                         textTranslationViewModel = MainApplication.module.textTranslationViewModel,
-                        translationViewModel = MainApplication.module.translationViewModel
+                        translationViewModel = MainApplication.module.translationViewModel,
+                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
                     )
 
-                    TranslatorLoadingProgressDialog(
+                    ModelLoadingProgressDialog(
                         translationViewModel = MainApplication.module.translationViewModel,
-                        textTranslationViewModel = MainApplication.module.textTranslationViewModel
+                        textTranslationViewModel = MainApplication.module.textTranslationViewModel,
+                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
                     )
 
-                    TranslationErrorAlertDialog(
+                    ErrorAlertDialog(
                         translationViewModel = MainApplication.module.translationViewModel,
+                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
                     )
 
                     LanguageSelectionDrawer(

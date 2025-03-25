@@ -32,16 +32,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
+import app.versta.translate.adapter.outbound.AudioMockPlayer
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.adapter.outbound.MockInference
-import app.versta.translate.adapter.outbound.MockTokenizer
+import app.versta.translate.adapter.outbound.TextToSpeechMemoryRepository
+import app.versta.translate.adapter.outbound.TextToSpeechMockInference
+import app.versta.translate.adapter.outbound.TextToSpeechMockTokenizer
+import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryRepository
+import app.versta.translate.adapter.outbound.TranslationMockInference
+import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
+import app.versta.translate.core.entity.TextToSpeechSynthesisState
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LoadingProgress
+import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.MinimalLanguageSelector
+import app.versta.translate.ui.component.TextToSpeechButton
 import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
 import kotlinx.coroutines.launch
@@ -51,6 +59,7 @@ fun MinimalTextTranslation(
     languageViewModel: LanguageViewModel,
     translationViewModel: TranslationViewModel,
     textTranslationViewModel: TextTranslationViewModel,
+    textToSpeechViewModel: TextToSpeechViewModel,
     autoTranslate: Boolean = true,
 ) {
     val view = LocalView.current
@@ -73,10 +82,33 @@ fun MinimalTextTranslation(
     val transliterationLoadingProgress by textTranslationViewModel.loadingProgress.collectAsStateWithLifecycle(
         LoadingProgress.Idle
     )
+    val textToSpeechSynthesisState by textToSpeechViewModel.speechProgressState.collectAsStateWithLifecycle(
+        TextToSpeechSynthesisState.Idle
+    )
+
+    val textToSpeechVoiceAvailable by textToSpeechViewModel.voiceAvailable.collectAsStateWithLifecycle(
+        false
+    )
 
     val languages by translationViewModel.languages.collectAsStateWithLifecycle(null)
 
+    val targetLanguage by languageViewModel.targetLanguage.collectAsStateWithLifecycle(null)
+
     val translationScope = rememberCoroutineScope()
+    val textToSpeechScope = rememberCoroutineScope()
+
+    fun onTextToSpeech() {
+        textToSpeechScope.launch {
+            textToSpeechViewModel.synthesize(
+                text = translated,
+                language = targetLanguage!!
+            )
+        }
+    }
+
+    fun onCancelTextToSpeech() {
+        textToSpeechViewModel.cancelSynthesis()
+    }
 
     fun translate(input: String) {
         if (input.isEmpty()) {
@@ -130,6 +162,14 @@ fun MinimalTextTranslation(
 
         MinimalTextTranslationOutputButtonRow(
             translationInProgress = translationInProgress,
+            textToSpeechSynthesisState = textToSpeechSynthesisState,
+            textToSpeechVoiceAvailable = textToSpeechVoiceAvailable,
+            onTextToSpeech = {
+                onTextToSpeech()
+            },
+            onCancelTextToSpeech = {
+                onCancelTextToSpeech()
+            },
             onCancel = {
                 translationViewModel.cancelTranslation()
             },
@@ -177,6 +217,10 @@ fun MinimalTextTranslationOutput(
 @Composable
 fun MinimalTextTranslationOutputButtonRow(
     translationInProgress: Boolean,
+    textToSpeechSynthesisState: TextToSpeechSynthesisState,
+    textToSpeechVoiceAvailable: Boolean,
+    onTextToSpeech: () -> Unit,
+    onCancelTextToSpeech: () -> Unit,
     onCancel: () -> Unit,
     onCopy: () -> Unit,
     onShare: () -> Unit,
@@ -188,27 +232,37 @@ fun MinimalTextTranslationOutputButtonRow(
             .then(modifier),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column {
-            AnimatedVisibility(
-                visible = translationInProgress,
-                enter = fadeIn(),
-                exit = fadeOut(
-                    animationSpec = tween(
-                        durationMillis = DefaultDurationMillis * 2,
-                        delayMillis = DefaultDurationMillis
-                    )
-                ),
-            ) {
-                FilledIconButton(
-                    onClick = onCancel,
-                    colors = FilledIconButtonDefaults.primaryIconButtonColors(),
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
+        ) {
+            TextToSpeechButton(
+                enabled = !translationInProgress,
+                textToSpeechSynthesisState = textToSpeechSynthesisState,
+                textToSpeechVoiceAvailable = textToSpeechVoiceAvailable,
+                onTextToSpeech = onTextToSpeech,
+                onCancelTextToSpeech = onCancelTextToSpeech,
+            )
+
+                AnimatedVisibility(
+                    visible = translationInProgress,
+                    enter = fadeIn(),
+                    exit = fadeOut(
+                        animationSpec = tween(
+                            durationMillis = DefaultDurationMillis * 2,
+                            delayMillis = DefaultDurationMillis
+                        )
+                    ),
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Stop,
-                        contentDescription = stringResource(R.string.cancel)
-                    )
+                    FilledIconButton(
+                        onClick = onCancel,
+                        colors = FilledIconButtonDefaults.primaryIconButtonColors(),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Stop,
+                            contentDescription = stringResource(R.string.cancel)
+                        )
+                    }
                 }
-            }
         }
 
         Row(
@@ -249,11 +303,19 @@ fun MinimalTextTranslationPreview() {
             languagePreferenceRepository = LanguagePreferenceMemoryRepository()
         ),
         translationViewModel = TranslationViewModel(
-            tokenizer = MockTokenizer(),
-            model = MockInference(),
+            tokenizer = TranslationMockTokenizer(),
+            model = TranslationMockInference(),
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
             translationPreferenceRepository = TranslationPreferenceMemoryRepository()
+        ),
+        textToSpeechViewModel = TextToSpeechViewModel(
+            tokenizer = TextToSpeechMockTokenizer(),
+            model = TextToSpeechMockInference(),
+            audioPlayer = AudioMockPlayer(),
+            textToSpeechRepository = TextToSpeechMemoryRepository(),
+            textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
         )
     )
 }

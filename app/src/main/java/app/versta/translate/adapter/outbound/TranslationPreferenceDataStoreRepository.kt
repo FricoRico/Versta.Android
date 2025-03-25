@@ -144,12 +144,12 @@ class TranslationPreferenceDataStoreRepository(
     }
 
     companion object {
-        private val CACHE_SIZE_KEY = stringPreferencesKey("cache_size")
-        private val CACHE_ENABLED_KEY = stringPreferencesKey("cache_enabled")
-        private val NUMBER_OF_BEAMS_KEY = stringPreferencesKey("number_of_beams")
-        private val THREAD_COUNT_KEY = stringPreferencesKey("thread_count")
-        private val MAX_SEQUENCE_LENGTH_KEY = stringPreferencesKey("max_sequence_length")
-        private val MIN_PROBABILITY_KEY = stringPreferencesKey("min_probability")
-        private val REPETITION_PENALTY_KEY = stringPreferencesKey("repetition_penalty")
+        private val CACHE_SIZE_KEY = stringPreferencesKey("translation_cache_size")
+        private val CACHE_ENABLED_KEY = stringPreferencesKey("translation_cache_enabled")
+        private val NUMBER_OF_BEAMS_KEY = stringPreferencesKey("translation_number_of_beams")
+        private val THREAD_COUNT_KEY = stringPreferencesKey("translation_thread_count")
+        private val MAX_SEQUENCE_LENGTH_KEY = stringPreferencesKey("translation_max_sequence_length")
+        private val MIN_PROBABILITY_KEY = stringPreferencesKey("translation_min_probability")
+        private val REPETITION_PENALTY_KEY = stringPreferencesKey("translation_repetition_penalty")
     }
 }

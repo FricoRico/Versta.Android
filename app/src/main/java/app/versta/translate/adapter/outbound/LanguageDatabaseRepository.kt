@@ -1,13 +1,12 @@
 package app.versta.translate.adapter.outbound
 
-import android.util.Log
-import app.versta.translate.core.entity.BundleMetadata
+import app.versta.translate.core.entity.LanguageBundleMetadata
 import app.versta.translate.core.entity.Language
-import app.versta.translate.core.entity.LanguageMetadata
+import app.versta.translate.core.entity.LanguageModelMetadata
 import app.versta.translate.core.entity.LanguageModelFiles
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.LanguagePairWithModelFiles
-import app.versta.translate.core.entity.ModelMetadata
+import app.versta.translate.core.entity.LanguageModel
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.executeAsListFlow
 import kotlinx.coroutines.flow.Flow
@@ -74,15 +73,15 @@ class LanguageDatabaseRepository(
         )
 
     /**
-     * Inserts a [LanguageMetadata] into the repository, ignoring if it already exists.
-     * @param bundleMetadata The metadata of the bundle containing the language model.
-     * @param languageMetadata The metadata of the language model to insert.
+     * Inserts a [LanguageModelMetadata] into the repository, ignoring if it already exists.
+     * @param languageBundleMetadata The metadata of the bundle containing the language model.
+     * @param languageModelMetadata The metadata of the language model to insert.
      */
     override fun insertLanguageOrIgnore(
-        bundleMetadata: BundleMetadata, languageMetadata: LanguageMetadata
+        languageBundleMetadata: LanguageBundleMetadata, languageModelMetadata: LanguageModelMetadata
     ) {
         val languageModel =
-            mapLanguageMetadataToLanguageDatabaseModel(bundleMetadata, languageMetadata)
+            mapLanguageMetadataToLanguageDatabaseModel(languageBundleMetadata, languageModelMetadata)
         insertLanguageDatabaseModelOrIgnore(data = languageModel)
     }
 
@@ -90,7 +89,7 @@ class LanguageDatabaseRepository(
      * Inserts or updates the language models in the repository.
      * @param metadata The metadata to insert or update.
      */
-    override fun upsertLanguageModel(metadata: LanguageMetadata) {
+    override fun upsertLanguageModel(metadata: LanguageModelMetadata) {
         val languageModel = mapLanguageMetadataToLanguageModelDatabaseModel(data = metadata)
         upsertLanguageModelDatabaseModel(data = languageModel)
     }
@@ -99,11 +98,11 @@ class LanguageDatabaseRepository(
      * Inserts or updates the language models in the repository.
      * @param metadata The metadata to insert or update.
      */
-    override fun upsertLanguageModels(metadata: ModelMetadata) {
+    override fun upsertLanguageModels(metadata: LanguageModel) {
         database.languages.transaction {
-            metadata.languageMetadata.forEach {
+            metadata.languages.forEach {
                 insertLanguageOrIgnore(
-                    bundleMetadata = metadata.bundleMetadata, languageMetadata = it
+                    languageBundleMetadata = metadata.bundle, languageModelMetadata = it
                 )
                 upsertLanguageModel(metadata = it)
             }
@@ -173,14 +172,14 @@ class LanguageDatabaseRepository(
     }
 
     /**
-     * Maps a [LanguageMetadata] to a [LanguageDatabaseModel].
-     * @param languageMetadata The language metadata to map.
+     * Maps a [LanguageModelMetadata] to a [LanguageDatabaseModel].
+     * @param languageModelMetadata The language metadata to map.
      */
     private fun mapLanguageMetadataToLanguageDatabaseModel(
-        bundleMetadata: BundleMetadata, languageMetadata: LanguageMetadata
+        languageBundleMetadata: LanguageBundleMetadata, languageModelMetadata: LanguageModelMetadata
     ): LanguageDatabaseModel {
-        val source = Language.fromIsoCode(languageMetadata.sourceLanguage)
-        val target = Language.fromIsoCode(languageMetadata.targetLanguage)
+        val source = Language.fromIsoCode(languageModelMetadata.sourceLanguage)
+        val target = Language.fromIsoCode(languageModelMetadata.targetLanguage)
         val pair = LanguagePair(
             source = source,
             target = target,
@@ -190,15 +189,15 @@ class LanguageDatabaseRepository(
             id = pair.id,
             source = source.locale.language,
             target = target.locale.language,
-            bidirectional = bundleMetadata.bidirectional
+            bidirectional = languageBundleMetadata.bidirectional
         )
     }
 
     /**
-     * Maps a [LanguageMetadata] to a [LanguageModelDatabaseModel].
+     * Maps a [LanguageModelMetadata] to a [LanguageModelDatabaseModel].
      * @param data The language metadata to map.
      */
-    private fun mapLanguageMetadataToLanguageModelDatabaseModel(data: LanguageMetadata): LanguageModelDatabaseModel {
+    private fun mapLanguageMetadataToLanguageModelDatabaseModel(data: LanguageModelMetadata): LanguageModelDatabaseModel {
         val source = Language.fromIsoCode(data.sourceLanguage)
         val target = Language.fromIsoCode(data.targetLanguage)
         val pair = LanguagePair(
@@ -218,6 +217,7 @@ class LanguageDatabaseRepository(
     /**
      * Maps a [LanguageModelDatabaseModel] to a [LanguageModelFiles].
      * @param data The language model database model to map.
+     * @return The mapped language model files.
      */
     private fun mapLanguageModelDatabaseModelToLanguageModelFiles(data: LanguageModelDatabaseModel?): LanguageModelFiles? {
         if (data == null) {
@@ -237,6 +237,7 @@ class LanguageDatabaseRepository(
     /**
      * Maps a [String] iso code to a [Language].
      * @param data The language to map.
+     * @return The mapped language.
      */
     private fun mapSingleLanguageDatabaseModelToLanguage(data: String): Language {
         return Language.fromIsoCode(data)
@@ -245,6 +246,7 @@ class LanguageDatabaseRepository(
     /**
      * Maps a [LanguageDatabaseModel] to a [LanguagePair].
      * @param data The language database model to map.
+     * @return The mapped language pair.
      */
     private fun mapLanguageDatabaseModelToLanguagePair(data: LanguageDatabaseModel): LanguagePair {
         val source = Language.fromIsoCode(data.source)

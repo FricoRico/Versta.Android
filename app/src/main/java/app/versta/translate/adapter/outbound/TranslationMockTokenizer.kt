@@ -3,7 +3,7 @@ package app.versta.translate.adapter.outbound
 import app.versta.translate.core.entity.LanguageModelTokenizerFiles
 import app.versta.translate.core.entity.LanguagePair
 
-class MockTokenizer(
+class TranslationMockTokenizer(
     override val vocabSize: Long = 0,
     override val padId: Long = 0,
     override val eosId: Long = 0,

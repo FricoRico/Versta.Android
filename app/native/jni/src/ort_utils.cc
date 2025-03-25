@@ -2,6 +2,7 @@
 // Created by Ricardo Snoek on 14/03/2025.
 //
 #include <jni.h>
+#include <string>
 
 #include "onnxruntime/onnxruntime_c_api.h"
 

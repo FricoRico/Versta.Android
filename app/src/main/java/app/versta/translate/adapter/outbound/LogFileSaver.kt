@@ -14,7 +14,7 @@ object LogFileSaver : FileSaver {
      */
     fun registerForActivity(activity: ComponentActivity) {
         fileSaver = activity.registerForActivityResult(
-            ActivityResultContracts.CreateDocument(),
+            ActivityResultContracts.CreateDocument("text/plain"),
         ) { uri: Uri? ->
             if (uri == null) {
                 return@registerForActivityResult

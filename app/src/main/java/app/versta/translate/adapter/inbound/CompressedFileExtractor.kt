@@ -2,6 +2,7 @@ package app.versta.translate.adapter.inbound
 
 import android.net.Uri
 import java.io.File
+import java.io.InputStream
 
 interface ExtractionProgressListener {
     /**
@@ -15,7 +16,7 @@ interface ExtractionProgressListener {
 
 interface CompressedFileExtractor {
     /**
-     * Extracts the contents of a compressed archive file from a given Uri into the app's local storage.
+     * Extracts the contents of a compressed archive file from a given [Uri] into the app's local storage.
      * @param uri The Uri of the zip file to extract.
      * @param outputDir The local directory where the contents should be extracted.
      * @param extractToDirectory Whether to extract the contents to a directory with the same name as the compressed file.
@@ -25,7 +26,17 @@ interface CompressedFileExtractor {
         outputDir: File,
         extractToDirectory: Boolean = true,
         listener: ExtractionProgressListener? = null
-    ): File
+    ): File?
+
+    /**
+     * Extracts the contents of a compressed archive file from a given [InputStream] into the app's local storage.
+     * @param stream An already opened input stream
+     * @param outputDir The local directory where the contents should be extracted.
+     */
+    fun extract(
+        stream: InputStream,
+        outputDir: File,
+    ): File?
 
     /**
      * Opens a file from a compressed archive file.

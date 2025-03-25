@@ -56,6 +56,5 @@ DELETE FROM Language WHERE id = :id;
 deleteByIds:
 DELETE FROM Language WHERE id IN :ids;
 
-
 removeNotIn:
 DELETE FROM Language WHERE source NOT IN :source AND target NOT IN :target;

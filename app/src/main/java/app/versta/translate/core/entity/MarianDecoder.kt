@@ -7,7 +7,7 @@ import ai.onnxruntime.OrtSession
 import app.versta.translate.bridge.inference.BeamSearch
 import app.versta.translate.utils.TensorUtils
 
-class DecoderInput(
+class MarianDecoderInput(
     private val ortEnvironment: OrtEnvironment,
     encoderHiddenStates: Array<EncoderHiddenStates>,
     encoderAttentionMask: Array<EncoderAttentionMasks>,
@@ -53,7 +53,7 @@ class DecoderInput(
     }
 }
 
-class DecoderOutput(
+class MarianDecoderOutput(
     private val ortEnvironment: OrtEnvironment,
     private val beamSearch: BeamSearch
 ) {

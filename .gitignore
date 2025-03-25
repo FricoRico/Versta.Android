@@ -12,3 +12,5 @@ release
 local.properties
 *.keystore
 keystore.properties
+**/raw/versta_data.tgz
+**/raw/versta_data_hash.sha256

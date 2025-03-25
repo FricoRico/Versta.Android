@@ -1,15 +1,15 @@
 package app.versta.translate.adapter.outbound
 
-import app.versta.translate.core.entity.BundleMetadata
+import app.versta.translate.core.entity.LanguageBundleMetadata
 import app.versta.translate.core.entity.Language
-import app.versta.translate.core.entity.LanguageMetadata
+import app.versta.translate.core.entity.LanguageModelMetadata
 import app.versta.translate.core.entity.LanguageModelFiles
 import app.versta.translate.core.entity.LanguageModelInferenceFiles
 import app.versta.translate.core.entity.LanguageModelTokenizerFiles
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.LanguagePairWithModelFiles
-import app.versta.translate.core.entity.ModelArchitecture
-import app.versta.translate.core.entity.ModelMetadata
+import app.versta.translate.core.entity.LanguageModelArchitecture
+import app.versta.translate.core.entity.LanguageModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -43,7 +43,7 @@ class LanguageMemoryRepository : LanguageRepository {
             ),
             baseModel = "Helsinki-NLP/opus-mt-en-ja",
             path = _mockPath,
-            architectures = listOf(ModelArchitecture.MarianMTModel),
+            architectures = listOf(LanguageModelArchitecture.MarianMTModel),
             version = "v1.0.0",
             inference = LanguageModelInferenceFiles(
                 encoder = _mockPath,
@@ -93,16 +93,16 @@ class LanguageMemoryRepository : LanguageRepository {
     }
 
     /**
-     * Inserts a [LanguageMetadata] into the repository, ignoring if it already exists.
-     * @param bundleMetadata The metadata of the bundle containing the language model.
-     * @param languageMetadata The metadata of the language model to insert.
+     * Inserts a [LanguageModelMetadata] into the repository, ignoring if it already exists.
+     * @param languageBundleMetadata The metadata of the bundle containing the language model.
+     * @param languageModelMetadata The metadata of the language model to insert.
      */
     override fun insertLanguageOrIgnore(
-        bundleMetadata: BundleMetadata,
-        languageMetadata: LanguageMetadata
+        languageBundleMetadata: LanguageBundleMetadata,
+        languageModelMetadata: LanguageModelMetadata
     ) {
-        val sourceLanguage = Language.fromIsoCode(languageMetadata.sourceLanguage)
-        val targetLanguage = Language.fromIsoCode(languageMetadata.targetLanguage)
+        val sourceLanguage = Language.fromIsoCode(languageModelMetadata.sourceLanguage)
+        val targetLanguage = Language.fromIsoCode(languageModelMetadata.targetLanguage)
 
         if (_languages.any { it.source == sourceLanguage && it.target == targetLanguage }) {
             return
@@ -120,7 +120,7 @@ class LanguageMemoryRepository : LanguageRepository {
      * Inserts or updates the language models in the repository.
      * @param metadata The metadata to insert or update.
      */
-    override fun upsertLanguageModel(metadata: LanguageMetadata) {
+    override fun upsertLanguageModel(metadata: LanguageModelMetadata) {
         val path = metadata.root ?: Path("")
 
         val sourceLanguage = Language.fromIsoCode(metadata.sourceLanguage)
@@ -150,9 +150,9 @@ class LanguageMemoryRepository : LanguageRepository {
      * Inserts or updates the language models in the repository.
      * @param metadata The metadata to insert or update.
      */
-    override fun upsertLanguageModels(metadata: ModelMetadata) {
-        metadata.languageMetadata.forEach {
-            insertLanguageOrIgnore(metadata.bundleMetadata, it)
+    override fun upsertLanguageModels(metadata: LanguageModel) {
+        metadata.languages.forEach {
+            insertLanguageOrIgnore(metadata.bundle, it)
             upsertLanguageModel(it)
         }
     }

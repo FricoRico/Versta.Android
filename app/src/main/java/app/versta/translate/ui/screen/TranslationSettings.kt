@@ -37,8 +37,8 @@ import app.versta.translate.adapter.outbound.DEFAULT_NUMBER_OF_BEAMS
 import app.versta.translate.adapter.outbound.DEFAULT_REPETITION_PENALTY
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.adapter.outbound.MockInference
-import app.versta.translate.adapter.outbound.MockTokenizer
+import app.versta.translate.adapter.outbound.TranslationMockInference
+import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.ListDivider
@@ -337,8 +337,8 @@ fun TranslationSettings(
 fun TranslationSettingsPreview() {
     TranslationSettings(
         navController = rememberNavController(), translationViewModel = TranslationViewModel(
-            tokenizer = MockTokenizer(),
-            model = MockInference(),
+            tokenizer = TranslationMockTokenizer(),
+            model = TranslationMockInference(),
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
             translationPreferenceRepository = TranslationPreferenceMemoryRepository()

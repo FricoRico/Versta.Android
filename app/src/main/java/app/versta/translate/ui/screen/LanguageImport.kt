@@ -82,6 +82,7 @@ import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.annotateSentence
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -146,7 +147,7 @@ fun LanguageImport(
             ) {
                 Column {
                     when (pagerState.currentPage) {
-                        0 -> SelectionPage(
+                        0 -> LanguageSelectionPage(
                             context,
                             coroutineScope,
                             pagerState,
@@ -154,7 +155,7 @@ fun LanguageImport(
                             innerPadding
                         )
 
-                        1 -> AnalysisPage(
+                        1 -> LanguageAnalysisPage(
                             context,
                             coroutineScope,
                             pagerState,
@@ -209,7 +210,7 @@ fun PageIndicator(pagerState: PagerState, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun SelectionPage(
+fun LanguageSelectionPage(
     context: Context,
     coroutineScope: CoroutineScope,
     pagerState: PagerState,
@@ -228,7 +229,7 @@ fun SelectionPage(
 
     val onDownloadNewFile = Intent(
         Intent.ACTION_VIEW,
-        Uri.parse(stringResource(R.string.language_models_url, stringResource(R.string.site_url)))
+        stringResource(R.string.language_models_url, stringResource(R.string.site_url)).toUri()
     )
 
     ScaffoldBottomPage(
@@ -260,8 +261,8 @@ fun SelectionPage(
         item {
             Text(
                 text = annotateSentence(
-                    sentence = stringResource(R.string.language_import_file_type_explanation),
-                    annotation = stringResource(R.string.language_import_file_type),
+                    sentence = stringResource(R.string.import_file_type_explanation),
+                    annotation = stringResource(R.string.import_file_type),
                     style = SpanStyle(fontWeight = FontWeight.Bold)
                 ),
                 modifier = Modifier
@@ -326,7 +327,7 @@ fun SelectionPage(
 }
 
 @Composable
-fun AnalysisPage(
+fun LanguageAnalysisPage(
     context: Context,
     coroutineScope: CoroutineScope,
     pagerState: PagerState,
@@ -388,7 +389,7 @@ fun AnalysisPage(
             ) {
                 item {
                     Text(
-                        text = stringResource(R.string.language_analysis_failed_title),
+                        text = stringResource(R.string.analysis_failed_title),
                         style = MaterialTheme.typography.headlineLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center,
@@ -398,7 +399,7 @@ fun AnalysisPage(
 
                 item {
                     Text(
-                        text = stringResource(R.string.language_analysis_failed_explanation),
+                        text = stringResource(R.string.analysis_failed_explanation),
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier
                             .padding(
@@ -695,8 +696,8 @@ fun FinishedPage(
         if (importProgress is LanguageImportProgress.Completed) {
             val import = importProgress as LanguageImportProgress.Completed
 
-            val languagePairs = import.metadata.bundleMetadata.languagePairs()
-            val distinctLanguages = import.metadata.bundleMetadata.distinctLanguagePairs()
+            val languagePairs = import.metadata.bundle.languagePairs()
+            val distinctLanguages = import.metadata.bundle.distinctLanguagePairs()
 
             item {
                 Text(
@@ -844,7 +845,7 @@ fun FinishedPage(
 
             item {
                 Text(
-                    text = stringResource(R.string.language_import_failed_extra_help),
+                    text = stringResource(R.string.import_failed_extra_help),
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
                         .padding(

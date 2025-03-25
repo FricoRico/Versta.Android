@@ -59,7 +59,7 @@ class BeamSearch(
 
     override fun close() {
         if (handle == 0L) {
-            Timber.tag(TAG).w("BeamSearch is already closed")
+            Timber.tag(TAG).w("Already closed")
             return
         }
 

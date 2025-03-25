@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.MicNone
 import androidx.compose.material.icons.outlined.Translate
@@ -116,6 +117,26 @@ fun Settings(
                     item {
                         TrialLicenseCard(licenseViewModel = licenseViewModel)
                     }
+                }
+
+                ListDivider()
+
+                item {
+                    SettingsButtonItem(
+                        headlineContent = "Text-to-Speech",
+                        supportingContent = "Configure voices, speech rate",
+                        onClick = {
+                            navController.navigate(Screens.TextToSpeechSettings())
+                        },
+                        leadingContent = {
+                            Icon(
+                                Icons.Outlined.GraphicEq,
+                                contentDescription = null,
+                            )
+                        },
+                        index = 0,
+                        groupSize = 1
+                    )
                 }
 
                 ListDivider()

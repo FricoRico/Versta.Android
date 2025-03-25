@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -163,6 +164,7 @@ fun SettingsButtonItem(
     leadingContent: @Composable (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
     underlineContent: @Composable (() -> Unit)? = null,
+    underlineContentPadding: PaddingValues = PaddingValues(start = MaterialTheme.spacing.large, end = MaterialTheme.spacing.large, bottom = MaterialTheme.spacing.large),
     modifier: Modifier = Modifier,
     colors: ListItemColors = SettingsDefaults.colors(),
     tonalElevation: Dp = ListItemDefaults.Elevation,
@@ -197,6 +199,7 @@ fun SettingsButtonItem(
                 leadingContent = leadingContent,
                 trailingContent = trailingContent,
                 underlineContent = underlineContent,
+                underlineContentPadding = underlineContentPadding,
                 colors = colors,
                 tonalElevation = tonalElevation,
                 shadowElevation = shadowElevation,
@@ -216,6 +219,7 @@ fun SettingsButtonItem(
                 leadingContent = leadingContent,
                 trailingContent = trailingContent,
                 underlineContent = underlineContent,
+                underlineContentPadding = underlineContentPadding,
                 colors = colors,
                 tonalElevation = tonalElevation,
                 shadowElevation = shadowElevation,
@@ -233,6 +237,7 @@ private fun SettingsButtonItemContent(
     leadingContent: @Composable (() -> Unit)?,
     trailingContent: @Composable (() -> Unit)?,
     underlineContent: @Composable (() -> Unit)?,
+    underlineContentPadding: PaddingValues,
     colors: ListItemColors,
     tonalElevation: Dp,
     shadowElevation: Dp,
@@ -248,14 +253,21 @@ private fun SettingsButtonItemContent(
         Column(
             modifier = Modifier
                 .defaultMinSize(minHeight = 96.dp)
-                .fillMaxWidth()
-                .padding(
-                    vertical = MaterialTheme.spacing.large,
-                    horizontal = MaterialTheme.spacing.large,
-                ),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium, Alignment.CenterVertically),
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(
+                MaterialTheme.spacing.medium,
+                Alignment.CenterVertically
+            ),
         ) {
             Row(
+                modifier = Modifier
+                    .padding(
+                        top = MaterialTheme.spacing.large,
+                        bottom = if (underlineContent != null) 0.dp else MaterialTheme.spacing.large,
+                    )
+                    .padding(
+                        horizontal = MaterialTheme.spacing.large,
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
             ) {
@@ -292,7 +304,13 @@ private fun SettingsButtonItemContent(
             }
 
             if (underlineContent != null) {
-                underlineContent()
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(underlineContentPadding),
+                ) {
+                    underlineContent()
+                }
             }
         }
     }

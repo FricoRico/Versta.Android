@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material3.Button
@@ -23,27 +24,36 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
+import app.versta.translate.adapter.outbound.AudioMockPlayer
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.adapter.outbound.MockInference
-import app.versta.translate.adapter.outbound.MockTokenizer
+import app.versta.translate.adapter.outbound.TextToSpeechMemoryRepository
+import app.versta.translate.adapter.outbound.TextToSpeechMockInference
+import app.versta.translate.adapter.outbound.TextToSpeechMockTokenizer
+import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryRepository
+import app.versta.translate.adapter.outbound.TranslationMockInference
+import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
+import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.theme.ButtonDefaults
 import app.versta.translate.ui.theme.spacing
 
 @Composable
-fun TranslationErrorAlertDialog(
+fun ErrorAlertDialog(
     modifier: Modifier = Modifier,
     translationViewModel: TranslationViewModel,
+    textToSpeechViewModel: TextToSpeechViewModel
 ) {
     val translationError by translationViewModel.translationError.collectAsStateWithLifecycle()
+    val textToSpeechError by textToSpeechViewModel.textToSpeechError.collectAsStateWithLifecycle()
 
     fun onDismissRequest() {
         translationViewModel.clearTranslationError()
+        textToSpeechViewModel.clearTextToSpeechError()
     }
 
-    if (translationError == null) {
+    if (translationError == null && textToSpeechError == null) {
         return
     }
 
@@ -56,10 +66,13 @@ fun TranslationErrorAlertDialog(
                 .then(modifier),
             shape = MaterialTheme.shapes.extraLarge
         ) {
-            LazyColumn (
+            LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(MaterialTheme.spacing.large),
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium, Alignment.CenterVertically),
+                verticalArrangement = Arrangement.spacedBy(
+                    MaterialTheme.spacing.medium,
+                    Alignment.CenterVertically
+                ),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 item {
@@ -69,26 +82,10 @@ fun TranslationErrorAlertDialog(
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
-                
-                item {
-                    Text(text = stringResource(R.string.translation_error_title), style = MaterialTheme.typography.headlineSmall)
-                }
 
-                item {
-                    Text(
-                        text = stringResource(R.string.translation_error_description),
-                    )
-                }
-                
-                item {
-                    Text(
-                        text = translationError?.message ?: stringResource(R.string.unknown_error),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Light,
-                        fontStyle = FontStyle.Italic,
-                        maxLines = 6,
-                        modifier = Modifier.padding(vertical = MaterialTheme.spacing.large),
-                    )
+                when {
+                    translationError != null -> TranslationError(translationError)
+                    textToSpeechError != null -> TextToSpeechError(textToSpeechError)
                 }
 
                 item {
@@ -106,18 +103,78 @@ fun TranslationErrorAlertDialog(
     }
 }
 
+fun LazyListScope.TranslationError(error: Throwable?) {
+    item {
+        Text(
+            text = stringResource(R.string.translation_error_title),
+            style = MaterialTheme.typography.headlineSmall
+        )
+    }
+
+    item {
+        Text(
+            text = stringResource(R.string.translation_error_description),
+        )
+    }
+
+    item {
+        Text(
+            text = error?.message ?: stringResource(R.string.unknown_error),
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Light,
+            fontStyle = FontStyle.Italic,
+            maxLines = 6,
+            modifier = Modifier.padding(vertical = MaterialTheme.spacing.large),
+        )
+    }
+}
+
+fun LazyListScope.TextToSpeechError(error: Throwable?) {
+    item {
+        Text(
+            text = stringResource(R.string.text_to_speech_error_title),
+            style = MaterialTheme.typography.headlineSmall
+        )
+    }
+
+    item {
+        Text(
+            text = stringResource(R.string.text_to_speech_error_description),
+        )
+    }
+
+    item {
+        Text(
+            text = error?.message ?: stringResource(R.string.unknown_error),
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Light,
+            fontStyle = FontStyle.Italic,
+            maxLines = 6,
+            modifier = Modifier.padding(vertical = MaterialTheme.spacing.large),
+        )
+    }
+}
+
 @Composable
 @Preview(showBackground = true)
-fun TranslationErrorAlertDialogPreview() {
-    TranslationErrorAlertDialog(
+fun ErrorAlertDialogPreview() {
+    ErrorAlertDialog(
         translationViewModel = TranslationViewModel(
-            tokenizer = MockTokenizer(),
-            model = MockInference(),
+            tokenizer = TranslationMockTokenizer(),
+            model = TranslationMockInference(),
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
             translationPreferenceRepository = TranslationPreferenceMemoryRepository()
         ).apply {
             setTranslationError(Error("Error message"))
-        }
+        },
+        textToSpeechViewModel = TextToSpeechViewModel(
+            tokenizer = TextToSpeechMockTokenizer(),
+            model = TextToSpeechMockInference(),
+            audioPlayer = AudioMockPlayer(),
+            textToSpeechRepository = TextToSpeechMemoryRepository(),
+            textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+        )
     )
 }

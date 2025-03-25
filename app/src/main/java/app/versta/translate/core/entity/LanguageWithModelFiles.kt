@@ -19,7 +19,7 @@ data class LanguagePairWithModelFiles(
 data class LanguageModelFiles(
     val path: Path,
     val baseModel: String,
-    val architectures: List<ModelArchitecture>,
+    val architectures: List<LanguageModelArchitecture>,
     val version: String,
     val tokenizer: LanguageModelTokenizerFiles,
     val inference: LanguageModelInferenceFiles)
@@ -36,7 +36,7 @@ data class LanguageModelFiles(
                 throw IllegalArgumentException("Language model metadata file not found: ${metadataFile.absolutePath}")
             }
 
-            val metadata = serializer.decodeFromString<LanguageMetadata>(metadataFile.readText())
+            val metadata = serializer.decodeFromString<LanguageModelMetadata>(metadataFile.readText())
             val files = LanguageModelFiles(
                 path = path,
                 baseModel = metadata.baseModel,

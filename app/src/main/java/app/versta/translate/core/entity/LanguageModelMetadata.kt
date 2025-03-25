@@ -5,21 +5,56 @@ import kotlinx.serialization.Serializable
 import java.nio.file.Path
 import kotlin.io.path.exists
 
-enum class ModelArchitecture(val value: String) {
-    MarianMTModel("MarianMTModel")
+enum class LanguageModelArchitecture(val value: String) {
+    MarianMTModel("MarianMTModel"),
 }
 
 @Serializable
-class BundleMetadata(
+class LanguageModelMetadata(
     val version: String = "",
-    val metadata: List<LanguageModelMetadata>,
+    @SerialName("base_model")
+    val baseModel: String,
+    @SerialName("source_language")
+    val sourceLanguage: String,
+    @SerialName("target_language")
+    val targetLanguage: String,
+    val architectures: List<LanguageModelArchitecture>,
+    val files: LanguageModelFilesMetadata,
+    var root: Path? = null
+) {
+    fun isValid() = baseModel.isNotBlank()
+            && sourceLanguage.isNotBlank()
+            && architectures.isNotEmpty()
+            && (root != null && files.isValid(root!!))
+            && root?.isAbsolute ?: false
+
+    fun setRootPath(path: Path): LanguageModelMetadata {
+        root = path
+
+        return this
+    }
+}
+
+@Serializable
+data class LanguageMetadata(
+    val directory: String,
+    @SerialName("source_language")
+    val sourceLanguage: String,
+    @SerialName("target_language")
+    val targetLanguage: String
+)
+
+@Serializable
+class LanguageBundleMetadata(
+    val version: String = "",
+    val metadata: List<LanguageMetadata>,
     val bidirectional: Boolean,
     val languages: List<String>
 ) {
     fun isValid() =
         languages.isNotEmpty()
-            && (if (bidirectional) languages.size % 2 == 0 else true)
-            && metadata.isNotEmpty()
+                && (if (bidirectional) languages.size % 2 == 0 else true)
+                && metadata.isNotEmpty()
 
     fun languagePairs(): List<LanguagePair> {
         return metadata.map {
@@ -40,60 +75,10 @@ class BundleMetadata(
 }
 
 @Serializable
-data class LanguageModelMetadata(
-    val directory: String,
-    @SerialName("source_language")
-    val sourceLanguage: String,
-    @SerialName("target_language")
-    val targetLanguage: String
-)
-
-
-@Serializable
-class LanguageMetadata(
-    val version: String = "",
-    @SerialName("base_model")
-    val baseModel: String,
-    @SerialName("source_language")
-    val sourceLanguage: String,
-    @SerialName("target_language")
-    val targetLanguage: String,
-    val architectures: List<ModelArchitecture>,
-    val files: LanguageModelFilesMetadata,
-    var root: Path? = null
-) {
-    fun isValid() = baseModel.isNotBlank()
-            && sourceLanguage.isNotBlank()
-            && architectures.isNotEmpty()
-            && (root != null && files.isValid(root!!))
-            && root?.isAbsolute ?: false
-
-    fun setRootPath(path: Path): LanguageMetadata {
-        root = path
-
-        return this
-    }
-}
-
-@Serializable
-data class ModelMetadata(
-    val bundleMetadata: BundleMetadata,
-    val languageMetadata: List<LanguageMetadata>
-) {
-    fun setRootPath(path: Path): ModelMetadata {
-        languageMetadata.forEach {
-            it.setRootPath(path)
-        }
-
-        return this
-    }
-}
-
-@Serializable
 data class LanguageModelFilesMetadata(
     val tokenizer: LanguageModelTokenizerFilesMetadata,
-    val inference: LanguageModelInferenceFilesMetadata)
-{
+    val inference: LanguageModelInferenceFilesMetadata
+) {
     fun isValid(path: Path) = tokenizer.isValid(path) &&
             inference.isValid(path)
 }
@@ -124,3 +109,8 @@ data class LanguageModelInferenceFilesMetadata(
             path.resolve(decoder).exists()
 }
 
+@Serializable
+data class LanguageModel(
+    val bundle: LanguageBundleMetadata,
+    val languages: List<LanguageModelMetadata>
+)

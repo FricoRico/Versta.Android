@@ -19,5 +19,7 @@ target_link_libraries(
         ${CMAKE_PROJECT_NAME}
         log
         android
+        ucd
+        espeak-ng
         sentencepiece
 )

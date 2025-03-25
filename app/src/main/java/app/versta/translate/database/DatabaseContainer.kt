@@ -5,9 +5,9 @@ import app.cash.sqldelight.ColumnAdapter
 import app.cash.sqldelight.TransactionWithReturn
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.app.versta.translate.database.sqldelight.LanguageModel
+import java.app.versta.translate.database.sqldelight.TextToSpeechModel
 
 class DatabaseContainer(
     context: Context
@@ -22,10 +22,14 @@ class DatabaseContainer(
         LanguageModelAdapter = LanguageModel.Adapter(
             architecturesAdapter = ListOfStringsAdapter,
         ),
+        TextToSpeechModelAdapter = TextToSpeechModel.Adapter(
+            architecturesAdapter = ListOfStringsAdapter,
+        ),
     )
 
     val languages = database.languageQueries
     val languageModels = database.languageModelQueries
+    val textToSpeechModels = database.textToSpeechModelQueries
 
     fun transaction(body: TransactionWithoutReturn.() -> Unit) = database.transaction { body() }
     fun <T> transactionForResult(body: TransactionWithReturn<T>.() -> T) =

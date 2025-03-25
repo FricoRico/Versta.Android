@@ -1,3 +1,4 @@
+import org.gradle.crypto.checksum.Checksum
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -12,6 +13,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.sqldelight)
+    alias(libs.plugins.gradle.crypto.checksum)
 }
 
 sqldelight {
@@ -31,6 +33,8 @@ aboutLibraries {
 android {
     namespace = "app.versta.translate"
     compileSdk = 35
+    ndkVersion = "26.1.10909125"
+    buildToolsVersion = "35.0.0"
 
     defaultConfig {
         applicationId = "app.versta.translate"
@@ -42,6 +46,12 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+
+        externalNativeBuild {
+            cmake {
+                targets("app_versta_translate_data", "app_versta_translate_bridge")
+            }
         }
     }
 
@@ -92,12 +102,82 @@ android {
     }
     externalNativeBuild {
         cmake {
-            path("native/jni/CMakeLists.txt")
+            path = file("native/jni/CMakeLists.txt")
             version = "3.22.1"
         }
     }
-    ndkVersion = "27.0.12077973"
-    buildToolsVersion = "35.0.0"
+}
+
+tasks.apply {
+    val dataArchiveName = "versta_data.tgz"
+
+    register("checkData") {
+        doFirst {
+            assert(layout.buildDirectory.file("generated/espeak-ng-data/en_dict").isPresent)
+            assert(layout.buildDirectory.file("generated/espeak-ng-data/intonations").isPresent)
+            assert(layout.buildDirectory.file("generated/espeak-ng-data/phondata").isPresent)
+            assert(layout.buildDirectory.file("generated/espeak-ng-data/phondata-manifest").isPresent)
+            assert(layout.buildDirectory.file("generated/espeak-ng-data/phonindex").isPresent)
+            assert(layout.buildDirectory.file("generated/espeak-ng-data/phontab").isPresent)
+        }
+    }
+
+    register("createDataArchive", Tar::class) {
+        isPreserveFileTimestamps = false
+        isReproducibleFileOrder = true
+        compression = Compression.GZIP
+
+        archiveFileName.set(dataArchiveName)
+        destinationDirectory.set(layout.projectDirectory.dir("src/main/res/raw"))
+
+        from(layout.buildDirectory.dir("generated/espeak-ng-data")) {
+            into("espeak-ng-data")
+        }
+    }
+
+    register("createDataHash", Checksum::class) {
+        dependsOn("createDataArchive")
+
+        checksumAlgorithm.set(Checksum.Algorithm.SHA256)
+        inputFiles.setFrom(layout.projectDirectory.file("src/main/res/raw/$dataArchiveName"))
+        outputDirectory.set(layout.buildDirectory.dir("intermediates/datahash"))
+    }
+
+    register("createDataVersion", Copy::class) {
+        dependsOn("createDataHash")
+        rename { "versta_data_hash.sha256" }
+
+        from(layout.buildDirectory.file("intermediates/datahash/$dataArchiveName.sha256"))
+        into(layout.projectDirectory.dir("src/main/res/raw"))
+    }
+}
+
+project.apply {
+    afterEvaluate {
+        tasks.named("checkData") {
+            dependsOn("externalNativeBuildDebug")
+        }
+        tasks.named("createDataArchive") {
+            dependsOn("externalNativeBuildDebug")
+        }
+
+        listOf(
+            "mapDebugSourceSetPaths",
+            "mergeDebugResources",
+            "packageDebugResources",
+            "generateDebugResources",
+            "generateDebugDatabaseInterface",
+            "mapReleaseSourceSetPaths",
+            "mergeReleaseResources",
+            "packageReleaseResources",
+            "generateReleaseResources",
+            "generateReleaseDatabaseInterface"
+        ).forEach {
+            tasks.named(it) {
+                dependsOn("createDataVersion", "createDataArchive")
+            }
+        }
+    }
 }
 
 dependencies {
@@ -127,6 +207,7 @@ dependencies {
     implementation(libs.androidx.splash.screen)
     implementation(libs.appache.commons.compress)
     implementation(libs.jakewharton.timber)
+    implementation(libs.jetbrains.bio.npy)
     implementation(libs.kotlinx.serialization)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lucene.analyzers.kuromoji)

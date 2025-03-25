@@ -3,11 +3,14 @@ package app.versta.translate.adapter.inbound
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.core.net.toFile
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.InputStream
 
 class TarballExtractor(private val context: Context) : CompressedFileExtractor {
     /**
@@ -21,20 +24,24 @@ class TarballExtractor(private val context: Context) : CompressedFileExtractor {
         outputDir: File,
         extractToDirectory: Boolean,
         listener: ExtractionProgressListener?
-    ): File {
-        var file: File? = null
-
+    ): File? {
         try {
-            file = copyToInternalStorage(uri)
-            return extractFile(file, outputDir, extractToDirectory, listener)
+            return extractFile(uri, outputDir, extractToDirectory, listener)
         } catch (e: Exception) {
             throw e
-        } finally {
-            // Clean up the temporary file
-            if (file?.exists() == true) {
-                file.delete()
-            }
         }
+    }
+
+    /**
+     * Extracts the contents of a compressed archive file from a given [InputStream] into the app's local storage.
+     * @param stream An already opened input stream
+     * @param outputDir The local directory where the contents should be extracted.
+     */
+    override fun extract(
+        stream: InputStream,
+        outputDir: File,
+    ): File {
+        return extractInputStream(stream, outputDir)
     }
 
     /**
@@ -43,7 +50,8 @@ class TarballExtractor(private val context: Context) : CompressedFileExtractor {
      * @param fileName The name of the file to open.
      */
     override fun openFile(uri: Uri, fileName: String): File? {
-        TarArchiveInputStream(GzipCompressorInputStream(context.contentResolver.openInputStream(uri))).use { input ->
+        val stream = context.contentResolver.openInputStream(uri) ?: return null
+        TarArchiveInputStream(GzipCompressorInputStream(stream)).use { input ->
             var entry = input.nextEntry
 
             while (entry != null) {
@@ -62,50 +70,50 @@ class TarballExtractor(private val context: Context) : CompressedFileExtractor {
     }
 
     /**
-     * Copies the file from the given Uri to the app's internal storage.
-     * @param uri The Uri of the file to copy.
-     * @return The File object pointing to the copied file in internal storage.
-     */
-    private fun copyToInternalStorage(uri: Uri): File {
-        val fileName = getFileName(uri) ?: "tmp.tar.gz"
-        val destinationFile = File(context.filesDir, fileName)
-
-        context.contentResolver.openInputStream(uri).use { inputStream ->
-            FileOutputStream(destinationFile).use { outputStream ->
-                inputStream?.copyTo(outputStream)
-            }
-        }
-
-        return destinationFile
-    }
-
-    /**
      * Extracts the contents of a .tar.gz file into a specified directory.
-     * @param file The File object pointing to the .tar.gz file.
+     * @param uri The [Uri] object pointing to the .tar.gz file.
      * @param outputDir The directory where the contents should be extracted.
      */
     private fun extractFile(
-        file: File,
+        uri: Uri,
         outputDir: File,
         extractToDirectory: Boolean,
         listener: ExtractionProgressListener?
-    ): File {
-        val total = if (listener != null) getTotalEntries(file) else 0
+    ): File? {
+        val stream = context.contentResolver.openInputStream(uri) ?: return null
+
+        val total = if (listener != null) getTotalEntries(uri) else 0
         val extractionDir = if (extractToDirectory) {
-            val fileNameWithoutExtension = file.name.removeSuffix(".tar.gz")
+            val fileName = getFileName(uri) ?: throw IllegalArgumentException("File name not found")
+            val fileNameWithoutExtension = fileName.removeSuffix(".tar.gz")
             File(outputDir, fileNameWithoutExtension)
         } else outputDir
 
-        if (!extractionDir.exists()) {
-            extractionDir.mkdirs()
+        return extractInputStream(stream, extractionDir, total, listener)
+    }
+
+    /**
+     * Extracts the contents of a .tar.gz file from an InputStream into a specified directory.
+     * @param stream The [InputStream] object pointing to the .tar.gz file.
+     * @param outputDir The directory where the contents should be extracted.
+     * @param listener The listener for progress updates during extraction.
+     */
+    private fun extractInputStream(
+        stream: InputStream,
+        outputDir: File,
+        total: Int? = null,
+        listener: ExtractionProgressListener? = null
+    ): File {
+        if (!outputDir.exists()) {
+            outputDir.mkdirs()
         }
 
-        TarArchiveInputStream(GzipCompressorInputStream(FileInputStream(file))).use { input ->
+        TarArchiveInputStream(GzipCompressorInputStream(stream)).use { input ->
             var entry = input.nextEntry
             var extracted = 0
 
             while (entry != null) {
-                val path = File(extractionDir, entry.name)
+                val path = File(outputDir, entry.name)
 
                 if (entry.isDirectory) {
                     path.mkdirs()
@@ -116,7 +124,7 @@ class TarballExtractor(private val context: Context) : CompressedFileExtractor {
                     }
                 }
 
-                if (listener != null) {
+                if (listener != null && total != null) {
                     extracted++
                     listener.onProgressUpdate(path, extracted, total)
                 }
@@ -125,12 +133,12 @@ class TarballExtractor(private val context: Context) : CompressedFileExtractor {
             }
         }
 
-        return extractionDir
+        return outputDir
     }
 
     /**
      * Helper method to retrieve the file name from a Uri.
-     * @param uri The Uri to extract the file name from.
+     * @param uri The [Uri] to extract the file name from.
      * @return The file name or null if it can't be determined.
      */
     private fun getFileName(uri: Uri): String? {
@@ -158,13 +166,14 @@ class TarballExtractor(private val context: Context) : CompressedFileExtractor {
 
     /**
      * Helper method to retrieve the total number of entries in a .tar.gz file.
-     * @param file The File object pointing to the .tar.gz file.
+     * @param uri The [Uri] object pointing to the .tar.gz file.
      * @return The total number of entries in the .tar.gz file.
      */
-    private fun getTotalEntries(file: File): Int {
+    private fun getTotalEntries(uri: Uri): Int {
         var totalEntries = 0
 
-        TarArchiveInputStream(GzipCompressorInputStream(FileInputStream(file))).use { input ->
+        val stream = context.contentResolver.openInputStream(uri) ?: return 0
+        TarArchiveInputStream(GzipCompressorInputStream(stream)).use { input ->
             while (input.nextEntry != null) {
                 totalEntries++
             }

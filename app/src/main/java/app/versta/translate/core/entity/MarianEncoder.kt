@@ -12,7 +12,7 @@ internal typealias EncoderHiddenStates = Array<FloatArray>
 // Shape: [sequence_length]
 internal typealias EncoderAttentionMasks = LongArray
 
-class EncoderInput(ortEnvironment: OrtEnvironment, inputIds: LongArray, attentionMask: LongArray) {
+class MarianEncoderInput(ortEnvironment: OrtEnvironment, inputIds: LongArray, attentionMask: LongArray) {
     private val _inputIdsTensor = OnnxTensor.createTensor(ortEnvironment, arrayOf(inputIds))
     private val _attentionMaskTensor =
         OnnxTensor.createTensor(ortEnvironment, arrayOf(attentionMask))
@@ -30,7 +30,7 @@ class EncoderInput(ortEnvironment: OrtEnvironment, inputIds: LongArray, attentio
     }
 }
 
-class EncoderOutput {
+class MarianEncoderOutput {
     private var _output: OrtSession.Result? = null
 
     @Suppress("UNCHECKED_CAST")

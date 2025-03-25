@@ -18,6 +18,8 @@ enum class Screens (
     ),
     TextTranslation,
     TranslationSettings,
+    TextToSpeechSettings,
+    TextToSpeechImport,
     About,
     LanguageAttributions,
     ThirdParty,

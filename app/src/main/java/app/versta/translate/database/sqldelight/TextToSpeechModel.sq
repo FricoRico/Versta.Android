@@ -1,0 +1,46 @@
+import kotlin.String;
+import kotlin.collections.List;
+import kotlin.collections.Map;
+
+CREATE TABLE TextToSpeechModel (
+    id TEXT NOT NULL PRIMARY KEY,
+    baseModel TEXT NOT NULL,
+    architectures TEXT AS List<String> NOT NULL,
+    path TEXT NOT NULL,
+    version TEXT NOT NULL
+);
+
+getAll:
+SELECT * FROM TextToSpeechModel;
+
+getById:
+SELECT * FROM TextToSpeechModel WHERE id = :id LIMIT 1;
+
+upsert {
+    UPDATE TextToSpeechModel SET
+        baseModel = :baseModel,
+        architectures = :architectures,
+        path = :path,
+        version = :version
+    WHERE id = :id;
+
+    INSERT OR IGNORE INTO TextToSpeechModel (
+        id,
+        baseModel,
+        architectures,
+        path,
+        version
+    ) VALUES (
+        :id,
+        :baseModel,
+        :architectures,
+        :path,
+        :version
+    );
+}
+
+deleteById:
+DELETE FROM TextToSpeechModel WHERE id = :id;
+
+deleteByIds:
+DELETE FROM TextToSpeechModel WHERE id IN :ids;

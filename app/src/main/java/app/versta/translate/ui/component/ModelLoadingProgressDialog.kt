@@ -8,31 +8,42 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.versta.translate.adapter.inbound.PrecomputedHashFileValidator
+import app.versta.translate.adapter.inbound.TarballExtractor
+import app.versta.translate.adapter.outbound.AudioMockPlayer
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
-import app.versta.translate.adapter.outbound.LanguagePreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.adapter.outbound.MockInference
-import app.versta.translate.adapter.outbound.MockTokenizer
+import app.versta.translate.adapter.outbound.TextToSpeechMemoryRepository
+import app.versta.translate.adapter.outbound.TextToSpeechMockInference
+import app.versta.translate.adapter.outbound.TextToSpeechMockTokenizer
+import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryRepository
+import app.versta.translate.adapter.outbound.TranslationMockInference
+import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.core.model.LoadingProgress
+import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.theme.spacing
 
 @Composable
-fun TranslatorLoadingProgressDialog(
+fun ModelLoadingProgressDialog(
     translationViewModel: TranslationViewModel,
-    textTranslationViewModel: TextTranslationViewModel
+    textTranslationViewModel: TextTranslationViewModel,
+    textToSpeechViewModel: TextToSpeechViewModel
 ) {
     val translationModelLoadingProgress =
         translationViewModel.loadingProgress.collectAsStateWithLifecycle()
     val textTranslationLoadingProgress =
         textTranslationViewModel.loadingProgress.collectAsStateWithLifecycle()
+    val textToSpeechLoadingProgress =
+        textToSpeechViewModel.loadingProgress.collectAsStateWithLifecycle()
 
-    if (translationModelLoadingProgress.value == LoadingProgress.InProgress || textTranslationLoadingProgress.value == LoadingProgress.InProgress) {
+    if (translationModelLoadingProgress.value == LoadingProgress.InProgress || textTranslationLoadingProgress.value == LoadingProgress.InProgress || textToSpeechLoadingProgress.value == LoadingProgress.InProgress) {
         Dialog(onDismissRequest = { /* Can not be dismissed */ }) {
             Card(
                 colors = CardDefaults.cardColors(
@@ -52,17 +63,25 @@ fun TranslatorLoadingProgressDialog(
 
 @Composable
 @Preview
-fun TranslatorLoadingDialogPreview() {
-    TranslatorLoadingProgressDialog(
+fun ModelLoadingProgressDialogPreview() {
+    ModelLoadingProgressDialog(
         translationViewModel = TranslationViewModel(
-            tokenizer = MockTokenizer(),
-            model = MockInference(),
+            tokenizer = TranslationMockTokenizer(),
+            model = TranslationMockInference(),
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
             translationPreferenceRepository = TranslationPreferenceMemoryRepository()
         ),
         textTranslationViewModel = TextTranslationViewModel(
             languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+        ),
+        textToSpeechViewModel = TextToSpeechViewModel(
+            tokenizer = TextToSpeechMockTokenizer(),
+            model = TextToSpeechMockInference(),
+            audioPlayer = AudioMockPlayer(),
+            textToSpeechRepository = TextToSpeechMemoryRepository(),
+            textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
         )
     )
 }

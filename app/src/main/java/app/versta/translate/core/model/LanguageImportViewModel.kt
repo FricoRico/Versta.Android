@@ -6,11 +6,11 @@ import androidx.lifecycle.viewModelScope
 import app.versta.translate.adapter.inbound.CompressedFileExtractor
 import app.versta.translate.adapter.inbound.ExtractionProgressListener
 import app.versta.translate.adapter.outbound.LanguageRepository
-import app.versta.translate.core.entity.BundleMetadata
+import app.versta.translate.core.entity.LanguageBundleMetadata
 import app.versta.translate.core.entity.LanguageAnalysisProgress
 import app.versta.translate.core.entity.LanguageImportProgress
-import app.versta.translate.core.entity.LanguageMetadata
-import app.versta.translate.core.entity.ModelMetadata
+import app.versta.translate.core.entity.LanguageModelMetadata
+import app.versta.translate.core.entity.LanguageModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -87,14 +87,14 @@ class LanguageImportViewModel(
             try {
                 val output = modelExtractor.openFile(uri, "metadata.json")
                     ?: throw Exception("Metadata file not found")
-                val bundleMetadata = _serializer.decodeFromString<BundleMetadata>(output.readText())
+                val languageBundleMetadata = _serializer.decodeFromString<LanguageBundleMetadata>(output.readText())
 
-                if (!bundleMetadata.isValid()) {
+                if (!languageBundleMetadata.isValid()) {
                     throw Exception("Invalid metadata file")
                 }
 
                 _analysisProgressState.value =
-                    LanguageAnalysisProgress.Completed(bundleMetadata, uri)
+                    LanguageAnalysisProgress.Completed(languageBundleMetadata, uri)
             } catch (e: Exception) {
                 _analysisProgressState.value = LanguageAnalysisProgress.Error(e)
                 Timber.tag(TAG).e(e)
@@ -105,31 +105,35 @@ class LanguageImportViewModel(
     /**
      * Reads the metadata file from the extracted model.
      */
-    private fun readMetadata(output: File): ModelMetadata {
-        val bundleMetadataFile = File(output, "metadata.json")
-        val bundleMetadata =
-            _serializer.decodeFromString<BundleMetadata>(bundleMetadataFile.readText())
+    private fun readMetadata(output: File?): LanguageModel {
+        if (output == null) {
+            throw Exception("Output file is null")
+        }
 
-        if (!bundleMetadata.isValid()) {
+        val bundleMetadataFile = File(output, "metadata.json")
+        val languageBundleMetadata =
+            _serializer.decodeFromString<LanguageBundleMetadata>(bundleMetadataFile.readText())
+
+        if (!languageBundleMetadata.isValid()) {
             throw Exception("Invalid metadata file")
         }
 
-        val languageMetadata = bundleMetadata.metadata.map {
+        val languageModelMetadata = languageBundleMetadata.metadata.map {
             val languageMetadataFile = File(output.resolve(it.directory), "metadata.json")
 
-            _serializer.decodeFromString<LanguageMetadata>(languageMetadataFile.readText())
+            _serializer.decodeFromString<LanguageModelMetadata>(languageMetadataFile.readText())
                 .setRootPath(
                     path = output.resolve(it.directory).toPath()
                 )
         }
 
-        if (languageMetadata.any { !it.isValid() }) {
+        if (languageModelMetadata.any { !it.isValid() }) {
             throw Exception("Invalid language metadata file")
         }
 
-        return ModelMetadata(
-            bundleMetadata = bundleMetadata,
-            languageMetadata = languageMetadata
+        return LanguageModel(
+            bundle = languageBundleMetadata,
+            languages = languageModelMetadata
         )
     }
 
