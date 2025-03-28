@@ -33,12 +33,20 @@ class LanguageViewModel(
     val sourceLanguage = languagePreferenceRepository.getSourceLanguage().distinctUntilChanged()
     val targetLanguage = languagePreferenceRepository.getTargetLanguage().distinctUntilChanged()
 
-    val canSwapLanguages = sourceLanguage.combine(targetLanguage) { source, target ->
-        source != null && target != null
-    }
-
     val availableLanguages = languageRepository.getLanguages().distinctUntilChanged()
     val availableLanguagePairs = languageRepository.getLanguagePairs().distinctUntilChanged()
+
+    val canSwapLanguages = combine(
+        sourceLanguage,
+        targetLanguage,
+        availableLanguagePairs
+    ) { source, target, pairs ->
+        if (source == null || target == null) {
+            return@combine false
+        }
+
+        pairs.any { it.source == target && it.target == source }
+    }.distinctUntilChanged()
 
     val sourceLanguages = languageRepository.getSourceLanguages().distinctUntilChanged()
     val targetLanguages = sourceLanguage
