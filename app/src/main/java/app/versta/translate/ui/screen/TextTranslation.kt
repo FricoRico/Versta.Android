@@ -6,11 +6,7 @@ import androidx.compose.animation.core.AnimationConstants.DefaultDurationMillis
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,22 +16,17 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -43,7 +34,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
@@ -56,7 +46,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -67,7 +56,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -96,9 +84,14 @@ import app.versta.translate.ui.component.TextFieldDefaults
 import app.versta.translate.ui.component.TextToSpeechButton
 import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, FlowPreview::class)
 @Composable
 fun TextTranslation(
     navController: NavController,
@@ -319,6 +312,7 @@ fun TextTranslation(
                     )
 
                     TextTranslationInputButtonRow(
+                        inputIsEmpty = input.isEmpty(),
                         onTranslate = {
                             onSubmit(input)
                         },
@@ -435,6 +429,7 @@ fun TextTranslationInputField(
 @Composable
 fun TextTranslationInputButtonRow(
     modifier: Modifier = Modifier,
+    inputIsEmpty: Boolean,
     onTranslate: () -> Unit,
     onClear: () -> Unit,
 ) {
@@ -449,6 +444,7 @@ fun TextTranslationInputButtonRow(
         ) {
             FilledIconButton(
                 onClick = onClear,
+                enabled = !inputIsEmpty,
                 colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
             ) {
                 Icon(
@@ -460,6 +456,7 @@ fun TextTranslationInputButtonRow(
 
         FilledIconButton(
             onClick = onTranslate,
+            enabled = !inputIsEmpty,
             colors = FilledIconButtonDefaults.primaryIconButtonColors(),
         ) {
             Icon(

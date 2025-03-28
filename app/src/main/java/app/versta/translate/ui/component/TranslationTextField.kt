@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.core.model.TextTranslationViewModel
+import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
 
 @Composable
@@ -80,12 +81,8 @@ fun TranslationTextField(
                         onClick = {
                             onClear()
                         },
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            disabledContentColor = MaterialTheme.colorScheme.onSurface
-                        ),
+                        enabled = input.isNotEmpty(),
+                        colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Close,
@@ -97,12 +94,7 @@ fun TranslationTextField(
                     onClick = {
                         onSubmit(input)
                     },
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        disabledContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        disabledContentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
+                    colors = FilledIconButtonDefaults.primaryIconButtonColors(),
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
