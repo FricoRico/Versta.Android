@@ -93,6 +93,7 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/*.md"
         }
     }
     androidResources {
@@ -206,11 +207,11 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.splash.screen)
     implementation(libs.appache.commons.compress)
+    implementation(libs.atilika.kuromoji.ipadic)
     implementation(libs.jakewharton.timber)
     implementation(libs.jetbrains.bio.npy)
     implementation(libs.kotlinx.serialization)
     implementation(libs.lifecycle.viewmodel.compose)
-    implementation(libs.lucene.analyzers.kuromoji)
     implementation(libs.material.icons)
     implementation(libs.material.icons.extended)
     implementation(libs.navigation.compose)

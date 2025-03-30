@@ -4,7 +4,6 @@ import android.icu.lang.UScript
 import android.icu.text.Transliterator
 import java.util.Locale
 
-
 private val scriptMapping = mapOf(
     UScript.CYRILLIC to "Cyrillic-Latin",
     UScript.GREEK to "Greek-Latin",

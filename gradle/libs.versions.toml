@@ -18,6 +18,7 @@ androidDataStore = "1.1.2"
 androidSplashScreen = "1.0.0"
 androidAppCompat = "1.7.0"
 appacheCommonsCompress = "1.27.1"
+atilikaKuromoji = "0.9.0"
 composeLifecycle = "2.8.7"
 jetbrainsBioNpy = "0.3.5"
 kotlinxSerialization = "1.8.0"
@@ -27,7 +28,6 @@ materialIcons = "1.7.8"
 navigationCompose = "2.8.7"
 onnxRuntime = "1.20.0"
 onnxRuntimeExtensions = "0.13.0"
-luceneAnalyzersKuromoji = "8.11.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -53,11 +53,11 @@ androidx-compose-animation = { group = "androidx.compose.animation", name = "ani
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "androidDataStore" }
 androidx-splash-screen = { group = "androidx.core", name = "core-splashscreen", version.ref = "androidSplashScreen" }
 appache-commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "appacheCommonsCompress" }
+atilika-kuromoji-ipadic = { group = "com.atilika.kuromoji", name = "kuromoji-ipadic", version.ref = "atilikaKuromoji" }
 jakewharton-timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 jetbrains-bio-npy = { group = "org.jetbrains.bio", name = "npy", version.ref = "jetbrainsBioNpy" }
 kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "composeLifecycle" }
-lucene-analyzers-kuromoji = { group = "org.apache.lucene", name = "lucene-analyzers-kuromoji", version.ref = "luceneAnalyzersKuromoji" }
 material-icons = { group = "androidx.compose.material", name = "material-icons-core", version.ref = "materialIcons" }
 material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIcons" }
 navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
