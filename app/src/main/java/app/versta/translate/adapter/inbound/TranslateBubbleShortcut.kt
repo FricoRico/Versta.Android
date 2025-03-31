@@ -4,13 +4,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
+import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.annotation.RequiresApi
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.graphics.drawable.toAdaptiveIcon
 import androidx.core.graphics.drawable.toBitmap
 import app.versta.translate.MainApplication.Companion.TRANSLATION_BUBBLE_SHORTCUT_ID
 import app.versta.translate.core.entity.Language
 
+@RequiresApi(Build.VERSION_CODES.Q)
 object TranslateBubbleShortcut {
     private var manager: ShortcutManager? = null
     private var shortcut: ShortcutInfo.Builder? = null

@@ -1,13 +1,17 @@
 package app.versta.translate.adapter.outbound
 
 import android.icu.text.Transliterator
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.atilika.kuromoji.ipadic.Token
 import com.atilika.kuromoji.ipadic.Tokenizer
 
 class JapaneseTransliterator : Transliteration {
+    @RequiresApi(Build.VERSION_CODES.Q)
     private val _transliterator = Transliterator.getInstance("Hiragana-Latin; Katakana-Latin")
     private val _analyzer = Tokenizer.Builder().build()
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun transliterate(text: String): String {
         val converted = convertToFurigana(text)
 

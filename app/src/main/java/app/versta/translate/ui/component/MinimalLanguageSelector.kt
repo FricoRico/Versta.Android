@@ -1,6 +1,7 @@
 package app.versta.translate.ui.component
 
 import android.content.Context
+import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -41,7 +42,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
 import app.versta.translate.adapter.inbound.TranslateBubbleShortcut
@@ -66,6 +66,10 @@ fun MinimalLanguageSelector(
     val canSwapLanguages by languageViewModel.canSwapLanguages.collectAsStateWithLifecycle(false)
 
     LaunchedEffect(targetLanguage) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return@LaunchedEffect
+        }
+
         if (targetLanguage == null) {
             return@LaunchedEffect
         }

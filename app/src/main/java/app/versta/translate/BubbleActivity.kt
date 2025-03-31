@@ -1,5 +1,6 @@
 package app.versta.translate
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -10,7 +11,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -52,21 +52,35 @@ class BubbleActivity : ComponentActivity() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        registerReceiver(updateReceiver, IntentFilter(TRANSLATION_NOTIFICATION_CHANNEL_ID), RECEIVER_EXPORTED)
+        when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+                registerReceiver(
+                    updateReceiver,
+                    IntentFilter(TRANSLATION_NOTIFICATION_CHANNEL_ID),
+                    RECEIVER_EXPORTED
+                )
+            }
 
-        TranslateBubbleShortcut.registerForActivity(this)
-        TranslateBubbleNotification.registerForActivity(this)
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
+                TranslateBubbleShortcut.registerForActivity(this)
+                TranslateBubbleNotification.registerForActivity(this)
+            }
+
+            else -> {
+                registerReceiver(updateReceiver, IntentFilter(TRANSLATION_NOTIFICATION_CHANNEL_ID))
+            }
+        }
 
         handleStartupAndResume(intent)
         handleTargetLanguageUpdate(this)
 
         setContent {
             TranslateTheme {
-                Surface (
+                Surface(
                     color = MaterialTheme.colorScheme.background,
                     contentColor = MaterialTheme.colorScheme.onBackground,
                 ) {
@@ -119,6 +133,10 @@ class BubbleActivity : ComponentActivity() {
     }
 
     private fun handleTargetLanguageUpdate(activity: Activity) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return
+        }
+
         lifecycleScope.launch {
             languageViewModel.targetLanguage.conflate().filterNotNull().collect {
                 val text = MainApplication.module.textTranslationViewModel.input.first()

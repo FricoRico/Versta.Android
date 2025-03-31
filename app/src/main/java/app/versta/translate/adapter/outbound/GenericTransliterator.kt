@@ -2,6 +2,8 @@ package app.versta.translate.adapter.outbound
 
 import android.icu.lang.UScript
 import android.icu.text.Transliterator
+import android.os.Build
+import androidx.annotation.RequiresApi
 import java.util.Locale
 
 private val scriptMapping = mapOf(
@@ -48,6 +50,7 @@ private val localeToScriptMapping = mapOf(
     ),
 )
 
+@RequiresApi(Build.VERSION_CODES.Q)
 class GenericTransliterator(locale: Locale) : Transliteration {
     private var _transliterator: Transliterator? = null
 

@@ -182,7 +182,7 @@ class TranslationViewModel(
             cache = _cache.get(sanitized, languages)
 
             if (cache != null) {
-                return flowOf(cache)
+                return flowOf(cache.toString())
             }
 
             val (inputIds, attentionMask) = tokenizer.encode(sanitized)
@@ -239,7 +239,7 @@ class TranslationViewModel(
                 cache = _cache.get(sanitized, languages)
 
                 if (cache != null) {
-                    return cache
+                    return cache.toString()
                 }
 
 

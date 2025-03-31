@@ -3,6 +3,7 @@ package app.versta.translate.ui.screen
 import android.Manifest
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
@@ -55,20 +56,24 @@ fun Home(
 ) {
     val hasLicense by licenseViewModel.hasLicense.collectAsStateWithLifecycle(false)
 
-    val notificationPermissionState = rememberPermissionState(
-        Manifest.permission.POST_NOTIFICATIONS
-    )
+    val notificationPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        rememberPermissionState(
+            Manifest.permission.POST_NOTIFICATIONS
+        )
+    } else {
+        null
+    }
 
     LaunchedEffect(notificationPermissionState) {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
             return@LaunchedEffect
         }
 
-        if (notificationPermissionState.status == PermissionStatus.Granted) {
+        if (notificationPermissionState?.status == PermissionStatus.Granted) {
             return@LaunchedEffect
         }
 
-        notificationPermissionState.launchPermissionRequest()
+        notificationPermissionState?.launchPermissionRequest()
     }
 
     val orientation = LocalContext.current.resources.configuration.orientation

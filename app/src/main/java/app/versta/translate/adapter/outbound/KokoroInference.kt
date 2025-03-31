@@ -10,6 +10,9 @@ import app.versta.translate.core.entity.Waveform
 import org.jetbrains.bio.npy.NpyFile
 import timber.log.Timber
 import java.io.File
+import java.io.FileInputStream
+import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
 import java.nio.file.Path
 import kotlin.io.path.pathString
 import kotlin.math.max
@@ -86,17 +89,27 @@ class KokoroInference(private val ortEnvironment: OrtEnvironment): TextToSpeechI
     override fun load(files: TextToSpeechInferenceFiles, threads: Int) {
         close()
 
-        val modelFile = File(files.model.pathString).readBytes()
+        val modelFile = File(files.model.pathString)
         val options = OrtSession.SessionOptions().apply {
             addXnnpack(mapOf("intra_op_num_threads" to threads.toString()))
             addConfigEntry("kOrtSessionOptionsConfigAllowIntraOpSpinning", "0")
         }
 
-        kokoroSession = ortEnvironment.createSession(modelFile, options)
+        kokoroSession = ortEnvironment.createSession(readFileToByteBuffer(modelFile), options)
     }
 
     fun close() {
         kokoroSession?.close()
+    }
+
+
+    private fun readFileToByteBuffer(file: File): ByteBuffer {
+        FileInputStream(file).use { inputStream ->
+            val channel = inputStream.channel
+            val size = channel.size()
+            val buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, size)
+            return buffer
+        }
     }
 
     companion object {

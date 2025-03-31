@@ -1,6 +1,7 @@
 package app.versta.translate.ui.component
 
 import android.content.Context
+import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -64,6 +65,10 @@ fun LanguageSelector(
     val canSwapLanguages by languageViewModel.canSwapLanguages.collectAsStateWithLifecycle(false)
 
     LaunchedEffect(targetLanguage) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return@LaunchedEffect
+        }
+
         if (targetLanguage == null) {
             return@LaunchedEffect
         }

@@ -2,6 +2,7 @@ package app.versta.translate.core.model
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.os.FileObserver
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -74,6 +75,10 @@ class LoggingViewModel(directory: File?) : ViewModel() {
      * Starts a FileObserver to monitor changes in the log file.
      */
     private fun startObserver() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return
+        }
+
         observer = object : FileObserver(_file, MODIFY or DELETE) {
             override fun onEvent(event: Int, path: String?) {
                 if (event and (MODIFY or DELETE) != 0) {
@@ -81,6 +86,7 @@ class LoggingViewModel(directory: File?) : ViewModel() {
                 }
             }
         }
+
         observer.startWatching()
     }
 

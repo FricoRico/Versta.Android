@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import timber.log.Timber
 import java.io.File
+import java.io.FileInputStream
+import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
 import kotlin.io.path.pathString
 
 class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationInference {
@@ -299,8 +302,8 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
     override fun load(files: LanguageModelInferenceFiles, threads: Int) {
         close()
 
-        val encoderFile = File(files.encoder.pathString).readBytes()
-        val decoderFile = File(files.decoder.pathString).readBytes()
+        val encoderFile = File(files.encoder.pathString)
+        val decoderFile = File(files.decoder.pathString)
         val options = OrtSession.SessionOptions().apply {
             setCPUArenaAllocator(true)
             setMemoryPatternOptimization(true)
@@ -310,13 +313,29 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
             registerCustomOpLibrary(OrtxPackage.getLibraryPath())
         }
 
-        encoderSession = ortEnvironment.createSession(encoderFile, options)
-        decoderSession = ortEnvironment.createSession(decoderFile, options)
+        encoderSession = ortEnvironment.createSession(readFileToByteBuffer(encoderFile), options)
+        decoderSession = ortEnvironment.createSession(readFileToByteBuffer(decoderFile), options)
     }
 
     override fun close() {
-        encoderSession?.close()
-        decoderSession?.close()
+        try {
+            encoderSession?.close()
+            decoderSession?.close()
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e)
+        } finally {
+            encoderSession = null
+            decoderSession = null
+        }
+    }
+
+    private fun readFileToByteBuffer(file: File): ByteBuffer {
+        FileInputStream(file).use { inputStream ->
+            val channel = inputStream.channel
+            val size = channel.size()
+            val buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, size)
+            return buffer
+        }
     }
 
     companion object {

@@ -1,11 +1,14 @@
 package app.versta.translate.adapter.outbound
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import java.util.Locale
 
 interface Transliteration {
     fun transliterate(text: String): String
 }
 
+@RequiresApi(Build.VERSION_CODES.Q)
 class TransliterationAdapter(locale: Locale) {
     private var _transliterator: Transliteration? = null
     private val _latinRegex = Regex("^[\\p{IsLatin}\\p{Punct}\\p{Digit}\\s]+$")

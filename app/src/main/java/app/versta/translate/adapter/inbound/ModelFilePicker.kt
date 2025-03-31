@@ -1,6 +1,7 @@
 package app.versta.translate.adapter.inbound
 
 import android.net.Uri
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -35,6 +36,12 @@ object ModelFilePicker : FilePicker {
         }
 
         filePickerListener = listener
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            filePicker?.launch(arrayOf("*/*"))
+            return
+        }
+
         filePicker?.launch(types)
     }
 }

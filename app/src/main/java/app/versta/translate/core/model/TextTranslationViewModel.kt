@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
@@ -47,15 +48,33 @@ class TextTranslationViewModel(
 
     private val _transliterationScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
+    private fun transliterateInput(text: String) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return
+        }
+
+        _transliterationScope.launch {
+            _inputTransliteration.value = _inputTransliterator?.transliterate(text) ?: ""
+        }
+    }
+
+    private fun transliterateTranslation(text: String) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return
+        }
+
+        _transliterationScope.launch {
+            _translatedTransliteration.value = _translationTransliterator?.transliterate(text) ?: ""
+        }
+    }
+
     /**
      * Set the input.
      */
     fun setInput(text: String) {
         _input.value = text
 
-        _transliterationScope.launch {
-            _inputTransliteration.value = _inputTransliterator?.transliterate(text) ?: ""
-        }
+        transliterateInput(text)
     }
 
     /**
@@ -72,9 +91,7 @@ class TextTranslationViewModel(
     fun setTranslation(text: String) {
         _translated.value = text
 
-        _transliterationScope.launch {
-            _translatedTransliteration.value = _translationTransliterator?.transliterate(text) ?: ""
-        }
+        transliterateTranslation(text)
     }
 
     /**
@@ -96,11 +113,14 @@ class TextTranslationViewModel(
      * Load the transliterator.
      */
     fun load(languages: LanguagePair) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
             _loadingProgress.value = LoadingProgress.InProgress
 
             try {
-                _inputTransliterator = TransliterationAdapter(locale = languages.source.locale)
                 _translationTransliterator =
                     TransliterationAdapter(locale = languages.target.locale)
 

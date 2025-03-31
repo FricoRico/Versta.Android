@@ -1,6 +1,7 @@
 package app.versta.translate
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -81,8 +82,11 @@ open class MainActivity : ComponentActivity() {
 
         ModelFilePicker.registerForActivity(this)
         LogFileSaver.registerForActivity(this)
-        TranslateBubbleShortcut.registerForActivity(this)
-        TranslateBubbleNotification.registerForActivity(this)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            TranslateBubbleShortcut.registerForActivity(this)
+            TranslateBubbleNotification.registerForActivity(this)
+        }
 
         handleStartupAndResume(intent)
 
