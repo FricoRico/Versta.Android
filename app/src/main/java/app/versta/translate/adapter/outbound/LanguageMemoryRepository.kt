@@ -45,6 +45,7 @@ class LanguageMemoryRepository : LanguageRepository {
             path = _mockPath,
             architectures = listOf(LanguageModelArchitecture.MarianMTModel),
             version = "v1.0.0",
+            score = 52.8,
             inference = LanguageModelInferenceFiles(
                 encoder = _mockPath,
                 decoder = _mockPath,
@@ -139,6 +140,7 @@ class LanguageMemoryRepository : LanguageRepository {
                 ),
                 architectures = metadata.architectures,
                 version = metadata.version,
+                score = metadata.score ?: 0.0,
                 inference = LanguageModelInferenceFiles(
                     encoder = Path(metadata.files.inference.encoder),
                     decoder = Path(metadata.files.inference.decoder)

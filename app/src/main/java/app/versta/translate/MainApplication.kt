@@ -6,7 +6,11 @@ import android.app.Application
 import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
 import app.versta.translate.adapter.inbound.CompressedFileExtractor
+import app.versta.translate.adapter.inbound.DownloadClient
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsFileRepository
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsRepository
 import app.versta.translate.adapter.inbound.FileHashValidator
+import app.versta.translate.adapter.inbound.HttpDownloadClient
 import app.versta.translate.adapter.inbound.PrecomputedHashFileValidator
 import app.versta.translate.adapter.inbound.TarballExtractor
 import app.versta.translate.adapter.outbound.AudioTrackPlayer
@@ -50,6 +54,7 @@ interface ApplicationModuleInterface {
     val translatorPreferenceRepository: TranslationPreferenceRepository
     val textToSpeechRepository: TextToSpeechRepository
     val textToSpeechPreferenceRepository: TextToSpeechPreferenceRepository
+    val externalLanguageModelsRepository: ExternalLanguageModelsRepository
 
     val translationViewModel: TranslationViewModel
     val textTranslationViewModel: TextTranslationViewModel
@@ -90,6 +95,10 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
 
     override val textToSpeechPreferenceRepository: TextToSpeechPreferenceRepository by lazy {
         TextToSpeechPreferenceDataStoreRepository(context.dataStore)
+    }
+
+    override val externalLanguageModelsRepository: ExternalLanguageModelsRepository by lazy {
+        ExternalLanguageModelsFileRepository(context.resources.openRawResource(R.raw.versta_translation_models))
     }
 
     override val loggingViewModel: LoggingViewModel by lazy {

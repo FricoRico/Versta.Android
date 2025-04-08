@@ -2,6 +2,7 @@ package app.versta.translate.core.entity
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.exists
 
@@ -10,7 +11,7 @@ enum class LanguageModelArchitecture(val value: String) {
 }
 
 @Serializable
-class LanguageModelMetadata(
+data class LanguageModelMetadata(
     val version: String = "",
     @SerialName("base_model")
     val baseModel: String,
@@ -18,6 +19,7 @@ class LanguageModelMetadata(
     val sourceLanguage: String,
     @SerialName("target_language")
     val targetLanguage: String,
+    val score: Double? = 0.0,
     val architectures: List<LanguageModelArchitecture>,
     val files: LanguageModelFilesMetadata,
     var root: Path? = null
@@ -45,7 +47,7 @@ data class LanguageMetadata(
 )
 
 @Serializable
-class LanguageBundleMetadata(
+data class LanguageBundleMetadata(
     val version: String = "",
     val metadata: List<LanguageMetadata>,
     val bidirectional: Boolean,
@@ -58,18 +60,13 @@ class LanguageBundleMetadata(
 
     fun languagePairs(): List<LanguagePair> {
         return metadata.map {
-            val source = Language.fromIsoCode(it.sourceLanguage)
-            val target = Language.fromIsoCode(it.targetLanguage)
-
-            LanguagePair(source, target)
+            LanguagePair.fromIsoCodes(it.sourceLanguage, it.targetLanguage)
         }
     }
 
     fun distinctLanguagePairs(): List<LanguagePair> {
         return languagePairs().distinctBy { pair ->
-            listOf(pair.source, pair.target)
-                .sortedBy { it.isoCode }
-                .joinToString("-")
+            pair.uniqueId()
         }
     }
 }

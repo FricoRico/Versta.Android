@@ -44,6 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.inbound.TranslateBubbleShortcut
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
@@ -176,13 +177,13 @@ fun MinimalLanguageSelector(
 
 @Composable
 fun MinimalLanguageSelectorButton(
+    modifier: Modifier = Modifier,
     context: Context,
     language: Language?,
     text: String,
     onClick: () -> Unit,
     contentPadding: PaddingValues = PaddingValues(MaterialTheme.spacing.large, MaterialTheme.spacing.medium),
-    shape: CornerBasedShape = MaterialTheme.shapes.extraLarge,
-    modifier: Modifier = Modifier
+    shape: CornerBasedShape = MaterialTheme.shapes.extraLarge
 ) {
     val flagDrawable = language?.getFlagDrawable(context)
 
@@ -232,8 +233,10 @@ fun MinimalLanguageSelectorButton(
 fun MinimalLanguageSelectorPreview() {
     return MinimalLanguageSelector(
         languageViewModel = LanguageViewModel(
+            context = LocalContext.current,
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
         ),
     )
 }

@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.core.entity.Language
@@ -64,8 +65,7 @@ fun LanguageDetails(
     val availableLanguagePairs by languageViewModel.availableLanguagePairs.collectAsStateWithLifecycle(emptyList())
     val availableLanguages by languageViewModel.availableLanguages.collectAsStateWithLifecycle(emptyList())
 
-    val targetLanguagePairs = availableLanguagePairs.filter { it.target == language }
-    val targetLanguages = availableLanguages.filter { it.pair in targetLanguagePairs }
+    val targetLanguages = availableLanguages.filter { it.pair.target == language }
 
     val context = LocalContext.current
 
@@ -178,8 +178,10 @@ fun LanguageDetailsPreview() {
     LanguageDetails(
         navController = rememberNavController(),
         languageViewModel = LanguageViewModel(
+            context = LocalContext.current,
             languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
         )
     )
 }

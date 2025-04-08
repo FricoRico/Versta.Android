@@ -2,6 +2,7 @@ package app.versta.translate.core.entity
 
 import android.content.Context
 import app.versta.translate.utils.LocaleUtils
+import kotlinx.serialization.Serializable
 import java.util.Locale
 
 enum class WritingDirection(val value: Int) {
@@ -44,4 +45,46 @@ data class Language(val locale: Locale) {
 
 data class LanguagePair(val source: Language, val target: Language) {
     val id: String = "${source.locale.language}-${target.locale.language}"
+
+    /**
+     * Returns a string representation of the language pair.
+     */
+    fun uniqueId(): String {
+        return listOf(source, target)
+            .sortedBy { it.isoCode }
+            .joinToString("-")
+    }
+
+    /**
+     * Checks if the language pair is equal to another language pair based on the non-unique ID.
+     */
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is LanguagePair) return false
+
+        return other.id == id
+    }
+
+    override fun hashCode(): Int {
+        return javaClass.hashCode()
+    }
+
+    /**
+     * Checks if the language pair is equal to another language pair based on unique ID.
+     */
+    fun uniqueEquals(other: LanguagePair): Boolean {
+        return other.uniqueId() == uniqueId()
+    }
+
+    companion object {
+        /**
+         * Returns a language pair instance from the given ISO codes.
+         */
+        fun fromIsoCodes(sourceLanguage: String, targetLanguage: String): LanguagePair {
+            return LanguagePair(
+                source = Language.fromIsoCode(sourceLanguage),
+                target = Language.fromIsoCode(targetLanguage)
+            )
+        }
+    }
 }

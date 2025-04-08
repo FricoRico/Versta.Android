@@ -153,7 +153,7 @@ class TextToSpeechViewModel(
     /**
      * Sets the text-to-speech error.
      */
-    fun setTextToSpeechError(throwable: Throwable) {
+    private fun setTextToSpeechError(throwable: Throwable) {
         _speechInference.value = false
         _speechProgress.value = TextToSpeechSynthesisState.Idle
 

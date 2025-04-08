@@ -37,8 +37,10 @@ class BubbleActivity : ComponentActivity() {
         factoryProducer = {
             viewModelFactory {
                 LanguageViewModel(
+                    context = this,
                     languageRepository = MainApplication.module.languageRepository,
-                    languagePreferenceRepository = MainApplication.module.languagePreferenceRepository
+                    languagePreferenceRepository = MainApplication.module.languagePreferenceRepository,
+                    externalLanguageModelsRepository = MainApplication.module.externalLanguageModelsRepository
                 )
             }
         }

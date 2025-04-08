@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.core.entity.Language
@@ -194,7 +195,7 @@ fun LanguageSelectionNoItems() {
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
-                text = stringResource(R.string.language_import_hint),
+                text = stringResource(R.string.select_language_hint),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -249,8 +250,10 @@ fun LanguageSelectionListItem(
 fun LanguageSelectionDrawerPreview() {
     LanguageSelectionDrawer(
         languageViewModel = LanguageViewModel(
+            context = LocalContext.current,
             languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
         ).apply {
             setLanguageSelectionState(LanguageType.Source)
         },

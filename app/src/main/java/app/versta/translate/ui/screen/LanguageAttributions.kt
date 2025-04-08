@@ -32,12 +32,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import app.versta.translate.R
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.theme.spacing
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,7 +50,7 @@ fun LanguageAttributions(
     val context = LocalContext.current
     val orientation = context.resources.configuration.orientation
 
-    val languages by languageViewModel.availableLanguages.collectAsStateWithLifecycle(emptyList())
+    val languageModels by languageViewModel.languageModels.collectAsStateWithLifecycle(emptyList())
 
     val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
         MaterialTheme.spacing.medium
@@ -85,65 +87,71 @@ fun LanguageAttributions(
                     end = landscapeContentPadding
                 ),
             ) {
-                items(items = languages, key = { it.pair.id }) { language ->
-                    val onClick = Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse(stringResource(R.string.hugginface_url, language.files.baseModel))
-                    )
+                items(items = languageModels, key = { it.pair.uniqueId() }) { model ->
+                    for(metadata in model.metadata) {
+                        val onClick = Intent(
+                            Intent.ACTION_VIEW,
+                            stringResource(R.string.hugginface_url, metadata.baseModel).toUri()
+                        )
 
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        onClick = {
-                            context.startActivity(onClick, null)
-                        },
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(MaterialTheme.spacing.medium),
-                            verticalAlignment = Alignment.Top,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            onClick = {
+                                context.startActivity(onClick, null)
+                            },
                         ) {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(MaterialTheme.spacing.medium),
+                                verticalAlignment = Alignment.Top,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(
-                                    text = "${language.pair.source.name} to ${language.pair.target.name}",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    maxLines = 1
-                                )
-
-                                Text(
-                                    text = language.files.baseModel,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-
-                                Row(
-                                    modifier = Modifier.padding(top = MaterialTheme.spacing.small)
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall)
                                 ) {
-                                    language.files.architectures.forEach { architecture ->
-                                        Surface(
-                                            color = MaterialTheme.colorScheme.primary,
-                                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                                            modifier = Modifier.clip(MaterialTheme.shapes.extraLarge)
-                                        ) {
-                                            Text(
-                                                text = architecture.name,
-                                                modifier = Modifier.padding(
-                                                    vertical = 1.dp,
-                                                    horizontal = MaterialTheme.spacing.extraSmall
-                                                ),
-                                                style = MaterialTheme.typography.labelSmall,
-                                            )
+                                    Text(
+                                        text = stringResource(
+                                            R.string.language_attributes_source_target_combination,
+                                            metadata.source.name,
+                                            metadata.target.name
+                                        ),
+                                        style = MaterialTheme.typography.titleLarge,
+                                        maxLines = 1
+                                    )
+
+                                    Text(
+                                        text = metadata.baseModel,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+
+                                    Row(
+                                        modifier = Modifier.padding(top = MaterialTheme.spacing.small)
+                                    ) {
+                                        metadata.architectures.forEach { architecture ->
+                                            Surface(
+                                                color = MaterialTheme.colorScheme.primary,
+                                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                                modifier = Modifier.clip(MaterialTheme.shapes.extraLarge)
+                                            ) {
+                                                Text(
+                                                    text = architecture.name,
+                                                    modifier = Modifier.padding(
+                                                        vertical = 1.dp,
+                                                        horizontal = MaterialTheme.spacing.extraSmall
+                                                    ),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                )
+                                            }
                                         }
                                     }
                                 }
-                            }
 
-                            Text(
-                                text = language.files.version.replace("v", ""),
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
+                                Text(
+                                    text = model.version.replace("v", ""),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
                         }
                     }
                 }
@@ -158,8 +166,10 @@ fun LanguageAttributionsPreview() {
     LanguageAttributions(
         navController = NavController(LocalContext.current),
         languageViewModel = LanguageViewModel(
+            context = LocalContext.current,
             languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
         )
     )
 }

@@ -3,16 +3,25 @@ package app.versta.translate.core.entity
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.io.IOException
+import java.nio.file.FileVisitResult
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.Locale
 import kotlin.io.path.exists
+import kotlin.io.path.fileSize
 
 data class LanguagePairWithModelFiles(
     private val sourceLocale: Locale,
     private val targetLocale: Locale,
     val files: LanguageModelFiles,
 ) {
-    val pair = LanguagePair(source = Language.fromLocale(sourceLocale), target = Language.fromLocale(targetLocale))
+    val pair = LanguagePair(
+        source = Language.fromLocale(sourceLocale),
+        target = Language.fromLocale(targetLocale)
+    )
 }
 
 @Serializable
@@ -20,10 +29,12 @@ data class LanguageModelFiles(
     val path: Path,
     val baseModel: String,
     val architectures: List<LanguageModelArchitecture>,
+    val score: Double? = 0.0,
+    val size: Long = 0,
     val version: String,
     val tokenizer: LanguageModelTokenizerFiles,
-    val inference: LanguageModelInferenceFiles)
-{
+    val inference: LanguageModelInferenceFiles
+) {
     fun isValid() = tokenizer.isValid() &&
             inference.isValid()
 
@@ -36,7 +47,8 @@ data class LanguageModelFiles(
                 throw IllegalArgumentException("Language model metadata file not found: ${metadataFile.absolutePath}")
             }
 
-            val metadata = serializer.decodeFromString<LanguageModelMetadata>(metadataFile.readText())
+            val metadata =
+                serializer.decodeFromString<LanguageModelMetadata>(metadataFile.readText())
             val files = LanguageModelFiles(
                 path = path,
                 baseModel = metadata.baseModel,
@@ -45,10 +57,16 @@ data class LanguageModelFiles(
                 tokenizer = LanguageModelTokenizerFiles(
                     config = path.resolve(metadata.files.tokenizer.config),
                     sourceVocabulary = path.resolve(metadata.files.tokenizer.sourceVocabulary),
-                    targetVocabulary = metadata.files.tokenizer.targetVocabulary?.let { path.resolve(it) },
+                    targetVocabulary = metadata.files.tokenizer.targetVocabulary?.let {
+                        path.resolve(
+                            it
+                        )
+                    },
                     source = path.resolve(metadata.files.tokenizer.source),
                     target = path.resolve(metadata.files.tokenizer.target)
                 ),
+                score = metadata.score ?: 0.0,
+                size = size(path.parent),
                 inference = LanguageModelInferenceFiles(
                     encoder = path.resolve(metadata.files.inference.encoder),
                     decoder = path.resolve(metadata.files.inference.decoder)
@@ -60,6 +78,27 @@ data class LanguageModelFiles(
             }
 
             return files
+        }
+
+        private fun size(path: Path): Long {
+            var folderSize: Long = 0
+
+            Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
+                override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                    folderSize += Files.size(file)
+                    return FileVisitResult.CONTINUE
+                }
+
+                override fun postVisitDirectory(dir: Path, exc: IOException?): FileVisitResult {
+                    if (exc != null) {
+                        throw exc
+                    }
+
+                    return FileVisitResult.CONTINUE
+                }
+            })
+
+            return folderSize
         }
     }
 }

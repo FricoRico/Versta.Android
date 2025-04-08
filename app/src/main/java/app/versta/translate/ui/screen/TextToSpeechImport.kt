@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -169,6 +171,33 @@ fun TextToSpeechImport(
             }
         }
     )
+}
+
+@Composable
+fun PageIndicator(pagerState: PagerState, modifier: Modifier = Modifier) {
+    val pageCount = pagerState.pageCount
+    Row(
+        Modifier
+            .padding(horizontal = MaterialTheme.spacing.extraLarge)
+            .then(modifier),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        repeat(pageCount) { iteration ->
+            val color =
+                if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(
+                    alpha = 0.5f
+                )
+            Box(
+                modifier = Modifier
+                    .padding(MaterialTheme.spacing.extraSmall)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(color)
+                    .weight(1f)
+                    .height(MaterialTheme.spacing.extraSmall)
+            )
+        }
+    }
 }
 
 @Composable

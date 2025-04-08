@@ -1,5 +1,6 @@
 import org.gradle.crypto.checksum.Checksum
 import java.io.FileInputStream
+import java.net.URI
 import java.util.Properties
 
 val keystoreProperties = Properties().apply {
@@ -151,6 +152,23 @@ tasks.apply {
         from(layout.buildDirectory.file("intermediates/datahash/$dataArchiveName.sha256"))
         into(layout.projectDirectory.dir("src/main/res/raw"))
     }
+
+    register("getLanguageModels") {
+        doLast {
+            val uri = URI("https://models.versta.app/translation/models.json")
+            val file = layout.projectDirectory.file("src/main/res/raw/versta_translation_models.json")
+
+            uri.toURL().openStream().use { input ->
+                file.asFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+        }
+    }
+
+    preBuild {
+        dependsOn("getLanguageModels")
+    }
 }
 
 project.apply {
@@ -215,6 +233,7 @@ dependencies {
     implementation(libs.material.icons)
     implementation(libs.material.icons.extended)
     implementation(libs.navigation.compose)
+    implementation(libs.squareup.okhttp)
     implementation(libs.sqldelight.android)
     implementation(libs.sqldelight.coroutines)
 

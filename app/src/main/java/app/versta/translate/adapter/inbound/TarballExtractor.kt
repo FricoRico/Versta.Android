@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.core.net.toFile
+import androidx.core.net.toUri
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import java.io.ByteArrayInputStream
@@ -27,6 +28,25 @@ class TarballExtractor(private val context: Context) : CompressedFileExtractor {
     ): File? {
         try {
             return extractFile(uri, outputDir, extractToDirectory, listener)
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
+    /**
+     * Extracts the contents of a compressed archive file from a given [File] into the app's local storage.
+     * @param file The File of the zip file to extract.
+     * @param outputDir The local directory where the contents should be extracted.
+     * @param extractToDirectory Whether to extract the contents to a directory with the same name as the compressed file.
+     */
+    override fun extract(
+        file: File,
+        outputDir: File,
+        extractToDirectory: Boolean,
+        listener: ExtractionProgressListener?
+    ): File? {
+        try {
+            return extractFile(file.toUri(), outputDir, extractToDirectory, listener)
         } catch (e: Exception) {
             throw e
         }

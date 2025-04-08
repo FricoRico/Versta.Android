@@ -1,23 +1,20 @@
 package app.versta.translate.ui.screen
 
-import android.content.Context
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import android.icu.text.DecimalFormat
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,30 +25,39 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
+import app.versta.translate.core.entity.DownloadStatus
+import app.versta.translate.core.entity.ExternalLanguageDownloadTask
+import app.versta.translate.core.entity.ExternalLanguageModels
+import app.versta.translate.core.entity.ExternalLanguagePairDefinition
 import app.versta.translate.core.entity.Language
-import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.model.LanguageViewModel
+import app.versta.translate.ui.component.DownloadButton
 import app.versta.translate.ui.component.LanguageDeletionConfirmationDialog
+import app.versta.translate.ui.component.LanguagePairBadge
 import app.versta.translate.ui.component.ListDivider
 import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.component.SettingsDefaults
+import app.versta.translate.ui.component.SettingsHeaderItem
 import app.versta.translate.ui.theme.spacing
+import kotlin.math.max
+import kotlin.math.min
+
+internal const val LANGUAGE_RATING_THRESHOLD = 70
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,15 +75,19 @@ fun LanguageSettings(
         MaterialTheme.spacing.small
     }
 
-
-    val sourceLanguages by languageViewModel.sourceLanguages.collectAsStateWithLifecycle(emptyList())
     val availableLanguages by languageViewModel.availableLanguagePairs.collectAsStateWithLifecycle(
         emptyList()
     )
 
+    val languageModels by languageViewModel.languageModelsByState.collectAsStateWithLifecycle(
+        ExternalLanguageModels()
+    )
+    val downloadTasks by languageViewModel.languageModelDownloadTasks.collectAsStateWithLifecycle()
+
     var languageToBeDeleted by remember { mutableStateOf<Language?>(null) }
 
-    ScaffoldLargeHeader(topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
+    ScaffoldLargeHeader(
+        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
         title = {
             Text(
                 text = stringResource(R.string.language_settings_title),
@@ -102,71 +112,59 @@ fun LanguageSettings(
                     end = landscapeContentPadding
                 )
             ) {
-                item {
-                    SettingsButtonItem(
-                        headlineContent = stringResource(R.string.language_settings_get_more_title),
-                        supportingContent = stringResource(R.string.language_settings_get_more_description),
-                        onClick = {
-                            navController.navigate(Screens.LanguageImport())
-                        },
-                        leadingContent = {
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        MaterialTheme.colorScheme.secondaryContainer,
-                                        MaterialTheme.shapes.extraLarge
-                                    )
-                                    .padding(MaterialTheme.spacing.small),
-                            ) {
-                                Icon(
-                                    Icons.Filled.Download,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                )
-                            }
-                        },
-                        colors = SettingsDefaults.colorsSecondary(),
-                    )
-                }
-
-                ListDivider()
-
-                if (availableLanguages.isEmpty()) {
-                    item {
-                        Row(
-                            Modifier
-                                .padding(top = MaterialTheme.spacing.extraLarge)
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Column {
-                                Text(
-                                    text = stringResource(R.string.language_settings_no_languages),
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                                Text(
-                                    text = stringResource(R.string.language_settings_language_import_hint),
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(MaterialTheme.spacing.extraLarge)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Languages(context = context,
-                    sourceLanguages = sourceLanguages,
-                    availableLanguages = availableLanguages,
+                Languages(
+                    languages = languageModels.installed,
+                    downloadTasks = downloadTasks,
+                    header = { size ->
+                        SettingsHeaderItem(
+                            headlineContent = stringResource(R.string.language_settings_installed_headline),
+                            groupSize = size + 1, index = 0
+                        )
+                    },
                     onClick = { language ->
                         navController.navigate(Screens.LanguageDetails.withArgs(language.locale.language))
                     },
                     onSwipeToDelete = { language ->
                         languageToBeDeleted = language
-                    })
+                    }
+                )
+
+                Languages(
+                    languages = languageModels.updates,
+                    downloadTasks = downloadTasks,
+                    header = { size ->
+                        SettingsHeaderItem(
+                            headlineContent = stringResource(R.string.language_settings_updates_headline),
+                            groupSize = size + 1, index = 0
+                        )
+                    },
+                    onDownload = { model ->
+                        languageViewModel.queueDownload(model)
+                    },
+                    onClick = { language ->
+                        navController.navigate(Screens.LanguageDetails.withArgs(language.locale.language))
+                    },
+                    onSwipeToDelete = { language ->
+                        languageToBeDeleted = language
+                    }
+                )
+
+                Languages(
+                    languages = languageModels.available,
+                    downloadTasks = downloadTasks,
+                    header = { size ->
+                        SettingsHeaderItem(
+                            headlineContent = stringResource(R.string.language_settings_available_headline),
+                            groupSize = size + 1, index = 0
+                        )
+                    },
+                    onDownload = { model ->
+                        languageViewModel.queueDownload(model)
+                    },
+                    onClick = { language ->
+                        navController.navigate(Screens.LanguageDetails.withArgs(language.locale.language))
+                    }
+                )
             }
 
             LanguageDeletionConfirmationDialog(
@@ -183,43 +181,113 @@ fun LanguageSettings(
 }
 
 private fun LazyListScope.Languages(
-    context: Context,
-    sourceLanguages: List<Language>,
-    availableLanguages: List<LanguagePair>,
+    languages: List<ExternalLanguagePairDefinition>,
+    header: @Composable (Int) -> Unit,
+    downloadTasks: List<ExternalLanguageDownloadTask>,
     onClick: (Language) -> Unit,
-    onSwipeToDelete: (Language) -> Unit,
+    onDownload: ((ExternalLanguagePairDefinition) -> Unit)? = null,
+    onSwipeToDelete: ((Language) -> Unit)? = null,
 ) {
-    if (availableLanguages.isEmpty()) {
+    if (languages.isEmpty()) {
         return
     }
 
+    val ratingFormat = DecimalFormat("0.0")
+    val sizeFormat = DecimalFormat("0.00")
+
+    item {
+        header(languages.size)
+    }
+
     items(
-        sourceLanguages.size,
-        key = { index -> sourceLanguages[index].locale.language }) { index ->
-        val language = remember { sourceLanguages[index] }
+        count = languages.size,
+        key = { languages[it].pair.uniqueId() }
+    ) { it ->
+        val model = remember { languages[it] }
+        val task = downloadTasks.firstOrNull { it.model == model }
 
-        val flagDrawable = remember { language.getFlagDrawable(context) }
-        val availableTargetLanguages =
-            remember { availableLanguages.count { it.source == language } }
+        val source = model.pair.source
+        val target = model.pair.target
 
-        SettingsButtonItem(index = index,
-            groupSize = sourceLanguages.size,
-            headlineContent = language.name,
-            supportingContent = stringResource(
-                R.string.target_languages_available, availableTargetLanguages
-            ),
+        val score = model.metadata.map { it.score }.average()
+        val rating = max(min((score / LANGUAGE_RATING_THRESHOLD) * 5, 5.0), 1.0)
+
+        val size = ((model.extracted ?: model.size) / 1e6)
+
+        SettingsButtonItem(
+            index = it + 1,
+            groupSize = languages.size + 1,
+            modifier = Modifier.animateItem(),
+            colors = SettingsDefaults.colors(supportingColor = MaterialTheme.colorScheme.onSurfaceVariant),
+            headlineContent = "${source.name} - ${target.name}",
+            supportingContent = {
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+                    modifier = Modifier.padding(top = MaterialTheme.spacing.extraSmall)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Filled.Star,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.requiredSize(MaterialTheme.spacing.medium)
+                        )
+                        Text(
+                            text = ratingFormat.format(rating),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        )
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            if (model.extracted != null) Icons.Filled.Save else Icons.Filled.CloudDownload,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.requiredSize(MaterialTheme.spacing.medium)
+                        )
+                        Text(
+                            text = "${sizeFormat.format(size)} MB",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        )
+                    }
+                }
+            },
             leadingContent = {
-                Image(
-                    painter = painterResource(flagDrawable),
-                    contentDescription = stringResource(R.string.flag, language.name),
-                    modifier = Modifier
-                        .requiredSize(MaterialTheme.spacing.extraLarge)
-                        .clip(MaterialTheme.shapes.extraLarge)
+                LanguagePairBadge(
+                    pair = model.pair,
+                    bidirectional = model.bidirectional,
                 )
             },
-            onClick = { onClick(language) },
-            onSwipeToDelete = { onSwipeToDelete(language) })
+            onClick = { onClick(source) },
+            trailingContent = {
+                if (onDownload != null) {
+                    DownloadButton(
+                        onClick = {
+                            onDownload(model)
+                        },
+                        status = task?.status ?: DownloadStatus.Idle,
+                    )
+                }
+            },
+            onSwipeToDelete = if (onSwipeToDelete != null) {
+                { onSwipeToDelete(source) }
+            } else {
+                null
+            })
     }
+
+    ListDivider()
 }
 
 @Composable
@@ -228,8 +296,10 @@ private fun PreviewLanguageSettings() {
     LanguageSettings(
         navController = rememberNavController(),
         languageViewModel = LanguageViewModel(
+            context = LocalContext.current,
             languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
         ),
     )
 }

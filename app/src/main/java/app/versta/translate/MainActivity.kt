@@ -17,7 +17,6 @@ import app.versta.translate.adapter.inbound.ModelFilePicker
 import app.versta.translate.adapter.inbound.TranslateBubbleNotification
 import app.versta.translate.adapter.inbound.TranslateBubbleShortcut
 import app.versta.translate.adapter.outbound.LogFileSaver
-import app.versta.translate.core.model.LanguageImportViewModel
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.ui.component.LanguageSelectionDrawer
@@ -36,19 +35,10 @@ open class MainActivity : ComponentActivity() {
         factoryProducer = {
             viewModelFactory {
                 LanguageViewModel(
+                    context = this,
                     languageRepository = MainApplication.module.languageRepository,
-                    languagePreferenceRepository = MainApplication.module.languagePreferenceRepository
-                )
-            }
-        }
-    )
-
-    private val languageImportViewModel by viewModels<LanguageImportViewModel>(
-        factoryProducer = {
-            viewModelFactory {
-                LanguageImportViewModel(
-                    modelExtractor = MainApplication.module.extractor,
-                    languageRepository = MainApplication.module.languageRepository
+                    languagePreferenceRepository = MainApplication.module.languagePreferenceRepository,
+                    externalLanguageModelsRepository = MainApplication.module.externalLanguageModelsRepository
                 )
             }
         }
@@ -101,7 +91,6 @@ open class MainActivity : ComponentActivity() {
                     Router(
                         startDestination = initialRoute,
                         languageViewModel = languageViewModel,
-                        languageImportViewModel = languageImportViewModel,
                         licenseViewModel = licenseViewModel,
                         translationViewModel = MainApplication.module.translationViewModel,
                         textTranslationViewModel = MainApplication.module.textTranslationViewModel,

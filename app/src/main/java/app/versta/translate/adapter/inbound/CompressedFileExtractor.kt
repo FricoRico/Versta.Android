@@ -29,6 +29,19 @@ interface CompressedFileExtractor {
     ): File?
 
     /**
+     * Extracts the contents of a compressed archive file from a given [File] into the app's local storage.
+     * @param file The File of the zip file to extract.
+     * @param outputDir The local directory where the contents should be extracted.
+     * @param extractToDirectory Whether to extract the contents to a directory with the same name as the compressed file.
+     */
+    fun extract(
+        file: File,
+        outputDir: File,
+        extractToDirectory: Boolean = true,
+        listener: ExtractionProgressListener? = null
+    ): File?
+
+    /**
      * Extracts the contents of a compressed archive file from a given [InputStream] into the app's local storage.
      * @param stream An already opened input stream
      * @param outputDir The local directory where the contents should be extracted.

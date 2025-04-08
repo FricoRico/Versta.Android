@@ -157,6 +157,7 @@ object SettingsDefaults {
 
 @Composable
 fun SettingsButtonItem(
+    modifier: Modifier = Modifier,
     headlineContent: String,
     onClick: (() -> Unit)? = null,
     onSwipeToDelete: (() -> Unit)? = null,
@@ -164,8 +165,58 @@ fun SettingsButtonItem(
     leadingContent: @Composable (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
     underlineContent: @Composable (() -> Unit)? = null,
-    underlineContentPadding: PaddingValues = PaddingValues(start = MaterialTheme.spacing.large, end = MaterialTheme.spacing.large, bottom = MaterialTheme.spacing.large),
+    underlineContentPadding: PaddingValues = PaddingValues(
+        start = MaterialTheme.spacing.large,
+        end = MaterialTheme.spacing.large,
+        bottom = MaterialTheme.spacing.large
+    ),
+    colors: ListItemColors = SettingsDefaults.colors(),
+    tonalElevation: Dp = ListItemDefaults.Elevation,
+    shadowElevation: Dp = ListItemDefaults.Elevation,
+    index: Int = 0,
+    groupSize: Int = 1,
+) {
+    SettingsButtonItem(
+        modifier = modifier,
+        headlineContent = headlineContent,
+        onClick = onClick,
+        onSwipeToDelete = onSwipeToDelete,
+        supportingContent = {
+            if (supportingContent.isNotEmpty()) {
+                Text(
+                    text = supportingContent,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.supportingTextColor,
+                )
+            }
+        },
+        leadingContent = leadingContent,
+        trailingContent = trailingContent,
+        underlineContent = underlineContent,
+        underlineContentPadding = underlineContentPadding,
+        colors = colors,
+        tonalElevation = tonalElevation,
+        shadowElevation = shadowElevation,
+        index = index,
+        groupSize = groupSize,
+    )
+}
+
+@Composable
+fun SettingsButtonItem(
     modifier: Modifier = Modifier,
+    headlineContent: String,
+    onClick: (() -> Unit)? = null,
+    onSwipeToDelete: (() -> Unit)? = null,
+    supportingContent: @Composable (() -> Unit)? = null,
+    leadingContent: @Composable (() -> Unit)? = null,
+    trailingContent: @Composable (() -> Unit)? = null,
+    underlineContent: @Composable (() -> Unit)? = null,
+    underlineContentPadding: PaddingValues = PaddingValues(
+        start = MaterialTheme.spacing.large,
+        end = MaterialTheme.spacing.large,
+        bottom = MaterialTheme.spacing.large
+    ),
     colors: ListItemColors = SettingsDefaults.colors(),
     tonalElevation: Dp = ListItemDefaults.Elevation,
     shadowElevation: Dp = ListItemDefaults.Elevation,
@@ -233,7 +284,7 @@ fun SettingsButtonItem(
 private fun SettingsButtonItemContent(
     headlineContent: String,
     onClick: (() -> Unit)? = null,
-    supportingContent: String = "",
+    supportingContent: @Composable (() -> Unit)?,
     leadingContent: @Composable (() -> Unit)?,
     trailingContent: @Composable (() -> Unit)?,
     underlineContent: @Composable (() -> Unit)?,
@@ -275,7 +326,7 @@ private fun SettingsButtonItemContent(
                     leadingContent()
                 }
 
-                if (headlineContent.isNotEmpty() || supportingContent.isNotEmpty()) {
+                if (headlineContent.isNotEmpty() || supportingContent != null) {
                     Column(
                         modifier = Modifier.weight(1f),
                     ) {
@@ -288,12 +339,8 @@ private fun SettingsButtonItemContent(
                             )
                         }
 
-                        if (supportingContent.isNotEmpty()) {
-                            Text(
-                                text = supportingContent,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = colors.supportingTextColor,
-                            )
+                        if (supportingContent != null) {
+                            supportingContent()
                         }
                     }
                 }

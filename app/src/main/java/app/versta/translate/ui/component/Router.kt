@@ -21,7 +21,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import app.versta.translate.core.model.LanguageImportViewModel
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.LoggingViewModel
@@ -34,7 +33,6 @@ import app.versta.translate.ui.screen.ApplicationLogs
 import app.versta.translate.ui.screen.Home
 import app.versta.translate.ui.screen.LanguageAttributions
 import app.versta.translate.ui.screen.LanguageDetails
-import app.versta.translate.ui.screen.LanguageImport
 import app.versta.translate.ui.screen.LanguageSettings
 import app.versta.translate.ui.screen.PrivacyPolicy
 import app.versta.translate.ui.screen.Screens
@@ -51,7 +49,6 @@ import app.versta.translate.ui.screen.Troubleshooting
 fun Router(
     startDestination: String? = null,
     languageViewModel: LanguageViewModel,
-    languageImportViewModel: LanguageImportViewModel,
     licenseViewModel: LicenseViewModel,
     translationViewModel: TranslationViewModel,
     textTranslationViewModel: TextTranslationViewModel,
@@ -130,12 +127,6 @@ fun Router(
             LanguageSettings(
                 navController = navController,
                 languageViewModel = languageViewModel
-            )
-        }
-        composable(Screens.LanguageImport()) {
-            LanguageImport(
-                navController = navController,
-                languageImportViewModel = languageImportViewModel,
             )
         }
         composable(Screens.TextTranslation()) {

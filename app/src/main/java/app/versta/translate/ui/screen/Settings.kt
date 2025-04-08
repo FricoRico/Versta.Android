@@ -123,8 +123,8 @@ fun Settings(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = "Text-to-Speech",
-                        supportingContent = "Configure voices, speech rate",
+                        headlineContent = stringResource(R.string.settings_text_to_speech_title),
+                        supportingContent = stringResource(R.string.settings_text_to_speech_description),
                         onClick = {
                             navController.navigate(Screens.TextToSpeechSettings())
                         },

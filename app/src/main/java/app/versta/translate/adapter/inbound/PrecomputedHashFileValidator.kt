@@ -26,7 +26,7 @@ class PrecomputedHashFileValidator : FileHashValidator {
             return false
         }
 
-        return hashFile.use { hashStream ->
+        hashFile.use { hashStream ->
             cachedHashFile.inputStream().use { cachedHashStream ->
                 val hashBytes = hashStream.readBytes()
                 val cachedHashBytes = cachedHashStream.readBytes()

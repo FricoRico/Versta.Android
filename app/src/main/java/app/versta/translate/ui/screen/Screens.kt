@@ -12,7 +12,6 @@ enum class Screens (
     Home,
     Settings,
     LanguageSettings,
-    LanguageImport,
     LanguageDetails(
         listOf("sourceLanguage")
     ),
