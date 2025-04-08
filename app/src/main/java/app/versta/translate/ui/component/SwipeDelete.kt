@@ -36,15 +36,22 @@ fun SwipeDelete(
     val state = rememberSwipeToDismissBoxState(
         positionalThreshold = {
             with(density) {
-                configuration.screenWidthDp.dp.toPx() / 2f
+                (configuration.screenWidthDp * 0.33).dp.toPx()
             }
         },
         confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                onSwipeToDeleteRequested()
+            when (value) {
+                SwipeToDismissBoxValue.EndToStart -> {
+                    onSwipeToDeleteRequested()
+                }
+
+                SwipeToDismissBoxValue.StartToEnd,
+                SwipeToDismissBoxValue.Settled -> {
+                    return@rememberSwipeToDismissBoxState false
+                }
             }
 
-            false
+            return@rememberSwipeToDismissBoxState false
         }
     )
 
@@ -77,7 +84,7 @@ fun DeleteBackground(
         contentAlignment = Alignment.CenterEnd
     ) {
         Icon(
-            imageVector = if(progress > 0.51f && progress < 0.99f) Icons.Outlined.DeleteForever else Icons.Outlined.Delete,
+            imageVector = if (progress > 0.33f && progress < 0.99f) Icons.Outlined.DeleteForever else Icons.Outlined.Delete,
             contentDescription = stringResource(R.string.remove),
             tint = MaterialTheme.colorScheme.onError,
         )

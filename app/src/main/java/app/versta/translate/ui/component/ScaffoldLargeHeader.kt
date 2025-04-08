@@ -25,8 +25,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -34,6 +36,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.versta.translate.ui.theme.spacing
+import kotlin.math.abs
+import kotlin.math.sqrt
+
+internal const val NESTED_SCROLL_VELOCITY_THRESHOLD = 128f
 
 @OptIn(ExperimentalMaterial3Api::class)
 object ScaffoldLargeHeaderDefaults {
@@ -184,8 +190,39 @@ fun ScaffoldLargeHeader(
         0.dp
     }
 
+    // This is a workaround for swipe to dismiss taking priority over a swipe to scroll quickly.
+    // Instead the swipe to dismiss would trigger thinking it has been swiped, while instead the user
+    // intended to scroll quickly.
+    val scrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val consumed = scrollBehavior.nestedScrollConnection.onPreScroll(available, source)
+
+                val remaining = available - consumed
+                val deltaY = remaining.y
+                val deltaX = remaining.x
+
+                val velocity = sqrt(deltaX * deltaX + deltaY * deltaY)
+
+                return if (velocity > NESTED_SCROLL_VELOCITY_THRESHOLD || abs(deltaY) > abs(deltaX)) {
+                    consumed
+                } else {
+                    available
+                }
+            }
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                return scrollBehavior.nestedScrollConnection.onPostScroll(consumed, available, source)
+            }
+        }
+    }
+
     Scaffold(
-        modifier = Modifier.nestedScroll(connection = scrollBehavior.nestedScrollConnection),
+        modifier = Modifier.nestedScroll(connection = scrollConnection),
         topBar = {
             LargeTopAppBar(
                 title = title,
