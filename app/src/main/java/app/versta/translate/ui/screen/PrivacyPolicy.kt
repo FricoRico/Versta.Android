@@ -49,6 +49,10 @@ fun PrivacyPolicy(
 
     val privacyPolicyContent = listOf(
         PrivacyPolicyParagraph(
+            title = stringResource(R.string.latest_updates_title),
+            content = stringResource(R.string.latest_updates_paragraph)
+        ),
+        PrivacyPolicyParagraph(
             title = stringResource(R.string.information_collection_title),
             content = stringResource(R.string.information_collection_paragraph, stringResource(R.string.app_name))
         ),

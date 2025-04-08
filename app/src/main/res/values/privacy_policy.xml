@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="latest_updates_title">Latest Updates</string>
+    <string name="latest_updates_paragraph">This privacy policy has last been updated on 2025–04–09. The changes made are related to in-app downloads of language models, requiring the app to gain internet permissions.</string>
     <string name="information_collection_title">Information We Collect</string>
     <string name="information_collection_paragraph">%1$s does not collect any personal data from its users. The app is designed to function entirely offline, and as such, it does not require an internet connection to operate.</string>
-    <string name="internet_permissions_title">No Internet Permissions</string>
-    <string name="internet_permission_paragraph">%1$s does not request or require any internet permissions in the Android manifest. This means the app cannot access the internet from your device, ensuring that no data is sent or received without your explicit action.</string>
+    <string name="internet_permissions_title">Limited Internet Use</string>
+    <string name="internet_permission_paragraph">%1$s requires internet access solely for downloading and updating language models. No data is sent or received beyond this specific purpose, ensuring your privacy and security. Your explicit action is required for any internet-related activity within the app.</string>
     <string name="analytics_title">No Analytics</string>
     <string name="analytics_paragraph">%1$s does not use any analytics services. We do not track or collect data about your usage of the app.</string>
     <string name="logging_title">Logs</string>
