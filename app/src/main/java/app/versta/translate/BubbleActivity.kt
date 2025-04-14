@@ -69,7 +69,6 @@ class BubbleActivity : ComponentActivity() {
 
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
                 TranslateBubbleShortcut.registerForActivity(this)
-                TranslateBubbleNotification.registerForActivity(this)
             }
 
             else -> {

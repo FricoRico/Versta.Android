@@ -3,7 +3,6 @@ package app.versta.translate.adapter.inbound
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Person
@@ -12,8 +11,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.Icon
 import android.os.Build
-import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import app.versta.translate.BubbleActivity
@@ -22,29 +19,9 @@ import app.versta.translate.MainApplication.Companion.TRANSLATION_BUBBLE_SHORTCU
 import app.versta.translate.MainApplication.Companion.TRANSLATION_NOTIFICATION_CHANNEL_ID
 import app.versta.translate.MainApplication.Companion.TRANSLATION_NOTIFICATION_ID
 import app.versta.translate.R
-import kotlin.random.Random
 
 
 object TranslateBubbleNotification : TranslateNotification {
-    private const val name = "Translation Bubbles"
-    private const val descriptionText = "Allows you to translate selected text in a bubble overlay"
-    private val importance = NotificationManager.IMPORTANCE_MIN
-
-    /**
-     * Registers the notification channel for the translation bubble.
-     */
-    fun registerForActivity(activity: ComponentActivity) {
-        val notificationManager =
-            activity.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        val channel =
-            NotificationChannel(TRANSLATION_NOTIFICATION_CHANNEL_ID, name, importance).apply {
-                description = descriptionText
-            }
-
-        notificationManager.createNotificationChannel(channel)
-    }
-
     /**
      * Clears the translation notification.
      */
@@ -138,8 +115,8 @@ object TranslateBubbleNotification : TranslateNotification {
             .build()
 
         val builder = Notification.Builder(context, TRANSLATION_NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher_round)
-            .setContentTitle("Translate")
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(context.getString(R.string.translation_bubbles_notification_title))
             .setContentText(text)
             .setGroup(TRANSLATION_NOTIFICATION_CHANNEL_ID)
             .setShortcutId(TRANSLATION_BUBBLE_SHORTCUT_ID)

@@ -223,6 +223,7 @@ dependencies {
     implementation(libs.androidx.compose.animation)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.splash.screen)
     implementation(libs.appache.commons.compress)
     implementation(libs.atilika.kuromoji.ipadic)

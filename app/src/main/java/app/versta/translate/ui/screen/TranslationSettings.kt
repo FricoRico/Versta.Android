@@ -132,7 +132,7 @@ fun TranslationSettings(
             ) {
                 item {
                     SettingsHeaderItem(
-                        headlineContent = stringResource(R.string.translation_settings_history_headline), groupSize = 3, index = 0
+                        content = stringResource(R.string.translation_settings_history_headline), groupSize = 3, index = 0
                     )
                 }
 
@@ -188,7 +188,7 @@ fun TranslationSettings(
 
                 item {
                     SettingsHeaderItem(
-                        headlineContent = stringResource(R.string.translation_settings_inference_headline), groupSize = 5, index = 0
+                        content = stringResource(R.string.translation_settings_inference_headline), groupSize = 5, index = 0
                     )
                 }
 

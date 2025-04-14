@@ -3,6 +3,7 @@ package app.versta.translate.core.entity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.net.URI
+import java.util.UUID
 
 @Serializable
 data class ExternalLanguageModelDefinition(
@@ -92,6 +93,7 @@ data class ExternalLanguageModels(
 )
 
 data class ExternalLanguageDownloadTask(
+    val id: UUID = UUID.randomUUID(),
     val model: ExternalLanguagePairDefinition,
     var status: DownloadStatus,
 )

@@ -1,7 +1,6 @@
 package app.versta.translate.ui.component
 
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -163,7 +162,7 @@ fun TrialLicenseDrawer(
                                 ),
                             ) {
                                 Text(
-                                    text = stringResource(R.string.license_uprade_buy_license),
+                                    text = stringResource(R.string.license_upgrade_buy_license),
                                 )
                                 Icon(
                                     Icons.AutoMirrored.Outlined.OpenInNew,

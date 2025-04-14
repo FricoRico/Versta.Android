@@ -20,7 +20,7 @@ import app.versta.translate.ui.theme.spacing
 
 @Composable
 fun SettingsHeaderItem(
-    headlineContent: String,
+    content: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     colors: ListItemColors = SettingsDefaults.colors(
         headlineColor = MaterialTheme.colorScheme.primary
@@ -63,10 +63,7 @@ fun SettingsHeaderItem(
                     )
                     .fillMaxWidth()
             ) {
-                Text(
-                    text = headlineContent,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                content()
             }
 
         }
@@ -74,9 +71,37 @@ fun SettingsHeaderItem(
 }
 
 @Composable
+fun SettingsHeaderItem(
+    content: String,
+    modifier: Modifier = Modifier,
+    colors: ListItemColors = SettingsDefaults.colors(
+        headlineColor = MaterialTheme.colorScheme.primary
+    ),
+    tonalElevation: Dp = ListItemDefaults.Elevation,
+    shadowElevation: Dp = ListItemDefaults.Elevation,
+    index: Int = 0,
+    groupSize: Int = 1,
+) {
+    SettingsHeaderItem(
+        modifier = modifier,
+        colors = colors,
+        tonalElevation = tonalElevation,
+        shadowElevation = shadowElevation,
+        index = index,
+        groupSize = groupSize,
+        content = {
+            Text(
+                text = content,
+                style = MaterialTheme.typography.titleLarge,
+            )
+        },
+    )
+}
+
+@Composable
 @Preview(showBackground = true)
 fun SettingsHeaderItemPreview() {
     SettingsHeaderItem(
-        headlineContent = "History",
+        content = "History",
     )
 }

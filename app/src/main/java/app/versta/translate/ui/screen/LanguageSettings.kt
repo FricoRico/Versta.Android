@@ -86,6 +86,16 @@ fun LanguageSettings(
 
     var languageToBeDeleted by remember { mutableStateOf<Language?>(null) }
 
+    val queuedTasks = (languageModels.updates + languageModels.available).filter { model ->
+        downloadTasks.any { it.model == model }
+    }
+    val filteredUpdates = languageModels.updates.filterNot { model ->
+        downloadTasks.any { it.model == model }
+    }
+    val filteredAvailable = languageModels.available.filterNot { model ->
+        downloadTasks.any { it.model == model }
+    }
+
     ScaffoldLargeHeader(
         topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
         title = {
@@ -113,11 +123,34 @@ fun LanguageSettings(
                 )
             ) {
                 Languages(
+                    languages = queuedTasks,
+                    downloadTasks = downloadTasks,
+                    header = { size ->
+                        SettingsHeaderItem(
+                            content = stringResource(R.string.downloading),
+                            groupSize = size + 1, index = 0
+                        )
+                    },
+                    onDownload = { model ->
+                        languageViewModel.queueDownload(model)
+                    },
+                    onCancel = {
+                        languageViewModel.cancelDownload()
+                    },
+                    onClick = { language ->
+                        navController.navigate(Screens.LanguageDetails.withArgs(language.locale.language))
+                    },
+                    onSwipeToDelete = { language ->
+                        languageToBeDeleted = language
+                    }
+                )
+
+                Languages(
                     languages = languageModels.installed,
                     downloadTasks = downloadTasks,
                     header = { size ->
                         SettingsHeaderItem(
-                            headlineContent = stringResource(R.string.language_settings_installed_headline),
+                            content = stringResource(R.string.language_settings_installed_headline),
                             groupSize = size + 1, index = 0
                         )
                     },
@@ -130,16 +163,19 @@ fun LanguageSettings(
                 )
 
                 Languages(
-                    languages = languageModels.updates,
+                    languages = filteredUpdates,
                     downloadTasks = downloadTasks,
                     header = { size ->
                         SettingsHeaderItem(
-                            headlineContent = stringResource(R.string.language_settings_updates_headline),
+                            content = stringResource(R.string.language_settings_updates_headline),
                             groupSize = size + 1, index = 0
                         )
                     },
                     onDownload = { model ->
                         languageViewModel.queueDownload(model)
+                    },
+                    onCancel = {
+                        languageViewModel.cancelDownload()
                     },
                     onClick = { language ->
                         navController.navigate(Screens.LanguageDetails.withArgs(language.locale.language))
@@ -150,16 +186,19 @@ fun LanguageSettings(
                 )
 
                 Languages(
-                    languages = languageModels.available,
+                    languages = filteredAvailable,
                     downloadTasks = downloadTasks,
                     header = { size ->
                         SettingsHeaderItem(
-                            headlineContent = stringResource(R.string.language_settings_available_headline),
+                            content = stringResource(R.string.language_settings_available_headline),
                             groupSize = size + 1, index = 0
                         )
                     },
                     onDownload = { model ->
                         languageViewModel.queueDownload(model)
+                    },
+                    onCancel = {
+                        languageViewModel.cancelDownload()
                     },
                     onClick = { language ->
                         navController.navigate(Screens.LanguageDetails.withArgs(language.locale.language))
@@ -186,6 +225,7 @@ private fun LazyListScope.Languages(
     downloadTasks: List<ExternalLanguageDownloadTask>,
     onClick: (Language) -> Unit,
     onDownload: ((ExternalLanguagePairDefinition) -> Unit)? = null,
+    onCancel: (() -> Unit)? = null,
     onSwipeToDelete: ((Language) -> Unit)? = null,
 ) {
     if (languages.isEmpty()) {
@@ -271,10 +311,13 @@ private fun LazyListScope.Languages(
             },
             onClick = { onClick(source) },
             trailingContent = {
-                if (onDownload != null) {
+                if (onDownload != null && onCancel != null) {
                     DownloadButton(
                         onClick = {
                             onDownload(model)
+                        },
+                        onCancel = {
+                            onCancel()
                         },
                         status = task?.status ?: DownloadStatus.Idle,
                     )

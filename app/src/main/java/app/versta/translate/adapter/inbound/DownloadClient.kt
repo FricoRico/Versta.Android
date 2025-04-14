@@ -13,5 +13,5 @@ interface DownloadClient {
     /**
      * Download the file and checksum file if provided.
      */
-    fun download(uri: URI, checksum: URI?, listener: DownloadListener)
+    suspend fun download(uri: URI, checksum: URI?, listener: DownloadListener)
 }

@@ -39,6 +39,7 @@
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
     <string name="unknown">Unknown</string>
+    <string name="downloading">Downloading</string>
     <string name="version">Version %1$s</string>
     <string name="text_translation_placeholder">Translate your text</string>
     <string name="trial_license_title">Trial license</string>
@@ -97,7 +98,7 @@
     <string name="license_upgrade_hint">After purchase, confirm with the \'I have a license\' button.</string>
     <string name="license_upgrade_hint_highlight">\'I have a license\'</string>
     <string name="license_upgrade_has_license">I have a license</string>
-    <string name="license_uprade_buy_license">Buy license</string>
+    <string name="license_upgrade_buy_license">Buy license</string>
     <string name="license_confirmation_title">Thank you!</string>
     <string name="license_confirmation_making_a_difference">Your purchase makes a real difference.</string>
     <string name="license_confirmation_contribution_perks">With your support, we can continue to improve and expand %1$s, making it even better for you and others.</string>
@@ -149,4 +150,11 @@
     <string name="text_to_speech_error_description">An error occurred while synthesizing the text to speech.</string>
     <string name="settings_text_to_speech_title">Text-to-Speech</string>
     <string name="settings_text_to_speech_description">Configure voices, speech rate</string>
+    <string name="translation_bubbles_notification_channel_title">Translation Bubbles</string>
+    <string name="translation_bubbles_notification_channel_description">Allows you to translate selected text in a bubble overlay</string>
+    <string name="translation_bubbles_notification_title">Translate</string>
+    <string name="download_progress_notification_channel_title">Download progress</string>
+    <string name="download_progress_notification_channel_description">Download progress for models</string>
+    <string name="download_progress_notification_title">Downloading</string>
+    <string name="download_progress_notification_content">Downloading: %1$s</string>
 </resources>

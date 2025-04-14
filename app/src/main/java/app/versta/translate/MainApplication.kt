@@ -3,14 +3,14 @@ package app.versta.translate
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtLoggingLevel
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
 import app.versta.translate.adapter.inbound.CompressedFileExtractor
-import app.versta.translate.adapter.inbound.DownloadClient
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsFileRepository
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsRepository
 import app.versta.translate.adapter.inbound.FileHashValidator
-import app.versta.translate.adapter.inbound.HttpDownloadClient
 import app.versta.translate.adapter.inbound.PrecomputedHashFileValidator
 import app.versta.translate.adapter.inbound.TarballExtractor
 import app.versta.translate.adapter.outbound.AudioTrackPlayer
@@ -177,6 +177,7 @@ class MainApplication : Application() {
         super.onCreate()
 
         handleLogging()
+        createNotificationChannels()
 
         module = ApplicationModule(this)
     }
@@ -189,11 +190,35 @@ class MainApplication : Application() {
         plant(FileLoggingTree(getExternalFilesDir(null)))
     }
 
+    private fun createNotificationChannels() {
+        val translationChannel = NotificationChannel(
+            TRANSLATION_NOTIFICATION_CHANNEL_ID,
+            getString(R.string.translation_bubbles_notification_channel_title),
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = getString(R.string.translation_bubbles_notification_channel_description)
+        }
+
+        val downloadChannel = NotificationChannel(
+            DOWNLOAD_NOTIFICATION_CHANNEL_ID,
+            getString(R.string.download_progress_notification_channel_title),
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+           description = getString(R.string.download_progress_notification_channel_description)
+        }
+
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannels(listOf(translationChannel, downloadChannel))
+    }
+
     companion object {
         lateinit var module: ApplicationModuleInterface
 
         const val TRANSLATION_BUBBLE_SHORTCUT_ID = "translation_bubble_shortcut"
         const val TRANSLATION_NOTIFICATION_CHANNEL_ID = "translation_bubble_channel"
         const val TRANSLATION_NOTIFICATION_ID = 1
+
+        const val DOWNLOAD_NOTIFICATION_CHANNEL_ID = "download_channel"
+        const val DOWNLOAD_NOTIFICATION_ID = 2
     }
 }

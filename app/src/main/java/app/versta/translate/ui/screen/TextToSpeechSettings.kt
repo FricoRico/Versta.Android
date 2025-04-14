@@ -179,7 +179,7 @@ fun TextToSpeechSettings(
 
                 item {
                     SettingsHeaderItem(
-                        headlineContent = stringResource(R.string.text_to_speech_settings_voice_headline), groupSize = 3, index = 0
+                        content = stringResource(R.string.text_to_speech_settings_voice_headline), groupSize = 3, index = 0
                     )
                 }
 
@@ -316,7 +316,7 @@ fun TextToSpeechSettings(
 
                 item {
                     SettingsHeaderItem(
-                        headlineContent = stringResource(R.string.text_to_speech_settings_synthesis_headline), groupSize = 2, index = 0
+                        content = stringResource(R.string.text_to_speech_settings_synthesis_headline), groupSize = 2, index = 0
                     )
                 }
 

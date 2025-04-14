@@ -75,7 +75,6 @@ open class MainActivity : ComponentActivity() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             TranslateBubbleShortcut.registerForActivity(this)
-            TranslateBubbleNotification.registerForActivity(this)
         }
 
         handleStartupAndResume(intent)
