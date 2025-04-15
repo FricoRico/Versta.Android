@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 import java.net.URI
 import java.util.UUID
 
+const val LANGUAGE_RATING_THRESHOLD = 70
+
 @Serializable
 data class ExternalLanguageModelDefinition(
     @SerialName("base_model")

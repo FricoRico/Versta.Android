@@ -13,7 +13,7 @@ enum class Screens (
     Settings,
     LanguageSettings,
     LanguageDetails(
-        listOf("sourceLanguage")
+        listOf("pair")
     ),
     TextTranslation,
     TranslationSettings,

@@ -6,6 +6,7 @@ import app.versta.translate.core.entity.ExternalLanguageMetadata
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.ExternalLanguageModelDefinition
 import app.versta.translate.core.entity.ExternalLanguageModelDefinitions
+import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.LanguagePairWithModelFiles
 import app.versta.translate.core.entity.isValid
 import kotlinx.coroutines.CoroutineScope
@@ -13,6 +14,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -25,10 +29,26 @@ class ExternalLanguageModelsFileRepository(private val stream: InputStream) :
     private val _downloadableLanguageModels =
         MutableStateFlow<List<ExternalLanguagePairDefinition>>(emptyList())
 
+    /**
+     * Returns a flow of [ExternalLanguagePairDefinition] that contains the definitions of the
+     * external language models.
+     */
     override fun getDefinitions(): Flow<List<ExternalLanguagePairDefinition>> {
         return _downloadableLanguageModels
     }
 
+    /**
+     * Returns a flow of [ExternalLanguagePairDefinition] that contains the definition of the
+     * external language model for the given [pair].
+     */
+    override fun getDefinition(pair: LanguagePair): Flow<ExternalLanguagePairDefinition> {
+        return _downloadableLanguageModels.map { model -> model.first { it.pair.uniqueEquals(pair) } }
+    }
+
+    /**
+     * Returns a flow of [ExternalLanguageModels] that contains the definitions of the external
+     * language models. These definitions are filtered by the state of the imported language pairs.
+     */
     override fun getDefinitionsByState(availableLanguages: Flow<List<LanguagePairWithModelFiles>>): Flow<ExternalLanguageModels> {
         return _downloadableLanguageModels.combine(availableLanguages) { model, imported ->
             ExternalLanguageModels(

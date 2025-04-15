@@ -92,7 +92,7 @@ fun SettingsHeaderItem(
         content = {
             Text(
                 text = content,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.bodyMedium,
             )
         },
     )

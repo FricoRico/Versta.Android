@@ -175,11 +175,12 @@ class LanguageMemoryRepository : LanguageRepository {
     /**
      * Deletes the language models in the repository.
      * @param languagePair The language pair to delete.
+     * @param bidirectional Whether to delete the bidirectional model.
      */
-    override fun deleteLanguageModel(languagePair: LanguagePair): LanguagePair {
+    override fun deleteLanguageModel(languagePair: LanguagePair, bidirectional: Boolean): List<LanguagePair> {
         _languages.remove(languagePair)
         _languageModels.remove(languagePair.id)
 
-        return languagePair
+        return listOf(languagePair)
     }
 }

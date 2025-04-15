@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -53,7 +54,8 @@ fun LanguagePairBadge(
     modifier: Modifier = Modifier,
     pair: LanguagePair,
     bidirectional: Boolean,
-    colors: LanguagePairBadgeColors = LanguagePairBadgeDefaults.colors()
+    colors: LanguagePairBadgeColors = LanguagePairBadgeDefaults.colors(),
+    icon: ImageVector? = null
 ) {
     val context = LocalContext.current
     val sourceFlagDrawable =
@@ -123,7 +125,7 @@ fun LanguagePairBadge(
                 .padding(MaterialTheme.spacing.extraSmall)
         ) {
             Icon(
-                if (bidirectional) Icons.Outlined.SyncAlt else Icons.AutoMirrored.Outlined.ArrowForward,
+                icon ?: if (bidirectional) Icons.Outlined.SyncAlt else Icons.AutoMirrored.Outlined.ArrowForward,
                 contentDescription = null,
                 tint = colors.badgeContentColor,
             )

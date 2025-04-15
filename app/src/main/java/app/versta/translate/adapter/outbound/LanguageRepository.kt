@@ -63,6 +63,7 @@ interface LanguageRepository {
     /**
      * Deletes the language models in the repository.
      * @param languagePair The language pair to delete.
+     * @param bidirectional Whether to delete the bidirectional model.
      */
-    fun deleteLanguageModel(languagePair: LanguagePair): LanguagePair
+    fun deleteLanguageModel(languagePair: LanguagePair, bidirectional: Boolean): List<LanguagePair>
 }

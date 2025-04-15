@@ -21,15 +21,16 @@ import app.versta.translate.core.entity.DownloadStatus
 import app.versta.translate.core.entity.ExternalLanguageDownloadTask
 import app.versta.translate.core.entity.ExternalLanguagePairDefinition
 import app.versta.translate.core.entity.Language
+import app.versta.translate.core.entity.LanguagePair
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -48,7 +49,6 @@ class LanguageViewModel(
     private val externalLanguageModelsRepository: ExternalLanguageModelsRepository,
 ) : ViewModel() {
     private val _broadcastManager = LocalBroadcastManager.getInstance(context)
-    private val _workManager = WorkManager.getInstance(context)
 
     private val _languageSelectionState = MutableStateFlow<LanguageType?>(null)
     val languageSelectionState: StateFlow<LanguageType?> = _languageSelectionState.asStateFlow()
@@ -60,21 +60,20 @@ class LanguageViewModel(
     val languageModelDownloadTasks: StateFlow<List<ExternalLanguageDownloadTask>> =
         _languageModelDownloadTasks.asStateFlow()
 
-    // TODO: Make this private so that it will only be used for mapping definitions
-    val availableLanguages = languageRepository.getLanguages().distinctUntilChanged()
-    val availableLanguagePairs = languageRepository.getLanguagePairs().distinctUntilChanged()
+    private val _importedLanguages = languageRepository.getLanguages().distinctUntilChanged()
+    val importedLanguagePairs = languageRepository.getLanguagePairs().distinctUntilChanged()
 
     val languageModels =
         externalLanguageModelsRepository.getDefinitions().distinctUntilChanged()
     val languageModelsByState =
-        externalLanguageModelsRepository.getDefinitionsByState(availableLanguages)
+        externalLanguageModelsRepository.getDefinitionsByState(_importedLanguages)
             .distinctUntilChanged()
 
     val sourceLanguage = languagePreferenceRepository.getSourceLanguage().distinctUntilChanged()
     val targetLanguage = languagePreferenceRepository.getTargetLanguage().distinctUntilChanged()
 
     val canSwapLanguages = combine(
-        sourceLanguage, targetLanguage, availableLanguagePairs
+        sourceLanguage, targetLanguage, importedLanguagePairs
     ) { source, target, pairs ->
         if (source == null || target == null) {
             return@combine false
@@ -90,6 +89,15 @@ class LanguageViewModel(
         } else {
             flowOf(emptyList())
         }
+    }
+
+    /**
+     * Returns a flow of [ExternalLanguagePairDefinition] that contains the definitions of the
+     * external language model for the given [LanguagePair].
+     */
+    fun getLanguageDefinition(pair: LanguagePair): Flow<ExternalLanguagePairDefinition> {
+        return externalLanguageModelsRepository.getDefinition(pair)
+            .distinctUntilChanged()
     }
 
     /**
@@ -172,15 +180,17 @@ class LanguageViewModel(
     /**
      * Clears the language selection if the language pair is the same as the current one.
      */
-    fun deleteBySource(language: Language) {
+    fun removeLanguageModel(pair: LanguagePair, bidirectional: Boolean) {
         viewModelScope.launch {
-            languageRepository.deleteLanguageModelsBySourceLanguage(language).forEach {
-                languagePreferenceRepository.clearLanguageSelectionForPair(it)
-            }
+            languageRepository.deleteLanguageModel(pair, bidirectional)
+            languagePreferenceRepository.clearLanguageSelectionForPair(pair)
         }
     }
 
-    fun queueDownload(model: ExternalLanguagePairDefinition) {
+    /**
+     * Queues a download for the given language model.
+     */
+    fun queueDownload(context: Context, model: ExternalLanguagePairDefinition) {
         var task = _languageModelDownloadTasks.value.firstOrNull { it.model == model }
 
         if (task != null) {
@@ -193,6 +203,7 @@ class LanguageViewModel(
             _languageModelDownloadTasks.value += task
         }
 
+        val manager = WorkManager.getInstance(context)
         val worker = OneTimeWorkRequestBuilder<DownloadWorker>()
             .setInputData(
                 workDataOf(
@@ -204,8 +215,8 @@ class LanguageViewModel(
             )
             .build()
 
-        _workManager.enqueue(worker)
-        _workManager.getWorkInfoByIdLiveData(worker.id)
+        manager.enqueue(worker)
+        manager.getWorkInfoByIdLiveData(worker.id)
 
         if (_languageDownloadWorker == null) {
             _languageDownloadWorker = worker
@@ -216,9 +227,9 @@ class LanguageViewModel(
     /**
      * Cancels all pending downloads.
      */
-    fun cancelDownload() {
+    fun cancelDownload(context: Context) {
         _languageDownloadWorker?.let {
-            _workManager.cancelWorkById(it.id)
+            WorkManager.getInstance(context).cancelWorkById(it.id)
         }
         _languageDownloadWorker = null
     }

@@ -23,8 +23,8 @@
     <string name="get_file">Get a new file</string>
     <string name="choose_file">Choose an existing file</string>
     <string name="unknown_error">Unknown error</string>
-    <string name="delete_language_title">Delete %1$s?</string>
-    <string name="delete_language_description">Are you sure you want to remove %1$s? This will delete the following translation options:</string>
+    <string name="delete_language_title">Remove\n%1$s?</string>
+    <string name="delete_language_description">Are you sure you want to remove this language model?</string>
     <string name="no_languages_available">No languages available</string>
     <string name="select_source_language">Select source language</string>
     <string name="select_target_language">Select target language</string>
@@ -157,4 +157,14 @@
     <string name="download_progress_notification_channel_description">Download progress for models</string>
     <string name="download_progress_notification_title">Downloading</string>
     <string name="download_progress_notification_content">Downloading: %1$s</string>
+    <string name="language_details_download_size_label">Download size</string>
+    <string name="language_details_disk_size_label">Disk size</string>
+    <string name="language_details_bidirectional_label">Bidirectional</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="language_details_version_label">Version</string>
+    <string name="language_details_rating_label">Rating</string>
+    <string name="language_details_blue_score_label">BLEU score</string>
+    <string name="language_details_base_model_label">Base model</string>
+    <string name="language_details_architecture_label">Architecture</string>
 </resources>

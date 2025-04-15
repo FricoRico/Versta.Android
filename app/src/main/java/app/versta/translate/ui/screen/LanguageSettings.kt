@@ -42,7 +42,9 @@ import app.versta.translate.core.entity.DownloadStatus
 import app.versta.translate.core.entity.ExternalLanguageDownloadTask
 import app.versta.translate.core.entity.ExternalLanguageModels
 import app.versta.translate.core.entity.ExternalLanguagePairDefinition
+import app.versta.translate.core.entity.LANGUAGE_RATING_THRESHOLD
 import app.versta.translate.core.entity.Language
+import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.ui.component.DownloadButton
 import app.versta.translate.ui.component.LanguageDeletionConfirmationDialog
@@ -56,8 +58,6 @@ import app.versta.translate.ui.component.SettingsHeaderItem
 import app.versta.translate.ui.theme.spacing
 import kotlin.math.max
 import kotlin.math.min
-
-internal const val LANGUAGE_RATING_THRESHOLD = 70
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,16 +75,12 @@ fun LanguageSettings(
         MaterialTheme.spacing.small
     }
 
-    val availableLanguages by languageViewModel.availableLanguagePairs.collectAsStateWithLifecycle(
-        emptyList()
-    )
-
     val languageModels by languageViewModel.languageModelsByState.collectAsStateWithLifecycle(
         ExternalLanguageModels()
     )
     val downloadTasks by languageViewModel.languageModelDownloadTasks.collectAsStateWithLifecycle()
 
-    var languageToBeDeleted by remember { mutableStateOf<Language?>(null) }
+    var languageToBeDeleted by remember { mutableStateOf<LanguagePair?>(null) }
 
     val queuedTasks = (languageModels.updates + languageModels.available).filter { model ->
         downloadTasks.any { it.model == model }
@@ -94,6 +90,18 @@ fun LanguageSettings(
     }
     val filteredAvailable = languageModels.available.filterNot { model ->
         downloadTasks.any { it.model == model }
+    }
+
+    fun onDownload(model: ExternalLanguagePairDefinition) {
+        languageViewModel.queueDownload(context, model)
+    }
+
+    fun onCancel() {
+        languageViewModel.cancelDownload(context)
+    }
+
+    fun onClick(pair: LanguagePair) {
+        navController.navigate(Screens.LanguageDetails.withArgs(pair.id))
     }
 
     ScaffoldLargeHeader(
@@ -131,14 +139,14 @@ fun LanguageSettings(
                             groupSize = size + 1, index = 0
                         )
                     },
-                    onDownload = { model ->
-                        languageViewModel.queueDownload(model)
+                    onDownload = {
+                        onDownload(it)
                     },
                     onCancel = {
-                        languageViewModel.cancelDownload()
+                        onCancel()
                     },
-                    onClick = { language ->
-                        navController.navigate(Screens.LanguageDetails.withArgs(language.locale.language))
+                    onClick = {
+                        onClick(it)
                     },
                     onSwipeToDelete = { language ->
                         languageToBeDeleted = language
@@ -154,8 +162,8 @@ fun LanguageSettings(
                             groupSize = size + 1, index = 0
                         )
                     },
-                    onClick = { language ->
-                        navController.navigate(Screens.LanguageDetails.withArgs(language.locale.language))
+                    onClick = {
+                        onClick(it)
                     },
                     onSwipeToDelete = { language ->
                         languageToBeDeleted = language
@@ -171,14 +179,14 @@ fun LanguageSettings(
                             groupSize = size + 1, index = 0
                         )
                     },
-                    onDownload = { model ->
-                        languageViewModel.queueDownload(model)
+                    onDownload = {
+                        onDownload(it)
                     },
                     onCancel = {
-                        languageViewModel.cancelDownload()
+                        onCancel()
                     },
-                    onClick = { language ->
-                        navController.navigate(Screens.LanguageDetails.withArgs(language.locale.language))
+                    onClick = {
+                        onClick(it)
                     },
                     onSwipeToDelete = { language ->
                         languageToBeDeleted = language
@@ -194,23 +202,22 @@ fun LanguageSettings(
                             groupSize = size + 1, index = 0
                         )
                     },
-                    onDownload = { model ->
-                        languageViewModel.queueDownload(model)
+                    onDownload = {
+                        onDownload(it)
                     },
                     onCancel = {
-                        languageViewModel.cancelDownload()
+                        onCancel()
                     },
-                    onClick = { language ->
-                        navController.navigate(Screens.LanguageDetails.withArgs(language.locale.language))
+                    onClick = {
+                        onClick(it)
                     }
                 )
             }
 
             LanguageDeletionConfirmationDialog(
-                language = languageToBeDeleted,
-                availableLanguages = availableLanguages,
+                pair = languageToBeDeleted,
                 onConfirmation = {
-                    languageViewModel.deleteBySource(it)
+                    languageViewModel.removeLanguageModel(it, true)
                     languageToBeDeleted = null
                 },
                 onDismissRequest = {
@@ -223,10 +230,10 @@ private fun LazyListScope.Languages(
     languages: List<ExternalLanguagePairDefinition>,
     header: @Composable (Int) -> Unit,
     downloadTasks: List<ExternalLanguageDownloadTask>,
-    onClick: (Language) -> Unit,
+    onClick: (LanguagePair) -> Unit,
     onDownload: ((ExternalLanguagePairDefinition) -> Unit)? = null,
     onCancel: (() -> Unit)? = null,
-    onSwipeToDelete: ((Language) -> Unit)? = null,
+    onSwipeToDelete: ((LanguagePair) -> Unit)? = null,
 ) {
     if (languages.isEmpty()) {
         return
@@ -309,7 +316,7 @@ private fun LazyListScope.Languages(
                     bidirectional = model.bidirectional,
                 )
             },
-            onClick = { onClick(source) },
+            onClick = { onClick(model.pair) },
             trailingContent = {
                 if (onDownload != null && onCancel != null) {
                     DownloadButton(
@@ -324,7 +331,7 @@ private fun LazyListScope.Languages(
                 }
             },
             onSwipeToDelete = if (onSwipeToDelete != null) {
-                { onSwipeToDelete(source) }
+                { onSwipeToDelete(model.pair) }
             } else {
                 null
             })

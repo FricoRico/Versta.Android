@@ -132,16 +132,30 @@ class LanguageDatabaseRepository(
     /**
      * Deletes the language models in the repository.
      * @param languagePair The language pair to delete.
+     * @param bidirectional Whether to delete the bidirectional model.
      */
     @OptIn(ExperimentalPathApi::class)
-    override fun deleteLanguageModel(languagePair: LanguagePair): LanguagePair {
-        database.languageModels.getAllByLanguageId(languageId = languagePair.id).executeAsList()
+    override fun deleteLanguageModel(languagePair: LanguagePair, bidirectional: Boolean): List<LanguagePair> {
+        val languagePairs = listOfNotNull(
+            languagePair,
+            if (bidirectional) {
+                LanguagePair(
+                    source = languagePair.target,
+                    target = languagePair.source
+                )
+            } else {
+                null
+            }
+        )
+        val languageIds =languagePairs.map { it.id }
+
+        database.languageModels.getAllByLanguageIds(languageIds = languageIds).executeAsList()
             .map { it.path.toPath().toNioPath().parent }.distinct()
             .forEach { it.deleteRecursively() }
 
-        database.languages.deleteById(id = languagePair.id)
+        database.languages.deleteByIds(ids = languageIds)
 
-        return languagePair
+        return languagePairs
     }
 
     /**
