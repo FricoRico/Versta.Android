@@ -2,6 +2,7 @@ package app.versta.translate.core.entity
 
 import android.content.Context
 import app.versta.translate.utils.LocaleUtils
+import timber.log.Timber
 import java.util.Locale
 
 enum class WritingDirection(val value: Int) {
@@ -14,12 +15,19 @@ data class Language(val locale: Locale) {
     val isoCode: String = locale.language
 
     fun getFlagDrawable(context: Context): Int {
-        return context.resources.getIdentifier(locale.language, "drawable", context.packageName)
+        val code = when (isoCode) {
+            "iw" -> "he"
+            "in" -> "id"
+            else -> isoCode
+        }
+
+        return context.resources.getIdentifier(code, "drawable", context.packageName)
     }
 
     fun getWritingDirection(): WritingDirection {
-        return when (locale.language) {
+        return when (isoCode) {
             "ar" -> WritingDirection.RTL
+            "iw",
             "he" -> WritingDirection.RTL
             else -> WritingDirection.LTR
         }

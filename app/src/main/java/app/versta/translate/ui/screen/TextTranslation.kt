@@ -1,5 +1,6 @@
 package app.versta.translate.ui.screen
 
+import android.os.Build
 import android.view.HapticFeedbackConstants
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.AnimationConstants.DefaultDurationMillis
@@ -46,10 +47,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -86,6 +92,7 @@ import app.versta.translate.ui.component.TextToSpeechButton
 import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, FlowPreview::class)
@@ -100,6 +107,7 @@ fun TextTranslation(
     val view = LocalView.current
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     val input by textTranslationViewModel.input.collectAsStateWithLifecycle("")
     val inputTransliteration by textTranslationViewModel.inputTransliteration.collectAsStateWithLifecycle(
@@ -158,8 +166,18 @@ fun TextTranslation(
         }
 
         sheetScope.launch {
-            focusManager.clearFocus()
             scaffoldState.bottomSheetState.expand()
+
+            when {
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.Q -> {
+                    focusManager.moveFocus(FocusDirection.Down)
+                    keyboardController?.hide()
+                }
+
+                else -> {
+                    focusManager.clearFocus()
+                }
+            }
         }
 
         translationScope.launch {
@@ -243,8 +261,14 @@ fun TextTranslation(
             return@LaunchedEffect
         }
 
-        if (translationLoadingProgress != LoadingProgress.Completed || transliterationLoadingProgress != LoadingProgress.Completed) {
+        if (translationLoadingProgress != LoadingProgress.Completed) {
             return@LaunchedEffect
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (transliterationLoadingProgress != LoadingProgress.Completed) {
+                return@LaunchedEffect
+            }
         }
 
         textTranslationViewModel.setTranslateOnInput(false)
@@ -262,7 +286,10 @@ fun TextTranslation(
                             }
                         }
                     }) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
+                        Icon(
+                            Icons.AutoMirrored.Outlined.ArrowBack,
+                            stringResource(R.string.back)
+                        )
                     }
                 },
                 title = {
@@ -476,7 +503,10 @@ fun TextTranslationOutput(
             .fillMaxWidth()
             .padding(bottom = MaterialTheme.spacing.large)
             .then(modifier),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.large, Alignment.Bottom)
+        verticalArrangement = Arrangement.spacedBy(
+            MaterialTheme.spacing.large,
+            Alignment.Bottom
+        )
     ) {
         Text(
             text = translation,
