@@ -155,14 +155,21 @@ tasks.apply {
 
     register("getLanguageModels") {
         doLast {
-            val uri = URI("https://models.versta.app/translation/models.json")
-            val file = layout.projectDirectory.file("src/main/res/raw/versta_translation_models.json")
-
-            uri.toURL().openStream().use { input ->
-                file.asFile.outputStream().use { output ->
-                    input.copyTo(output)
+            URI("https://models.versta.app/translation/models.json").toURL().openStream()
+                .use { input ->
+                    layout.projectDirectory.file("src/main/res/raw/versta_translation_models.json").asFile.outputStream()
+                        .use { output ->
+                            input.copyTo(output)
+                        }
                 }
-            }
+
+            URI("https://models.versta.app/text-to-speech/models.json").toURL().openStream()
+                .use { input ->
+                    layout.projectDirectory.file("src/main/res/raw/versta_text_to_speech_models.json").asFile.outputStream()
+                        .use { output ->
+                            input.copyTo(output)
+                        }
+                }
         }
     }
 

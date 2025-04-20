@@ -14,6 +14,8 @@ import app.versta.translate.adapter.inbound.FileHashValidator
 import app.versta.translate.adapter.inbound.PrecomputedHashFileValidator
 import app.versta.translate.adapter.inbound.TarballExtractor
 import app.versta.translate.adapter.outbound.AudioTrackPlayer
+import app.versta.translate.adapter.outbound.ExternalVoiceModelsFileRepository
+import app.versta.translate.adapter.outbound.ExternalVoiceModelsRepository
 import app.versta.translate.adapter.outbound.KokoroInference
 import app.versta.translate.adapter.outbound.KokoroTokenizer
 import app.versta.translate.adapter.outbound.LanguageDatabaseRepository
@@ -24,11 +26,11 @@ import app.versta.translate.adapter.outbound.LicenseDataStoreRepository
 import app.versta.translate.adapter.outbound.LicenseRepository
 import app.versta.translate.adapter.outbound.MarianInference
 import app.versta.translate.adapter.outbound.MarianTokenizer
-import app.versta.translate.adapter.outbound.TextToSpeechDatabaseRepository
+import app.versta.translate.adapter.outbound.VoiceDatabaseRepository
 import app.versta.translate.adapter.outbound.TextToSpeechInference
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceRepository
-import app.versta.translate.adapter.outbound.TextToSpeechRepository
+import app.versta.translate.adapter.outbound.VoiceRepository
 import app.versta.translate.adapter.outbound.TextToSpeechTokenizer
 import app.versta.translate.adapter.outbound.TranslationInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceDataStoreRepository
@@ -39,6 +41,7 @@ import app.versta.translate.core.model.LoggingViewModel
 import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
+import app.versta.translate.core.model.VoiceViewModel
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.FileLoggingTree
 import timber.log.Timber
@@ -52,13 +55,15 @@ interface ApplicationModuleInterface {
     val languagePreferenceRepository: LanguagePreferenceRepository
     val licenseRepository: LicenseRepository
     val translatorPreferenceRepository: TranslationPreferenceRepository
-    val textToSpeechRepository: TextToSpeechRepository
+    val voiceRepository: VoiceRepository
     val textToSpeechPreferenceRepository: TextToSpeechPreferenceRepository
     val externalLanguageModelsRepository: ExternalLanguageModelsRepository
+    val externalVoiceModelsRepository: ExternalVoiceModelsRepository
 
     val translationViewModel: TranslationViewModel
     val textTranslationViewModel: TextTranslationViewModel
     val textToSpeechViewModel: TextToSpeechViewModel
+    val voiceViewModel: VoiceViewModel
     val loggingViewModel: LoggingViewModel
 
     val ortEnvironment: OrtEnvironment
@@ -89,8 +94,8 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
         TranslationPreferenceDataStoreRepository(context.dataStore)
     }
 
-    override val textToSpeechRepository: TextToSpeechRepository by lazy {
-        TextToSpeechDatabaseRepository(database)
+    override val voiceRepository: VoiceRepository by lazy {
+        VoiceDatabaseRepository(database)
     }
 
     override val textToSpeechPreferenceRepository: TextToSpeechPreferenceRepository by lazy {
@@ -99,6 +104,10 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
 
     override val externalLanguageModelsRepository: ExternalLanguageModelsRepository by lazy {
         ExternalLanguageModelsFileRepository(context.resources.openRawResource(R.raw.versta_translation_models))
+    }
+
+    override val externalVoiceModelsRepository: ExternalVoiceModelsRepository by lazy {
+        ExternalVoiceModelsFileRepository(context.resources.openRawResource((R.raw.versta_text_to_speech_models)))
     }
 
     override val loggingViewModel: LoggingViewModel by lazy {
@@ -126,9 +135,17 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
             tokenizer = MainApplication.module.textToSpeechTokenizer,
             model = MainApplication.module.textToSpeechInference,
             audioPlayer = AudioTrackPlayer(),
-            textToSpeechRepository = MainApplication.module.textToSpeechRepository,
+            voiceRepository = MainApplication.module.voiceRepository,
             textToSpeechPreferenceRepository = MainApplication.module.textToSpeechPreferenceRepository,
             languagePreferenceRepository = MainApplication.module.languagePreferenceRepository,
+        )
+    }
+
+    override val voiceViewModel: VoiceViewModel by lazy {
+        VoiceViewModel(
+            context = context,
+            voiceRepository = MainApplication.module.voiceRepository,
+            externalVoiceModelsRepository = MainApplication.module.externalVoiceModelsRepository
         )
     }
 

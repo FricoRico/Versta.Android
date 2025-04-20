@@ -8,16 +8,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.versta.translate.adapter.inbound.PrecomputedHashFileValidator
-import app.versta.translate.adapter.inbound.TarballExtractor
 import app.versta.translate.adapter.outbound.AudioMockPlayer
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.adapter.outbound.TextToSpeechMemoryRepository
+import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.adapter.outbound.TextToSpeechMockInference
 import app.versta.translate.adapter.outbound.TextToSpeechMockTokenizer
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryRepository
@@ -79,7 +76,7 @@ fun ModelLoadingProgressDialogPreview() {
             tokenizer = TextToSpeechMockTokenizer(),
             model = TextToSpeechMockInference(),
             audioPlayer = AudioMockPlayer(),
-            textToSpeechRepository = TextToSpeechMemoryRepository(),
+            voiceRepository = VoiceMemoryRepository(),
             textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
         )

@@ -5,7 +5,7 @@ import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import app.versta.translate.core.entity.KokoroInput
 import app.versta.translate.core.entity.KokoroOutput
-import app.versta.translate.core.entity.TextToSpeechInferenceFiles
+import app.versta.translate.core.entity.VoiceModelInferenceFiles
 import app.versta.translate.core.entity.Waveform
 import org.jetbrains.bio.npy.NpyFile
 import timber.log.Timber
@@ -86,7 +86,7 @@ class KokoroInference(private val ortEnvironment: OrtEnvironment): TextToSpeechI
         return speed * (MAX_SPEED - (clamped - minTokens) * (MAX_SPEED - MIN_SPEED) / (MAX_TOKEN_LENGTH - minTokens))
     }
 
-    override fun load(files: TextToSpeechInferenceFiles, threads: Int) {
+    override fun load(files: VoiceModelInferenceFiles, threads: Int) {
         close()
 
         val modelFile = File(files.model.pathString)

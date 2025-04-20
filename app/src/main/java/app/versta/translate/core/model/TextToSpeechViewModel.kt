@@ -6,12 +6,12 @@ import app.versta.translate.adapter.outbound.AudioPlayer
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.TextToSpeechInference
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceRepository
-import app.versta.translate.adapter.outbound.TextToSpeechRepository
+import app.versta.translate.adapter.outbound.VoiceRepository
 import app.versta.translate.adapter.outbound.TextToSpeechTokenizer
 import app.versta.translate.bridge.speech.ESpeakNG
 import app.versta.translate.bridge.speech.SynthReadyCallback
 import app.versta.translate.core.entity.Language
-import app.versta.translate.core.entity.TextToSpeechModelFiles
+import app.versta.translate.core.entity.VoiceWithModelFiles
 import app.versta.translate.core.entity.TextToSpeechSynthesisState
 import app.versta.translate.core.entity.VoiceGender
 import kotlinx.coroutines.CoroutineScope
@@ -34,7 +34,7 @@ class TextToSpeechViewModel(
     private val tokenizer: TextToSpeechTokenizer,
     private val model: TextToSpeechInference,
     private val audioPlayer: AudioPlayer,
-    private val textToSpeechRepository: TextToSpeechRepository,
+    private val voiceRepository: VoiceRepository,
     private val textToSpeechPreferenceRepository: TextToSpeechPreferenceRepository,
     private val languagePreferenceRepository: LanguagePreferenceRepository
 ) : ViewModel() {
@@ -43,8 +43,9 @@ class TextToSpeechViewModel(
     val threadCount = textToSpeechPreferenceRepository.getThreadCount().distinctUntilChanged()
 
     private val _language = languagePreferenceRepository.getTargetLanguage().distinctUntilChanged()
+    // TODO: Get text to speech model based on current language
     private val _textToSpeechModel =
-        textToSpeechRepository.getTextToSpeechModel().distinctUntilChanged()
+        voiceRepository.getVoiceModel("kokoro").distinctUntilChanged()
 
     val voiceAvailable = _language.map { language ->
         val files = _textToSpeechModel.first()
@@ -197,7 +198,7 @@ class TextToSpeechViewModel(
     /**
      * Loads the model from given files.
      */
-    fun load(files: TextToSpeechModelFiles) {
+    fun load(files: VoiceWithModelFiles) {
         cancelSynthesis()
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -218,7 +219,7 @@ class TextToSpeechViewModel(
     /**
      * Sets the voice from given files and language.
      */
-    fun setVoice(files: TextToSpeechModelFiles, language: Language) {
+    fun setVoice(files: VoiceWithModelFiles, language: Language) {
         cancelSynthesis()
 
         viewModelScope.launch(Dispatchers.IO) {

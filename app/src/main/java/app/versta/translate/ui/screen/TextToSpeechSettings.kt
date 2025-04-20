@@ -3,8 +3,6 @@ package app.versta.translate.ui.screen
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.icu.text.DecimalFormat
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -38,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpSize
@@ -52,7 +49,7 @@ import app.versta.translate.adapter.outbound.AudioMockPlayer
 import app.versta.translate.adapter.outbound.DEFAULT_SPEED
 import app.versta.translate.adapter.outbound.DEFAULT_VOICE_GENDER
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.adapter.outbound.TextToSpeechMemoryRepository
+import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.adapter.outbound.TextToSpeechMockInference
 import app.versta.translate.adapter.outbound.TextToSpeechMockTokenizer
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryRepository
@@ -62,7 +59,6 @@ import app.versta.translate.ui.component.ListDivider
 import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.SettingsButtonItem
-import app.versta.translate.ui.component.SettingsDefaults
 import app.versta.translate.ui.component.SettingsHeaderItem
 import app.versta.translate.ui.theme.ButtonDefaults
 import app.versta.translate.ui.theme.FilledIconButtonDefaults
@@ -90,9 +86,9 @@ fun TextToSpeechSettings(
 
     val maxThreadCount = remember { Runtime.getRuntime().availableProcessors() }
     var voiceOptionsExpanded by remember { mutableStateOf(false) }
-    val voiceOptions = mapOf<VoiceGender, String>(
-        VoiceGender.FEMALE to stringResource(R.string.text_to_speech_settings_voice_gender_female),
-        VoiceGender.MALE to stringResource(R.string.text_to_speech_settings_voice_gender_male)
+    val voiceOptions = mapOf(
+        VoiceGender.Female to stringResource(R.string.text_to_speech_settings_voice_gender_female),
+        VoiceGender.Male to stringResource(R.string.text_to_speech_settings_voice_gender_male)
     )
 
     val speed by textToSpeechViewModel.speed.collectAsStateWithLifecycle(DEFAULT_SPEED)
@@ -146,37 +142,6 @@ fun TextToSpeechSettings(
                     end = landscapeContentPadding
                 )
             ) {
-                item {
-                    SettingsButtonItem(
-                        headlineContent = stringResource(R.string.text_to_speech_get_hd_model_title),
-                        supportingContent = stringResource(R.string.text_to_speech_get_hd_model_description),
-                        onClick = {
-                            navController.navigate(Screens.TextToSpeechImport())
-                        },
-                        leadingContent = {
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        MaterialTheme.colorScheme.secondaryContainer,
-                                        MaterialTheme.shapes.extraLarge
-                                    )
-                                    .padding(MaterialTheme.spacing.small),
-                            ) {
-                                Text(
-                                    text = "HD",
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    fontSize = 18.sp,
-                                    lineHeight = 24.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                )
-                            }
-                        },
-                        colors = SettingsDefaults.colorsSecondary(),
-                    )
-                }
-
-                ListDivider()
-
                 item {
                     SettingsHeaderItem(
                         content = stringResource(R.string.text_to_speech_settings_voice_headline), groupSize = 3, index = 0
@@ -359,7 +324,7 @@ fun TextToSpeechSettingsPreview() {
             tokenizer = TextToSpeechMockTokenizer(),
             model = TextToSpeechMockInference(),
             audioPlayer = AudioMockPlayer(),
-            textToSpeechRepository = TextToSpeechMemoryRepository(),
+            voiceRepository = VoiceMemoryRepository(),
             textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
         )

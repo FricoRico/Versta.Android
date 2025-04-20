@@ -6,7 +6,7 @@ import app.versta.translate.core.entity.ExternalLanguagePairDefinition
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageModelArchitecture
 import app.versta.translate.core.entity.LanguagePair
-import app.versta.translate.core.entity.LanguagePairWithModelFiles
+import app.versta.translate.core.entity.LanguagePairModelFiles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import java.net.URI
@@ -104,9 +104,9 @@ class ExternalLanguageModelsMemoryRepository : ExternalLanguageModelsRepository 
 
     /**
      * Returns a flow of [ExternalLanguageModels] that contains the definitions of the external
-     * language models. These definitions are filtered by the state of the imported language pairs.
+     * language models. These definitions are filtered by the state of the imported language models.
      */
-    override fun getDefinitionsByState(availableLanguages: Flow<List<LanguagePairWithModelFiles>>): Flow<ExternalLanguageModels> {
+    override fun getDefinitionsByState(imported: Flow<List<LanguagePairModelFiles>>): Flow<ExternalLanguageModels> {
         return flowOf(
             ExternalLanguageModels(
                 installed = listOf(

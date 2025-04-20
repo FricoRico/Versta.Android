@@ -14,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,33 +35,30 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
-import app.versta.translate.adapter.outbound.LanguageMemoryRepository
-import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
+import app.versta.translate.adapter.outbound.ExternalVoiceModelsMemoryRepository
+import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.core.entity.DownloadStatus
-import app.versta.translate.core.entity.ExternalLanguageDownloadTask
-import app.versta.translate.core.entity.ExternalLanguageModels
-import app.versta.translate.core.entity.ExternalLanguagePairDefinition
-import app.versta.translate.core.entity.LANGUAGE_RATING_THRESHOLD
-import app.versta.translate.core.entity.LanguagePair
-import app.versta.translate.core.model.LanguageViewModel
+import app.versta.translate.core.entity.ExternalVoiceDownloadTask
+import app.versta.translate.core.entity.ExternalVoiceModelDefinition
+import app.versta.translate.core.entity.ExternalVoiceModels
+import app.versta.translate.core.entity.Language
+import app.versta.translate.core.model.VoiceViewModel
 import app.versta.translate.ui.component.DownloadButton
-import app.versta.translate.ui.component.LanguageDeletionConfirmationDialog
-import app.versta.translate.ui.component.LanguagePairBadge
+import app.versta.translate.ui.component.LanguageBadge
 import app.versta.translate.ui.component.ListDivider
 import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.component.SettingsDefaults
 import app.versta.translate.ui.component.SettingsHeaderItem
+import app.versta.translate.ui.component.VoiceDeletionConfirmationDialog
 import app.versta.translate.ui.theme.spacing
-import kotlin.math.max
-import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LanguageSettings(
+fun VoicesSettings(
     navController: NavController,
-    languageViewModel: LanguageViewModel,
+    voiceViewModel: VoiceViewModel,
 ) {
     val context = LocalContext.current
 
@@ -74,12 +70,12 @@ fun LanguageSettings(
         MaterialTheme.spacing.small
     }
 
-    val languageModels by languageViewModel.languageModelsByState.collectAsStateWithLifecycle(
-        ExternalLanguageModels()
+    val languageModels by voiceViewModel.voicesByState.collectAsStateWithLifecycle(
+        ExternalVoiceModels()
     )
-    val downloadTasks by languageViewModel.downloadTasks.collectAsStateWithLifecycle()
+    val downloadTasks by voiceViewModel.downloadTasks.collectAsStateWithLifecycle()
 
-    var languageToBeDeleted by remember { mutableStateOf<LanguagePair?>(null) }
+    var voiceToBeDeleted by remember { mutableStateOf<ExternalVoiceModelDefinition?>(null) }
 
     val queuedTasks = (languageModels.updates + languageModels.available).filter { model ->
         downloadTasks.any { it.model == model }
@@ -91,23 +87,23 @@ fun LanguageSettings(
         downloadTasks.any { it.model == model }
     }
 
-    fun onDownload(model: ExternalLanguagePairDefinition) {
-        languageViewModel.queueDownload(context, model)
+    fun onDownload(model: ExternalVoiceModelDefinition) {
+        voiceViewModel.queueDownload(context, model)
     }
 
     fun onCancel() {
-        languageViewModel.cancelDownload(context)
+        voiceViewModel.cancelDownload(context)
     }
 
-    fun onClick(pair: LanguagePair) {
-        navController.navigate(Screens.LanguageDetails.withArgs(pair.id))
+    fun onClick(model: ExternalVoiceModelDefinition) {
+        navController.navigate(Screens.VoiceDetails.withArgs(model.id))
     }
 
     ScaffoldLargeHeader(
         topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
         title = {
             Text(
-                text = stringResource(R.string.language_settings_title),
+                text = stringResource(R.string.settings_voices_title),
             )
         },
         navigationIcon = {
@@ -129,8 +125,8 @@ fun LanguageSettings(
                     end = landscapeContentPadding
                 )
             ) {
-                Languages(
-                    languages = queuedTasks,
+                Voices(
+                    voices = queuedTasks,
                     downloadTasks = downloadTasks,
                     header = { size ->
                         SettingsHeaderItem(
@@ -148,12 +144,12 @@ fun LanguageSettings(
                         onClick(it)
                     },
                     onSwipeToDelete = { language ->
-                        languageToBeDeleted = language
+                        voiceToBeDeleted = language
                     }
                 )
 
-                Languages(
-                    languages = languageModels.installed,
+                Voices(
+                    voices = languageModels.installed,
                     downloadTasks = downloadTasks,
                     header = { size ->
                         SettingsHeaderItem(
@@ -164,13 +160,13 @@ fun LanguageSettings(
                     onClick = {
                         onClick(it)
                     },
-                    onSwipeToDelete = { language ->
-                        languageToBeDeleted = language
+                    onSwipeToDelete = { voice ->
+                        voiceToBeDeleted = voice
                     }
                 )
 
-                Languages(
-                    languages = filteredUpdates,
+                Voices(
+                    voices = filteredUpdates,
                     downloadTasks = downloadTasks,
                     header = { size ->
                         SettingsHeaderItem(
@@ -187,13 +183,13 @@ fun LanguageSettings(
                     onClick = {
                         onClick(it)
                     },
-                    onSwipeToDelete = { language ->
-                        languageToBeDeleted = language
+                    onSwipeToDelete = { voice ->
+                        voiceToBeDeleted = voice
                     }
                 )
 
-                Languages(
-                    languages = filteredAvailable,
+                Voices(
+                    voices = filteredAvailable,
                     downloadTasks = downloadTasks,
                     header = { size ->
                         SettingsHeaderItem(
@@ -213,83 +209,61 @@ fun LanguageSettings(
                 )
             }
 
-            LanguageDeletionConfirmationDialog(
-                pair = languageToBeDeleted,
+            VoiceDeletionConfirmationDialog(
+                model = voiceToBeDeleted,
                 onConfirmation = {
-                    languageViewModel.removeLanguageModel(it, true)
-                    languageToBeDeleted = null
+                    voiceViewModel.deleteVoiceModel(it)
+                    voiceToBeDeleted = null
                 },
                 onDismissRequest = {
-                    languageToBeDeleted = null
+                    voiceToBeDeleted = null
                 })
         })
 }
 
-private fun LazyListScope.Languages(
-    languages: List<ExternalLanguagePairDefinition>,
+private fun LazyListScope.Voices(
+    voices: List<ExternalVoiceModelDefinition>,
     header: @Composable (Int) -> Unit,
-    downloadTasks: List<ExternalLanguageDownloadTask>,
-    onClick: (LanguagePair) -> Unit,
-    onDownload: ((ExternalLanguagePairDefinition) -> Unit)? = null,
+    downloadTasks: List<ExternalVoiceDownloadTask>,
+    onClick: (ExternalVoiceModelDefinition) -> Unit,
+    onDownload: ((ExternalVoiceModelDefinition) -> Unit)? = null,
     onCancel: (() -> Unit)? = null,
-    onSwipeToDelete: ((LanguagePair) -> Unit)? = null,
+    onSwipeToDelete: ((ExternalVoiceModelDefinition) -> Unit)? = null,
 ) {
-    if (languages.isEmpty()) {
+    if (voices.isEmpty()) {
         return
     }
 
-    val ratingFormat = DecimalFormat("0.0")
     val sizeFormat = DecimalFormat("0.00")
 
     item {
-        header(languages.size)
+        header(voices.size)
     }
 
     items(
-        count = languages.size,
-        key = { languages[it].pair.uniqueId() }
+        count = voices.size,
+        key = { voices[it].id }
     ) { it ->
-        val model = remember { languages[it] }
+        val model = remember { voices[it] }
         val task = downloadTasks.firstOrNull { it.model == model }
-
-        val source = model.pair.source
-        val target = model.pair.target
-
-        val score = model.metadata.map { it.score }.average()
-        val rating = max(min((score / LANGUAGE_RATING_THRESHOLD) * 5, 5.0), 1.0)
+        val languages = model.voices.map { Language.fromIsoCode(it.language) }
+            .distinctBy { it.isoCode }
+            .sortedBy { it.name }
 
         val size = ((model.extracted ?: model.size) / 1e6)
 
         SettingsButtonItem(
             index = it + 1,
-            groupSize = languages.size + 1,
+            groupSize = voices.size + 1,
             modifier = Modifier.animateItem(),
             colors = SettingsDefaults.colors(supportingColor = MaterialTheme.colorScheme.onSurfaceVariant),
-            headlineContent = "${source.name} - ${target.name}",
+            headlineContent = model.name,
             supportingContent = {
                 Row(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
                     modifier = Modifier.padding(top = MaterialTheme.spacing.extraSmall)
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Filled.Star,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.requiredSize(MaterialTheme.spacing.medium)
-                        )
-                        Text(
-                            text = ratingFormat.format(rating),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
-                        )
-                    }
-
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
                         verticalAlignment = Alignment.CenterVertically
@@ -309,13 +283,20 @@ private fun LazyListScope.Languages(
                     }
                 }
             },
-            leadingContent = {
-                LanguagePairBadge(
-                    pair = model.pair,
-                    bidirectional = model.bidirectional,
-                )
+            underlineContent = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall)
+                ) {
+                    languages.map {
+                        LanguageBadge(
+                            language = it,
+                            size = MaterialTheme.spacing.medium,
+                        )
+                    }
+                }
             },
-            onClick = { onClick(model.pair) },
+            onClick = { onClick(model) },
             trailingContent = {
                 if (onDownload != null && onCancel != null) {
                     DownloadButton(
@@ -330,7 +311,7 @@ private fun LazyListScope.Languages(
                 }
             },
             onSwipeToDelete = if (onSwipeToDelete != null) {
-                { onSwipeToDelete(model.pair) }
+                { onSwipeToDelete(model) }
             } else {
                 null
             })
@@ -341,14 +322,13 @@ private fun LazyListScope.Languages(
 
 @Composable
 @Preview(showBackground = true)
-private fun PreviewLanguageSettings() {
-    LanguageSettings(
+private fun PreviewVoicesSettings() {
+    VoicesSettings(
         navController = rememberNavController(),
-        languageViewModel = LanguageViewModel(
+        voiceViewModel = VoiceViewModel(
             context = LocalContext.current,
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
+            voiceRepository = VoiceMemoryRepository(),
+            externalVoiceModelsRepository = ExternalVoiceModelsMemoryRepository()
         ),
     )
 }

@@ -24,10 +24,10 @@ import androidx.navigation.compose.rememberNavController
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.LoggingViewModel
-import app.versta.translate.core.model.TextToSpeechImportViewModel
 import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
+import app.versta.translate.core.model.VoiceViewModel
 import app.versta.translate.ui.screen.About
 import app.versta.translate.ui.screen.ApplicationLogs
 import app.versta.translate.ui.screen.Home
@@ -38,12 +38,13 @@ import app.versta.translate.ui.screen.PrivacyPolicy
 import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.screen.Settings
 import app.versta.translate.ui.screen.StatusBarStyle
-import app.versta.translate.ui.screen.TextToSpeechImport
 import app.versta.translate.ui.screen.TextToSpeechSettings
 import app.versta.translate.ui.screen.TextTranslation
 import app.versta.translate.ui.screen.ThirdParty
 import app.versta.translate.ui.screen.TranslationSettings
 import app.versta.translate.ui.screen.Troubleshooting
+import app.versta.translate.ui.screen.VoiceDetails
+import app.versta.translate.ui.screen.VoicesSettings
 
 @Composable
 fun Router(
@@ -53,7 +54,7 @@ fun Router(
     translationViewModel: TranslationViewModel,
     textTranslationViewModel: TextTranslationViewModel,
     textToSpeechViewModel: TextToSpeechViewModel,
-    textToSpeechImportViewModel: TextToSpeechImportViewModel,
+    voiceViewModel: VoiceViewModel,
     loggingViewModel: LoggingViewModel
 ) {
     val navController = rememberNavController()
@@ -150,10 +151,16 @@ fun Router(
                 textToSpeechViewModel = textToSpeechViewModel
             )
         }
-        composable(Screens.TextToSpeechImport()) {
-            TextToSpeechImport(
+        composable(Screens.VoicesSettings()) {
+            VoicesSettings(
                 navController = navController,
-                textToSpeechImportViewModel = textToSpeechImportViewModel
+                voiceViewModel = voiceViewModel
+            )
+        }
+        composable(Screens.VoiceDetails()) {
+            VoiceDetails(
+                navController = navController,
+                voiceViewModel = voiceViewModel
             )
         }
         composable(Screens.About()) {

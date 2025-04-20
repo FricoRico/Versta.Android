@@ -1,6 +1,6 @@
 package app.versta.translate.adapter.outbound
 
-import app.versta.translate.core.entity.TextToSpeechInferenceFiles
+import app.versta.translate.core.entity.VoiceModelInferenceFiles
 import java.nio.file.Path
 
 interface TextToSpeechInference {
@@ -8,5 +8,5 @@ interface TextToSpeechInference {
 
     fun setVoice(path: Path?)
 
-    fun load(files: TextToSpeechInferenceFiles, threads: Int = 8)
+    fun load(files: VoiceModelInferenceFiles, threads: Int = 8)
 }

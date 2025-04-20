@@ -4,7 +4,7 @@ import app.versta.translate.core.entity.VoiceGender
 import kotlinx.coroutines.flow.Flow
 
 internal const val DEFAULT_SPEED = 1f
-internal val DEFAULT_VOICE_GENDER = VoiceGender.FEMALE
+internal val DEFAULT_VOICE_GENDER = VoiceGender.Female
 
 interface TextToSpeechPreferenceRepository {
     /**

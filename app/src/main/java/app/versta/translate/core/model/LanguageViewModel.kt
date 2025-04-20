@@ -12,7 +12,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkRequest
 import androidx.work.workDataOf
-import app.versta.translate.adapter.inbound.DownloadWorker
+import app.versta.translate.adapter.inbound.DownloadLanguageWorker
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
@@ -53,12 +53,12 @@ class LanguageViewModel(
     private val _languageSelectionState = MutableStateFlow<LanguageType?>(null)
     val languageSelectionState: StateFlow<LanguageType?> = _languageSelectionState.asStateFlow()
 
-    private var _languageDownloadWorker: WorkRequest? = null
-    private val _languageModelDownloadTasks = MutableStateFlow<List<ExternalLanguageDownloadTask>>(
+    private var _downloadWorker: WorkRequest? = null
+    private val _downloadTasks = MutableStateFlow<List<ExternalLanguageDownloadTask>>(
         emptyList()
     )
-    val languageModelDownloadTasks: StateFlow<List<ExternalLanguageDownloadTask>> =
-        _languageModelDownloadTasks.asStateFlow()
+    val downloadTasks: StateFlow<List<ExternalLanguageDownloadTask>> =
+        _downloadTasks.asStateFlow()
 
     private val _importedLanguages = languageRepository.getLanguages().distinctUntilChanged()
     val importedLanguagePairs = languageRepository.getLanguagePairs().distinctUntilChanged()
@@ -92,15 +92,6 @@ class LanguageViewModel(
     }
 
     /**
-     * Returns a flow of [ExternalLanguagePairDefinition] that contains the definitions of the
-     * external language model for the given [LanguagePair].
-     */
-    fun getLanguageDefinition(pair: LanguagePair): Flow<ExternalLanguagePairDefinition> {
-        return externalLanguageModelsRepository.getDefinition(pair)
-            .distinctUntilChanged()
-    }
-
-    /**
      * Broadcast receiver for download status updates.
      */
     private val downloadStatusReceiver = object : BroadcastReceiver() {
@@ -116,6 +107,15 @@ class LanguageViewModel(
                 updateDownloadStatus(taskId, it)
             }
         }
+    }
+
+    /**
+     * Returns a flow of [ExternalLanguagePairDefinition] that contains the definitions of the
+     * external language model for the given [LanguagePair].
+     */
+    fun getLanguageDefinition(pair: LanguagePair): Flow<ExternalLanguagePairDefinition> {
+        return externalLanguageModelsRepository.getDefinition(pair)
+            .distinctUntilChanged()
     }
 
     /**
@@ -191,7 +191,7 @@ class LanguageViewModel(
      * Queues a download for the given language model.
      */
     fun queueDownload(context: Context, model: ExternalLanguagePairDefinition) {
-        var task = _languageModelDownloadTasks.value.firstOrNull { it.model == model }
+        var task = _downloadTasks.value.firstOrNull { it.model == model }
 
         if (task != null) {
             updateDownloadStatus(task.id, DownloadStatus.Queued)
@@ -200,11 +200,11 @@ class LanguageViewModel(
                 model = model,
                 status = DownloadStatus.Queued,
             )
-            _languageModelDownloadTasks.value += task
+            _downloadTasks.value += task
         }
 
         val manager = WorkManager.getInstance(context)
-        val worker = OneTimeWorkRequestBuilder<DownloadWorker>()
+        val worker = OneTimeWorkRequestBuilder<DownloadLanguageWorker>()
             .setInputData(
                 workDataOf(
                     "taskId" to task.id.toString(),
@@ -218,20 +218,19 @@ class LanguageViewModel(
         manager.enqueue(worker)
         manager.getWorkInfoByIdLiveData(worker.id)
 
-        if (_languageDownloadWorker == null) {
-            _languageDownloadWorker = worker
+        if (_downloadWorker == null) {
+            _downloadWorker = worker
         }
     }
-
 
     /**
      * Cancels all pending downloads.
      */
     fun cancelDownload(context: Context) {
-        _languageDownloadWorker?.let {
+        _downloadWorker?.let {
             WorkManager.getInstance(context).cancelWorkById(it.id)
         }
-        _languageDownloadWorker = null
+        _downloadWorker = null
     }
 
     /**
@@ -252,7 +251,7 @@ class LanguageViewModel(
             }
 
             else -> {
-                _languageModelDownloadTasks.value = _languageModelDownloadTasks.value.map {
+                _downloadTasks.value = _downloadTasks.value.map {
                     if (it.id == taskId) {
                         return@map it.copy(status = status)
                     }
@@ -267,7 +266,7 @@ class LanguageViewModel(
      * Removes the download task from the queue.
      */
     private fun removeDownloadTask(taskId: UUID) {
-        _languageModelDownloadTasks.value = _languageModelDownloadTasks.value.filter {
+        _downloadTasks.value = _downloadTasks.value.filter {
             it.id != taskId
         }
     }
@@ -276,7 +275,7 @@ class LanguageViewModel(
      * Clears the download tasks.
      */
     private fun clearDownloadTasks() {
-        _languageModelDownloadTasks.value = emptyList()
+        _downloadTasks.value = emptyList()
     }
 
     init {

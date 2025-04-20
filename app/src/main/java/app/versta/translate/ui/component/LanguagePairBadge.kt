@@ -1,6 +1,5 @@
 package app.versta.translate.ui.component
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
@@ -14,39 +13,29 @@ import androidx.compose.material.icons.outlined.SyncAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import app.versta.translate.R
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.ui.theme.spacing
 
-class LanguagePairBadgeColors (
-    val borderColor: Color,
-    val badgeColor: Color,
-    val badgeContentColor: Color
+class LanguagePairBadgeColors(
+    val borderColor: Color, val badgeColor: Color, val badgeContentColor: Color
 )
 
 object LanguagePairBadgeDefaults {
     val colors: Color = Color.Unspecified
 
-    @Composable fun colors(
+    @Composable
+    fun colors(
         borderColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
         badgeColor: Color = MaterialTheme.colorScheme.surface,
         badgeContentColor: Color = MaterialTheme.colorScheme.onSurface
-    ): LanguagePairBadgeColors =
-        LanguagePairBadgeColors(
-            borderColor = borderColor,
-            badgeColor = badgeColor,
-            badgeContentColor = badgeContentColor
-        )
+    ): LanguagePairBadgeColors = LanguagePairBadgeColors(
+        borderColor = borderColor, badgeColor = badgeColor, badgeContentColor = badgeContentColor
+    )
 }
 
 @Composable
@@ -57,12 +46,6 @@ fun LanguagePairBadge(
     colors: LanguagePairBadgeColors = LanguagePairBadgeDefaults.colors(),
     icon: ImageVector? = null
 ) {
-    val context = LocalContext.current
-    val sourceFlagDrawable =
-        remember { pair.source.getFlagDrawable(context) }
-    val targetFlagDrawable =
-        remember { pair.target.getFlagDrawable(context) }
-
     return Box(
         modifier = Modifier
             .heightIn(max = MaterialTheme.spacing.extraLarge * 2)
@@ -73,44 +56,27 @@ fun LanguagePairBadge(
             modifier = Modifier.align(Alignment.Center)
         ) {
             Box(
-                modifier = Modifier
-                    .offset(x = MaterialTheme.spacing.extraSmall)
-                    .background(
-                        color = colors.borderColor,
-                        shape = MaterialTheme.shapes.extraLarge
-                    )
-                    .padding(MaterialTheme.spacing.hairline)
+                modifier = Modifier.offset(x = MaterialTheme.spacing.extraSmall)
             ) {
-                Image(
-                    painter = painterResource(targetFlagDrawable),
-                    contentDescription = stringResource(
-                        R.string.flag, pair.target.name
-                    ),
-                    modifier = Modifier
-                        .requiredSize(MaterialTheme.spacing.extraLarge)
-                        .clip(MaterialTheme.shapes.extraLarge)
+                LanguageBadge(
+                    language = pair.target,
+                    colors = LanguageBadgeDefaults.colors(
+                        borderColor = colors.borderColor
+                    )
                 )
             }
 
             Box(
-                modifier = Modifier
-                    .offset(x = -MaterialTheme.spacing.extraSmall)
-                    .background(
-                        color = colors.borderColor,
-                        shape = MaterialTheme.shapes.extraLarge
-                    )
-                    .padding(MaterialTheme.spacing.hairline)
+                modifier = Modifier.offset(x = -MaterialTheme.spacing.extraSmall)
             ) {
-                Image(
-                    painter = painterResource(sourceFlagDrawable),
-                    contentDescription = stringResource(
-                        R.string.flag, pair.source.name
-                    ),
-                    modifier = Modifier
-                        .requiredSize(MaterialTheme.spacing.extraLarge)
-                        .clip(MaterialTheme.shapes.extraLarge)
+                LanguageBadge(
+                    language = pair.source,
+                    colors = LanguageBadgeDefaults.colors(
+                        borderColor = colors.borderColor
+                    )
                 )
             }
+
         }
 
         Box(
@@ -119,13 +85,13 @@ fun LanguagePairBadge(
                 .offset(y = MaterialTheme.spacing.medium)
                 .requiredSize(MaterialTheme.spacing.large)
                 .background(
-                    color = colors.badgeColor,
-                    shape = MaterialTheme.shapes.extraLarge
+                    color = colors.badgeColor, shape = MaterialTheme.shapes.extraLarge
                 )
                 .padding(MaterialTheme.spacing.extraSmall)
         ) {
             Icon(
-                icon ?: if (bidirectional) Icons.Outlined.SyncAlt else Icons.AutoMirrored.Outlined.ArrowForward,
+                icon
+                    ?: if (bidirectional) Icons.Outlined.SyncAlt else Icons.AutoMirrored.Outlined.ArrowForward,
                 contentDescription = null,
                 tint = colors.badgeContentColor,
             )
@@ -137,7 +103,6 @@ fun LanguagePairBadge(
 @Preview(showBackground = true)
 fun LanguagePairBadgePreview() {
     LanguagePairBadge(
-        pair = LanguagePair.fromIsoCodes("en", "nl"),
-        bidirectional = false
+        pair = LanguagePair.fromIsoCodes("en", "nl"), bidirectional = false
     )
 }

@@ -36,7 +36,7 @@ internal data class DownloadQueue(
     val checksum: URI,
 )
 
-class DownloadWorker(context: Context, params: WorkerParameters) :
+abstract class DownloadWorker(context: Context, params: WorkerParameters) :
     CoroutineWorker(context, params) {
     private val _workManager = WorkManager.getInstance(context)
     private val _broadcastManager = LocalBroadcastManager.getInstance(context)
@@ -54,11 +54,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
                 )
             )
 
-    private val _extractionDirectory = context.filesDir
     private val _downloadDirectory = context.cacheDir.resolve("downloads")
-
-    private val _languageExtractor = MainApplication.module.extractor
-    private val _languageRepository = MainApplication.module.languageRepository
 
     private val _downloadClient = HttpDownloadClient(_downloadDirectory)
 
@@ -142,27 +138,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
     /**
      * Extracts the downloaded language model.
      */
-    private fun extractDownload(taskId: UUID, file: File) {
-        var output: File? = null
-
-        try {
-            output = _languageExtractor.extract(
-                file = file,
-                outputDir = _extractionDirectory,
-            )
-
-            if (!file.delete()) {
-                Timber.tag(TAG).e("Deleting file ${file.absolutePath}")
-            }
-
-            val metadata = readMetadata(output)
-            _languageRepository.upsertLanguageModels(metadata)
-        } catch (e: Exception) {
-            output?.deleteRecursively()
-            setStatus(taskId, DownloadStatus.Error(e))
-            Timber.tag(TAG).e(e, "Extracting file ${file.absolutePath}")
-        }
-    }
+    protected open fun extractDownload(taskId: UUID, file: File) {}
 
     /**
      * Removes the download task from the queue.
@@ -171,42 +147,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
         _queue.removeIf { it.id == taskId }
     }
 
-    /**
-     * Reads the metadata file from the extracted model.
-     */
-    private fun readMetadata(output: File?): LanguageModel {
-        if (output == null) {
-            throw Exception("Output file is null")
-        }
-
-        val bundleMetadataFile = File(output, "metadata.json")
-        val languageBundleMetadata =
-            _serializer.decodeFromString<LanguageBundleMetadata>(bundleMetadataFile.readText())
-
-        if (!languageBundleMetadata.isValid()) {
-            throw Exception("Invalid metadata file")
-        }
-
-        val languageModelMetadata = languageBundleMetadata.metadata.map {
-            val languageMetadataFile = File(output.resolve(it.directory), "metadata.json")
-
-            _serializer.decodeFromString<LanguageModelMetadata>(languageMetadataFile.readText())
-                .setRootPath(
-                    path = output.resolve(it.directory).toPath()
-                )
-        }
-
-        if (languageModelMetadata.any { !it.isValid() }) {
-            throw Exception("Invalid language metadata file")
-        }
-
-        return LanguageModel(
-            bundle = languageBundleMetadata,
-            languages = languageModelMetadata
-        )
-    }
-
-    private fun setStatus(taskId: UUID, status: DownloadStatus) {
+    internal fun setStatus(taskId: UUID, status: DownloadStatus) {
         val intent = Intent(DOWNLOAD_STATUS_INTENT)
 
         intent.putExtra("taskId", taskId.toString())
@@ -254,7 +195,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
         private var _downloading = false
         private val _queue: Queue<DownloadQueue> = ArrayDeque()
 
-        private val _serializer = Json { ignoreUnknownKeys = true }
+        internal val _serializer = Json { ignoreUnknownKeys = true }
 
         private val TAG = DownloadWorker::class.java.simpleName
     }

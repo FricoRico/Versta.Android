@@ -7,17 +7,16 @@ import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.ExternalLanguageModelDefinition
 import app.versta.translate.core.entity.ExternalLanguageModelDefinitions
 import app.versta.translate.core.entity.LanguagePair
-import app.versta.translate.core.entity.LanguagePairWithModelFiles
+import app.versta.translate.core.entity.LanguagePairModelFiles
 import app.versta.translate.core.entity.isValid
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.io.InputStream
@@ -47,13 +46,13 @@ class ExternalLanguageModelsFileRepository(private val stream: InputStream) :
 
     /**
      * Returns a flow of [ExternalLanguageModels] that contains the definitions of the external
-     * language models. These definitions are filtered by the state of the imported language pairs.
+     * language models. These definitions are filtered by the state of the imported language models.
      */
-    override fun getDefinitionsByState(availableLanguages: Flow<List<LanguagePairWithModelFiles>>): Flow<ExternalLanguageModels> {
-        return _downloadableLanguageModels.combine(availableLanguages) { model, imported ->
+    override fun getDefinitionsByState(imported: Flow<List<LanguagePairModelFiles>>): Flow<ExternalLanguageModels> {
+        return _downloadableLanguageModels.combine(imported) { model, existing ->
             ExternalLanguageModels(
                 installed = model.mapNotNull { languages ->
-                    imported.find {
+                    existing.find {
                         languages.pair.uniqueEquals(it.pair) && it.files.version == languages.version
                     }?.let {
                         languages.apply {
@@ -62,12 +61,16 @@ class ExternalLanguageModelsFileRepository(private val stream: InputStream) :
                     }
                 },
                 updates = model.filter { languages ->
-                    imported.any {
+                    existing.find {
                         languages.pair.uniqueEquals(it.pair) && it.files.version < languages.version
-                    }
+                    }?.let {
+                        languages.apply {
+                            extracted = it.files.size
+                        }
+                    } != null
                 },
                 available = model.filter { languages ->
-                    imported.none { languages.pair.uniqueEquals(it.pair) }
+                    existing.none { languages.pair.uniqueEquals(it.pair) }
                 }
             )
         }
@@ -114,12 +117,12 @@ class ExternalLanguageModelsFileRepository(private val stream: InputStream) :
                 val definitions = _serializer.decodeFromString(serializer, data)
                 _downloadableLanguageModels.value =
                     mapLanguageModelDefinitionToDownloadableLanguageModel(definitions)
-
             }
         }
     }
 
     companion object {
-        private val _serializer = Json { ignoreUnknownKeys = true }
+        @OptIn(ExperimentalSerializationApi::class)
+        private val _serializer = Json { ignoreUnknownKeys = true; decodeEnumsCaseInsensitive = true }
     }
 }

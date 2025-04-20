@@ -5,7 +5,7 @@ import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageModelMetadata
 import app.versta.translate.core.entity.LanguageModelFiles
 import app.versta.translate.core.entity.LanguagePair
-import app.versta.translate.core.entity.LanguagePairWithModelFiles
+import app.versta.translate.core.entity.LanguagePairModelFiles
 import app.versta.translate.core.entity.LanguageModel
 import kotlinx.coroutines.flow.Flow
 
@@ -13,7 +13,7 @@ interface LanguageRepository {
     /**
      * Gets the language models metadata available in the repository.
      */
-    fun getLanguages(): Flow<List<LanguagePairWithModelFiles>>
+    fun getLanguages(): Flow<List<LanguagePairModelFiles>>
 
     /**
      * Gets the languages available in the repository.

@@ -28,7 +28,6 @@ import app.versta.translate.ui.component.TrialLicenseDrawer
 import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.theme.TranslateTheme
 import app.versta.translate.utils.viewModelFactory
-import app.versta.translate.core.model.TextToSpeechImportViewModel
 
 open class MainActivity : ComponentActivity() {
     private val languageViewModel by viewModels<LanguageViewModel>(
@@ -39,17 +38,6 @@ open class MainActivity : ComponentActivity() {
                     languageRepository = MainApplication.module.languageRepository,
                     languagePreferenceRepository = MainApplication.module.languagePreferenceRepository,
                     externalLanguageModelsRepository = MainApplication.module.externalLanguageModelsRepository
-                )
-            }
-        }
-    )
-
-    private val textToSpeechImportViewModel by viewModels<TextToSpeechImportViewModel>(
-        factoryProducer = {
-            viewModelFactory {
-                TextToSpeechImportViewModel(
-                    modelExtractor = MainApplication.module.extractor,
-                    textToSpeechRepository = MainApplication.module.textToSpeechRepository
                 )
             }
         }
@@ -94,7 +82,7 @@ open class MainActivity : ComponentActivity() {
                         translationViewModel = MainApplication.module.translationViewModel,
                         textTranslationViewModel = MainApplication.module.textTranslationViewModel,
                         textToSpeechViewModel = MainApplication.module.textToSpeechViewModel,
-                        textToSpeechImportViewModel = textToSpeechImportViewModel,
+                        voiceViewModel = MainApplication.module.voiceViewModel,
                         loggingViewModel = MainApplication.module.loggingViewModel
                     )
 

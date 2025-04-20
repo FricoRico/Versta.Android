@@ -9,6 +9,7 @@ import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.MicNone
+import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -95,14 +96,14 @@ fun Settings(
 
                 item {
                     SettingsButtonItem(
-                        headlineContent = stringResource(R.string.settings_translation_title),
-                        supportingContent = stringResource(R.string.settings_translation_description),
+                        headlineContent = "Voices",
+                        supportingContent = "Manage voices, download new voices",
                         onClick = {
-                            navController.navigate(Screens.TranslationSettings())
+                            navController.navigate(Screens.VoicesSettings())
                         },
                         leadingContent = {
                             Icon(
-                                Icons.Outlined.Language,
+                                Icons.Outlined.RecordVoiceOver,
                                 contentDescription = null,
                             )
                         },
@@ -123,6 +124,24 @@ fun Settings(
 
                 item {
                     SettingsButtonItem(
+                        headlineContent = stringResource(R.string.settings_translation_title),
+                        supportingContent = stringResource(R.string.settings_translation_description),
+                        onClick = {
+                            navController.navigate(Screens.TranslationSettings())
+                        },
+                        leadingContent = {
+                            Icon(
+                                Icons.Outlined.Language,
+                                contentDescription = null,
+                            )
+                        },
+                        index = 0,
+                        groupSize = 2
+                    )
+                }
+
+                item {
+                    SettingsButtonItem(
                         headlineContent = stringResource(R.string.settings_text_to_speech_title),
                         supportingContent = stringResource(R.string.settings_text_to_speech_description),
                         onClick = {
@@ -134,8 +153,8 @@ fun Settings(
                                 contentDescription = null,
                             )
                         },
-                        index = 0,
-                        groupSize = 1
+                        index = 1,
+                        groupSize = 2
                     )
                 }
 

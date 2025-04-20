@@ -7,7 +7,7 @@ import app.versta.translate.core.entity.LanguageModelFiles
 import app.versta.translate.core.entity.LanguageModelInferenceFiles
 import app.versta.translate.core.entity.LanguageModelTokenizerFiles
 import app.versta.translate.core.entity.LanguagePair
-import app.versta.translate.core.entity.LanguagePairWithModelFiles
+import app.versta.translate.core.entity.LanguagePairModelFiles
 import app.versta.translate.core.entity.LanguageModelArchitecture
 import app.versta.translate.core.entity.LanguageModel
 import kotlinx.coroutines.flow.Flow
@@ -66,12 +66,12 @@ class LanguageMemoryRepository : LanguageRepository {
     /**
      * Gets the language models metadata available in the repository.
      */
-    override fun getLanguages(): Flow<List<LanguagePairWithModelFiles>> = flow {
+    override fun getLanguages(): Flow<List<LanguagePairModelFiles>> = flow {
         emit(
             _languages.map {
                 val files = _languageModels[it.id] ?: return@map null
 
-                LanguagePairWithModelFiles(
+                LanguagePairModelFiles(
                     sourceLocale = it.source.locale,
                     targetLocale = it.target.locale,
                     files = files

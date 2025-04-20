@@ -12,10 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -36,48 +34,60 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
-import app.versta.translate.adapter.outbound.LanguageMemoryRepository
-import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.core.entity.ExternalLanguageMetadata
-import app.versta.translate.core.entity.ExternalLanguagePairDefinition
-import app.versta.translate.core.entity.LANGUAGE_RATING_THRESHOLD
-import app.versta.translate.core.entity.LanguagePair
-import app.versta.translate.core.model.LanguageViewModel
-import app.versta.translate.ui.component.LanguageDeletionConfirmationDialog
-import app.versta.translate.ui.component.LanguagePairBadge
+import app.versta.translate.adapter.outbound.ExternalVoiceModelsMemoryRepository
+import app.versta.translate.adapter.outbound.VoiceMemoryRepository
+import app.versta.translate.core.entity.ExternalVoiceLanguageVoiceGenders
+import app.versta.translate.core.entity.ExternalVoiceModelDefinition
+import app.versta.translate.core.entity.Language
+import app.versta.translate.core.entity.VoiceGender
+import app.versta.translate.core.model.VoiceViewModel
+import app.versta.translate.ui.component.LanguageBadge
 import app.versta.translate.ui.component.ListDivider
 import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
+import app.versta.translate.ui.component.VoiceDeletionConfirmationDialog
 import app.versta.translate.ui.theme.spacing
 import timber.log.Timber
-import kotlin.math.max
-import kotlin.math.min
-
-internal const val TAG = "LanguageDetails"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LanguageDetails(
+fun VoiceDetails(
     navController: NavController,
-    languageViewModel: LanguageViewModel,
+    voiceViewModel: VoiceViewModel,
 ) {
-    val argument = remember { navController.currentBackStackEntry?.arguments?.getString("pair") }
+    val argument = remember { navController.currentBackStackEntry?.arguments?.getString("id") }
     if (argument == null) {
         navController.popBackStack()
-        Timber.tag(TAG).e("Missing source language pair argument")
+        Timber.tag(TAG).e("Missing voice id argument")
         return
     }
 
-    val pair = LanguagePair.fromId(argument)
-    val model by languageViewModel.getLanguageDefinition(pair).collectAsStateWithLifecycle(null)
-    val importedLanguagePairs by languageViewModel.importedLanguagePairs.collectAsStateWithLifecycle(
+    val model by voiceViewModel.getVoiceModelDefinition(argument)
+        .collectAsStateWithLifecycle(null)
+    val importedLanguagePairs by voiceViewModel.importedVoices.collectAsStateWithLifecycle(
         emptyList()
+    )
+
+    if (model == null) {
+        return
+    }
+
+    val voiceLanguages = model!!.voices
+        .groupBy { it.language }
+        .map { (language, voices) ->
+            ExternalVoiceLanguageVoiceGenders(
+                language = Language.fromIsoCode(language),
+                genders = voices.map { it.gender }
+            )
+        }
+    val voiceOptions = mapOf(
+        VoiceGender.Female to stringResource(R.string.text_to_speech_settings_voice_gender_female),
+        VoiceGender.Male to stringResource(R.string.text_to_speech_settings_voice_gender_male)
     )
 
     val context = LocalContext.current
@@ -89,7 +99,7 @@ fun LanguageDetails(
         MaterialTheme.spacing.small
     }
 
-    var languageToBeDeleted by remember { mutableStateOf<LanguagePair?>(null) }
+    var voiceToBeDeleted by remember { mutableStateOf<ExternalVoiceModelDefinition?>(null) }
 
     fun onBackNavigation() {
         navController.popBackStack()
@@ -99,7 +109,7 @@ fun LanguageDetails(
         topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
         title = {
             Text(
-                text = "${pair.source.name} - ${pair.target.name}",
+                text = model!!.name,
             )
         },
         navigationIcon = {
@@ -110,11 +120,11 @@ fun LanguageDetails(
             }
         },
         actions = {
-            if (importedLanguagePairs.contains(
-                pair
-            )) {
+            if (importedLanguagePairs.any {
+                    it.id == model!!.id
+                }) {
                 IconButton(onClick = {
-                    languageToBeDeleted = pair
+                    voiceToBeDeleted = model
                 }) {
                     Icon(
                         imageVector = Icons.Outlined.Delete,
@@ -135,38 +145,33 @@ fun LanguageDetails(
                     end = landscapeContentPadding
                 ),
             ) {
-                if (model == null) {
-                    return@LazyColumn
-                }
-
                 Details(
                     definition = model!!
                 )
 
                 ListDivider()
 
-                Metadata(
-                    metadata = model!!.metadata
+                Voices(
+                    voiceLanguages = voiceLanguages,
+                    voiceOptions = voiceOptions
                 )
             }
         }
     )
 
-    LanguageDeletionConfirmationDialog(
-        pair = languageToBeDeleted,
+    VoiceDeletionConfirmationDialog(
+        model = voiceToBeDeleted,
         onConfirmation = {
-            onBackNavigation()
-
-            languageViewModel.removeLanguageModel(it, true)
-            languageToBeDeleted = null
+            voiceViewModel.deleteVoiceModel(it)
+            voiceToBeDeleted = null
         },
         onDismissRequest = {
-            languageToBeDeleted = null
+            voiceToBeDeleted = null
         })
 }
 
 fun LazyListScope.Details(
-    definition: ExternalLanguagePairDefinition
+    definition: ExternalVoiceModelDefinition
 ) {
     val sizeFormat = DecimalFormat("#.##")
     val size = definition.size / 1e6
@@ -192,29 +197,30 @@ fun LazyListScope.Details(
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraLarge),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    LanguageDetailsData(
+                    VoiceDetailsData(
                         label = stringResource(R.string.language_details_download_size_label),
                         value = "${sizeFormat.format(size)} MB",
                     )
 
                     if (extracted != null) {
-                        LanguageDetailsData(
+                        VoiceDetailsData(
                             label = stringResource(R.string.language_details_disk_size_label),
                             value = "${sizeFormat.format(extracted)} MB",
                         )
                     }
                 }
 
-                LanguageDetailsData(
-                    label = stringResource(R.string.language_details_bidirectional_label),
-                    value = if (definition.bidirectional) {
-                        stringResource(R.string.yes)
-                    } else {
-                        stringResource(R.string.no)
-                    },
+                VoiceDetailsData(
+                    label = stringResource(R.string.language_details_base_model_label),
+                    value = definition.baseModel,
                 )
 
-                LanguageDetailsData(
+                VoiceDetailsData(
+                    label = stringResource(R.string.language_details_architecture_label),
+                    value = definition.architectures.joinToString(", ") { architecture -> architecture.name },
+                )
+
+                VoiceDetailsData(
                     label = stringResource(R.string.language_details_version_label),
                     value = definition.version,
                 )
@@ -223,54 +229,20 @@ fun LazyListScope.Details(
     }
 }
 
-fun LazyListScope.Metadata(
-    metadata: List<ExternalLanguageMetadata>
+fun LazyListScope.Voices(
+    voiceLanguages: List<ExternalVoiceLanguageVoiceGenders>,
+    voiceOptions: Map<VoiceGender, String>
 ) {
-    return items(
-        count = metadata.size,
-        key = { "${metadata[it].source}-${metadata[it].target}" },
-    ) {
-        val data = metadata[it]
-        val first = it == 0
-        val last = it == metadata.size - 1
-
-        val pair = LanguagePair(
-            source = data.source,
-            target = data.target
-        )
-
-        val scoreFormat = DecimalFormat("#.#")
-        val ratingFormat = DecimalFormat("#.#")
-        val rating = max(min((data.score / LANGUAGE_RATING_THRESHOLD) * 5, 5.0), 1.0)
-
-        val topRounding = if (first) {
-            MaterialTheme.spacing.extraLarge
-        } else {
-            MaterialTheme.spacing.medium
-        }
-
-        val bottomRounding = if (last) {
-            MaterialTheme.spacing.extraLarge
-        } else {
-            MaterialTheme.spacing.medium
-        }
-
+    return item {
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
                 .padding(bottom = MaterialTheme.spacing.extraSmall)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = topRounding,
-                        topEnd = topRounding,
-                        bottomStart = bottomRounding,
-                        bottomEnd = bottomRounding,
-                    )
-                )
+                .clip(MaterialTheme.shapes.extraLarge)
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
                 modifier = Modifier
                     .padding(
                         vertical = MaterialTheme.spacing.medium,
@@ -278,54 +250,46 @@ fun LazyListScope.Metadata(
                     )
                     .fillMaxWidth()
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = MaterialTheme.spacing.small)
-                ) {
-                    LanguagePairBadge(
-                        pair = pair,
-                        bidirectional = false
-                    )
+                voiceLanguages.map {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
+                    ) {
+                        LanguageBadge(
+                            language = it.language
+                        )
 
-                    Text(
-                        text = "${data.source.name} - ${data.target.name}",
-                        style = MaterialTheme.typography.titleLarge,
-                    )
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.hairline)
+                        ) {
+                            Text(
+                                text = it.language.name,
+                                style = MaterialTheme.typography.labelLarge
+                            )
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.large),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                it.genders.map {
+                                    Text(
+                                        text = voiceOptions[it]
+                                            ?: stringResource(R.string.unknown),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraLarge),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    LanguageDetailsData(
-                        label = stringResource(R.string.language_details_rating_label),
-                        value = ratingFormat.format(rating),
-                        icon = Icons.Filled.Star
-                    )
-
-                    LanguageDetailsData(
-                        label = stringResource(R.string.language_details_blue_score_label),
-                        value = scoreFormat.format(data.score),
-                    )
-                }
-
-                LanguageDetailsData(
-                    label = stringResource(R.string.language_details_base_model_label),
-                    value = data.baseModel,
-                )
-
-                LanguageDetailsData(
-                    label = stringResource(R.string.language_details_architecture_label),
-                    value = data.architectures.joinToString(", ") { architecture -> architecture.name },
-                )
             }
         }
     }
 }
 
 @Composable
-fun LanguageDetailsData(
+fun VoiceDetailsData(
     label: String,
     value: String,
     icon: ImageVector? = null,
@@ -368,14 +332,13 @@ fun LanguageDetailsData(
 
 @Composable
 @Preview(showBackground = true)
-fun LanguageDetailsPreview() {
-    LanguageDetails(
+fun VoiceDetailsPreview() {
+    VoiceDetails(
         navController = rememberNavController(),
-        languageViewModel = LanguageViewModel(
+        voiceViewModel = VoiceViewModel(
             context = LocalContext.current,
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
+            voiceRepository = VoiceMemoryRepository(),
+            externalVoiceModelsRepository = ExternalVoiceModelsMemoryRepository()
         )
     )
 }

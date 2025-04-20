@@ -11,9 +11,8 @@ import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.Locale
 import kotlin.io.path.exists
-import kotlin.io.path.fileSize
 
-data class LanguagePairWithModelFiles(
+data class LanguagePairModelFiles(
     private val sourceLocale: Locale,
     private val targetLocale: Locale,
     val files: LanguageModelFiles,

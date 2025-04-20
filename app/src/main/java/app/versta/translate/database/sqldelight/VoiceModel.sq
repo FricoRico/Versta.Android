@@ -2,7 +2,7 @@ import kotlin.String;
 import kotlin.collections.List;
 import kotlin.collections.Map;
 
-CREATE TABLE TextToSpeechModel (
+CREATE TABLE VoiceModel (
     id TEXT NOT NULL PRIMARY KEY,
     baseModel TEXT NOT NULL,
     architectures TEXT AS List<String> NOT NULL,
@@ -11,20 +11,20 @@ CREATE TABLE TextToSpeechModel (
 );
 
 getAll:
-SELECT * FROM TextToSpeechModel;
+SELECT * FROM VoiceModel;
 
 getById:
-SELECT * FROM TextToSpeechModel WHERE id = :id LIMIT 1;
+SELECT * FROM VoiceModel WHERE id = :id LIMIT 1;
 
 upsert {
-    UPDATE TextToSpeechModel SET
+    UPDATE VoiceModel SET
         baseModel = :baseModel,
         architectures = :architectures,
         path = :path,
         version = :version
     WHERE id = :id;
 
-    INSERT OR IGNORE INTO TextToSpeechModel (
+    INSERT OR IGNORE INTO VoiceModel (
         id,
         baseModel,
         architectures,
@@ -40,7 +40,7 @@ upsert {
 }
 
 deleteById:
-DELETE FROM TextToSpeechModel WHERE id = :id;
+DELETE FROM VoiceModel WHERE id = :id;
 
 deleteByIds:
-DELETE FROM TextToSpeechModel WHERE id IN :ids;
+DELETE FROM VoiceModel WHERE id IN :ids;

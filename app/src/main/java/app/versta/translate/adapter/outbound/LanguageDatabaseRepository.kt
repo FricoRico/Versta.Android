@@ -5,7 +5,7 @@ import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageModelMetadata
 import app.versta.translate.core.entity.LanguageModelFiles
 import app.versta.translate.core.entity.LanguagePair
-import app.versta.translate.core.entity.LanguagePairWithModelFiles
+import app.versta.translate.core.entity.LanguagePairModelFiles
 import app.versta.translate.core.entity.LanguageModel
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.executeAsListFlow
@@ -39,14 +39,14 @@ class LanguageDatabaseRepository(
     /**
      * Gets the language models metadata available in the repository.
      */
-    override fun getLanguages(): Flow<List<LanguagePairWithModelFiles>> =
+    override fun getLanguages(): Flow<List<LanguagePairModelFiles>> =
         database.languages.getAll().executeAsListFlow().map {
             it.map { language ->
                 val languageModel = mapLanguageModelDatabaseModelToLanguageModelFiles(
                     data = database.languageModels.getAllByLanguageId(language.id).executeAsOneOrNull()
                 ) ?: return@map null
 
-                LanguagePairWithModelFiles(
+                LanguagePairModelFiles(
                     sourceLocale = Locale.forLanguageTag(language.source),
                     targetLocale = Locale.forLanguageTag(language.target),
                     files = languageModel

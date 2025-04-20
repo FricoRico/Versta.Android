@@ -16,15 +16,17 @@
     <string name="language_analysis_explanation">Great! The following languages will be imported, and you\'ll be able to use them in your translations.</string>
     <string name="language_analysis_approve">Import languages</string>
     <string name="language_settings_title">Languages</string>
-    <string name="language_settings_installed_headline">Installed</string>
-    <string name="language_settings_updates_headline">Updates</string>
-    <string name="language_settings_available_headline">Available</string>
+    <string name="installed_headline">Installed</string>
+    <string name="updates_headline">Updates</string>
+    <string name="available_headline">Available</string>
     <string name="language_attributes_source_target_combination">%1$s to %2$s</string>
     <string name="get_file">Get a new file</string>
     <string name="choose_file">Choose an existing file</string>
     <string name="unknown_error">Unknown error</string>
     <string name="delete_language_title">Remove\n%1$s?</string>
     <string name="delete_language_description">Are you sure you want to remove this language model?</string>
+    <string name="delete_voice_title">Remove %1$s?</string>
+    <string name="delete_voice_description">Are you sure you want to remove this text-to-speech model?</string>
     <string name="no_languages_available">No languages available</string>
     <string name="select_source_language">Select source language</string>
     <string name="select_target_language">Select target language</string>
@@ -149,7 +151,7 @@
     <string name="text_to_speech_error_title">Text-to-speech error</string>
     <string name="text_to_speech_error_description">An error occurred while synthesizing the text to speech.</string>
     <string name="settings_text_to_speech_title">Text-to-Speech</string>
-    <string name="settings_text_to_speech_description">Configure voices, speech rate</string>
+    <string name="settings_text_to_speech_description">Configure voice gender, speech rate</string>
     <string name="translation_bubbles_notification_channel_title">Translation Bubbles</string>
     <string name="translation_bubbles_notification_channel_description">Allows you to translate selected text in a bubble overlay</string>
     <string name="translation_bubbles_notification_title">Translate</string>
@@ -167,4 +169,5 @@
     <string name="language_details_blue_score_label">BLEU score</string>
     <string name="language_details_base_model_label">Base model</string>
     <string name="language_details_architecture_label">Architecture</string>
+    <string name="settings_voices_title">Voices</string>
 </resources>
