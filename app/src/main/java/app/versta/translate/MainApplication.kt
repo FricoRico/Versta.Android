@@ -51,6 +51,8 @@ import timber.log.Timber.Forest.plant
 val Context.dataStore by preferencesDataStore(name = "preferences")
 
 interface ApplicationModuleInterface {
+    val database: DatabaseContainer
+
     val languageRepository: LanguageRepository
     val languagePreferenceRepository: LanguagePreferenceRepository
     val licenseRepository: LicenseRepository
@@ -76,7 +78,7 @@ interface ApplicationModuleInterface {
 }
 
 class ApplicationModule(private val context: Context) : ApplicationModuleInterface {
-    val database = DatabaseContainer(context)
+    override val database = DatabaseContainer(context)
 
     override val languageRepository: LanguageRepository by lazy {
         LanguageDatabaseRepository(database)

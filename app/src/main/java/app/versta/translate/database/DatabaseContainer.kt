@@ -5,19 +5,28 @@ import app.cash.sqldelight.ColumnAdapter
 import app.cash.sqldelight.TransactionWithReturn
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
+import app.versta.translate.database.migrations.Migration3
 import kotlinx.serialization.json.Json
+import timber.log.Timber
 import java.app.versta.translate.database.sqldelight.LanguageModel
 import java.app.versta.translate.database.sqldelight.VoiceModel
+
+interface Migration {
+    fun migrate(database: DatabaseContainer)
+}
 
 class DatabaseContainer(
     context: Context
 ) {
     companion object {
+        private val TAG = DatabaseContainer::class.java.simpleName
+
         const val DB_FILE = "versta.db"
     }
 
-    private val driver = AndroidSqliteDriver(Database.Schema, context, DB_FILE)
-    private val database = Database(
+    val driver = AndroidSqliteDriver(Database.Schema, context, DB_FILE)
+
+    private val _database = Database(
         driver = driver,
         LanguageModelAdapter = LanguageModel.Adapter(
             architecturesAdapter = ListOfStringsAdapter,
@@ -27,13 +36,28 @@ class DatabaseContainer(
         ),
     )
 
-    val languages = database.languageQueries
-    val languageModels = database.languageModelQueries
-    val voiceModels = database.voiceModelQueries
+    private val _migrations = listOf(
+        Migration3,
+    )
 
-    fun transaction(body: TransactionWithoutReturn.() -> Unit) = database.transaction { body() }
+    val languages = _database.languageQueries
+    val languageModels = _database.languageModelQueries
+    val voices = _database.voiceQueries
+    val voiceModels = _database.voiceModelQueries
+
+    fun transaction(body: TransactionWithoutReturn.() -> Unit) = _database.transaction { body() }
     fun <T> transactionForResult(body: TransactionWithReturn<T>.() -> T) =
-        database.transactionWithResult { body() }
+        _database.transactionWithResult { body() }
+
+    private fun runMigrations() {
+        _migrations.forEach { migration ->
+            migration.migrate(this)
+        }
+    }
+
+    init {
+        runMigrations()
+    }
 }
 
 val ListOfStringsAdapter = object : ColumnAdapter<List<String>, String> {

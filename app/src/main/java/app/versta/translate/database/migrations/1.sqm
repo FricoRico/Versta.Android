@@ -1,4 +1,4 @@
-CREATE TABLE TextToSpeechModel (
+CREATE TABLE IF NOT EXISTS TextToSpeechModel (
     id TEXT NOT NULL PRIMARY KEY,
     baseModel TEXT NOT NULL,
     architectures TEXT AS List<String> NOT NULL,

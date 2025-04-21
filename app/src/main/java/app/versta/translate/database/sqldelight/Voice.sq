@@ -1,0 +1,31 @@
+CREATE TABLE Voice (
+    modelId TEXT NOT NULL REFERENCES VoiceModel(id) ON DELETE CASCADE,
+    language TEXT NOT NULL,
+    gender TEXT NOT NULL,
+
+    UNIQUE(modelId, language, gender)
+);
+
+getAll:
+SELECT * FROM Voice;
+
+getByLanguage:
+SELECT * FROM Voice WHERE language = :language LIMIT 1;
+
+insertOrIgnore {
+    INSERT OR IGNORE INTO Voice (
+        modelId,
+        language,
+        gender
+    ) VALUES (
+        :modelId,
+        :language,
+        :gender
+    );
+}
+
+deleteById:
+DELETE FROM Voice WHERE modelId = :modelId;
+
+deleteByIds:
+DELETE FROM Voice WHERE modelId IN :modelIds;

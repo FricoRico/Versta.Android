@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -43,9 +44,9 @@ class TextToSpeechViewModel(
     val threadCount = textToSpeechPreferenceRepository.getThreadCount().distinctUntilChanged()
 
     private val _language = languagePreferenceRepository.getTargetLanguage().distinctUntilChanged()
-    // TODO: Get text to speech model based on current language
-    private val _textToSpeechModel =
-        voiceRepository.getVoiceModel("kokoro").distinctUntilChanged()
+    private val _textToSpeechModel = _language.filterNotNull().map { data ->
+        voiceRepository.getVoiceModelsByLanguage(data)
+    }
 
     val voiceAvailable = _language.map { language ->
         val files = _textToSpeechModel.first()
