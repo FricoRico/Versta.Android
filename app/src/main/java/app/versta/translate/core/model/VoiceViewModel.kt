@@ -34,6 +34,8 @@ class VoiceViewModel(
 ) : ViewModel() {
     private val _broadcastManager = LocalBroadcastManager.getInstance(context)
 
+    val voiceModels =
+        externalVoiceModelsRepository.getDefinitions().distinctUntilChanged()
     val importedVoices = voiceRepository.getVoiceModels().distinctUntilChanged()
     val voicesByState =
         externalVoiceModelsRepository.getDefinitionsByState(importedVoices)

@@ -15,6 +15,7 @@ enum class Screens (
     LanguageDetails(
         listOf("pair")
     ),
+    LanguageAttributions,
     TextTranslation,
     TranslationSettings,
     TextToSpeechSettings,
@@ -22,8 +23,8 @@ enum class Screens (
     VoiceDetails(
         listOf("id")
     ),
+    VoiceAttributions,
     About,
-    LanguageAttributions,
     ThirdParty,
     PrivacyPolicy,
     Troubleshooting,

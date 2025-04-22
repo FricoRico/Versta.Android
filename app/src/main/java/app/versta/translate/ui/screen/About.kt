@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Attribution
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -89,7 +90,8 @@ fun About(
                 item {
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier.padding(bottom = MaterialTheme.spacing.large)
+                        modifier = Modifier
+                            .padding(bottom = MaterialTheme.spacing.large)
                             .size(MaterialTheme.spacing.extraLarge * 3)
                             .clip(MaterialTheme.shapes.extraExtraLarge),
                     ) {
@@ -183,7 +185,25 @@ fun About(
                             )
                         },
                         index = 0,
-                        groupSize = 3
+                        groupSize = 4
+                    )
+                }
+
+                item {
+                    SettingsButtonItem(
+                        headlineContent = stringResource(R.string.about_voice_models_title),
+                        supportingContent = stringResource(R.string.about_voice_models_description),
+                        onClick = {
+                            navController.navigate(Screens.VoiceAttributions())
+                        },
+                        leadingContent = {
+                            Icon(
+                                Icons.Outlined.RecordVoiceOver,
+                                contentDescription = null,
+                            )
+                        },
+                        index = 1,
+                        groupSize = 4
                     )
                 }
 
@@ -200,8 +220,8 @@ fun About(
                                 contentDescription = null,
                             )
                         },
-                        index = 1,
-                        groupSize = 3
+                        index = 2,
+                        groupSize = 4
                     )
                 }
 
@@ -218,8 +238,8 @@ fun About(
                                 contentDescription = null,
                             )
                         },
-                        index = 2,
-                        groupSize = 3
+                        index = 3,
+                        groupSize = 4
                     )
                 }
             }

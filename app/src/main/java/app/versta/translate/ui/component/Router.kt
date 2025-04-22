@@ -43,6 +43,7 @@ import app.versta.translate.ui.screen.TextTranslation
 import app.versta.translate.ui.screen.ThirdParty
 import app.versta.translate.ui.screen.TranslationSettings
 import app.versta.translate.ui.screen.Troubleshooting
+import app.versta.translate.ui.screen.VoiceAttributions
 import app.versta.translate.ui.screen.VoiceDetails
 import app.versta.translate.ui.screen.VoicesSettings
 
@@ -118,14 +119,20 @@ fun Router(
                 licenseViewModel = licenseViewModel,
             )
         }
+        composable(Screens.LanguageSettings()) {
+            LanguageSettings(
+                navController = navController,
+                languageViewModel = languageViewModel
+            )
+        }
         composable(Screens.LanguageDetails()) {
             LanguageDetails(
                 navController = navController,
                 languageViewModel = languageViewModel,
             )
         }
-        composable(Screens.LanguageSettings()) {
-            LanguageSettings(
+        composable(Screens.LanguageAttributions()) {
+            LanguageAttributions(
                 navController = navController,
                 languageViewModel = languageViewModel
             )
@@ -163,16 +170,16 @@ fun Router(
                 voiceViewModel = voiceViewModel
             )
         }
+        composable(Screens.VoiceAttributions()) {
+            VoiceAttributions(
+                navController = navController,
+                voiceViewModel = voiceViewModel
+            )
+        }
         composable(Screens.About()) {
             About(
                 navController = navController,
                 licenseViewModel = licenseViewModel
-            )
-        }
-        composable(Screens.LanguageAttributions()) {
-            LanguageAttributions(
-                navController = navController,
-                languageViewModel = languageViewModel
             )
         }
         composable(Screens.ThirdParty()) {

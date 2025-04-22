@@ -54,6 +54,8 @@
     <string name="about_third_party_description">Acknowledgements and third-party licenses</string>
     <string name="about_privacy_policy_title">Privacy policy</string>
     <string name="about_privacy_policy_description">Our commitment to your privacy</string>
+    <string name="about_voice_models_title">Voice models</string>
+    <string name="about_voice_models_description">Attributions for text-to-speech voice models</string>
     <string name="icon_description">%1$s Icon</string>
     <string name="neurora_attribution">By Neurora</string>
     <string name="version_number">Version %1$s</string>
@@ -170,4 +172,5 @@
     <string name="language_details_base_model_label">Base model</string>
     <string name="language_details_architecture_label">Architecture</string>
     <string name="settings_voices_title">Voices</string>
+    <string name="voice_models_title">Voice models</string>
 </resources>
