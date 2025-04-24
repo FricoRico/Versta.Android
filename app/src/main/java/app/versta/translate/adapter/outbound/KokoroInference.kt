@@ -64,6 +64,10 @@ class KokoroInference(private val ortEnvironment: OrtEnvironment): TextToSpeechI
         kokoroVoice = NpyFile.read(file).asFloatArray()
     }
 
+    override fun clearVoice() {
+        kokoroVoice = null
+    }
+
     private fun getStyle(tokens: LongArray): FloatArray {
         if (kokoroVoice == null) {
             throw IllegalStateException("Voice style is not loaded")
@@ -98,8 +102,11 @@ class KokoroInference(private val ortEnvironment: OrtEnvironment): TextToSpeechI
         kokoroSession = ortEnvironment.createSession(readFileToByteBuffer(modelFile), options)
     }
 
-    fun close() {
+    override fun close() {
         kokoroSession?.close()
+
+        kokoroSession = null
+        kokoroVoice = null
     }
 
 

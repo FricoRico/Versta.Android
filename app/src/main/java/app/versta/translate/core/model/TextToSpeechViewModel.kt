@@ -20,6 +20,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -51,7 +52,10 @@ class TextToSpeechViewModel(
     val voiceAvailable = _language.map { language ->
         val files = _textToSpeechModel.first()
         val gender = gender.first()
-        files != null && language != null && files.voices.getVoiceByLanguage(language, gender) != null
+        files != null && language != null && files.voices.getVoiceByLanguage(
+            language,
+            gender
+        ) != null
     }
 
     private val _loadingProgress = MutableStateFlow<LoadingProgress>(LoadingProgress.Idle)
@@ -148,8 +152,8 @@ class TextToSpeechViewModel(
         audioPlayer.stop()
     }
 
-    fun close() {
-        audioPlayer.release()
+    private fun close() {
+        model.close()
     }
 
     /**
@@ -200,6 +204,7 @@ class TextToSpeechViewModel(
      * Loads the model from given files.
      */
     fun load(files: VoiceWithModelFiles) {
+        close()
         cancelSynthesis()
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -220,7 +225,7 @@ class TextToSpeechViewModel(
     /**
      * Sets the voice from given files and language.
      */
-    fun setVoice(files: VoiceWithModelFiles, language: Language) {
+    private fun setVoice(files: VoiceWithModelFiles, language: Language) {
         cancelSynthesis()
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -229,30 +234,55 @@ class TextToSpeechViewModel(
     }
 
     /**
+     * Clears the voice.
+     */
+    private fun clearVoice() {
+        cancelSynthesis()
+        model.clearVoice()
+    }
+
+    /**
      * Reloads the model and voice.
      */
     fun reload() {
         viewModelScope.launch {
             _textToSpeechModel.collect {
-                if (it != null) {
-                    load(it)
+                if (it == null) {
+                    close()
+                    return@collect
                 }
+
+                load(it)
             }
         }
 
         viewModelScope.launch {
-            _language.conflate().collect {
-                val files = _textToSpeechModel.first()
-
-                if (it != null && files != null) {
-                    setVoice(files, it)
+            _language.combine(_textToSpeechModel) { language, files ->
+                Pair(language, files)
+            }.conflate().collect { (language, files) ->
+                if (language == null || files == null) {
+                    clearVoice()
+                    return@collect
                 }
+
+                setVoice(files, language)
+            }
+        }
+    }
+
+    /**
+     * Automatically reloads the voice model when a new one is added or removed
+     */
+    private fun autoReload() {
+        viewModelScope.launch {
+            voiceRepository.getVoiceModels().collect {
+                reload()
             }
         }
     }
 
     init {
-        reload()
+        autoReload()
     }
 
     companion object {

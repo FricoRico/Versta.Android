@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -321,11 +322,11 @@ class TranslationViewModel(
         }
 
         viewModelScope.launch {
-            _languageModels.conflate().collect {
-                val pair = languages.first()
-
-                if (it != null && pair != null) {
-                    load(it, pair)
+            _languageModels.combine(languages) { files, pair ->
+                Pair(files, pair)
+            }.conflate().collect { (files, pair) ->
+                if (files != null && pair != null) {
+                    load(files, pair)
                 }
             }
         }

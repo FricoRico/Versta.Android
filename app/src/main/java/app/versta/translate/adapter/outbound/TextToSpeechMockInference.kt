@@ -12,7 +12,15 @@ class TextToSpeechMockInference : TextToSpeechInference {
         return
     }
 
+    override fun clearVoice() {
+        return
+    }
+
     override fun load(files: VoiceModelInferenceFiles, threads: Int) {
+        return
+    }
+
+    override fun close() {
         return
     }
 }

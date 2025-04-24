@@ -8,5 +8,9 @@ interface TextToSpeechInference {
 
     fun setVoice(path: Path?)
 
+    fun clearVoice()
+
     fun load(files: VoiceModelInferenceFiles, threads: Int = 8)
+
+    fun close()
 }
