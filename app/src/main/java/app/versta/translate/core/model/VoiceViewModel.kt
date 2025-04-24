@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -12,10 +13,11 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkRequest
 import androidx.work.workDataOf
+import app.versta.translate.R
+import app.versta.translate.adapter.inbound.DOWNLOAD_VOICE_STATUS_INTENT
 import app.versta.translate.adapter.inbound.DownloadVoiceWorker
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsRepository
 import app.versta.translate.adapter.outbound.VoiceRepository
-import app.versta.translate.core.entity.DOWNLOAD_STATUS_INTENT
 import app.versta.translate.core.entity.DownloadStatus
 import app.versta.translate.core.entity.ExternalVoiceDownloadTask
 import app.versta.translate.core.entity.ExternalVoiceModelDefinition
@@ -25,7 +27,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import java.net.SocketException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 
 class VoiceViewModel(
     context: Context,
@@ -34,18 +40,15 @@ class VoiceViewModel(
 ) : ViewModel() {
     private val _broadcastManager = LocalBroadcastManager.getInstance(context)
 
-    val voiceModels =
-        externalVoiceModelsRepository.getDefinitions().distinctUntilChanged()
+    val voiceModels = externalVoiceModelsRepository.getDefinitions().distinctUntilChanged()
     val importedVoices = voiceRepository.getVoiceModels().distinctUntilChanged()
-    val voicesByState =
-        externalVoiceModelsRepository.getDefinitionsByState(importedVoices)
+    val voicesByState = externalVoiceModelsRepository.getDefinitionsByState(importedVoices)
 
     private var _downloadWorker: WorkRequest? = null
     private val _downloadTasks = MutableStateFlow<List<ExternalVoiceDownloadTask>>(
         emptyList()
     )
-    val downloadTasks: StateFlow<List<ExternalVoiceDownloadTask>> =
-        _downloadTasks.asStateFlow()
+    val downloadTasks: StateFlow<List<ExternalVoiceDownloadTask>> = _downloadTasks.asStateFlow()
 
     /**
      * Broadcast receiver for download status updates.
@@ -60,7 +63,7 @@ class VoiceViewModel(
             }
 
             status?.let {
-                updateDownloadStatus(taskId, it)
+                updateDownloadStatus(context, taskId, it)
             }
         }
     }
@@ -71,8 +74,7 @@ class VoiceViewModel(
      * external voice model for the given [id].
      */
     fun getVoiceModelDefinition(id: String): Flow<ExternalVoiceModelDefinition> {
-        return externalVoiceModelsRepository.getDefinition(id)
-            .distinctUntilChanged()
+        return externalVoiceModelsRepository.getDefinition(id).distinctUntilChanged()
     }
 
     /**
@@ -82,7 +84,7 @@ class VoiceViewModel(
         var task = _downloadTasks.value.firstOrNull { it.model == model }
 
         if (task != null) {
-            updateDownloadStatus(task.id, DownloadStatus.Queued)
+            updateDownloadStatus(context, task.id, DownloadStatus.Queued)
         } else {
             task = ExternalVoiceDownloadTask(
                 model = model,
@@ -92,16 +94,14 @@ class VoiceViewModel(
         }
 
         val manager = WorkManager.getInstance(context)
-        val worker = OneTimeWorkRequestBuilder<DownloadVoiceWorker>()
-            .setInputData(
+        val worker = OneTimeWorkRequestBuilder<DownloadVoiceWorker>().setInputData(
                 workDataOf(
                     "taskId" to task.id.toString(),
                     "name" to task.model.name,
                     "uri" to task.model.bundleUri().toString(),
                     "checksum" to task.model.checksumUri().toString()
                 )
-            )
-            .build()
+            ).build()
 
         manager.enqueue(worker)
         manager.getWorkInfoByIdLiveData(worker.id)
@@ -125,13 +125,37 @@ class VoiceViewModel(
      * Updates the download status of a task.
      */
     private fun updateDownloadStatus(
-        taskId: UUID,
-        status: DownloadStatus
+        context: Context, taskId: UUID, status: DownloadStatus
     ) {
         when (status) {
-            is DownloadStatus.Completed,
-            is DownloadStatus.Error -> {
+            is DownloadStatus.Completed -> {
                 removeDownloadTask(taskId)
+            }
+
+            is DownloadStatus.Error -> {
+                when (status.exception) {
+                    is CancellationException -> {}
+
+                    is SocketException,
+                    is SocketTimeoutException,
+                    is UnknownHostException -> {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.download_error_no_internet),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+
+                    else -> {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.download_error_unknown),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+                setDownloadStatus(taskId, status)
             }
 
             is DownloadStatus.Cancelled -> {
@@ -139,14 +163,23 @@ class VoiceViewModel(
             }
 
             else -> {
-                _downloadTasks.value = _downloadTasks.value.map {
-                    if (it.id == taskId) {
-                        return@map it.copy(status = status)
-                    }
-
-                    it
-                }
+                setDownloadStatus(taskId, status)
             }
+        }
+    }
+
+    /**
+     * Sets the download status of a task.
+     */
+    private fun setDownloadStatus(
+        taskId: UUID, status: DownloadStatus
+    ) {
+        _downloadTasks.value = _downloadTasks.value.map {
+            if (it.id == taskId) {
+                return@map it.copy(status = status)
+            }
+
+            it
         }
     }
 
@@ -177,8 +210,7 @@ class VoiceViewModel(
 
     init {
         _broadcastManager.registerReceiver(
-            downloadStatusReceiver,
-            IntentFilter(DOWNLOAD_STATUS_INTENT)
+            downloadStatusReceiver, IntentFilter(DOWNLOAD_VOICE_STATUS_INTENT)
         )
     }
 

@@ -35,16 +35,18 @@ fun DownloadButton(
 ) {
     FilledIconButton(
         onClick = {
-           when (status) {
-               is DownloadStatus.Idle -> onClick()
-               else -> onCancel()
-           }
+            when (status) {
+                is DownloadStatus.Idle,
+                is DownloadStatus.Error -> onClick()
+
+                else -> onCancel()
+            }
         },
         enabled = !(status is DownloadStatus.Queued || status is DownloadStatus.Completed),
         colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
         modifier = Modifier.then(modifier)
     ) {
-        Box{
+        Box {
             AnimatedVisibility(
                 visible = status is DownloadStatus.Idle,
                 enter = fadeIn(animationSpec = tween(500)),
@@ -123,6 +125,8 @@ fun DownloadButton(
 
             AnimatedVisibility(
                 visible = status is DownloadStatus.Error,
+                enter = fadeIn(animationSpec = tween(500)),
+                exit = fadeOut(animationSpec = tween(500))
             ) {
                 Icon(
                     Icons.Outlined.Replay,

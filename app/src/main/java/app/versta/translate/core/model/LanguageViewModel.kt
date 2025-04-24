@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -12,11 +13,12 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkRequest
 import androidx.work.workDataOf
+import app.versta.translate.R
+import app.versta.translate.adapter.inbound.DOWNLOAD_LANGUAGE_STATUS_INTENT
 import app.versta.translate.adapter.inbound.DownloadLanguageWorker
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
-import app.versta.translate.core.entity.DOWNLOAD_STATUS_INTENT
 import app.versta.translate.core.entity.DownloadStatus
 import app.versta.translate.core.entity.ExternalLanguageDownloadTask
 import app.versta.translate.core.entity.ExternalLanguagePairDefinition
@@ -35,7 +37,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import java.net.SocketException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 
 enum class LanguageType {
     Source, Target
@@ -57,14 +63,12 @@ class LanguageViewModel(
     private val _downloadTasks = MutableStateFlow<List<ExternalLanguageDownloadTask>>(
         emptyList()
     )
-    val downloadTasks: StateFlow<List<ExternalLanguageDownloadTask>> =
-        _downloadTasks.asStateFlow()
+    val downloadTasks: StateFlow<List<ExternalLanguageDownloadTask>> = _downloadTasks.asStateFlow()
 
     private val _importedLanguages = languageRepository.getLanguages().distinctUntilChanged()
     val importedLanguagePairs = languageRepository.getLanguagePairs().distinctUntilChanged()
 
-    val languageModels =
-        externalLanguageModelsRepository.getDefinitions().distinctUntilChanged()
+    val languageModels = externalLanguageModelsRepository.getDefinitions().distinctUntilChanged()
     val languageModelsByState =
         externalLanguageModelsRepository.getDefinitionsByState(_importedLanguages)
             .distinctUntilChanged()
@@ -104,7 +108,7 @@ class LanguageViewModel(
             }
 
             status?.let {
-                updateDownloadStatus(taskId, it)
+                updateDownloadStatus(context, taskId, it)
             }
         }
     }
@@ -114,8 +118,7 @@ class LanguageViewModel(
      * external language model for the given [LanguagePair].
      */
     fun getLanguageDefinition(pair: LanguagePair): Flow<ExternalLanguagePairDefinition> {
-        return externalLanguageModelsRepository.getDefinition(pair)
-            .distinctUntilChanged()
+        return externalLanguageModelsRepository.getDefinition(pair).distinctUntilChanged()
     }
 
     /**
@@ -194,7 +197,7 @@ class LanguageViewModel(
         var task = _downloadTasks.value.firstOrNull { it.model == model }
 
         if (task != null) {
-            updateDownloadStatus(task.id, DownloadStatus.Queued)
+            updateDownloadStatus(context, task.id, DownloadStatus.Queued)
         } else {
             task = ExternalLanguageDownloadTask(
                 model = model,
@@ -204,16 +207,14 @@ class LanguageViewModel(
         }
 
         val manager = WorkManager.getInstance(context)
-        val worker = OneTimeWorkRequestBuilder<DownloadLanguageWorker>()
-            .setInputData(
-                workDataOf(
-                    "taskId" to task.id.toString(),
-                    "name" to "${task.model.pair.source.name} - ${task.model.pair.target.name}",
-                    "uri" to task.model.bundleUri.toString(),
-                    "checksum" to task.model.checksumUri.toString()
-                )
+        val worker = OneTimeWorkRequestBuilder<DownloadLanguageWorker>().setInputData(
+            workDataOf(
+                "taskId" to task.id.toString(),
+                "name" to "${task.model.pair.source.name} - ${task.model.pair.target.name}",
+                "uri" to task.model.bundleUri.toString(),
+                "checksum" to task.model.checksumUri.toString()
             )
-            .build()
+        ).build()
 
         manager.enqueue(worker)
         manager.getWorkInfoByIdLiveData(worker.id)
@@ -237,13 +238,36 @@ class LanguageViewModel(
      * Updates the download status of a task.
      */
     private fun updateDownloadStatus(
-        taskId: UUID,
-        status: DownloadStatus
+        context: Context, taskId: UUID, status: DownloadStatus
     ) {
         when (status) {
-            is DownloadStatus.Completed,
-            is DownloadStatus.Error -> {
+            is DownloadStatus.Completed -> {
                 removeDownloadTask(taskId)
+            }
+
+            is DownloadStatus.Error -> {
+                when (status.exception) {
+                    is CancellationException -> {}
+
+                    is SocketException,
+                    is SocketTimeoutException, is UnknownHostException -> {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.download_error_no_internet),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+
+                    else -> {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.download_error_unknown),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+                setDownloadStatus(taskId, status)
             }
 
             is DownloadStatus.Cancelled -> {
@@ -259,6 +283,21 @@ class LanguageViewModel(
                     it
                 }
             }
+        }
+    }
+
+    /**
+     * Sets the download status of a task.
+     */
+    private fun setDownloadStatus(
+        taskId: UUID, status: DownloadStatus
+    ) {
+        _downloadTasks.value = _downloadTasks.value.map {
+            if (it.id == taskId) {
+                return@map it.copy(status = status)
+            }
+
+            it
         }
     }
 
@@ -280,8 +319,7 @@ class LanguageViewModel(
 
     init {
         _broadcastManager.registerReceiver(
-            downloadStatusReceiver,
-            IntentFilter(DOWNLOAD_STATUS_INTENT)
+            downloadStatusReceiver, IntentFilter(DOWNLOAD_LANGUAGE_STATUS_INTENT)
         )
     }
 

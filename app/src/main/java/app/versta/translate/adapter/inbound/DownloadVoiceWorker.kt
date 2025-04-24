@@ -1,6 +1,7 @@
 package app.versta.translate.adapter.inbound
 
 import android.content.Context
+import android.content.Intent
 import androidx.work.WorkerParameters
 import app.versta.translate.MainApplication
 import app.versta.translate.core.entity.DownloadStatus
@@ -11,8 +12,12 @@ import timber.log.Timber
 import java.io.File
 import java.util.UUID
 
+const val DOWNLOAD_VOICE_STATUS_INTENT = "DOWNLOAD_VOICE_STATUS_UPDATE"
+
 class DownloadVoiceWorker(context: Context, parameters: WorkerParameters) :
     DownloadWorker(context, parameters) {
+    override val downloadStatusIntent = Intent(DOWNLOAD_VOICE_STATUS_INTENT)
+
     private val _extractionDirectory = context.filesDir
 
     private val _voiceExtractor = MainApplication.module.extractor

@@ -34,7 +34,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
-import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.core.entity.DownloadStatus

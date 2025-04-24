@@ -173,4 +173,6 @@
     <string name="language_details_architecture_label">Architecture</string>
     <string name="settings_voices_title">Voices</string>
     <string name="voice_models_title">Voice models</string>
+    <string name="download_error_no_internet">Download failed, could not reach server. Please check your internet connection.</string>
+    <string name="download_error_unknown">Download failed, for an unexpected reason. Please try again.</string>
 </resources>

@@ -4,22 +4,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
 import android.os.Build
-import androidx.compose.ui.res.stringResource
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import app.versta.translate.MainApplication
 import app.versta.translate.MainApplication.Companion.DOWNLOAD_NOTIFICATION_CHANNEL_ID
 import app.versta.translate.MainApplication.Companion.DOWNLOAD_NOTIFICATION_ID
 import app.versta.translate.R
-import app.versta.translate.core.entity.DOWNLOAD_STATUS_INTENT
 import app.versta.translate.core.entity.DownloadStatus
-import app.versta.translate.core.entity.LanguageBundleMetadata
-import app.versta.translate.core.entity.LanguageModel
-import app.versta.translate.core.entity.LanguageModelMetadata
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.io.File
@@ -38,6 +32,8 @@ internal data class DownloadQueue(
 
 abstract class DownloadWorker(context: Context, params: WorkerParameters) :
     CoroutineWorker(context, params) {
+    protected open val downloadStatusIntent: Intent? = null
+
     private val _workManager = WorkManager.getInstance(context)
     private val _broadcastManager = LocalBroadcastManager.getInstance(context)
 
@@ -148,12 +144,15 @@ abstract class DownloadWorker(context: Context, params: WorkerParameters) :
     }
 
     internal fun setStatus(taskId: UUID, status: DownloadStatus) {
-        val intent = Intent(DOWNLOAD_STATUS_INTENT)
+        if (downloadStatusIntent == null) {
+            Timber.tag(TAG).e("Download status intent is null")
+            return
+        }
 
-        intent.putExtra("taskId", taskId.toString())
-        intent.putExtra("status", status)
+        downloadStatusIntent!!.putExtra("taskId", taskId.toString())
+        downloadStatusIntent!!.putExtra("status", status)
 
-        _broadcastManager.sendBroadcast(intent)
+        _broadcastManager.sendBroadcast(downloadStatusIntent!!)
     }
 
     private fun createForegroundInfo(name: String?, progress: Int = 0): ForegroundInfo {
