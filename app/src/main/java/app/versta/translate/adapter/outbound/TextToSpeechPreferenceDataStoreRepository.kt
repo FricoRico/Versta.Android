@@ -36,7 +36,12 @@ class TextToSpeechPreferenceDataStoreRepository(
      */
     override fun getGender(): Flow<VoiceGender> {
         return dataStore.data.map { preferences ->
-            VoiceGender.valueOf(preferences[VOICE_GENDER_KEY] ?: DEFAULT_VOICE_GENDER.toString())
+            enumValues<VoiceGender>().find {
+                it.name.equals(
+                    preferences[VOICE_GENDER_KEY],
+                    ignoreCase = true
+                )
+            } ?: DEFAULT_VOICE_GENDER
         }
     }
 
