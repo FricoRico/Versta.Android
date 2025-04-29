@@ -24,11 +24,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
@@ -54,6 +60,7 @@ import app.versta.translate.ui.component.TextToSpeechButton
 import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 @Composable
 fun MinimalTextTranslation(
@@ -68,6 +75,8 @@ fun MinimalTextTranslation(
 
     val input by textTranslationViewModel.input.collectAsStateWithLifecycle("")
 
+    val intermediate by textTranslationViewModel.intermediate.collectAsStateWithLifecycle("")
+
     val translated by textTranslationViewModel.translated.collectAsStateWithLifecycle("")
     val translatedTransliteration by textTranslationViewModel.translatedTransliteration.collectAsStateWithLifecycle(
         ""
@@ -77,12 +86,6 @@ fun MinimalTextTranslation(
         false
     )
 
-    val translationLoadingProgress by translationViewModel.loadingProgress.collectAsStateWithLifecycle(
-        LoadingProgress.Idle
-    )
-    val transliterationLoadingProgress by textTranslationViewModel.loadingProgress.collectAsStateWithLifecycle(
-        LoadingProgress.Idle
-    )
     val textToSpeechSynthesisState by textToSpeechViewModel.speechProgressState.collectAsStateWithLifecycle(
         TextToSpeechSynthesisState.Idle
     )
@@ -91,11 +94,8 @@ fun MinimalTextTranslation(
         false
     )
 
-    val languages by translationViewModel.languages.collectAsStateWithLifecycle(null)
-
     val targetLanguage by languageViewModel.targetLanguage.collectAsStateWithLifecycle(null)
 
-    val translationScope = rememberCoroutineScope()
     val textToSpeechScope = rememberCoroutineScope()
 
     fun onTextToSpeech() {
@@ -116,27 +116,14 @@ fun MinimalTextTranslation(
             return
         }
 
-        translationScope.launch {
-            if (languages == null) return@launch
-
-            translationViewModel.translateAsFlow(input, languages!!)
-                .collect {
-                    textTranslationViewModel.setTranslation(it)
-                    view.performHapticFeedback(HapticFeedbackConstants.TEXT_HANDLE_MOVE)
-                }
-        }
+        textTranslationViewModel.translate(input)
     }
 
-    LaunchedEffect(input, translationLoadingProgress, transliterationLoadingProgress) {
+    LaunchedEffect(input, targetLanguage) {
         if (!autoTranslate) {
             return@LaunchedEffect
         }
 
-        if (translationLoadingProgress != LoadingProgress.Completed || transliterationLoadingProgress != LoadingProgress.Completed) {
-            return@LaunchedEffect
-        }
-
-        textTranslationViewModel.setTranslateOnInput(false)
         translate(input)
     }
 
@@ -154,6 +141,7 @@ fun MinimalTextTranslation(
         )
 
         MinimalTextTranslationOutput(
+            intermediate = intermediate,
             translation = translated,
             transliteration = translatedTransliteration,
             modifier = Modifier
@@ -186,10 +174,41 @@ fun MinimalTextTranslation(
 
 @Composable
 fun MinimalTextTranslationOutput(
+    intermediate: String,
     translation: String,
     transliteration: String,
     modifier: Modifier = Modifier
 ) {
+    var displayedText by remember { mutableStateOf(intermediate) }
+
+    val translatedStyle = SpanStyle(color = MaterialTheme.colorScheme.onSurface)
+    val intermediateStyle = SpanStyle(color = MaterialTheme.colorScheme.surfaceContainerHighest)
+
+    LaunchedEffect(translation, intermediate) {
+        val placeholder = intermediate
+            .reversed()
+            .take(max(0, intermediate.length - translation.length))
+            .reversed()
+
+        displayedText = translation + placeholder
+    }
+
+    val annotatedString = buildAnnotatedString {
+        displayedText.forEachIndexed { index, char ->
+            if (index <= translation.length - 1) {
+                withStyle(translatedStyle) {
+                    append(char)
+                }
+
+                return@forEachIndexed
+            }
+
+            withStyle(intermediateStyle) {
+                append(char)
+            }
+        }
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -198,8 +217,7 @@ fun MinimalTextTranslationOutput(
     ) {
         item {
             Text(
-                text = translation,
-                color = MaterialTheme.colorScheme.onSurface
+                text = annotatedString
             )
         }
 
@@ -244,26 +262,26 @@ fun MinimalTextTranslationOutputButtonRow(
                 onCancelTextToSpeech = onCancelTextToSpeech,
             )
 
-                AnimatedVisibility(
-                    visible = translationInProgress,
-                    enter = fadeIn(),
-                    exit = fadeOut(
-                        animationSpec = tween(
-                            durationMillis = DefaultDurationMillis * 2,
-                            delayMillis = DefaultDurationMillis
-                        )
-                    ),
+            AnimatedVisibility(
+                visible = translationInProgress,
+                enter = fadeIn(),
+                exit = fadeOut(
+                    animationSpec = tween(
+                        durationMillis = DefaultDurationMillis * 2,
+                        delayMillis = DefaultDurationMillis
+                    )
+                ),
+            ) {
+                FilledIconButton(
+                    onClick = onCancel,
+                    colors = FilledIconButtonDefaults.primaryIconButtonColors(),
                 ) {
-                    FilledIconButton(
-                        onClick = onCancel,
-                        colors = FilledIconButtonDefaults.primaryIconButtonColors(),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Stop,
-                            contentDescription = stringResource(R.string.cancel)
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Stop,
+                        contentDescription = stringResource(R.string.cancel)
+                    )
                 }
+            }
         }
 
         Row(
@@ -295,22 +313,38 @@ fun MinimalTextTranslationOutputButtonRow(
 @Composable
 @Preview(showBackground = true)
 fun MinimalTextTranslationPreview() {
+    val languageViewModel = LanguageViewModel(
+        context = LocalContext.current,
+        languageRepository = LanguageMemoryRepository(),
+        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
+    )
+
     MinimalTextTranslation(
-        languageViewModel = LanguageViewModel(
-            context = LocalContext.current,
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-        ),
+        languageViewModel = languageViewModel,
         textTranslationViewModel = TextTranslationViewModel(
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+            languageViewModel = languageViewModel,
+            translationViewModel = TranslationViewModel(
+                intermediateTokenizer = TranslationMockTokenizer(),
+                intermediateModel = TranslationMockInference(),
+                outputTokenizer = TranslationMockTokenizer(),
+                outputModel = TranslationMockInference(),
+                translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+                languageViewModel = languageViewModel
+            )
         ),
         translationViewModel = TranslationViewModel(
-            tokenizer = TranslationMockTokenizer(),
-            model = TranslationMockInference(),
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            translationPreferenceRepository = TranslationPreferenceMemoryRepository()
+            intermediateTokenizer = TranslationMockTokenizer(),
+            intermediateModel = TranslationMockInference(),
+            outputTokenizer = TranslationMockTokenizer(),
+            outputModel = TranslationMockInference(),
+            translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+            languageViewModel = LanguageViewModel(
+                context = LocalContext.current,
+                languageRepository = LanguageMemoryRepository(),
+                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+                externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
+            )
         ),
         textToSpeechViewModel = TextToSpeechViewModel(
             tokenizer = TextToSpeechMockTokenizer(),

@@ -2,6 +2,7 @@ package app.versta.translate.ui.component
 
 import android.content.Context
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,11 +13,15 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -25,8 +30,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -39,10 +46,13 @@ import app.versta.translate.R
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
+import app.versta.translate.core.entity.AutoDetectLanguage
 import app.versta.translate.core.entity.Language
+import app.versta.translate.core.entity.LanguageOption
 import app.versta.translate.core.model.LanguageType
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.ui.theme.spacing
+import org.apache.commons.codec.language.bm.Lang
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,8 +119,8 @@ fun LanguageSelectionDrawer(
 @Composable
 fun LanguageSelectionSourceLanguage(
     context: Context,
-    languages: List<Language>,
-    onClick: (language: Language) -> Unit
+    languages: List<LanguageOption>,
+    onClick: (language: LanguageOption) -> Unit
 ) {
     if (languages.isEmpty()) {
         LanguageSelectionNoItems()
@@ -132,7 +142,7 @@ fun LanguageSelectionSourceLanguage(
             modifier = Modifier
                 .clip(MaterialTheme.shapes.extraLarge)
         ) {
-            items(languages, key = { it.locale.language }) {
+            items(languages, key = { it.isoCode }) {
                 LanguageSelectionListItem(
                     context = context,
                     language = it,
@@ -171,7 +181,7 @@ fun LanguageSelectionTargetLanguage(
             modifier = Modifier
                 .clip(MaterialTheme.shapes.extraLarge)
         ) {
-            items(languages, key = { it.locale.language }) {
+            items(languages, key = { it.isoCode }) {
                 LanguageSelectionListItem(
                     context = context,
                     language = it,
@@ -208,12 +218,10 @@ fun LanguageSelectionNoItems() {
 @Composable
 fun LanguageSelectionListItem(
     context: Context,
-    language: Language,
+    language: LanguageOption,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val flagDrawable = language.getFlagDrawable(context)
-
     ListItem(
         headlineContent = {
             Text(
@@ -223,15 +231,43 @@ fun LanguageSelectionListItem(
             )
         },
         leadingContent = {
-            Image(
-                painter = painterResource(flagDrawable),
-                contentDescription = stringResource(
-                    R.string.flag, language.name
-                ),
-                modifier = Modifier
-                    .requiredSize(MaterialTheme.spacing.extraLarge)
-                    .clip(MaterialTheme.shapes.extraLarge)
-            )
+            when (language) {
+                is AutoDetectLanguage -> {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                MaterialTheme.colorScheme.surfaceContainerHigh,
+                                MaterialTheme.shapes.extraLarge
+                            )
+                            .size(MaterialTheme.spacing.extraLarge)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.AutoAwesome,
+                            contentDescription = stringResource(R.string.detect_language),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .requiredSize(18.dp)
+                                .align(Alignment.Center)
+                        )
+                    }
+                }
+
+                is Language -> {
+                    val flagDrawable = language.getFlagDrawable(context)
+
+                    Image(
+                        painter = painterResource(flagDrawable),
+                        contentDescription = stringResource(
+                            R.string.flag, language.name
+                        ),
+                        modifier = Modifier
+                            .requiredSize(MaterialTheme.spacing.extraLarge)
+                            .clip(MaterialTheme.shapes.extraLarge)
+                    )
+                }
+
+                else -> {}
+            }
         },
         colors = ListItemDefaults.colors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow

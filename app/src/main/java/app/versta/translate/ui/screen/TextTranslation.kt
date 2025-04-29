@@ -1,7 +1,6 @@
 package app.versta.translate.ui.screen
 
 import android.os.Build
-import android.view.HapticFeedbackConstants
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.AnimationConstants.DefaultDurationMillis
 import androidx.compose.animation.core.tween
@@ -42,15 +41,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -58,25 +55,28 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
-import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.AudioMockPlayer
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.adapter.outbound.TextToSpeechMockInference
 import app.versta.translate.adapter.outbound.TextToSpeechMockTokenizer
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
+import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.core.entity.TextToSpeechSynthesisState
 import app.versta.translate.core.entity.WritingDirection
 import app.versta.translate.core.model.LanguageViewModel
@@ -91,11 +91,10 @@ import app.versta.translate.ui.component.TextFieldDefaults
 import app.versta.translate.ui.component.TextToSpeechButton
 import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
-@OptIn(ExperimentalMaterial3Api::class, FlowPreview::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TextTranslation(
     navController: NavController,
@@ -113,6 +112,9 @@ fun TextTranslation(
     val inputTransliteration by textTranslationViewModel.inputTransliteration.collectAsStateWithLifecycle(
         ""
     )
+
+    val intermediate by textTranslationViewModel.intermediate.collectAsStateWithLifecycle("")
+
     val translated by textTranslationViewModel.translated.collectAsStateWithLifecycle("")
     val translatedTransliteration by textTranslationViewModel.translatedTransliteration.collectAsStateWithLifecycle(
         ""
@@ -139,7 +141,7 @@ fun TextTranslation(
         false
     )
 
-    val languages by translationViewModel.languages.collectAsStateWithLifecycle(null)
+    val languages by languageViewModel.languagePair.collectAsStateWithLifecycle(null)
 
     val targetLanguage by languageViewModel.targetLanguage.collectAsStateWithLifecycle(null)
 
@@ -157,7 +159,6 @@ fun TextTranslation(
     var bottomBarHeight by remember { mutableIntStateOf(0) }
     val translationBottomPadding = with(LocalDensity.current) { bottomBarHeight.toDp() }
 
-    val translationScope = rememberCoroutineScope()
     val textToSpeechScope = rememberCoroutineScope()
 
     fun translate(input: String) {
@@ -180,19 +181,15 @@ fun TextTranslation(
             }
         }
 
-        translationScope.launch {
-            if (languages == null) return@launch
-
-            translationViewModel.translateAsFlow(input, languages!!)
-                .collect {
-                    textTranslationViewModel.setTranslation(it)
-                    view.performHapticFeedback(HapticFeedbackConstants.TEXT_HANDLE_MOVE)
-                }
-        }
+        textTranslationViewModel.translate(input)
     }
 
     fun cancelTranslation() {
         translationViewModel.cancelTranslation()
+    }
+
+    fun setInput(text: String) {
+        textTranslationViewModel.setInput(text)
     }
 
     fun clearInput() {
@@ -240,6 +237,7 @@ fun TextTranslation(
 
     fun onSwapLanguages() {
         textTranslationViewModel.setInput(translated)
+
         clearTranslation()
         cancelTextToSpeech()
     }
@@ -328,7 +326,7 @@ fun TextTranslation(
                             .padding(top = MaterialTheme.spacing.small)
                             .padding(start = MaterialTheme.spacing.medium),
                         onValueChange = {
-                            textTranslationViewModel.setInput(it)
+                            setInput(it)
                         },
                         onSubmit = {
                             onSubmit(input)
@@ -372,6 +370,7 @@ fun TextTranslation(
                                 top = MaterialTheme.spacing.medium + WindowInsets.navigationBars.asPaddingValues()
                                     .calculateBottomPadding()
                             ),
+                        intermediate = intermediate,
                         translation = translated,
                         transliteration = translatedTransliteration,
                         writingDirection = targetLanguage?.getWritingDirection()
@@ -494,10 +493,41 @@ fun TextTranslationInputButtonRow(
 @Composable
 fun TextTranslationOutput(
     modifier: Modifier = Modifier,
+    intermediate: String,
     translation: String,
     transliteration: String,
     writingDirection: WritingDirection
 ) {
+    var displayedText by remember { mutableStateOf(intermediate) }
+
+    val translatedStyle = SpanStyle(color = MaterialTheme.colorScheme.onSurface)
+    val intermediateStyle = SpanStyle(color = MaterialTheme.colorScheme.surfaceContainerHighest)
+
+    LaunchedEffect(translation, intermediate) {
+        val placeholder = intermediate
+            .reversed()
+            .take(max(0, intermediate.length - translation.length))
+            .reversed()
+
+        displayedText = translation + placeholder
+    }
+
+    val annotatedString = buildAnnotatedString {
+        displayedText.forEachIndexed { index, char ->
+            if (index <= translation.length - 1) {
+                withStyle(translatedStyle) {
+                    append(char)
+                }
+
+                return@forEachIndexed
+            }
+
+            withStyle(intermediateStyle) {
+                append(char)
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -509,8 +539,7 @@ fun TextTranslationOutput(
         )
     ) {
         Text(
-            text = translation,
-            color = MaterialTheme.colorScheme.onSurface,
+            text = annotatedString,
             modifier = Modifier.fillMaxWidth(),
             textAlign = if (writingDirection == WritingDirection.RTL) {
                 TextAlign.End
@@ -611,24 +640,30 @@ fun TextTranslationOutputButtonRow(
 @Composable
 @Preview
 fun TextTranslationPreview() {
+    val languageViewModel = LanguageViewModel(
+        context = LocalContext.current,
+        languageRepository = LanguageMemoryRepository(),
+        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
+    )
+
+    val translationViewModel = TranslationViewModel(
+        intermediateTokenizer = TranslationMockTokenizer(),
+        intermediateModel = TranslationMockInference(),
+        outputTokenizer = TranslationMockTokenizer(),
+        outputModel = TranslationMockInference(),
+        translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+        languageViewModel = languageViewModel
+    )
+
     TextTranslation(
         navController = rememberNavController(),
         textTranslationViewModel = TextTranslationViewModel(
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+            translationViewModel = translationViewModel,
+            languageViewModel = languageViewModel
         ),
-        languageViewModel = LanguageViewModel(
-            context = LocalContext.current,
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-        ),
-        translationViewModel = TranslationViewModel(
-            tokenizer = TranslationMockTokenizer(),
-            model = TranslationMockInference(),
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            translationPreferenceRepository = TranslationPreferenceMemoryRepository()
-        ),
+        languageViewModel = languageViewModel,
+        translationViewModel = translationViewModel,
         textToSpeechViewModel = TextToSpeechViewModel(
             tokenizer = TextToSpeechMockTokenizer(),
             model = TextToSpeechMockInference(),

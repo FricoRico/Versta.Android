@@ -16,44 +16,50 @@ class MarianTokenizer(
     private val eosToken: String = "</s>",
     private val padToken: String = "<pad>",
     private val separatedVocabularies: Boolean = false
-): TranslationTokenizer {
+) : TranslationTokenizer {
     companion object {
         private const val SENTENCE_PIECE_UNDERLINE = "▁"
         private val languageCodeRegex = Regex(">>.+<<")
     }
 
-    private val encoder =
+    private var _sourceVocabularyPath: String? = null
+    private var _targetVocabularyPath: String? = null
+
+    private var _encoderPath: String? = null
+    private var _decoderPath: String? = null
+
+    private val _encoder =
         SentencePiece()
-    private val decoder =
+    private val _decoder =
         SentencePiece()
 
-    private var sourceVocabulary: List<String> = emptyList()
-    private var targetVocabulary: List<String> = emptyList()
+    private var _sourceVocabulary: List<String> = emptyList()
+    private var _targetVocabulary: List<String> = emptyList()
 
-    private var sourceLanguage: String = ""
-    private var targetLanguage: String = ""
+    private var _sourceLanguage: String = ""
+    private var _targetLanguage: String = ""
 
-    private var normalizer: MosesPunctuationNormalizer? = null
+    private var _normalizer: MosesPunctuationNormalizer? = null
 
-    private val supportedLanguageCodes = mutableListOf<String>()
+    private val _supportedLanguageCodes = mutableListOf<String>()
 
     override val vocabSize: Long
-        get() = sourceVocabulary.size.toLong()
+        get() = _sourceVocabulary.size.toLong()
 
     override val eosId: Long
-        get() = sourceVocabulary.indexOf(eosToken).toLong()
+        get() = _sourceVocabulary.indexOf(eosToken).toLong()
 
     override val unknownId: Long
-        get() = sourceVocabulary.indexOf(unknownToken).toLong()
+        get() = _sourceVocabulary.indexOf(unknownToken).toLong()
 
     override val padId: Long
-        get() = sourceVocabulary.indexOf(padToken).toLong()
+        get() = _sourceVocabulary.indexOf(padToken).toLong()
 
     private val specialTokens: List<String>
         get() = listOf(unknownToken, eosToken, padToken)
 
     fun normalize(text: String): String {
-        return normalizer?.normalize(text) ?: text
+        return _normalizer?.normalize(text) ?: text
     }
 
     private fun removeLanguageCode(text: String): Pair<List<String>, String> {
@@ -67,7 +73,7 @@ class MarianTokenizer(
             val (code, cleanText) = removeLanguageCode(text)
             val normalized = normalize(cleanText)
 
-            val pieces = encoder.encodeAsPieces(normalized)
+            val pieces = _encoder.encodeAsPieces(normalized)
             return code + pieces
         } catch (e: Exception) {
             throw IllegalArgumentException("Tokenizing text", e)
@@ -141,35 +147,47 @@ class MarianTokenizer(
         files: LanguageModelTokenizerFiles,
         languages: LanguagePair
     ) {
-        sourceLanguage = languages.source.locale.language
-        targetLanguage = languages.target.locale.language
+        if (_sourceVocabularyPath == files.sourceVocabulary.pathString &&
+            _targetVocabularyPath == files.targetVocabulary?.pathString &&
+            _encoderPath == files.source.pathString &&
+            _decoderPath == files.target.pathString
+        ) {
+            return
+        }
 
-        normalizer = MosesPunctuationNormalizer(lang = sourceLanguage)
+        _sourceLanguage = languages.source.locale.language
+        _targetLanguage = languages.target.locale.language
 
-        sourceVocabulary = Vocabulary.load(files.sourceVocabulary.pathString)
-        if (!validateVocabulary(sourceVocabulary, eosToken, padToken, unknownToken)) {
+        _normalizer = MosesPunctuationNormalizer(lang = _sourceLanguage)
+
+        _sourceVocabulary = Vocabulary.load(files.sourceVocabulary.pathString)
+        if (!validateVocabulary(_sourceVocabulary, eosToken, padToken, unknownToken)) {
             throw IllegalArgumentException("Vocabulary does not contain the provided tokens")
         }
+        _sourceVocabularyPath = files.sourceVocabulary.pathString
 
         if (separatedVocabularies) {
             if (files.targetVocabulary == null) {
                 throw IllegalArgumentException("Target vocabulary file path must be provided when using separated vocabularies")
             }
 
-            targetVocabulary = Vocabulary.load(files.targetVocabulary.pathString)
-            if (!validateVocabulary(targetVocabulary, eosToken, padToken, unknownToken)) {
+            _targetVocabulary = Vocabulary.load(files.targetVocabulary.pathString)
+            if (!validateVocabulary(_targetVocabulary, eosToken, padToken, unknownToken)) {
                 throw IllegalArgumentException("Target vocabulary does not contain the provided tokens")
             }
+            _targetVocabularyPath = files.targetVocabulary.pathString
         } else {
-            supportedLanguageCodes.addAll(extractLanguageCodes(sourceVocabulary))
-            targetVocabulary = sourceVocabulary
+            _supportedLanguageCodes.addAll(extractLanguageCodes(_sourceVocabulary))
+            _targetVocabulary = _sourceVocabulary
         }
 
-        val encoderModel = loadSentencePieceModel(files.source.absolutePathString())
-        encoder.loadFromSerializedProto(encoderModel)
+        val encoderModel = loadSentencePieceModel(files.source.pathString)
+        _encoder.loadFromSerializedProto(encoderModel)
+        _encoderPath = files.source.pathString
 
         val decoderModel = loadSentencePieceModel(files.target.pathString)
-        decoder.loadFromSerializedProto(decoderModel)
+        _decoder.loadFromSerializedProto(decoderModel)
+        _decoderPath = files.target.pathString
     }
 
     private fun padBatchSequences(
@@ -196,10 +214,10 @@ class MarianTokenizer(
     }
 
     private fun convertTokenToId(token: String): Long {
-        val id = sourceVocabulary.indexOf(token).toLong()
+        val id = _sourceVocabulary.indexOf(token).toLong()
 
         if (id == -1L) {
-            return sourceVocabulary.indexOf(unknownToken).toLong()
+            return _sourceVocabulary.indexOf(unknownToken).toLong()
         }
 
         return id
@@ -210,7 +228,7 @@ class MarianTokenizer(
             return unknownToken
         }
 
-        return targetVocabulary[id.toInt()]
+        return _targetVocabulary[id.toInt()]
     }
 
     private fun loadVocabulary(filePath: String): List<String> {

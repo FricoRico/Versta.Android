@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
+import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.ui.theme.spacing
 

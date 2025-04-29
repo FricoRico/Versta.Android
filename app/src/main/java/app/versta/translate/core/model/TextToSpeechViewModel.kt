@@ -16,7 +16,9 @@ import app.versta.translate.core.entity.TextToSpeechSynthesisState
 import app.versta.translate.core.entity.VoiceGender
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,12 +28,14 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 import java.util.concurrent.LinkedBlockingQueue
 
+@OptIn(FlowPreview::class)
 class TextToSpeechViewModel(
     private val tokenizer: TextToSpeechTokenizer,
     private val model: TextToSpeechInference,
@@ -59,7 +63,7 @@ class TextToSpeechViewModel(
     }
 
     private val _loadingProgress = MutableStateFlow<LoadingProgress>(LoadingProgress.Idle)
-    val loadingProgress: StateFlow<LoadingProgress> = _loadingProgress.asStateFlow()
+    val loadingProgress: Flow<LoadingProgress> = _loadingProgress.asStateFlow().sample(10)
 
     private val _speechProgress =
         MutableStateFlow<TextToSpeechSynthesisState>(TextToSpeechSynthesisState.Idle)
@@ -76,9 +80,9 @@ class TextToSpeechViewModel(
 
     private val _speechInference = MutableStateFlow(false)
     private val _speechCallback = object : SynthReadyCallback {
-        override fun onSynthDataReady(audio: ByteArray) {
+        override fun onSynthDataReady(audioData: ByteArray) {
             _speechProgress.value = TextToSpeechSynthesisState.Synthesizing
-            audioPlayer.play(audio)
+            audioPlayer.play(audioData)
         }
 
         override fun onSynthDataComplete() {

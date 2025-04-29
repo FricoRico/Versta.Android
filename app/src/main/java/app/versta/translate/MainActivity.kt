@@ -17,7 +17,6 @@ import app.versta.translate.adapter.inbound.ModelFilePicker
 import app.versta.translate.adapter.inbound.TranslateBubbleNotification
 import app.versta.translate.adapter.inbound.TranslateBubbleShortcut
 import app.versta.translate.adapter.outbound.LogFileSaver
-import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.ui.component.LanguageSelectionDrawer
 import app.versta.translate.ui.component.Router
@@ -30,20 +29,7 @@ import app.versta.translate.ui.theme.TranslateTheme
 import app.versta.translate.utils.viewModelFactory
 
 open class MainActivity : ComponentActivity() {
-    private val languageViewModel by viewModels<LanguageViewModel>(
-        factoryProducer = {
-            viewModelFactory {
-                LanguageViewModel(
-                    context = this,
-                    languageRepository = MainApplication.module.languageRepository,
-                    languagePreferenceRepository = MainApplication.module.languagePreferenceRepository,
-                    externalLanguageModelsRepository = MainApplication.module.externalLanguageModelsRepository
-                )
-            }
-        }
-    )
-
-    private val licenseViewModel by viewModels<LicenseViewModel>(
+    private val _licenseViewModel by viewModels<LicenseViewModel>(
         factoryProducer = {
             viewModelFactory {
                 LicenseViewModel(
@@ -77,8 +63,8 @@ open class MainActivity : ComponentActivity() {
                 ) {
                     Router(
                         startDestination = initialRoute,
-                        languageViewModel = languageViewModel,
-                        licenseViewModel = licenseViewModel,
+                        languageViewModel = MainApplication.module.languageViewModel,
+                        licenseViewModel = _licenseViewModel,
                         translationViewModel = MainApplication.module.translationViewModel,
                         textTranslationViewModel = MainApplication.module.textTranslationViewModel,
                         textToSpeechViewModel = MainApplication.module.textToSpeechViewModel,
@@ -98,13 +84,13 @@ open class MainActivity : ComponentActivity() {
                     )
 
                     TrialLicenseDrawer(
-                        licenseViewModel = licenseViewModel
+                        licenseViewModel = _licenseViewModel
                     )
                     TrialLicenseConfirmationDialog(
-                        licenseViewModel = licenseViewModel
+                        licenseViewModel = _licenseViewModel
                     )
 
-                    LanguageSelectionDrawer(languageViewModel = languageViewModel)
+                    LanguageSelectionDrawer(languageViewModel = MainApplication.module.languageViewModel)
                 }
             }
         }

@@ -29,9 +29,13 @@ import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryReposit
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.LicenseMemoryRepository
+import app.versta.translate.adapter.outbound.TranslationMockInference
+import app.versta.translate.adapter.outbound.TranslationMockTokenizer
+import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
+import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.LanguageSelector
 import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
@@ -116,6 +120,7 @@ fun Home(
                 item {
                     TranslationTextField(
                         textTranslationViewModel = textTranslationViewModel,
+                        languageViewModel = languageViewModel,
                         onSubmit = {
                             textTranslationViewModel.setTranslateOnInput(true)
                             navController.navigate(Screens.TextTranslation())
@@ -142,13 +147,28 @@ fun Home(
 @Preview
 @Composable
 private fun HomePreview() {
+    val languageViewModel = LanguageViewModel(
+        context = LocalContext.current,
+        languageRepository = LanguageMemoryRepository(),
+        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
+    )
+
     Home(
         navController = rememberNavController(),
         licenseViewModel = LicenseViewModel(
             licenseRepository = LicenseMemoryRepository()
         ),
         textTranslationViewModel = TextTranslationViewModel(
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+            languageViewModel = languageViewModel,
+            translationViewModel = TranslationViewModel(
+                intermediateTokenizer = TranslationMockTokenizer(),
+                intermediateModel = TranslationMockInference(),
+                outputTokenizer = TranslationMockTokenizer(),
+                outputModel = TranslationMockInference(),
+                translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+                languageViewModel = languageViewModel
+            )
         ),
         languageViewModel = LanguageViewModel(
             context = LocalContext.current,

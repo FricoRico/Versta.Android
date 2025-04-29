@@ -17,7 +17,7 @@ import app.versta.translate.adapter.outbound.AudioTrackPlayer
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsFileRepository
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsRepository
 import app.versta.translate.adapter.outbound.KokoroInference
-import app.versta.translate.adapter.outbound.KokoroTokenizer
+import app.versta.translate.adapter.outbound.StyleTextToSpeech2Tokenizer
 import app.versta.translate.adapter.outbound.LanguageDatabaseRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
@@ -37,6 +37,7 @@ import app.versta.translate.adapter.outbound.TranslationPreferenceDataStoreRepos
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
 import app.versta.translate.adapter.outbound.TranslationTokenizer
 import app.versta.translate.bridge.speech.ESpeakNG
+import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LoggingViewModel
 import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
@@ -62,6 +63,7 @@ interface ApplicationModuleInterface {
     val externalLanguageModelsRepository: ExternalLanguageModelsRepository
     val externalVoiceModelsRepository: ExternalVoiceModelsRepository
 
+    val languageViewModel: LanguageViewModel
     val translationViewModel: TranslationViewModel
     val textTranslationViewModel: TextTranslationViewModel
     val textToSpeechViewModel: TextToSpeechViewModel
@@ -71,8 +73,10 @@ interface ApplicationModuleInterface {
     val ortEnvironment: OrtEnvironment
     val extractor: CompressedFileExtractor
     val validator: FileHashValidator
-    val translationTokenizer: TranslationTokenizer
-    val translationInference: TranslationInference
+    val intermediateTranslationTokenizer: TranslationTokenizer
+    val intermediateTranslationInference: TranslationInference
+    val outputTranslationTokenizer: TranslationTokenizer
+    val outputTranslationInference: TranslationInference
     val textToSpeechTokenizer: TextToSpeechTokenizer
     val textToSpeechInference: TextToSpeechInference
 }
@@ -116,38 +120,49 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
         LoggingViewModel(context.getExternalFilesDir(null))
     }
 
+    override val languageViewModel: LanguageViewModel by lazy {
+        LanguageViewModel(
+            context = context,
+            languageRepository = languageRepository,
+            languagePreferenceRepository = languagePreferenceRepository,
+            externalLanguageModelsRepository = externalLanguageModelsRepository
+        )
+    }
+
     override val translationViewModel: TranslationViewModel by lazy {
         TranslationViewModel(
-            tokenizer = MainApplication.module.translationTokenizer,
-            model = MainApplication.module.translationInference,
-            languageRepository = MainApplication.module.languageRepository,
-            languagePreferenceRepository = MainApplication.module.languagePreferenceRepository,
-            translationPreferenceRepository = MainApplication.module.translatorPreferenceRepository
+            intermediateTokenizer = intermediateTranslationTokenizer,
+            intermediateModel = intermediateTranslationInference,
+            outputTokenizer = outputTranslationTokenizer,
+            outputModel = outputTranslationInference,
+            translationPreferenceRepository = translatorPreferenceRepository,
+            languageViewModel = languageViewModel
         )
     }
 
     override val textTranslationViewModel: TextTranslationViewModel by lazy {
         TextTranslationViewModel(
-            languagePreferenceRepository = MainApplication.module.languagePreferenceRepository
+            languageViewModel = languageViewModel,
+            translationViewModel = translationViewModel,
         )
     }
 
     override val textToSpeechViewModel: TextToSpeechViewModel by lazy {
         TextToSpeechViewModel(
-            tokenizer = MainApplication.module.textToSpeechTokenizer,
-            model = MainApplication.module.textToSpeechInference,
+            tokenizer = textToSpeechTokenizer,
+            model = textToSpeechInference,
             audioPlayer = AudioTrackPlayer(),
-            voiceRepository = MainApplication.module.voiceRepository,
-            textToSpeechPreferenceRepository = MainApplication.module.textToSpeechPreferenceRepository,
-            languagePreferenceRepository = MainApplication.module.languagePreferenceRepository,
+            voiceRepository = voiceRepository,
+            textToSpeechPreferenceRepository = textToSpeechPreferenceRepository,
+            languagePreferenceRepository = languagePreferenceRepository,
         )
     }
 
     override val voiceViewModel: VoiceViewModel by lazy {
         VoiceViewModel(
             context = context,
-            voiceRepository = MainApplication.module.voiceRepository,
-            externalVoiceModelsRepository = MainApplication.module.externalVoiceModelsRepository
+            voiceRepository = voiceRepository,
+            externalVoiceModelsRepository = externalVoiceModelsRepository
         )
     }
 
@@ -168,11 +183,19 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
         PrecomputedHashFileValidator()
     }
 
-    override val translationTokenizer: TranslationTokenizer by lazy {
+    override val intermediateTranslationTokenizer: TranslationTokenizer by lazy {
         MarianTokenizer()
     }
 
-    override val translationInference: TranslationInference by lazy {
+    override val intermediateTranslationInference: TranslationInference by lazy {
+        MarianInference(ortEnvironment)
+    }
+
+    override val outputTranslationTokenizer: TranslationTokenizer by lazy {
+        MarianTokenizer()
+    }
+
+    override val outputTranslationInference: TranslationInference by lazy {
         MarianInference(ortEnvironment)
     }
 
@@ -183,7 +206,7 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
             validator
         )
 
-        KokoroTokenizer()
+        StyleTextToSpeech2Tokenizer()
     }
 
     override val textToSpeechInference: TextToSpeechInference by lazy {
@@ -198,6 +221,7 @@ class MainApplication : Application() {
         handleLogging()
         createNotificationChannels()
 
+        context = this
         module = ApplicationModule(this)
     }
 
@@ -231,6 +255,7 @@ class MainApplication : Application() {
     }
 
     companion object {
+        lateinit var context: Context
         lateinit var module: ApplicationModuleInterface
 
         const val TRANSLATION_BUBBLE_SHORTCUT_ID = "translation_bubble_shortcut"

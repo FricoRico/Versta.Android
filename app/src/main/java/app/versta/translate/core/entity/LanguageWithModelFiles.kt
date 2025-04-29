@@ -125,3 +125,10 @@ data class LanguageModelInferenceFiles(
     fun isValid() = encoder.exists() &&
             decoder.exists()
 }
+
+data class PivotPairModelFiles(
+    val intermediary: LanguageModelFiles?,
+    val output: LanguageModelFiles?
+) {
+    fun isValid() = intermediary?.isValid() != false && output?.isValid() != false
+}

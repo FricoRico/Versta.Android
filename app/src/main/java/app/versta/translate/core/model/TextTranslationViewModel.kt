@@ -5,32 +5,45 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.view.HapticFeedbackConstants
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.TransliterationAdapter
+import app.versta.translate.bridge.utils.LanguageDetect
+import app.versta.translate.core.entity.AutoDetectLanguage
 import app.versta.translate.core.entity.LanguagePair
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.sample
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 
+@OptIn(FlowPreview::class)
 class TextTranslationViewModel(
-    private val languagePreferenceRepository: LanguagePreferenceRepository,
+    private val translationViewModel: TranslationViewModel,
+    private val languageViewModel: LanguageViewModel
 ) : ViewModel() {
     private val _loadingProgress = MutableStateFlow<LoadingProgress>(LoadingProgress.Idle)
-    val loadingProgress: StateFlow<LoadingProgress> = _loadingProgress.asStateFlow()
+    val loadingProgress: Flow<LoadingProgress> = _loadingProgress.asStateFlow().sample(10)
 
     private val _input = MutableStateFlow("")
     val input = _input
 
     private val _inputTransliteration = MutableStateFlow("")
     val inputTransliteration = _inputTransliteration
+
+    private val _intermediate = MutableStateFlow("")
+    val intermediate = _intermediate
 
     private val _translated = MutableStateFlow("")
     val translated = _translated
@@ -41,12 +54,42 @@ class TextTranslationViewModel(
     private val _translatedTransliteration = MutableStateFlow("")
     val translatedTransliteration = _translatedTransliteration
 
-    private val languages = languagePreferenceRepository.getLanguagePair().distinctUntilChanged()
+    private val _languageModelFiles = languageViewModel.languageModelFiles.distinctUntilChanged()
+    private val _languageOptions = languageViewModel.languageOptions.distinctUntilChanged()
+    private val _languages = languageViewModel.languagePair.distinctUntilChanged()
 
     private var _inputTransliterator: TransliterationAdapter? = null
     private var _translationTransliterator: TransliterationAdapter? = null
 
+    private val _translationScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val _transliterationScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+    fun translate(text: String) {
+        _translationScope.launch {
+            val source = _languageOptions.first()?.source
+            val files = _languageModelFiles.first() ?: return@launch
+            val languages = _languages.first() ?: return@launch
+
+            clearTranslation()
+
+            if (source is AutoDetectLanguage) {
+                translationViewModel.load(files, languages)
+            }
+
+            val (intermediary, output) = translationViewModel.translateAsFlow(text, languages) {
+                setIntermediate(_intermediate.value.take(it.length))
+            }
+
+            intermediary?.collect {
+                setIntermediate(it)
+            }
+
+            output.collect {
+                setTranslation(it)
+//                view.performHapticFeedback(HapticFeedbackConstants.TEXT_HANDLE_MOVE)
+            }
+        }
+    }
 
     private fun transliterateInput(text: String) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
@@ -74,6 +117,7 @@ class TextTranslationViewModel(
     fun setInput(text: String) {
         _input.value = text
 
+        languageViewModel.setAutoDetectInput(text)
         transliterateInput(text)
     }
 
@@ -83,6 +127,13 @@ class TextTranslationViewModel(
     fun clearInput() {
         _input.value = ""
         _inputTransliteration.value = ""
+    }
+
+    /**
+     * Set the translation.
+     */
+    fun setIntermediate(text: String) {
+        _intermediate.value = text
     }
 
     /**
@@ -98,6 +149,8 @@ class TextTranslationViewModel(
      * Clear the translation.
      */
     fun clearTranslation() {
+        _intermediate.value = ""
+
         _translated.value = ""
         _translatedTransliteration.value = ""
     }
@@ -163,7 +216,7 @@ class TextTranslationViewModel(
      */
     fun reload() {
         viewModelScope.launch {
-            languages.collect {
+            _languages.collect {
                 if (it != null) {
                     load(it)
                 }
@@ -173,5 +226,9 @@ class TextTranslationViewModel(
 
     init {
         reload()
+    }
+
+    companion object {
+        private val TAG = TextTranslationViewModel::class.java.simpleName
     }
 }

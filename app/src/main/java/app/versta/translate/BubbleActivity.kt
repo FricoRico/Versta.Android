@@ -20,6 +20,8 @@ import app.versta.translate.MainApplication.Companion.TRANSLATION_NOTIFICATION_C
 import app.versta.translate.adapter.inbound.TranslateBubbleNotification
 import app.versta.translate.adapter.inbound.TranslateBubbleShortcut
 import app.versta.translate.core.model.LanguageViewModel
+import app.versta.translate.core.model.TextTranslationViewModel
+import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.LanguageSelectionDrawer
 import app.versta.translate.ui.component.ErrorAlertDialog
 import app.versta.translate.ui.component.ModelLoadingProgressDialog
@@ -27,26 +29,15 @@ import app.versta.translate.ui.screen.MinimalTextTranslation
 import app.versta.translate.ui.theme.TranslateTheme
 import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.viewModelFactory
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class BubbleActivity : ComponentActivity() {
-    private val languageViewModel by viewModels<LanguageViewModel>(
-        factoryProducer = {
-            viewModelFactory {
-                LanguageViewModel(
-                    context = this,
-                    languageRepository = MainApplication.module.languageRepository,
-                    languagePreferenceRepository = MainApplication.module.languagePreferenceRepository,
-                    externalLanguageModelsRepository = MainApplication.module.externalLanguageModelsRepository
-                )
-            }
-        }
-    )
-
-    private val updateReceiver = object : BroadcastReceiver() {
+    private val _updateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent != null) {
                 handleStartupAndResume(intent)
@@ -61,7 +52,7 @@ class BubbleActivity : ComponentActivity() {
         when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
                 registerReceiver(
-                    updateReceiver,
+                    _updateReceiver,
                     IntentFilter(TRANSLATION_NOTIFICATION_CHANNEL_ID),
                     RECEIVER_EXPORTED
                 )
@@ -72,7 +63,7 @@ class BubbleActivity : ComponentActivity() {
             }
 
             else -> {
-                registerReceiver(updateReceiver, IntentFilter(TRANSLATION_NOTIFICATION_CHANNEL_ID))
+                registerReceiver(_updateReceiver, IntentFilter(TRANSLATION_NOTIFICATION_CHANNEL_ID))
             }
         }
 
@@ -86,9 +77,9 @@ class BubbleActivity : ComponentActivity() {
                     contentColor = MaterialTheme.colorScheme.onBackground,
                 ) {
                     MinimalTextTranslation(
-                        languageViewModel = languageViewModel,
-                        textTranslationViewModel = MainApplication.module.textTranslationViewModel,
+                        languageViewModel = MainApplication.module.languageViewModel,
                         translationViewModel = MainApplication.module.translationViewModel,
+                        textTranslationViewModel = MainApplication.module.textTranslationViewModel,
                         textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
                     )
 
@@ -104,7 +95,7 @@ class BubbleActivity : ComponentActivity() {
                     )
 
                     LanguageSelectionDrawer(
-                        languageViewModel = languageViewModel,
+                        languageViewModel = MainApplication.module.languageViewModel,
                         modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium)
                     )
                 }
@@ -115,7 +106,7 @@ class BubbleActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        unregisterReceiver(updateReceiver)
+        unregisterReceiver(_updateReceiver)
 
         super.finish()
     }
@@ -129,7 +120,10 @@ class BubbleActivity : ComponentActivity() {
     private fun handleStartupAndResume(intent: Intent) {
         val input = intent.getStringExtra("input")
         if (input != null) {
-            MainApplication.module.textTranslationViewModel.setInput(input)
+            lifecycleScope.launch {
+                MainApplication.module.languageViewModel.detectLanguage(input)
+                MainApplication.module.textTranslationViewModel.setInput(input)
+            }
         }
     }
 
@@ -139,7 +133,7 @@ class BubbleActivity : ComponentActivity() {
         }
 
         lifecycleScope.launch {
-            languageViewModel.targetLanguage.conflate().filterNotNull().collect {
+            MainApplication.module.languageViewModel.targetLanguage.conflate().filterNotNull().collect {
                 val text = MainApplication.module.textTranslationViewModel.input.first()
 
                 TranslateBubbleShortcut.updateShortcutIcon(activity, it)

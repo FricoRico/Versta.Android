@@ -10,6 +10,7 @@ import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.LanguagePairModelFiles
 import app.versta.translate.core.entity.LanguageModelArchitecture
 import app.versta.translate.core.entity.LanguageModel
+import app.versta.translate.core.entity.PivotPairModelFiles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -64,6 +65,11 @@ class LanguageMemoryRepository : LanguageRepository {
     override fun getSourceLanguages() = flowOf(_languages.map { it.source }.distinct())
 
     /**
+     * Gets the target languages available in the repository.
+     */
+    override fun getTargetLanguages() = flowOf(_languages.map { it.target }.distinct())
+
+    /**
      * Gets the language models metadata available in the repository.
      */
     override fun getLanguages(): Flow<List<LanguagePairModelFiles>> = flow {
@@ -84,13 +90,16 @@ class LanguageMemoryRepository : LanguageRepository {
      * Gets the target languages for a given source language.
      */
     override fun getTargetLanguagesBySource(sourceLanguage: Language) =
-        flowOf(_languages.filter { it.source == sourceLanguage }.map { it.target }.distinct())
+        _languages.filter { it.source == sourceLanguage }.map { it.target }.distinct()
 
     /**
      * Gets the language model files for a given language pair.
      */
-    override fun getLanguageModel(languagePair: LanguagePair): LanguageModelFiles? {
-        return _languageModels[languagePair.toString()]
+    override fun getLanguageModel(languagePair: LanguagePair, pivotTranslation: Boolean): PivotPairModelFiles? {
+        return PivotPairModelFiles(
+            intermediary = null,
+            output = _languageModels[languagePair.toString()]
+        )
     }
 
     /**

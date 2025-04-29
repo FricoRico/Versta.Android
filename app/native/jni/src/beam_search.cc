@@ -207,7 +207,7 @@ private:
 };
 
 std::unordered_map<jlong, std::unique_ptr<BeamSearch>> beamSearchInstances;
-jlong instanceCounter = 0;
+jlong beamSearchInstanceCounter = 0;
 
 #ifdef __cplusplus
 extern "C" {
@@ -223,7 +223,7 @@ Java_app_versta_translate_bridge_inference_BeamSearch_construct(
         jlong eosId
 ) {
     auto beamSearch = std::make_unique<BeamSearch>(beamSize, minP, repetitionPenalty, padId, eosId);
-    jlong handle = ++instanceCounter;
+    jlong handle = ++beamSearchInstanceCounter;
     beamSearchInstances[handle] = std::move(beamSearch);
     return handle;
 }

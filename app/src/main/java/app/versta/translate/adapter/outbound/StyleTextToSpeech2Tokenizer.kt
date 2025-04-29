@@ -6,7 +6,7 @@ import java.util.Locale
 
 private const val MAX_PHONEME_LENGTH = 512
 
-class KokoroTokenizer : TextToSpeechTokenizer {
+class StyleTextToSpeech2Tokenizer : TextToSpeechTokenizer {
     private val _japaneseTransliterator = JapaneseTransliterator()
 
     /**

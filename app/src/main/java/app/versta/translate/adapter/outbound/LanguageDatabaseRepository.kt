@@ -1,5 +1,6 @@
 package app.versta.translate.adapter.outbound
 
+import app.versta.translate.core.entity.AutoDetectLanguage
 import app.versta.translate.core.entity.LanguageBundleMetadata
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageModelMetadata
@@ -7,6 +8,8 @@ import app.versta.translate.core.entity.LanguageModelFiles
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.LanguagePairModelFiles
 import app.versta.translate.core.entity.LanguageModel
+import app.versta.translate.core.entity.PivotPair
+import app.versta.translate.core.entity.PivotPairModelFiles
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.executeAsListFlow
 import kotlinx.coroutines.flow.Flow
@@ -33,8 +36,19 @@ class LanguageDatabaseRepository(
      * Gets the source languages available in the repository.
      */
     override fun getSourceLanguages() =
-        database.languages.getAllSourceLanguages().executeAsListFlow()
-            .map { it.map { language -> mapSingleLanguageDatabaseModelToLanguage(language) } }
+        database.languages.getAllSourceLanguages().executeAsListFlow().map {
+            it.map { language -> mapSingleLanguageDatabaseModelToLanguage(language) }
+                .plus(AutoDetectLanguage())
+                .sortedBy { language -> if (language is AutoDetectLanguage) 0 else 1 }
+        }
+
+    /**
+     * Gets the target languages available in the repository.
+     */
+    override fun getTargetLanguages(): Flow<List<Language>> =
+        database.languages.getAllTargetLanguages().executeAsListFlow().map {
+            it.map { language -> mapSingleLanguageDatabaseModelToLanguage(language) }
+        }
 
     /**
      * Gets the language models metadata available in the repository.
@@ -43,7 +57,8 @@ class LanguageDatabaseRepository(
         database.languages.getAll().executeAsListFlow().map {
             it.map { language ->
                 val languageModel = mapLanguageModelDatabaseModelToLanguageModelFiles(
-                    data = database.languageModels.getAllByLanguageId(language.id).executeAsOneOrNull()
+                    data = database.languageModels.getAllByLanguageId(language.id)
+                        .executeAsOneOrNull()
                 ) ?: return@map null
 
                 LanguagePairModelFiles(
@@ -59,18 +74,82 @@ class LanguageDatabaseRepository(
      */
     override fun getTargetLanguagesBySource(sourceLanguage: Language) =
         database.languages.getAllBySourceLanguage(sourceLanguage.locale.language)
-            .executeAsListFlow()
-            .map { it.map { language -> mapSingleLanguageDatabaseModelToLanguage(language) } }
+            .executeAsList()
+            .map { mapSingleLanguageDatabaseModelToLanguage(it) }
 
     /**
      * Gets the language model files for a given language pair.
      */
-    override fun getLanguageModel(languagePair: LanguagePair) =
-        mapLanguageModelDatabaseModelToLanguageModelFiles(
-            database.languageModels.getAllByLanguageId(
-                languagePair.id
-            ).executeAsOneOrNull()
+    override fun getLanguageModel(
+        languagePair: LanguagePair,
+        pivotTranslation: Boolean
+    ): PivotPairModelFiles? {
+        var output = database.languageModels.getAllByLanguageId(
+            languagePair.id
+        ).executeAsOneOrNull()
+
+        if (output != null) {
+            return PivotPairModelFiles(null, mapLanguageModelDatabaseModelToLanguageModelFiles(output))
+        }
+
+        if (languagePair.source !is Language) {
+            return null
+        }
+
+        if (!pivotTranslation) {
+            return null
+        }
+
+        val pivotPair =
+            findPivotPair(languagePair.source, languagePair.target) ?: return null
+
+        val intermediary = database.languageModels.getAllByLanguageId(
+            pivotPair.intermediary.id
+        ).executeAsOneOrNull()
+
+        output = database.languageModels.getAllByLanguageId(
+            pivotPair.output.id
+        ).executeAsOneOrNull()
+
+        return PivotPairModelFiles(
+            intermediary = mapLanguageModelDatabaseModelToLanguageModelFiles(
+                intermediary
+            ),
+            output = mapLanguageModelDatabaseModelToLanguageModelFiles(
+                output
+            )
         )
+    }
+
+    private fun findPivotPair(
+        source: Language, target: Language
+    ): PivotPair? {
+        val sourceLanguage = database.languages.getBySource(source.locale.language)
+            .executeAsList()
+        val targetLanguage = database.languages.getByTarget(target.locale.language)
+            .executeAsList()
+
+        val intermediaryPair = sourceLanguage.find { sourceLang ->
+            targetLanguage.any { targetLang ->
+                sourceLang.target == targetLang.source
+            }
+        }
+
+        val outputPair = targetLanguage.find { targetLang ->
+            sourceLanguage.any { sourceLang ->
+                targetLang.source == sourceLang.target
+            }
+        }
+
+        if (intermediaryPair == null || outputPair == null) {
+            return null
+        }
+
+        return PivotPair(
+            intermediary = LanguagePair.fromIsoCodes(intermediaryPair.source, intermediaryPair.target),
+            output = LanguagePair.fromIsoCodes(outputPair.source, outputPair.target),
+        )
+    }
 
     /**
      * Inserts a [LanguageModelMetadata] into the repository, ignoring if it already exists.
@@ -80,8 +159,9 @@ class LanguageDatabaseRepository(
     override fun insertLanguageOrIgnore(
         languageBundleMetadata: LanguageBundleMetadata, languageModelMetadata: LanguageModelMetadata
     ) {
-        val languageModel =
-            mapLanguageMetadataToLanguageDatabaseModel(languageBundleMetadata, languageModelMetadata)
+        val languageModel = mapLanguageMetadataToLanguageDatabaseModel(
+            languageBundleMetadata, languageModelMetadata
+        )
         insertLanguageDatabaseModelOrIgnore(data = languageModel)
     }
 
@@ -121,8 +201,7 @@ class LanguageDatabaseRepository(
         val languageIds = languagePairs.map { it.id }
 
         database.languageModels.getAllByLanguageIds(languageIds = languageIds).executeAsList()
-            .map { it.path.toPath().toNioPath() }.distinct()
-            .forEach { it.deleteRecursively() }
+            .map { it.path.toPath().toNioPath() }.distinct().forEach { it.deleteRecursively() }
 
         database.languages.deleteByIds(ids = languageIds)
 
@@ -135,19 +214,19 @@ class LanguageDatabaseRepository(
      * @param bidirectional Whether to delete the bidirectional model.
      */
     @OptIn(ExperimentalPathApi::class)
-    override fun deleteLanguageModel(languagePair: LanguagePair, bidirectional: Boolean): List<LanguagePair> {
+    override fun deleteLanguageModel(
+        languagePair: LanguagePair, bidirectional: Boolean
+    ): List<LanguagePair> {
         val languagePairs = listOfNotNull(
-            languagePair,
-            if (bidirectional) {
+            languagePair, if (bidirectional) {
                 LanguagePair(
-                    source = languagePair.target,
-                    target = languagePair.source
+                    source = languagePair.target, target = languagePair.source
                 )
             } else {
                 null
             }
         )
-        val languageIds =languagePairs.map { it.id }
+        val languageIds = languagePairs.map { it.id }
 
         database.languageModels.getAllByLanguageIds(languageIds = languageIds).executeAsList()
             .map { it.path.toPath().toNioPath().parent }.distinct()

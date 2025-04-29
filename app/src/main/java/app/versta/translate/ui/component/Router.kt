@@ -149,7 +149,8 @@ fun Router(
         composable(Screens.TranslationSettings()) {
             TranslationSettings(
                 navController = navController,
-                translationViewModel = translationViewModel
+                translationViewModel = translationViewModel,
+                languageViewModel = languageViewModel
             )
         }
         composable(Screens.TextToSpeechSettings()) {

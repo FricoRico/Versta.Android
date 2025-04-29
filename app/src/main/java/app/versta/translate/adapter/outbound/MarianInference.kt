@@ -23,15 +23,18 @@ import java.nio.channels.FileChannel
 import kotlin.io.path.pathString
 
 class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationInference {
-    private var encoderSession: OrtSession? = null
-    private var decoderSession: OrtSession? = null
+    private var _encoderSessionFile: File? = null
+    private var _decoderSessionFile: File? = null
 
-    private var runInference = false
+    private var _encoderSession: OrtSession? = null
+    private var _decoderSession: OrtSession? = null
+
+    private var _runInference = false
 
     private fun encode(
         inputIds: LongArray, attentionMask: LongArray
     ): EncoderHiddenStates {
-        if (encoderSession == null) {
+        if (_encoderSession == null) {
             throw IllegalStateException("Encoder session is not loaded")
         }
 
@@ -45,7 +48,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
 
         try {
             val inputs = encoderInput.get()
-            val output = encoderOutput.parse(encoderSession!!.run(inputs))
+            val output = encoderOutput.parse(_encoderSession!!.run(inputs))
 
             return output ?: throw IllegalStateException("Encoder output is null")
         } catch (e: Exception) {
@@ -68,7 +71,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
         maxSequenceLength: Int,
         completeOnRepeat: Boolean
     ): LongArray {
-        if (decoderSession == null) {
+        if (_decoderSession == null) {
             throw IllegalStateException("Decoder session is not loaded")
         }
 
@@ -94,7 +97,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
         var step = 0
 
         try {
-            while (runInference && step < maxSequenceLength) {
+            while (_runInference && step < maxSequenceLength) {
                 step++
 
                 if (beamSearch.complete(completeOnRepeat)) {
@@ -106,7 +109,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
                     cache = decoderOutput.cache
                 )
 
-                val outputs = decoderSession!!.run(inputs)
+                val outputs = _decoderSession!!.run(inputs)
                 decoderInput.close()
 
                 decoderOutput.search(outputs)
@@ -142,7 +145,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
         maxSequenceLength: Int,
         completeOnRepeat: Boolean
     ): Flow<LongArray> {
-        if (decoderSession == null) {
+        if (_decoderSession == null) {
             throw IllegalStateException("Decoder session is not loaded")
         }
 
@@ -169,7 +172,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
             var step = 0
 
             try {
-                while (runInference && step < maxSequenceLength) {
+                while (_runInference && step < maxSequenceLength) {
                     step++
 
                     if (beamSearch.complete(completeOnRepeat)) {
@@ -189,7 +192,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
                         cache = decoderOutput.cache
                     )
 
-                    val outputs = decoderSession!!.run(inputs)
+                    val outputs = _decoderSession!!.run(inputs)
                     decoderInput.close()
 
                     decoderOutput.search(outputs)
@@ -205,7 +208,6 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
             } finally {
                 decoderInput.destroy()
                 decoderOutput.destroy()
-
             }
         }.flowOn(Dispatchers.Default)
     }
@@ -220,7 +222,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
         beamSize: Int,
         maxSequenceLength: Int,
     ): LongArray {
-        runInference = true
+        _runInference = true
 
         // This is a workaround for the issue with various models that are overfitting on the
         // training data, and start repeating when translating single words. This is a temporary
@@ -256,7 +258,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
         beamSize: Int,
         maxSequenceLength: Int,
     ): Flow<LongArray> {
-        runInference = true
+        _runInference = true
 
         // This is a workaround for the issue with various models that are overfitting on the
         // training data, and start repeating when translating single words. This is a temporary
@@ -296,14 +298,18 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
     }
 
     override fun cancel() {
-        runInference = false
+        _runInference = false
     }
 
     override fun load(files: LanguageModelInferenceFiles, threads: Int) {
-        close()
-
         val encoderFile = File(files.encoder.pathString)
         val decoderFile = File(files.decoder.pathString)
+
+        if (_encoderSessionFile?.equals(encoderFile) == true && _decoderSessionFile?.equals(decoderFile) == true) {
+            return
+        }
+
+        close()
         val options = OrtSession.SessionOptions().apply {
             setCPUArenaAllocator(true)
             setMemoryPatternOptimization(true)
@@ -313,19 +319,25 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
             registerCustomOpLibrary(OrtxPackage.getLibraryPath())
         }
 
-        encoderSession = ortEnvironment.createSession(readFileToByteBuffer(encoderFile), options)
-        decoderSession = ortEnvironment.createSession(readFileToByteBuffer(decoderFile), options)
+        _encoderSession = ortEnvironment.createSession(readFileToByteBuffer(encoderFile), options)
+        _encoderSessionFile = encoderFile
+
+        _decoderSession = ortEnvironment.createSession(readFileToByteBuffer(decoderFile), options)
+        _decoderSessionFile = decoderFile
     }
 
     override fun close() {
         try {
-            encoderSession?.close()
-            decoderSession?.close()
+            _encoderSession?.close()
+            _decoderSession?.close()
         } catch (e: Exception) {
             Timber.tag(TAG).e(e)
         } finally {
-            encoderSession = null
-            decoderSession = null
+            _encoderSession = null
+            _encoderSessionFile = null
+
+            _decoderSession = null
+            _decoderSessionFile = null
         }
     }
 

@@ -34,12 +34,16 @@ import app.versta.translate.adapter.outbound.DEFAULT_CACHE_SIZE
 import app.versta.translate.adapter.outbound.DEFAULT_MAX_SEQUENCE_LENGTH
 import app.versta.translate.adapter.outbound.DEFAULT_MIN_PROBABILITY
 import app.versta.translate.adapter.outbound.DEFAULT_NUMBER_OF_BEAMS
+import app.versta.translate.adapter.outbound.DEFAULT_PIVOT_TRANSLATION
 import app.versta.translate.adapter.outbound.DEFAULT_REPETITION_PENALTY
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
+import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
+import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.ListDivider
 import app.versta.translate.ui.component.ScaffoldLargeHeader
@@ -56,6 +60,7 @@ import kotlin.math.roundToInt
 fun TranslationSettings(
     navController: NavController,
     translationViewModel: TranslationViewModel,
+    languageViewModel: LanguageViewModel
 ) {
     val orientation = LocalContext.current.resources.configuration.orientation
 
@@ -72,6 +77,9 @@ fun TranslationSettings(
     val cacheSize by translationViewModel.cacheSize.collectAsStateWithLifecycle(DEFAULT_CACHE_SIZE)
     val cacheEnabled by translationViewModel.cacheEnabled.collectAsStateWithLifecycle(
         DEFAULT_CACHE_ENABLED
+    )
+    val pivotTranslationEnabled by languageViewModel.pivotTranslationEnabled.collectAsStateWithLifecycle(
+        DEFAULT_PIVOT_TRANSLATION
     )
     val beamSize by translationViewModel.beamSize.collectAsStateWithLifecycle(
         DEFAULT_NUMBER_OF_BEAMS
@@ -188,7 +196,29 @@ fun TranslationSettings(
 
                 item {
                     SettingsHeaderItem(
-                        content = stringResource(R.string.translation_settings_inference_headline), groupSize = 5, index = 0
+                        content = stringResource(R.string.translation_settings_inference_headline), groupSize = 7, index = 0
+                    )
+                }
+
+                item {
+                    SettingsButtonItem(
+                        headlineContent = stringResource(R.string.translation_settings_language_pivot_translation_title),
+                        supportingContent = stringResource(R.string.translation_settings_language_pivot_translation_description),
+                        onClick = {
+                            settingsChanged = true
+                            languageViewModel.setPivotTranslationEnabled(!pivotTranslationEnabled)
+                        },
+                        trailingContent = {
+                            Switch(
+                                checked = pivotTranslationEnabled,
+                                onCheckedChange = {
+                                    settingsChanged = true
+                                    languageViewModel.setPivotTranslationEnabled(it)
+                                },
+                            )
+                        },
+                        groupSize = 7,
+                        index = 1
                     )
                 }
 
@@ -214,8 +244,8 @@ fun TranslationSettings(
                                 steps = 6,
                             )
                         },
-                        groupSize = 5,
-                        index = 1
+                        groupSize = 7,
+                        index = 2
                     )
                 }
 
@@ -240,8 +270,8 @@ fun TranslationSettings(
                                 },
                             )
                         },
-                        groupSize = 5,
-                        index = 2
+                        groupSize = 7,
+                        index = 3
                     )
                 }
 
@@ -269,8 +299,8 @@ fun TranslationSettings(
                                 },
                             )
                         },
-                        groupSize = 5,
-                        index = 3
+                        groupSize = 7,
+                        index = 4
                     )
                 }
 
@@ -297,8 +327,8 @@ fun TranslationSettings(
                                 },
                             )
                         },
-                        groupSize = 5,
-                        index = 3
+                        groupSize = 7,
+                        index = 5
                     )
                 }
 
@@ -324,8 +354,8 @@ fun TranslationSettings(
                                 steps = maxThreadCount - 2,
                             )
                         },
-                        groupSize = 5,
-                        index = 4
+                        groupSize = 7,
+                        index = 6
                     )
                 }
             }
@@ -336,12 +366,25 @@ fun TranslationSettings(
 @Preview(showBackground = true)
 fun TranslationSettingsPreview() {
     TranslationSettings(
-        navController = rememberNavController(), translationViewModel = TranslationViewModel(
-            tokenizer = TranslationMockTokenizer(),
-            model = TranslationMockInference(),
+        navController = rememberNavController(),
+        translationViewModel = TranslationViewModel(
+            intermediateTokenizer = TranslationMockTokenizer(),
+            intermediateModel = TranslationMockInference(),
+            outputTokenizer = TranslationMockTokenizer(),
+            outputModel = TranslationMockInference(),
+            translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+            languageViewModel = LanguageViewModel(
+                context = LocalContext.current,
+                languageRepository = LanguageMemoryRepository(),
+                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+                externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
+            )
+        ),
+        languageViewModel = LanguageViewModel(
+            context = LocalContext.current,
             languageRepository = LanguageMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            translationPreferenceRepository = TranslationPreferenceMemoryRepository()
+            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
         )
     )
 }

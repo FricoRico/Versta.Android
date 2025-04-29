@@ -20,13 +20,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
+import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
+import app.versta.translate.adapter.outbound.TranslationMockInference
+import app.versta.translate.adapter.outbound.TranslationMockTokenizer
+import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
+import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
+import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
 
@@ -35,7 +43,8 @@ fun TranslationTextField(
     modifier: Modifier = Modifier,
     onSubmit: (String) -> Unit,
     onClear: () -> Unit,
-    textTranslationViewModel: TextTranslationViewModel
+    textTranslationViewModel: TextTranslationViewModel,
+    languageViewModel: LanguageViewModel
 ) {
     val input by textTranslationViewModel.input.collectAsStateWithLifecycle()
 
@@ -67,7 +76,7 @@ fun TranslationTextField(
                 maxLines = 8,
                 colors = TextFieldDefaults.colorsTransparent()
             )
-            Row (
+            Row(
                 modifier = Modifier
                     .padding(horizontal = MaterialTheme.spacing.small)
                     .padding(bottom = MaterialTheme.spacing.small)
@@ -110,10 +119,26 @@ fun TranslationTextField(
 @Composable
 @Preview(showBackground = true)
 fun TranslationTextFieldMinimalPreview() {
-    TranslationTextField (
+    val languageViewModel = LanguageViewModel(
+        context = LocalContext.current,
+        languageRepository = LanguageMemoryRepository(),
+        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
+    )
+
+    TranslationTextField(
         textTranslationViewModel = TextTranslationViewModel(
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+            languageViewModel = languageViewModel,
+            translationViewModel = TranslationViewModel(
+                intermediateTokenizer = TranslationMockTokenizer(),
+                intermediateModel = TranslationMockInference(),
+                outputTokenizer = TranslationMockTokenizer(),
+                outputModel = TranslationMockInference(),
+                translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+                languageViewModel = languageViewModel
+            )
         ),
+        languageViewModel = languageViewModel,
         onSubmit = {},
         onClear = {}
     )

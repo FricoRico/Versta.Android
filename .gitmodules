@@ -6,3 +6,6 @@
 	path = app/native/jni/third_party/espeak-ng
 	url = https://github.com/espeak-ng/espeak-ng.git
 	branch = tags/1.52.0
+[submodule "app/native/jni/third_party/cld2"]
+	path = app/native/jni/third_party/cld2
+	url = https://github.com/CLD2Owners/cld2.git

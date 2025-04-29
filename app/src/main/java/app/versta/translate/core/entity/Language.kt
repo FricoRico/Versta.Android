@@ -1,8 +1,10 @@
 package app.versta.translate.core.entity
 
 import android.content.Context
+import app.versta.translate.ApplicationModule
+import app.versta.translate.MainApplication
+import app.versta.translate.R
 import app.versta.translate.utils.LocaleUtils
-import timber.log.Timber
 import java.util.Locale
 
 enum class WritingDirection(val value: Int) {
@@ -10,9 +12,26 @@ enum class WritingDirection(val value: Int) {
     RTL(1)
 }
 
-data class Language(val locale: Locale) {
-    val name: String = locale.displayLanguage
-    val isoCode: String = locale.language
+interface LanguageOption {
+    val locale: Locale?
+    val name: String
+    val isoCode: String
+}
+
+const val AUTO_DETECT_UNKNOWN_CODE = "un"
+const val AUTO_DETECT_ISO_CODE = "auto-detect"
+
+class AutoDetectLanguage : LanguageOption {
+    override val locale: Locale? = null
+    override val name: String = MainApplication.context.getString(R.string.detect_language)
+    override val isoCode: String = AUTO_DETECT_ISO_CODE
+
+    val detectedLanguage: Language? = null
+}
+
+data class Language(override val locale: Locale): LanguageOption {
+    override val name: String = locale.displayLanguage
+    override val isoCode: String = locale.language
 
     fun getFlagDrawable(context: Context): Int {
         val code = when (isoCode) {
@@ -50,8 +69,31 @@ data class Language(val locale: Locale) {
     }
 }
 
+data class LanguageOptionPair(val source: LanguageOption, val target: Language) {
+    fun toLanguagePair(): LanguagePair? {
+        if (source !is Language) {
+            return null
+        }
+
+        val pair = LanguagePair(
+            source = source,
+            target = target
+        )
+
+        if (!pair.isValid()) {
+            return null
+        }
+
+        return pair
+    }
+}
+
 data class LanguagePair(val source: Language, val target: Language) {
     val id: String = "${source.locale.language}-${target.locale.language}"
+
+    fun isValid(): Boolean {
+        return source.locale.language != target.locale.language
+    }
 
     /**
      * Returns a string representation of the language pair.
@@ -106,3 +148,8 @@ data class LanguagePair(val source: Language, val target: Language) {
         }
     }
 }
+
+data class PivotPair(
+    val intermediary: LanguagePair,
+    val output: LanguagePair
+)

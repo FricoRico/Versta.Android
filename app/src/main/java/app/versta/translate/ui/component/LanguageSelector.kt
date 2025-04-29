@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.SyncAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -31,8 +32,10 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -48,7 +51,9 @@ import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryReposit
 import app.versta.translate.adapter.inbound.TranslateBubbleShortcut
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
+import app.versta.translate.core.entity.AutoDetectLanguage
 import app.versta.translate.core.entity.Language
+import app.versta.translate.core.entity.LanguageOption
 import app.versta.translate.core.model.LanguageType
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.ui.theme.spacing
@@ -63,6 +68,8 @@ fun LanguageSelector(
 
     val sourceLanguage by languageViewModel.sourceLanguage.collectAsStateWithLifecycle(null)
     val targetLanguage by languageViewModel.targetLanguage.collectAsStateWithLifecycle(null)
+
+    val autoDetectLanguage by languageViewModel.autoDetectLanguage.collectAsStateWithLifecycle(null)
 
     val canSwapLanguages by languageViewModel.canSwapLanguages.collectAsStateWithLifecycle(false)
 
@@ -94,6 +101,7 @@ fun LanguageSelector(
             LanguageSelectorButton(
                 context = context,
                 language = sourceLanguage,
+                autoDetectLanguage = autoDetectLanguage,
                 text = stringResource(R.string.select_language),
                 placeholder = stringResource(R.string.select_language_from),
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Source) },
@@ -115,6 +123,7 @@ fun LanguageSelector(
             LanguageSelectorButton(
                 context = context,
                 language = targetLanguage,
+                autoDetectLanguage = null,
                 text = stringResource(R.string.select_language),
                 placeholder = stringResource(R.string.select_language_to),
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Target) },
@@ -144,12 +153,12 @@ fun LanguageSelector(
                 MaterialTheme.colorScheme.surfaceContainerHighest
             }
 
-           VerticalDivider(
+            VerticalDivider(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(MaterialTheme.spacing.small),
                 color = dividerColor,
-           )
+            )
             FilledIconButton(
                 enabled = canSwapLanguages,
                 onClick = {
@@ -161,7 +170,9 @@ fun LanguageSelector(
                 colors = IconButtonDefaults.filledIconButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = MaterialTheme.colorScheme.onSurface,
-                    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 1f),
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(
+                        alpha = 1f
+                    ),
                     disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .3f),
                 ),
             ) {
@@ -178,15 +189,17 @@ fun LanguageSelector(
 fun LanguageSelectorButton(
     modifier: Modifier = Modifier,
     context: Context,
-    language: Language?,
+    language: LanguageOption?,
+    autoDetectLanguage: Language?,
     text: String,
     placeholder: String,
     onClick: () -> Unit,
-    contentPadding: PaddingValues = PaddingValues(MaterialTheme.spacing.large, MaterialTheme.spacing.medium),
+    contentPadding: PaddingValues = PaddingValues(
+        MaterialTheme.spacing.large,
+        MaterialTheme.spacing.medium
+    ),
     shape: CornerBasedShape = MaterialTheme.shapes.extraLarge
 ) {
-    val flagDrawable = language?.getFlagDrawable(context)
-
     Button(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(
@@ -216,18 +229,57 @@ fun LanguageSelectorButton(
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
                 modifier = Modifier.fillMaxSize()
             ) {
-                if (flagDrawable != null) {
-                    Image(
-                        painter = painterResource(flagDrawable),
-                        contentDescription = stringResource(
-                            R.string.flag, language.name
-                        ),
-                        modifier = Modifier
-                            .requiredSize(MaterialTheme.spacing.large)
-                            .clip(MaterialTheme.shapes.large)
-                    )
-                }
+                when (language) {
+                    is AutoDetectLanguage -> {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    MaterialTheme.shapes.extraLarge
+                                )
+                                .requiredSize(MaterialTheme.spacing.large)
+                                .clip(MaterialTheme.shapes.large)
+                        ) {
+                            if (autoDetectLanguage != null) {
+                                val flagDrawable = autoDetectLanguage.getFlagDrawable(context)
 
+                                Image(
+                                    painter = painterResource(flagDrawable),
+                                    contentDescription = stringResource(
+                                        R.string.flag, autoDetectLanguage.name
+                                    ),
+                                    modifier = Modifier
+                                        .alpha(0.4f)
+                                        .fillMaxSize()
+                                )
+                            }
+
+                            Icon(
+                                imageVector = Icons.Outlined.AutoAwesome,
+                                contentDescription = stringResource(R.string.detect_language),
+                                modifier = Modifier
+                                    .requiredSize(16.dp)
+                                    .align(Alignment.Center)
+                            )
+                        }
+                    }
+
+                    is Language -> {
+                        val flagDrawable = language.getFlagDrawable(context)
+
+                        Image(
+                            painter = painterResource(flagDrawable),
+                            contentDescription = stringResource(
+                                R.string.flag, language.name
+                            ),
+                            modifier = Modifier
+                                .requiredSize(MaterialTheme.spacing.large)
+                                .clip(MaterialTheme.shapes.large)
+                        )
+                    }
+
+                    else -> {}
+                }
 
                 Text(
                     text = language?.name ?: text,

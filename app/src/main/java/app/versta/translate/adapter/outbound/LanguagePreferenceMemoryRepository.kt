@@ -1,13 +1,17 @@
 package app.versta.translate.adapter.outbound
 
 import app.versta.translate.core.entity.Language
+import app.versta.translate.core.entity.LanguageOption
+import app.versta.translate.core.entity.LanguageOptionPair
 import app.versta.translate.core.entity.LanguagePair
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import java.util.Locale
 
 class LanguagePreferenceMemoryRepository : LanguagePreferenceRepository {
-    private var _sourceLanguage: Language? = Language(
+    private var _pivotTranslation: Boolean = DEFAULT_PIVOT_TRANSLATION
+
+    private var _sourceLanguage: LanguageOption? = Language(
         locale = Locale.ENGLISH
     )
     private var _targetLanguage: Language? = Language(
@@ -17,7 +21,7 @@ class LanguagePreferenceMemoryRepository : LanguagePreferenceRepository {
     /**
      * Gets the source language from the repository.
      */
-    override fun getSourceLanguage(): Flow<Language?> {
+    override fun getSourceLanguage(): Flow<LanguageOption?> {
         return flowOf(_sourceLanguage)
     }
 
@@ -25,7 +29,7 @@ class LanguagePreferenceMemoryRepository : LanguagePreferenceRepository {
      * Sets the source language in the repository.
      * @param language The language to set.
      */
-    override suspend fun setSourceLanguage(language: Language) {
+    override suspend fun setSourceLanguage(language: LanguageOption) {
         _sourceLanguage = language
     }
 
@@ -45,13 +49,28 @@ class LanguagePreferenceMemoryRepository : LanguagePreferenceRepository {
     }
 
     /**
+     * Gets the pivot translation option from the data store.
+     */
+    override fun getPivotTranslation(): Flow<Boolean> {
+        return flowOf(_pivotTranslation)
+    }
+
+    /**
+     * Sets the pivot translation option in the data store.
+     */
+    override suspend fun setPivotTranslation(enabled: Boolean) {
+        _pivotTranslation = enabled
+    }
+
+    /**
      * Gets the language pair from the repository.
      */
-    override fun getLanguagePair(): Flow<LanguagePair?> {
+    override fun getLanguagePair(): Flow<LanguageOptionPair?> {
         if (_sourceLanguage != null && _targetLanguage != null) {
             return flowOf(
-                LanguagePair(
-                    source = _sourceLanguage!!, target = _targetLanguage!!
+                LanguageOptionPair(
+                    source = _sourceLanguage!!,
+                    target = _targetLanguage!!
                 )
             )
         }
@@ -66,8 +85,19 @@ class LanguagePreferenceMemoryRepository : LanguagePreferenceRepository {
         val source = _sourceLanguage
         val target = _targetLanguage
 
+        if (source !is Language) {
+            return
+        }
+
         _sourceLanguage = target
         _targetLanguage = source
+    }
+
+    /**
+     * Clears the source language in the repository.
+     */
+    override suspend fun clearSourceLanguage() {
+        _sourceLanguage = null
     }
 
     /**

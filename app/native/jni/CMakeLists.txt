@@ -22,6 +22,7 @@ target_link_libraries(
         log
         android
         ucd
+        cld2
         espeak-ng
         sentencepiece
 )

@@ -7,6 +7,9 @@ import app.versta.translate.core.entity.LanguageModelFiles
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.LanguagePairModelFiles
 import app.versta.translate.core.entity.LanguageModel
+import app.versta.translate.core.entity.LanguageOption
+import app.versta.translate.core.entity.PivotPair
+import app.versta.translate.core.entity.PivotPairModelFiles
 import kotlinx.coroutines.flow.Flow
 
 interface LanguageRepository {
@@ -23,17 +26,22 @@ interface LanguageRepository {
     /**
      * Gets the source languages available in the repository.
      */
-    fun getSourceLanguages(): Flow<List<Language>>
+    fun getSourceLanguages(): Flow<List<LanguageOption>>
+
+    /**
+     * Gets the target languages available in the repository.
+     */
+    fun getTargetLanguages(): Flow<List<Language>>
 
     /**
      * Gets the target languages for a given source language.
      */
-    fun getTargetLanguagesBySource(sourceLanguage: Language): Flow<List<Language>>
+    fun getTargetLanguagesBySource(sourceLanguage: Language): List<Language>
 
     /**
      * Gets the language model files for a given language pair.
      */
-    fun getLanguageModel(languagePair: LanguagePair): LanguageModelFiles?
+    fun getLanguageModel(languagePair: LanguagePair, pivotTranslation: Boolean): PivotPairModelFiles?
 
     /**
      * Inserts a [LanguageModelMetadata] into the repository, ignoring if it already exists.

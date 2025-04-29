@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -25,6 +26,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.AudioMockPlayer
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
@@ -34,6 +36,7 @@ import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryReposit
 import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
+import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.theme.ButtonDefaults
@@ -160,11 +163,17 @@ fun LazyListScope.TextToSpeechError(error: Throwable?) {
 fun ErrorAlertDialogPreview() {
     ErrorAlertDialog(
         translationViewModel = TranslationViewModel(
-            tokenizer = TranslationMockTokenizer(),
-            model = TranslationMockInference(),
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            translationPreferenceRepository = TranslationPreferenceMemoryRepository()
+            intermediateTokenizer = TranslationMockTokenizer(),
+            intermediateModel = TranslationMockInference(),
+            outputTokenizer = TranslationMockTokenizer(),
+            outputModel = TranslationMockInference(),
+            translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+            languageViewModel = LanguageViewModel(
+                context = LocalContext.current,
+                languageRepository = LanguageMemoryRepository(),
+                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+                externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
+            )
         ).apply {
             setTranslationError(Error("Error message"))
         },

@@ -8,10 +8,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.adapter.outbound.AudioMockPlayer
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
@@ -21,11 +23,14 @@ import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryReposit
 import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
+import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LoadingProgress
 import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.theme.spacing
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.sample
 
 @Composable
 fun ModelLoadingProgressDialog(
@@ -34,11 +39,11 @@ fun ModelLoadingProgressDialog(
     textToSpeechViewModel: TextToSpeechViewModel
 ) {
     val translationModelLoadingProgress =
-        translationViewModel.loadingProgress.collectAsStateWithLifecycle()
+        translationViewModel.loadingProgress.collectAsStateWithLifecycle(false)
     val textTranslationLoadingProgress =
-        textTranslationViewModel.loadingProgress.collectAsStateWithLifecycle()
+        textTranslationViewModel.loadingProgress.collectAsStateWithLifecycle(false)
     val textToSpeechLoadingProgress =
-        textToSpeechViewModel.loadingProgress.collectAsStateWithLifecycle()
+        textToSpeechViewModel.loadingProgress.collectAsStateWithLifecycle(false)
 
     if (translationModelLoadingProgress.value == LoadingProgress.InProgress || textTranslationLoadingProgress.value == LoadingProgress.InProgress || textToSpeechLoadingProgress.value == LoadingProgress.InProgress) {
         Dialog(onDismissRequest = { /* Can not be dismissed */ }) {
@@ -61,16 +66,27 @@ fun ModelLoadingProgressDialog(
 @Composable
 @Preview
 fun ModelLoadingProgressDialogPreview() {
+    val languageViewModel = LanguageViewModel(
+        context = LocalContext.current,
+        languageRepository = LanguageMemoryRepository(),
+        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
+    )
+
+    val translationViewModel = TranslationViewModel(
+        intermediateTokenizer = TranslationMockTokenizer(),
+        intermediateModel = TranslationMockInference(),
+        outputTokenizer = TranslationMockTokenizer(),
+        outputModel = TranslationMockInference(),
+        translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+        languageViewModel = languageViewModel
+    )
+
     ModelLoadingProgressDialog(
-        translationViewModel = TranslationViewModel(
-            tokenizer = TranslationMockTokenizer(),
-            model = TranslationMockInference(),
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            translationPreferenceRepository = TranslationPreferenceMemoryRepository()
-        ),
+        translationViewModel = translationViewModel,
         textTranslationViewModel = TextTranslationViewModel(
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository()
+            languageViewModel = languageViewModel,
+            translationViewModel = translationViewModel
         ),
         textToSpeechViewModel = TextToSpeechViewModel(
             tokenizer = TextToSpeechMockTokenizer(),
