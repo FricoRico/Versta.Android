@@ -3,8 +3,8 @@ package app.versta.translate.adapter.outbound
 
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
-import app.versta.translate.core.entity.KokoroInput
-import app.versta.translate.core.entity.KokoroOutput
+import app.versta.translate.core.entity.StyleTextToSpeech2Input
+import app.versta.translate.core.entity.StyleTextToSpeech2Output
 import app.versta.translate.core.entity.VoiceModelInferenceFiles
 import app.versta.translate.core.entity.Waveform
 import org.jetbrains.bio.npy.NpyFile
@@ -32,26 +32,26 @@ class KokoroInference(private val ortEnvironment: OrtEnvironment): TextToSpeechI
             throw IllegalStateException("Session is not loaded")
         }
 
-        val kokoroInput = KokoroInput(
+        val styleTextToSpeech2Input = StyleTextToSpeech2Input(
             ortEnvironment = ortEnvironment,
             tokens = tokens,
             style = getStyle(tokens),
             speed = getSpeed(speed, tokens.size)
         )
 
-        val kokoroOutput = KokoroOutput()
+        val styleTextToSpeech2Output = StyleTextToSpeech2Output()
 
         try {
-            val inputs = kokoroInput.get()
-            val output = kokoroOutput.parse(kokoroSession!!.run(inputs))
+            val inputs = styleTextToSpeech2Input.get()
+            val output = styleTextToSpeech2Output.parse(kokoroSession!!.run(inputs))
 
             return output ?: throw IllegalStateException("Waveform output is null")
         } catch (e: Exception) {
             Timber.tag(TAG).e(e)
             throw e
         } finally {
-            kokoroInput.destroy()
-            kokoroOutput.destroy()
+            styleTextToSpeech2Input.destroy()
+            styleTextToSpeech2Output.destroy()
         }
     }
 
