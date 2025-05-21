@@ -18,7 +18,7 @@ class VoiceMemoryRepository : VoiceRepository {
             id = "kokoro",
             baseModel = "hexgrad/Kokoro-82M",
             path = _mockPath,
-            architectures = listOf(VoiceModelArchitecture.Kokoro),
+            architectures = listOf(VoiceModelArchitecture.StyleTTS2),
             version = "v1.0.0",
             inference = VoiceModelInferenceFiles(
                 model = _mockPath

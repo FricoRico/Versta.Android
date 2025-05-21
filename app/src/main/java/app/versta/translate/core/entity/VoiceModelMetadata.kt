@@ -7,7 +7,8 @@ import kotlin.collections.isNotEmpty
 import kotlin.io.path.exists
 
 enum class VoiceModelArchitecture(val value: String) {
-    Kokoro("Kokoro")
+    Kokoro("Kokoro"),
+    StyleTTS2("StyleTTS2")
 }
 
 @Serializable

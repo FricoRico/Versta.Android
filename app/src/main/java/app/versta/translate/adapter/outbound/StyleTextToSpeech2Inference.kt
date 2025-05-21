@@ -20,6 +20,7 @@ import kotlin.math.min
 
 internal const val MIN_SPEED = 0.7f
 internal const val MAX_SPEED = 1.4f
+internal const val OFFSET_SPEED = 0.9f
 const val MAX_TOKEN_LENGTH = 509
 const val STYLE_DIM = 256
 
@@ -87,7 +88,7 @@ class KokoroInference(private val ortEnvironment: OrtEnvironment): TextToSpeechI
         val minTokens = 1
         val clamped = minTokens.coerceAtLeast(tokens.coerceAtMost(MAX_TOKEN_LENGTH))
 
-        return speed * (MAX_SPEED - (clamped - minTokens) * (MAX_SPEED - MIN_SPEED) / (MAX_TOKEN_LENGTH - minTokens))
+        return speed * OFFSET_SPEED * (MAX_SPEED - (clamped - minTokens) * (MAX_SPEED - MIN_SPEED) / (MAX_TOKEN_LENGTH - minTokens))
     }
 
     override fun load(files: VoiceModelInferenceFiles, threads: Int) {

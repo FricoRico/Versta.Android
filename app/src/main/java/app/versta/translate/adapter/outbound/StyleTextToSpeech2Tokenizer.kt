@@ -198,19 +198,25 @@ class StyleTextToSpeech2Tokenizer : TextToSpeechTokenizer {
             phonemes = when (language.locale) {
                 Locale.FRENCH ->
                     phonemes
-                        .replace("(.)̃".toRegex()) { it ->
+                        .replace("(.)̃".toRegex()) {
+                            it.groupValues.last()
+                        }
+
+                Locale.ITALIAN ->
+                    phonemes
+                        .replace("(.)̪".toRegex()) {
                             it.groupValues.last()
                         }
 
                 Locale.CHINESE ->
                     phonemes.replace("[0-9]".toRegex(), "")
                         .replace("j".toRegex(), "ʝ")
-                        .replace("(.)̪".toRegex()) { it ->
+                        .replace("(.)̪".toRegex()) {
                             it.groupValues.last()
                         }
 
                 Locale.forLanguageTag("pt") ->
-                    phonemes.replace("(.)̃".toRegex()) { it ->
+                    phonemes.replace("(.)̃".toRegex()) {
                         it.groupValues.last()
                     }
 
@@ -219,7 +225,7 @@ class StyleTextToSpeech2Tokenizer : TextToSpeechTokenizer {
                         .replace("ᵝ".toRegex(), "ʷ")
                         .replace("ɽ".toRegex(), "ɹ")
                         .replace("ũ".toRegex(), "u")
-                        .replace("(.)̞".toRegex()) { it ->
+                        .replace("(.)̞".toRegex()) {
                             it.groupValues.last()
                         }
 

@@ -86,7 +86,7 @@ class ExternalVoiceModelsMemoryRepository : ExternalVoiceModelsRepository {
                             language = "fr",
                         )
                     ),
-                    architectures = listOf(VoiceModelArchitecture.Kokoro),
+                    architectures = listOf(VoiceModelArchitecture.StyleTTS2),
                     bundle = "https://mock.versta.app/kokoro-bundle.tar.gz",
                     checksum = "https://mock.versta.app/kokoro-bundle.tar.gz.sha256",
                 )
@@ -168,7 +168,7 @@ class ExternalVoiceModelsMemoryRepository : ExternalVoiceModelsRepository {
                         language = "fr",
                     )
                 ),
-                architectures = listOf(VoiceModelArchitecture.Kokoro),
+                architectures = listOf(VoiceModelArchitecture.StyleTTS2),
                 bundle = "https://mock.versta.app/kokoro-bundle.tar.gz",
                 checksum = "https://mock.versta.app/kokoro-bundle.tar.gz.sha256",
             )
@@ -254,7 +254,7 @@ class ExternalVoiceModelsMemoryRepository : ExternalVoiceModelsRepository {
                                 language = "fr",
                             )
                         ),
-                        architectures = listOf(VoiceModelArchitecture.Kokoro),
+                        architectures = listOf(VoiceModelArchitecture.StyleTTS2),
                         bundle = "https://mock.versta.app/kokoro-bundle.tar.gz",
                         checksum = "https://mock.versta.app/kokoro-bundle.tar.gz.sha256",
                     )
