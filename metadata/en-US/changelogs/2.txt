@@ -1,1 +1,0 @@
-Fixing crashing because of minified build
