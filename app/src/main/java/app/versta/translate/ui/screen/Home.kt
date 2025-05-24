@@ -1,6 +1,7 @@
 package app.versta.translate.ui.screen
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
@@ -120,7 +121,6 @@ fun Home(
                 item {
                     TranslationTextField(
                         textTranslationViewModel = textTranslationViewModel,
-                        languageViewModel = languageViewModel,
                         onSubmit = {
                             textTranslationViewModel.setTranslateOnInput(true)
                             navController.navigate(Screens.TextTranslation())
@@ -144,8 +144,9 @@ fun Home(
     )
 }
 
-@Preview
 @Composable
+@Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 private fun HomePreview() {
     val languageViewModel = LanguageViewModel(
         context = LocalContext.current,

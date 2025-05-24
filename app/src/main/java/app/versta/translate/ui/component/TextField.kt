@@ -139,7 +139,7 @@ fun TextField(
 }
 
 @Composable
-@Preview
+@Preview(showBackground = true)
 fun TextFieldPreview() {
     TextField(
         placeholder = "Type something",

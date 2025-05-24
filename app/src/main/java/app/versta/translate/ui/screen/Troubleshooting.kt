@@ -1,5 +1,6 @@
 package app.versta.translate.ui.screen
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.widget.Toast
@@ -164,6 +165,7 @@ fun Troubleshooting(
 
 @Composable
 @Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun TroubleshootingPreview() {
     Troubleshooting(
         navController = NavController(LocalContext.current),

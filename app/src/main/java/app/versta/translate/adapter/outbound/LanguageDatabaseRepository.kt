@@ -233,6 +233,7 @@ class LanguageDatabaseRepository(
             .forEach { it.deleteRecursively() }
 
         database.languages.deleteByIds(ids = languageIds)
+        database.languageModels.deleteByIds(languageIds = languageIds)
 
         return languagePairs
     }

@@ -1,5 +1,6 @@
 package app.versta.translate.ui.screen
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
@@ -123,6 +124,7 @@ fun ApplicationLogs(
 
 @Composable
 @Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun ApplicationLogsPreview() {
     ApplicationLogs(
         navController = rememberNavController(),

@@ -137,12 +137,8 @@ class LanguagePreferenceDataStoreRepository(
     override suspend fun clearLanguageSelectionForPair(languagePair: LanguagePair) {
         dataStore.edit { preferences ->
             val sourceLanguage = preferences[SOURCE_LANGUAGE_KEY]
-            val targetLanguage = preferences[TARGET_LANGUAGE_KEY]
 
-            if (sourceLanguage == mapLanguageEntityToIsoCode(languagePair.source) ||
-                targetLanguage == mapLanguageEntityToIsoCode(languagePair.target) ||
-                sourceLanguage == mapLanguageEntityToIsoCode(languagePair.source)
-            ) {
+            if (sourceLanguage == mapLanguageEntityToIsoCode(languagePair.source)) {
                 preferences.remove(SOURCE_LANGUAGE_KEY)
                 preferences.remove(TARGET_LANGUAGE_KEY)
             }

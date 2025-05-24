@@ -1,5 +1,6 @@
 package app.versta.translate.ui.screen
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.icu.text.DecimalFormat
 import androidx.activity.compose.BackHandler
@@ -317,6 +318,7 @@ fun TextToSpeechSettings(
 
 @Composable
 @Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun TextToSpeechSettingsPreview() {
     TextToSpeechSettings(
         navController = rememberNavController(),

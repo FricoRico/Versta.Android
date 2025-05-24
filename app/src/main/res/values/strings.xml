@@ -178,4 +178,7 @@
     <string name="detect_language">Detect language</string>
     <string name="translation_settings_language_pivot_translation_title">Pivot translation</string>
     <string name="translation_settings_language_pivot_translation_description">Allow translating through an intermediate language. This will allow translating between all languages, but takes longer to translate and use more memory.</string>
+    <string name="language_suggestion_description">%1$s is currently not available for translation.</string>
+    <string name="language_suggestion_title">Download %1$s</string>
+    <string name="language_suggestion_call_to_action">Do you want to download it now?</string>
 </resources>

@@ -24,6 +24,7 @@ import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.LanguageSelectionDrawer
 import app.versta.translate.ui.component.ErrorAlertDialog
+import app.versta.translate.ui.component.LanguageSuggestionDrawer
 import app.versta.translate.ui.component.ModelLoadingProgressDialog
 import app.versta.translate.ui.screen.MinimalTextTranslation
 import app.versta.translate.ui.theme.TranslateTheme
@@ -98,6 +99,8 @@ class BubbleActivity : ComponentActivity() {
                         languageViewModel = MainApplication.module.languageViewModel,
                         modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium)
                     )
+
+                    LanguageSuggestionDrawer(languageViewModel = MainApplication.module.languageViewModel)
                 }
             }
         }

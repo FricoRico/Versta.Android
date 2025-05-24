@@ -1,5 +1,6 @@
 package app.versta.translate.ui.screen
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.icu.text.DecimalFormat
 import androidx.compose.foundation.layout.Arrangement
@@ -332,6 +333,7 @@ fun VoiceDetailsData(
 
 @Composable
 @Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun VoiceDetailsPreview() {
     VoiceDetails(
         navController = rememberNavController(),
