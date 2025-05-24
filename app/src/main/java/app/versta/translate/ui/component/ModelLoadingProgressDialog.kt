@@ -1,5 +1,6 @@
 package app.versta.translate.ui.component
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -64,7 +65,8 @@ fun ModelLoadingProgressDialog(
 }
 
 @Composable
-@Preview
+@Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun ModelLoadingProgressDialogPreview() {
     val languageViewModel = LanguageViewModel(
         context = LocalContext.current,

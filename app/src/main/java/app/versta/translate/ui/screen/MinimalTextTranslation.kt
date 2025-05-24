@@ -1,5 +1,6 @@
 package app.versta.translate.ui.screen
 
+import android.annotation.SuppressLint
 import android.view.HapticFeedbackConstants
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.AnimationConstants.DefaultDurationMillis
@@ -70,7 +71,6 @@ fun MinimalTextTranslation(
     textToSpeechViewModel: TextToSpeechViewModel,
     autoTranslate: Boolean = true,
 ) {
-    val view = LocalView.current
     val context = LocalContext.current
 
     val input by textTranslationViewModel.input.collectAsStateWithLifecycle("")
@@ -96,6 +96,7 @@ fun MinimalTextTranslation(
 
     val targetLanguage by languageViewModel.targetLanguage.collectAsStateWithLifecycle(null)
 
+    val translationScope = rememberCoroutineScope()
     val textToSpeechScope = rememberCoroutineScope()
 
     fun onTextToSpeech() {
@@ -116,7 +117,16 @@ fun MinimalTextTranslation(
             return
         }
 
-        textTranslationViewModel.translate(input)
+        translationScope.launch {
+            if (!languageViewModel.modelAvailable()) {
+                languageViewModel.setLanguageSuggestionState(true) {
+                    translate(input)
+                }
+                return@launch
+            }
+
+            textTranslationViewModel.translate(input)
+        }
     }
 
     LaunchedEffect(input, targetLanguage) {
@@ -312,6 +322,7 @@ fun MinimalTextTranslationOutputButtonRow(
 
 @Composable
 @Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun MinimalTextTranslationPreview() {
     val languageViewModel = LanguageViewModel(
         context = LocalContext.current,

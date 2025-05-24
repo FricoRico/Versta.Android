@@ -1,5 +1,6 @@
 package app.versta.translate.ui.component
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -180,6 +181,7 @@ fun TrialLicenseDrawer(
 
 @Composable
 @Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 private fun TrialLicenseDrawerPreview() {
     TrialLicenseDrawer(
         LicenseViewModel(

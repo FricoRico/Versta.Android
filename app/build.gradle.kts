@@ -33,14 +33,14 @@ aboutLibraries {
 
 android {
     namespace = "app.versta.translate"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "26.1.10909125"
-    buildToolsVersion = "35.0.0"
+    buildToolsVersion = "36.0.0"
 
     defaultConfig {
         applicationId = "app.versta.translate"
         minSdk = 27
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 9
         versionName = "1.2.2"
 

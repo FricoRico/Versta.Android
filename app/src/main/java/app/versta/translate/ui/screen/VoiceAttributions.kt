@@ -1,5 +1,6 @@
 package app.versta.translate.ui.screen
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import androidx.compose.foundation.layout.Arrangement
@@ -154,6 +155,7 @@ fun VoiceAttributions(
 
 @Composable
 @Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun VoiceAttributionsPreview() {
     VoiceAttributions(
         navController = NavController(LocalContext.current),

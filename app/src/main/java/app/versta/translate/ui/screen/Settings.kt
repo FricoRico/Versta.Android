@@ -1,5 +1,6 @@
 package app.versta.translate.ui.screen
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
@@ -189,7 +190,8 @@ fun Settings(
 }
 
 @Composable
-@Preview
+@Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun SettingsPreview() {
     return Settings(
         navController = rememberNavController(),

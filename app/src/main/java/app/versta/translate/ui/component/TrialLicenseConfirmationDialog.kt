@@ -1,5 +1,6 @@
 package app.versta.translate.ui.component
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -108,6 +109,7 @@ fun TrialLicenseConfirmationDialog(
 
 @Composable
 @Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun TrialLicenseConfirmationDialogPreview() {
     TrialLicenseConfirmationDialog(
         licenseViewModel = LicenseViewModel(

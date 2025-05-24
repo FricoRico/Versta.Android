@@ -1,5 +1,6 @@
 package app.versta.translate.ui.component
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -60,9 +61,9 @@ fun LanguageSelectionDrawer(
     languageViewModel: LanguageViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val languageSelection = languageViewModel.languageSelectionState.collectAsStateWithLifecycle()
+    val languageSelection by languageViewModel.languageSelectionState.collectAsStateWithLifecycle()
 
-    val drawerOpenedState = languageSelection.value != null
+    val drawerOpenedState = languageSelection != null
     val drawerState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val sourceLanguages by languageViewModel.sourceLanguages.collectAsStateWithLifecycle(emptyList())
@@ -87,7 +88,7 @@ fun LanguageSelectionDrawer(
                 .padding(bottom = MaterialTheme.spacing.large)
                 .then(modifier)
         ) {
-            when (languageSelection.value) {
+            when (languageSelection) {
                 LanguageType.Source -> {
                     LanguageSelectionSourceLanguage(
                         context = context,
@@ -283,6 +284,7 @@ fun LanguageSelectionListItem(
 
 @Composable
 @Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun LanguageSelectionDrawerPreview() {
     LanguageSelectionDrawer(
         languageViewModel = LanguageViewModel(

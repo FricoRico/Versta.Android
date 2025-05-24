@@ -1,5 +1,6 @@
 package app.versta.translate.ui.component
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,7 +45,6 @@ fun TranslationTextField(
     onSubmit: (String) -> Unit,
     onClear: () -> Unit,
     textTranslationViewModel: TextTranslationViewModel,
-    languageViewModel: LanguageViewModel
 ) {
     val input by textTranslationViewModel.input.collectAsStateWithLifecycle()
 
@@ -118,6 +118,7 @@ fun TranslationTextField(
 
 @Composable
 @Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun TranslationTextFieldMinimalPreview() {
     val languageViewModel = LanguageViewModel(
         context = LocalContext.current,
@@ -138,7 +139,6 @@ fun TranslationTextFieldMinimalPreview() {
                 languageViewModel = languageViewModel
             )
         ),
-        languageViewModel = languageViewModel,
         onSubmit = {},
         onClear = {}
     )

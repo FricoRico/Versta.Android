@@ -25,8 +25,6 @@ class AutoDetectLanguage : LanguageOption {
     override val locale: Locale? = null
     override val name: String = MainApplication.context.getString(R.string.detect_language)
     override val isoCode: String = AUTO_DETECT_ISO_CODE
-
-    val detectedLanguage: Language? = null
 }
 
 data class Language(override val locale: Locale): LanguageOption {

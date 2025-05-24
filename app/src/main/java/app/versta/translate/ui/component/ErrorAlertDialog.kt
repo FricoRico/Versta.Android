@@ -1,5 +1,6 @@
 package app.versta.translate.ui.component
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -160,6 +161,7 @@ fun LazyListScope.TextToSpeechError(error: Throwable?) {
 
 @Composable
 @Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun ErrorAlertDialogPreview() {
     ErrorAlertDialog(
         translationViewModel = TranslationViewModel(

@@ -98,4 +98,5 @@ data class ExternalLanguageDownloadTask(
     val id: UUID = UUID.randomUUID(),
     val model: ExternalLanguagePairDefinition,
     var status: DownloadStatus,
+    val onComplete: (ExternalLanguagePairDefinition) -> Unit = {},
 )

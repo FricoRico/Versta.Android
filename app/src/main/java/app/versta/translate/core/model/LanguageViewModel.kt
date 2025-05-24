@@ -29,7 +29,6 @@ import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageOption
 import app.versta.translate.core.entity.LanguagePair
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -40,9 +39,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -67,6 +65,12 @@ class LanguageViewModel(
 
     private val _languageSelectionState = MutableStateFlow<LanguageType?>(null)
     val languageSelectionState: StateFlow<LanguageType?> = _languageSelectionState.asStateFlow()
+
+    private val _languageSuggestionState = MutableStateFlow(false)
+    val languageSuggestionState: StateFlow<Boolean> = _languageSuggestionState.asStateFlow()
+
+    private val _languageSuggestionOnCompleteCallback = MutableStateFlow<((ExternalLanguagePairDefinition) -> Unit)?>(null)
+    val languageSuggestionOnCompleteCallback: StateFlow<((ExternalLanguagePairDefinition) -> Unit)?> = _languageSuggestionOnCompleteCallback.asStateFlow()
 
     private val _autoDetectInput = MutableStateFlow("")
     val autoDetectLanguage = MutableStateFlow<Language?>(null)
@@ -190,10 +194,22 @@ class LanguageViewModel(
     }
 
     /**
-     * Sets the language selection state.
+     * Sets the language selection drawer state.
      */
     fun setLanguageSelectionState(state: LanguageType?) {
         _languageSelectionState.value = state
+    }
+
+    /**
+     * Sets the language suggestion drawer state.
+     */
+    fun setLanguageSuggestionState(enabled: Boolean, onComplete: ((ExternalLanguagePairDefinition) -> Unit)? = null) {
+        _languageSuggestionState.value = enabled
+        _languageSuggestionOnCompleteCallback.value = onComplete
+    }
+
+    suspend fun modelAvailable(): Boolean {
+        return languageModelFiles.first() != null
     }
 
     /**
@@ -279,7 +295,7 @@ class LanguageViewModel(
     /**
      * Queues a download for the given language model.
      */
-    fun queueDownload(context: Context, model: ExternalLanguagePairDefinition) {
+    fun queueDownload(context: Context, model: ExternalLanguagePairDefinition, onComplete: (ExternalLanguagePairDefinition) -> Unit = {}) {
         var task = _downloadTasks.value.firstOrNull { it.model == model }
 
         if (task != null) {
@@ -288,6 +304,7 @@ class LanguageViewModel(
             task = ExternalLanguageDownloadTask(
                 model = model,
                 status = DownloadStatus.Queued,
+                onComplete = onComplete
             )
             _downloadTasks.value += task
         }
@@ -328,6 +345,7 @@ class LanguageViewModel(
     ) {
         when (status) {
             is DownloadStatus.Completed -> {
+                triggerDownloadTaskCallback(taskId)
                 removeDownloadTask(taskId)
             }
 
@@ -384,6 +402,15 @@ class LanguageViewModel(
             }
 
             it
+        }
+    }
+
+    /**
+     * Removes the download task from the queue.
+     */
+    private fun triggerDownloadTaskCallback(taskId: UUID) {
+        _downloadTasks.value.find { it.id == taskId }?.let {
+            it.onComplete(it.model)
         }
     }
 

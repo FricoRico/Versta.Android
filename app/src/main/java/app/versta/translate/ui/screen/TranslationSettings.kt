@@ -1,5 +1,6 @@
 package app.versta.translate.ui.screen
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.icu.text.DecimalFormat
 import androidx.activity.compose.BackHandler
@@ -364,6 +365,7 @@ fun TranslationSettings(
 
 @Composable
 @Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun TranslationSettingsPreview() {
     TranslationSettings(
         navController = rememberNavController(),

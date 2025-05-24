@@ -1,5 +1,6 @@
 package app.versta.translate.ui.screen
 
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.AnimationConstants.DefaultDurationMillis
@@ -77,10 +78,11 @@ import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
+import app.versta.translate.core.entity.AutoDetectLanguage
 import app.versta.translate.core.entity.TextToSpeechSynthesisState
 import app.versta.translate.core.entity.WritingDirection
 import app.versta.translate.core.model.LanguageViewModel
-import app.versta.translate.core.model.LoadingProgress
+import app.versta.translate.core.model.ReadyState
 import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
@@ -92,6 +94,7 @@ import app.versta.translate.ui.component.TextToSpeechButton
 import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import kotlin.math.max
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -108,6 +111,8 @@ fun TextTranslation(
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
+    val sourceLanguage by languageViewModel.sourceLanguage.collectAsStateWithLifecycle(null)
+
     val input by textTranslationViewModel.input.collectAsStateWithLifecycle("")
     val inputTransliteration by textTranslationViewModel.inputTransliteration.collectAsStateWithLifecycle(
         ""
@@ -120,12 +125,10 @@ fun TextTranslation(
         ""
     )
 
-    val translationLoadingProgress by translationViewModel.loadingProgress.collectAsStateWithLifecycle(
-        LoadingProgress.Idle
-    )
-    val transliterationLoadingProgress by textTranslationViewModel.loadingProgress.collectAsStateWithLifecycle(
-        LoadingProgress.Idle
-    )
+    val languageReadyState by translationViewModel.languageReadyState.collectAsStateWithLifecycle()
+    val readyToTranslate =
+        languageReadyState == ReadyState.Ready || sourceLanguage is AutoDetectLanguage
+
     val textToSpeechSynthesisState by textToSpeechViewModel.speechProgressState.collectAsStateWithLifecycle(
         TextToSpeechSynthesisState.Idle
     )
@@ -141,7 +144,7 @@ fun TextTranslation(
         false
     )
 
-    val languages by languageViewModel.languagePair.collectAsStateWithLifecycle(null)
+    val languageOptions by languageViewModel.languageOptions.collectAsStateWithLifecycle(null)
 
     val targetLanguage by languageViewModel.targetLanguage.collectAsStateWithLifecycle(null)
 
@@ -167,6 +170,15 @@ fun TextTranslation(
         }
 
         sheetScope.launch {
+            if (!languageViewModel.modelAvailable()) {
+                languageViewModel.setLanguageSuggestionState(true) {
+                    translate(input)
+                }
+                return@launch
+            }
+
+            textTranslationViewModel.translate(input)
+
             scaffoldState.bottomSheetState.expand()
 
             when {
@@ -180,8 +192,6 @@ fun TextTranslation(
                 }
             }
         }
-
-        textTranslationViewModel.translate(input)
     }
 
     fun cancelTranslation() {
@@ -250,23 +260,13 @@ fun TextTranslation(
         textTranslationViewModel.shareTranslatedText(context)
     }
 
-    LaunchedEffect(languages) {
+    LaunchedEffect(languageOptions) {
         clearTranslation()
     }
 
-    LaunchedEffect(input, translationLoadingProgress, transliterationLoadingProgress) {
+    LaunchedEffect(translateOnInput) {
         if (!translateOnInput) {
             return@LaunchedEffect
-        }
-
-        if (translationLoadingProgress != LoadingProgress.Completed) {
-            return@LaunchedEffect
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (transliterationLoadingProgress != LoadingProgress.Completed) {
-                return@LaunchedEffect
-            }
         }
 
         textTranslationViewModel.setTranslateOnInput(false)
@@ -334,6 +334,7 @@ fun TextTranslation(
                     )
 
                     TextTranslationInputButtonRow(
+                        readyToTranslate = readyToTranslate,
                         inputIsEmpty = input.isEmpty(),
                         onTranslate = {
                             onSubmit(input)
@@ -452,6 +453,7 @@ fun TextTranslationInputField(
 @Composable
 fun TextTranslationInputButtonRow(
     modifier: Modifier = Modifier,
+    readyToTranslate: Boolean,
     inputIsEmpty: Boolean,
     onTranslate: () -> Unit,
     onClear: () -> Unit,
@@ -479,7 +481,7 @@ fun TextTranslationInputButtonRow(
 
         FilledIconButton(
             onClick = onTranslate,
-            enabled = !inputIsEmpty,
+            enabled = !inputIsEmpty && readyToTranslate,
             colors = FilledIconButtonDefaults.primaryIconButtonColors(),
         ) {
             Icon(
@@ -638,7 +640,8 @@ fun TextTranslationOutputButtonRow(
 }
 
 @Composable
-@Preview
+@Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun TextTranslationPreview() {
     val languageViewModel = LanguageViewModel(
         context = LocalContext.current,

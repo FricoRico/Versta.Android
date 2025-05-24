@@ -1,5 +1,6 @@
 package app.versta.translate.ui.screen
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.net.Uri
@@ -162,6 +163,7 @@ fun LanguageAttributions(
 
 @Composable
 @Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun LanguageAttributionsPreview() {
     LanguageAttributions(
         navController = NavController(LocalContext.current),

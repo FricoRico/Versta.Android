@@ -44,6 +44,11 @@ sealed class LoadingProgress {
     data class Error(val exception: Exception) : LoadingProgress()
 }
 
+sealed class ReadyState {
+    data object NotReady : ReadyState()
+    data object Ready : ReadyState()
+}
+
 @OptIn(FlowPreview::class)
 class TranslationViewModel(
     private val intermediateTokenizer: TranslationTokenizer,
@@ -71,6 +76,9 @@ class TranslationViewModel(
 
     private val _loadingProgress = MutableStateFlow<LoadingProgress>(LoadingProgress.Idle)
     val loadingProgress: Flow<LoadingProgress> = _loadingProgress.asStateFlow().sample(10)
+
+    private val _languageReadyState = MutableStateFlow<ReadyState>(ReadyState.NotReady)
+    val languageReadyState: StateFlow<ReadyState> = _languageReadyState.asStateFlow()
 
     private val _translationInProgress = MutableStateFlow(false)
     val translationInProgress: StateFlow<Boolean> = _translationInProgress.asStateFlow()
@@ -391,6 +399,7 @@ class TranslationViewModel(
 
         viewModelScope.async(Dispatchers.IO) {
             _loadMutex.withLock {
+                _languageReadyState.value = ReadyState.NotReady
                 _loadingProgress.value = LoadingProgress.InProgress
 
                 try {
@@ -406,6 +415,7 @@ class TranslationViewModel(
                         outputModel.load(files.output.inference, threadCount.first())
                     }
 
+                    _languageReadyState.value = ReadyState.Ready
                     _loadingProgress.value = LoadingProgress.Completed
                 } catch (e: Exception) {
                     Timber.tag(TAG).e(e)
@@ -424,6 +434,8 @@ class TranslationViewModel(
             _loadMutex.withLock {
                 intermediateModel.close()
                 outputModel.close()
+
+                _languageReadyState.value = ReadyState.NotReady
             }
         }
     }

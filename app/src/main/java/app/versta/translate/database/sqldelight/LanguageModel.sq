@@ -44,5 +44,8 @@ upsert {
 deleteById:
 DELETE FROM LanguageModel WHERE languageId = :languageId;
 
+deleteByIds:
+DELETE FROM LanguageModel WHERE languageId IN :languageIds;
+
 removeNotIn:
 DELETE FROM LanguageModel WHERE languageId NOT IN :languageIds;

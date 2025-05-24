@@ -1,5 +1,6 @@
 package app.versta.translate.ui.component
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.Image
@@ -294,6 +295,7 @@ fun LanguageSelectorButton(
 
 @Composable
 @Preview(showBackground = true)
+@SuppressLint("ViewModelConstructorInComposable")
 fun LanguageSelectorPreview() {
     return LanguageSelector(
         languageViewModel = LanguageViewModel(

@@ -17,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -67,6 +68,7 @@ class TextTranslationViewModel(
     fun translate(text: String) {
         _translationScope.launch {
             val source = _languageOptions.first()?.source
+
             val files = _languageModelFiles.first() ?: return@launch
             val languages = _languages.first() ?: return@launch
 
