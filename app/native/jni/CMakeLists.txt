@@ -17,6 +17,8 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         $<BUILD_INTERFACE:${THIRD_PARTY_DIR}>
 )
 
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE "-Wl,-z,max-page-size=16384")
+
 target_link_libraries(
         ${CMAKE_PROJECT_NAME}
         log

@@ -24,6 +24,7 @@ import app.versta.translate.R
 import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.theme.spacing
+import androidx.compose.ui.platform.LocalConfiguration
 
 data class PrivacyPolicyParagraph(
     val title: String,
@@ -35,7 +36,7 @@ data class PrivacyPolicyParagraph(
 fun PrivacyPolicy(
     navController: NavController
 ) {
-    val orientation = LocalContext.current.resources.configuration.orientation
+    val orientation = LocalConfiguration.current.orientation
 
     val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
         MaterialTheme.spacing.large

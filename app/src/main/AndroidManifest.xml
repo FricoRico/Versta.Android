@@ -29,7 +29,7 @@
         android:supportsRtl="true"
         android:launchMode="singleTask"
         android:theme="@style/Versta.Theme.SplashScreen"
-        tools:targetApi="35">
+        tools:targetApi="36">
         <meta-data
             android:name="firebase_analytics_collection_deactivated"
             android:value="true" />

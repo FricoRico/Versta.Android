@@ -55,6 +55,7 @@ import app.versta.translate.ui.component.SliderLogarithmic
 import app.versta.translate.ui.component.SliderPredefinedValues
 import app.versta.translate.ui.theme.spacing
 import kotlin.math.roundToInt
+import androidx.compose.ui.platform.LocalConfiguration
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,7 +64,7 @@ fun TranslationSettings(
     translationViewModel: TranslationViewModel,
     languageViewModel: LanguageViewModel
 ) {
-    val orientation = LocalContext.current.resources.configuration.orientation
+    val orientation = LocalConfiguration.current.orientation
 
     val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
         MaterialTheme.spacing.medium

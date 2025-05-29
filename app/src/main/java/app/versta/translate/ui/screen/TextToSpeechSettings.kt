@@ -66,6 +66,7 @@ import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import androidx.compose.ui.platform.LocalConfiguration
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,7 +74,7 @@ fun TextToSpeechSettings(
     navController: NavController,
     textToSpeechViewModel: TextToSpeechViewModel,
 ) {
-    val orientation = LocalContext.current.resources.configuration.orientation
+    val orientation = LocalConfiguration.current.orientation
 
     val tooltipScope = rememberCoroutineScope()
     val tooltipState = rememberTooltipState(isPersistent = true)

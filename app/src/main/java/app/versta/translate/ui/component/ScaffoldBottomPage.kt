@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import app.versta.translate.ui.theme.spacing
+import androidx.compose.ui.platform.LocalConfiguration
 
 data class BottomPageColors (
     val containerColor: Color,
@@ -53,7 +54,7 @@ fun ScaffoldBottomPage(
     innerPadding: PaddingValues = PaddingValues(),
     content: LazyListScope.() -> Unit
 ) {
-    val orientation = LocalContext.current.resources.configuration.orientation
+    val orientation = LocalConfiguration.current.orientation
 
     val lazyListState = rememberLazyListState()
 

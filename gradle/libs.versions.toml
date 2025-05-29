@@ -9,8 +9,8 @@ activityCompose = "1.10.1"
 composeBom = "2025.05.01"
 gradleCheckSum = "1.4.0"
 
-aboutLibraries = "11.6.3"
-accompanistPermissions = "0.37.0"
+aboutLibraries = "12.1.2"
+accompanistPermissions = "0.37.3"
 androidMaterial = "1.12.0"
 androidComposeAnimation = "1.8.2"
 androidComposeMaterial3 = "1.4.0-alpha15"
@@ -22,13 +22,12 @@ appacheCommonsCompress = "1.27.1"
 atilikaKuromoji = "0.9.0"
 composeLifecycle = "2.9.0"
 jetbrainsBioNpy = "0.3.5"
-kotlinxSerialization = "1.8.0"
-sqldelight = "2.0.2"
+kotlinxSerialization = "1.8.1"
+sqldelight = "2.1.0"
 timber = "5.0.1"
 materialIcons = "1.7.8"
 navigationCompose = "2.9.0"
 onnxRuntime = "1.22.0"
-onnxRuntimeExtensions = "0.13.0"
 okhttp = "4.12.0"
 
 [libraries]
@@ -68,7 +67,6 @@ squareup-okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref
 sqldelight-android = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
 onnxruntime = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version.ref = "onnxRuntime" }
-onnxruntime-extensions = { group = "com.microsoft.onnxruntime", name = "onnxruntime-extensions-android", version.ref = "onnxRuntimeExtensions" }
 
 [plugins]
 about-libraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibraries" }

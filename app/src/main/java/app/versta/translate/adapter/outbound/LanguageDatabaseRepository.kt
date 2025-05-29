@@ -92,10 +92,6 @@ class LanguageDatabaseRepository(
             return PivotPairModelFiles(null, mapLanguageModelDatabaseModelToLanguageModelFiles(output))
         }
 
-        if (languagePair.source !is Language) {
-            return null
-        }
-
         if (!pivotTranslation) {
             return null
         }

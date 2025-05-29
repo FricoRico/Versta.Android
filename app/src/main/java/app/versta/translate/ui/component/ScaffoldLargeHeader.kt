@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import app.versta.translate.ui.theme.spacing
 import kotlin.math.abs
 import kotlin.math.sqrt
+import androidx.compose.ui.platform.LocalConfiguration
 
 internal const val NESTED_SCROLL_VELOCITY_THRESHOLD = 128f
 
@@ -163,7 +164,7 @@ fun ScaffoldLargeHeader(
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     contentColor: Color = contentColorFor(containerColor),
 ) {
-    val orientation = LocalContext.current.resources.configuration.orientation
+    val orientation = LocalConfiguration.current.orientation
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val collapsedFraction = scrollBehavior.state.collapsedFraction

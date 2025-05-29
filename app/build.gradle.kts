@@ -28,13 +28,16 @@ sqldelight {
 
 aboutLibraries {
     offlineMode = true
-    duplicationMode = com.mikepenz.aboutlibraries.plugin.DuplicateMode.MERGE
+
+    library {
+        duplicationMode = com.mikepenz.aboutlibraries.plugin.DuplicateMode.MERGE
+    }
 }
 
 android {
     namespace = "app.versta.translate"
     compileSdk = 36
-    ndkVersion = "26.1.10909125"
+    ndkVersion = "28.1.13356709"
     buildToolsVersion = "36.0.0"
 
     defaultConfig {
@@ -78,11 +81,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -105,7 +108,7 @@ android {
     externalNativeBuild {
         cmake {
             path = file("native/jni/CMakeLists.txt")
-            version = "3.22.1"
+            version = "3.31.6"
         }
     }
 }
@@ -246,5 +249,5 @@ dependencies {
     implementation(libs.sqldelight.coroutines)
 
     implementation(libs.onnxruntime)
-    implementation(libs.onnxruntime.extensions)
+//    implementation(libs.onnxruntime.extensions)
 }

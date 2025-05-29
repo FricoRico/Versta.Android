@@ -47,6 +47,7 @@ import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.theme.spacing
+import androidx.compose.ui.platform.LocalConfiguration
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -54,7 +55,7 @@ import app.versta.translate.ui.theme.spacing
 fun About(
     navController: NavController, licenseViewModel: LicenseViewModel
 ) {
-    val orientation = LocalContext.current.resources.configuration.orientation
+    val orientation = LocalConfiguration.current.orientation
     val version = LocalContext.current.packageManager?.getPackageInfo(LocalContext.current.packageName, 0)?.versionName ?: "x.x.x"
 
     val hasLicense by licenseViewModel.hasLicense.collectAsStateWithLifecycle(true)

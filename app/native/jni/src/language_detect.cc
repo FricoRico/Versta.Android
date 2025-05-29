@@ -1,4 +1,5 @@
 #include <jni.h>
+#include <unordered_map>
 #include <compact_lang_det.h>
 
 struct DetectionResult {

@@ -2,7 +2,6 @@ package app.versta.translate.adapter.outbound
 
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
-import ai.onnxruntime.extensions.OrtxPackage
 import app.versta.translate.bridge.inference.BeamSearch
 import app.versta.translate.core.entity.LanguageModelInferenceFiles
 import app.versta.translate.core.entity.MarianDecoderInput
@@ -316,7 +315,6 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
             setIntraOpNumThreads(1)
             addXnnpack(mapOf("intra_op_num_threads" to threads.toString()))
             addConfigEntry("kOrtSessionOptionsConfigAllowIntraOpSpinning", "0")
-            registerCustomOpLibrary(OrtxPackage.getLibraryPath())
         }
 
         _encoderSession = ortEnvironment.createSession(readFileToByteBuffer(encoderFile), options)
