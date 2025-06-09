@@ -3,6 +3,7 @@ package app.versta.translate.core.model
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.versta.translate.adapter.outbound.AudioPlayer
+import app.versta.translate.adapter.outbound.JapaneseTransliterator
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.TextToSpeechInference
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceRepository
@@ -33,6 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
+import java.util.Locale
 import java.util.concurrent.LinkedBlockingQueue
 
 @OptIn(FlowPreview::class)
@@ -48,6 +50,7 @@ class TextToSpeechViewModel(
     val gender = textToSpeechPreferenceRepository.getGender().distinctUntilChanged()
     val threadCount = textToSpeechPreferenceRepository.getThreadCount().distinctUntilChanged()
 
+    private val _japaneseTransliterator = JapaneseTransliterator()
     private val _language = languagePreferenceRepository.getTargetLanguage().distinctUntilChanged()
     private val _textToSpeechModel = _language.filterNotNull().map { data ->
         voiceRepository.getVoiceModelsByLanguage(data)
@@ -135,9 +138,11 @@ class TextToSpeechViewModel(
     }
 
     private fun lowDefinitionSynthesize(text: String, language: Language) {
+        val transliterated = transliterate(text, language)
+
         _synthesizeScope.launch {
             ESpeakNG.getSession().setCallback(_speechCallback)
-            ESpeakNG.getSession().synthesize(text, language)
+            ESpeakNG.getSession().synthesize(transliterated, language)
         }
     }
 
@@ -201,6 +206,21 @@ class TextToSpeechViewModel(
     fun setThreadCount(count: Int): Job {
         return viewModelScope.launch {
             textToSpeechPreferenceRepository.setThreadCount(count)
+        }
+    }
+
+    /**
+     * Transliterate text using the appropriate transliterator. Currently only supports Japanese
+     * as it requires Kanji to Hiragana conversion as ESpeakNG does not support Kanji.
+     */
+    private fun transliterate(text: String, language: Language): String {
+        return when (language.locale) {
+            Locale.JAPANESE ->
+                _japaneseTransliterator.convertToFurigana(text)
+                    .replace("・", "")
+                    .replace("ー", "")
+
+            else -> text
         }
     }
 

@@ -1,13 +1,17 @@
 package app.versta.translate.adapter.outbound
 
+import android.content.Context
 import app.versta.translate.bridge.speech.ESpeakNG
+import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.entity.Language
+import app.versta.translate.ui.screen.TAG
+import timber.log.Timber
 import java.util.Locale
 
 private const val MAX_PHONEME_LENGTH = 512
 
-class StyleTextToSpeech2Tokenizer : TextToSpeechTokenizer {
-    private val _japaneseTransliterator = JapaneseTransliterator()
+class StyleTextToSpeech2Tokenizer(context: Context) : TextToSpeechTokenizer {
+    private val _openJTalk = OpenJTalk(context)
 
     /**
      * Helper function to split a string on a regex, but keep the delimiters
@@ -160,83 +164,80 @@ class StyleTextToSpeech2Tokenizer : TextToSpeechTokenizer {
     }
 
     /**
-     * Transliterate text using the appropriate transliterator. Currently only supports Japanese
-     * as it requires Kanji to Hiragana conversion as ESpeakNG does not support Kanji.
-     */
-    private fun transliterate(text: String, language: Language): String {
-        return when (language.locale) {
-            Locale.JAPANESE ->
-                _japaneseTransliterator.convertToFurigana(text)
-                    .replace("・", "")
-                    .replace("ー", "")
-
-            else -> text
-        }
-    }
-
-    /**
      * Phonemize text using the eSpeak-NG phonemizer
      */
     private fun phonemize(text: String, language: Language): List<String> {
-        val transliterated = transliterate(text, language)
-        val normalized = normalizeText(transliterated)
+        val normalized = normalizeText(text)
         val voice = voiceLanguage(language)
 
         return split(normalized).filter { !it.first }.map {
-            var phonemes = ESpeakNG.getSession().phonemize(it.second, voice)
-                .replace("\\([a-z]+\\)".toRegex(), "")
-                .replace("kəkˈoːɹoʊ".toRegex(), "kˈoʊkəɹoʊ")
-                .replace("kəkˈɔːɹəʊ".toRegex(), "kˈəʊkəɹəʊ")
-                .replace("ʲ".toRegex(), "j")
-                .replace("r".toRegex(), "ɹ")
-                .replace("x".toRegex(), "k")
-                .replace("ɬ".toRegex(), "l")
-                .replace("-".toRegex(), "—")
-                .replace("(?<=[a-zɹː])(?=hˈʌndɹɪd)".toRegex(), " ")
-                .replace(" z(?=[;:,.!?¡¿—…\"«»“” ]|\$)\\)".toRegex(), "z")
+            if (language.locale == Locale.JAPANESE) {
+                _openJTalk.phonemize(it.second)
+                    .replace("G".toRegex(), "gw")
+                    .replace("j".toRegex(), "y")
+                    .replace("K".toRegex(), "kw")
+                    .replace("ç".toRegex(), "hy")
+                    .replace("ƫ".toRegex(), "ty")
+                    .replace("ɕ".toRegex(), "sh")
+                    .replace("ɲ".toRegex(), "ny")
+                    .replace("ʥ".toRegex(), "j")
+                    .replace("ʦ".toRegex(), "ts")
+                    .replace("ʨ".toRegex(), "ch")
+                    .replace("ᶀ".toRegex(), "by")
+                    .replace("ᶁ".toRegex(), "dy")
+                    .replace("ᶃ".toRegex(), "gy")
+                    .replace("ᶄ".toRegex(), "ky")
+                    .replace("ᶆ".toRegex(), "my")
+                    .replace("ᶈ".toRegex(), "py")
+                    .replace("ᶉ".toRegex(), "ry")
+                    .trim()
+            } else {
+                var phonemes = ESpeakNG.getSession().phoneme(it.second, voice)
+                    .replace("\\([a-z]+\\)".toRegex(), "")
+                    .replace("kəkˈoːɹoʊ".toRegex(), "kˈoʊkəɹoʊ")
+                    .replace("kəkˈɔːɹəʊ".toRegex(), "kˈəʊkəɹəʊ")
+                    .replace("ʲ".toRegex(), "j")
+                    .replace("r".toRegex(), "ɹ")
+                    .replace("x".toRegex(), "k")
+                    .replace("ɬ".toRegex(), "l")
+                    .replace("-".toRegex(), "—")
+                    .replace("(?<=[a-zɹː])(?=hˈʌndɹɪd)".toRegex(), " ")
+                    .replace(" z(?=[;:,.!?¡¿—…\"«»“” ]|\$)\\)".toRegex(), "z")
 
-            phonemes = when (language.locale) {
-                Locale.FRENCH ->
-                    phonemes
-                        .replace("(.)̃".toRegex()) {
+                phonemes = when (language.locale) {
+                    Locale.FRENCH ->
+                        phonemes
+                            .replace("(.)̃".toRegex()) {
+                                it.groupValues.last()
+                            }
+
+                    Locale.ITALIAN ->
+                        phonemes
+                            .replace("(.)̪".toRegex()) {
+                                it.groupValues.last()
+                            }
+
+                    Locale.CHINESE ->
+                        phonemes.replace("[0-9]".toRegex(), "")
+                            .replace("j".toRegex(), "ʝ")
+                            .replace("(.)̪".toRegex()) {
+                                it.groupValues.last()
+                            }
+
+                    Locale.forLanguageTag("pt") ->
+                        phonemes.replace("(.)̃".toRegex()) {
                             it.groupValues.last()
                         }
 
-                Locale.ITALIAN ->
-                    phonemes
-                        .replace("(.)̪".toRegex()) {
-                            it.groupValues.last()
-                        }
+                    Locale.ENGLISH ->
+                        phonemes
+                            .replace("(?<=nˈaɪn)ti(?!ː)".toRegex(), "di")
 
-                Locale.CHINESE ->
-                    phonemes.replace("[0-9]".toRegex(), "")
-                        .replace("j".toRegex(), "ʝ")
-                        .replace("(.)̪".toRegex()) {
-                            it.groupValues.last()
-                        }
+                    else -> phonemes
+                }
 
-                Locale.forLanguageTag("pt") ->
-                    phonemes.replace("(.)̃".toRegex()) {
-                        it.groupValues.last()
-                    }
-
-                Locale.JAPANESE ->
-                    phonemes.replace("ä".toRegex(), "a")
-                        .replace("ᵝ".toRegex(), "ʷ")
-                        .replace("ɽ".toRegex(), "ɹ")
-                        .replace("ũ".toRegex(), "u")
-                        .replace("(.)̞".toRegex()) {
-                            it.groupValues.last()
-                        }
-
-                Locale.ENGLISH ->
-                    phonemes
-                        .replace("(?<=nˈaɪn)ti(?!ː)".toRegex(), "di")
-
-                else -> phonemes
+                phonemes.trim()
             }
-
-            phonemes.trim()
         }
     }
 
@@ -259,6 +260,8 @@ class StyleTextToSpeech2Tokenizer : TextToSpeechTokenizer {
         try {
             val phonemes = phonemize(text, language)
 
+            Timber.tag(TAG).d("phonemes: $phonemes")
+
             return phonemes.map {
                 if (it.length > MAX_PHONEME_LENGTH) {
                     throw IllegalArgumentException(
@@ -268,9 +271,7 @@ class StyleTextToSpeech2Tokenizer : TextToSpeechTokenizer {
 
                 _pauzeToken + it.map { char ->
                     val token = _vocabulary[char.toString()]
-                    if (token == null) {
-                        throw IllegalArgumentException("Unknown symbol: $char")
-                    }
+                        ?: throw IllegalArgumentException("Unknown symbol: $char")
                     token.toLong()
                 }.toLongArray() + _pauzeToken
             }

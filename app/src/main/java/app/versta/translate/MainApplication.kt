@@ -206,7 +206,7 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
             validator
         )
 
-        StyleTextToSpeech2Tokenizer()
+        StyleTextToSpeech2Tokenizer(context)
     }
 
     override val textToSpeechInference: TextToSpeechInference by lazy {

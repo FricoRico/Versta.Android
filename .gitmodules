@@ -9,3 +9,6 @@
 [submodule "app/native/jni/third_party/cld2"]
 	path = app/native/jni/third_party/cld2
 	url = https://github.com/CLD2Owners/cld2.git
+[submodule "app/native/jni/third_party/open-jtalk"]
+	path = app/native/jni/third_party/open-jtalk
+	url = https://github.com/r9y9/open_jtalk.git

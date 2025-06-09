@@ -80,7 +80,7 @@ Java_app_versta_translate_bridge_speech_ESpeakNG_terminate(JNIEnv *env, jobject)
 }
 
 JNIEXPORT jstring JNICALL
-Java_app_versta_translate_bridge_speech_ESpeakNG_phenomize(JNIEnv *env, jobject, jstring text,
+Java_app_versta_translate_bridge_speech_ESpeakNG_phonemize(JNIEnv *env, jobject, jstring text,
                                                            jstring language) {
     const char *nativeText = env->GetStringUTFChars(text, nullptr);
     const char *nativeLanguage = env->GetStringUTFChars(language, nullptr);

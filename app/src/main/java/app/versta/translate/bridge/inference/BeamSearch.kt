@@ -1,7 +1,6 @@
 package app.versta.translate.bridge.inference
 
 import ai.onnxruntime.OnnxTensor
-import android.util.Log
 import app.versta.translate.utils.TensorUtils
 import timber.log.Timber
 import java.nio.ByteBuffer
@@ -13,12 +12,12 @@ class BeamSearch(
     padId: Long,
     eosId: Long
 ) : AutoCloseable {
-    private var handle: Long
+    private var _handle: Long
 
     init {
-        handle = construct(beamSize, minP, repetitionPenalty / 10, padId, eosId)
+        _handle = construct(beamSize, minP, repetitionPenalty / 10, padId, eosId)
 
-        if (handle == 0L) {
+        if (_handle == 0L) {
             throw RuntimeException("Failed to initialize BeamSearch")
         }
     }
@@ -29,7 +28,7 @@ class BeamSearch(
         val size = tensor.info.shape[2].toInt()
 
         return search(
-            handle = handle,
+            handle = _handle,
             apiHandle = ortApiHandle,
             tensorHandle = tensorHandle,
             size = size
@@ -42,29 +41,29 @@ class BeamSearch(
         val ortApiHandle = TensorUtils.getOrtApiHandle()
         val tensorHandle = TensorUtils.getNativeHandle(tensor)
 
-        return transposeBuffer(handle, ortApiHandle, tensorHandle)
+        return transposeBuffer(_handle, ortApiHandle, tensorHandle)
     }
 
     fun lastTokens(): Array<LongArray> {
-        return lastTokens(handle)
+        return lastTokens(_handle)
     }
 
     fun complete(completeOnRepeat: Boolean): Boolean {
-        return complete(handle, completeOnRepeat)
+        return complete(_handle, completeOnRepeat)
     }
 
     fun best(): LongArray {
-        return best(handle)
+        return best(_handle)
     }
 
     override fun close() {
-        if (handle == 0L) {
+        if (_handle == 0L) {
             Timber.tag(TAG).w("Already closed")
             return
         }
 
-        close(handle)
-        handle = 0L
+        close(_handle)
+        _handle = 0L
     }
 
     private external fun construct(beamSize: Int, minP: Float, repetitionPenalty: Float, padId: Long, eosId: Long): Long

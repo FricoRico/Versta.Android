@@ -124,6 +124,10 @@ tasks.apply {
             assert(layout.buildDirectory.file("generated/espeak-ng-data/phondata-manifest").isPresent)
             assert(layout.buildDirectory.file("generated/espeak-ng-data/phonindex").isPresent)
             assert(layout.buildDirectory.file("generated/espeak-ng-data/phontab").isPresent)
+            assert(layout.buildDirectory.file("generated/open-jtalk-data/char.bin").isPresent)
+            assert(layout.buildDirectory.file("generated/open-jtalk-data/matrix.bin").isPresent)
+            assert(layout.buildDirectory.file("generated/open-jtalk-data/sys.dic").isPresent)
+            assert(layout.buildDirectory.file("generated/open-jtalk-data/unk.dic").isPresent)
         }
     }
 
@@ -137,6 +141,10 @@ tasks.apply {
 
         from(layout.buildDirectory.dir("generated/espeak-ng-data")) {
             into("espeak-ng-data")
+        }
+
+        from(layout.buildDirectory.dir("generated/open-jtalk-data")) {
+            into("open-jtalk-data")
         }
     }
 

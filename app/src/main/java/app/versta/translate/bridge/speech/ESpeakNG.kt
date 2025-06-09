@@ -31,12 +31,12 @@ class ESpeakNG private constructor() : AutoCloseable {
         _initialized = false
     }
 
-    fun phonemize(text: String, language: String): String {
+    fun phoneme(text: String, language: String): String {
         if (!_initialized) {
             throw IllegalStateException("Not initialized")
         }
 
-        return phenomize(text, language)
+        return phonemize(text, language)
     }
 
     fun synthesize(text: String, language: Language) {
@@ -75,7 +75,7 @@ class ESpeakNG private constructor() : AutoCloseable {
 
     private external fun construct(path: String)
     private external fun terminate()
-    private external fun phenomize(text: String, language: String): String
+    private external fun phonemize(text: String, language: String): String
     private external fun synthesize(text: String, language: String)
     private external fun cancel()
 
