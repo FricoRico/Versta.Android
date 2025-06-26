@@ -14,6 +14,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.adapter.outbound.AudioMockPlayer
+import app.versta.translate.adapter.outbound.DataMemoryRepository
+import app.versta.translate.adapter.outbound.ExternalDataMemoryRepository
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
@@ -24,14 +26,14 @@ import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryReposit
 import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
+import app.versta.translate.bridge.speech.ESpeakNG
+import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LoadingProgress
 import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.theme.spacing
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.sample
 
 @Composable
 fun ModelLoadingProgressDialog(
@@ -91,12 +93,17 @@ fun ModelLoadingProgressDialogPreview() {
             translationViewModel = translationViewModel
         ),
         textToSpeechViewModel = TextToSpeechViewModel(
+            context = LocalContext.current,
+            espeakNG = ESpeakNG(),
+            openJTalk = OpenJTalk(),
             tokenizer = TextToSpeechMockTokenizer(),
             model = TextToSpeechMockInference(),
             audioPlayer = AudioMockPlayer(),
+            dataRepository = DataMemoryRepository(),
             voiceRepository = VoiceMemoryRepository(),
             textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalDataRepository = ExternalDataMemoryRepository(),
         )
     )
 }

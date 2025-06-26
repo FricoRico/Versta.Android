@@ -86,13 +86,13 @@ fun LanguageSuggestionDrawer(
     }
 
     fun onDownload() {
-        languageViewModel.queueDownload(context, language) {
+        languageViewModel.queueDownload(language) {
             onComplete()
         }
     }
 
     fun onCancel() {
-        languageViewModel.cancelDownload(context)
+        languageViewModel.cancelDownload()
     }
 
     ModalBottomSheet(

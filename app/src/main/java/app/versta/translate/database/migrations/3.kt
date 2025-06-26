@@ -19,7 +19,7 @@ object Migration3 : Migration {
                     val path = data.path.toPath().toNioPath()
 
                     val model = VoiceWithModelFiles.load(data.id, path)
-                    val voices = model.voices.map {
+                    val voices = model?.voices?.map {
                         val file = it.fileName.toString()
 
                         val language = when {
@@ -49,7 +49,7 @@ object Migration3 : Migration {
                     }
 
                     database.voices.transaction {
-                        voices.forEach {
+                        voices?.forEach {
                             database.voices.insertOrIgnore(
                                 modelId = it.modelId,
                                 language = it.language,

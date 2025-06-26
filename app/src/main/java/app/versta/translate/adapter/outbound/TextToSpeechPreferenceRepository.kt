@@ -8,6 +8,17 @@ internal val DEFAULT_VOICE_GENDER = VoiceGender.Female
 
 interface TextToSpeechPreferenceRepository {
     /**
+     * Gets whether text-to-speech is enabled.
+     */
+    fun getTextToSpeechEnabled(): Flow<Boolean>
+
+    /**
+     * Sets whether text-to-speech is enabled.
+     * @param enabled True if text-to-speech is enabled, false otherwise.
+     */
+    suspend fun setTextToSpeechEnabled(enabled: Boolean)
+
+    /**
      * Gets the speed of the speech.
      */
     fun getSpeed(): Flow<Float>

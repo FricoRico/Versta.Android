@@ -5,9 +5,25 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 class TextToSpeechPreferenceMemoryRepository : TextToSpeechPreferenceRepository {
+    private var _enabled = false
     private var _speed = DEFAULT_SPEED
     private var _gender = DEFAULT_VOICE_GENDER
     private var _threadCount = Runtime.getRuntime().availableProcessors()
+
+    /**
+     * Gets whether text-to-speech is enabled.
+     */
+    override fun getTextToSpeechEnabled(): Flow<Boolean> {
+        return flowOf(_enabled)
+    }
+
+    /**
+     * Sets whether text-to-speech is enabled.
+     * @param enabled True if text-to-speech is enabled, false otherwise.
+     */
+    override suspend fun setTextToSpeechEnabled(enabled: Boolean) {
+        _enabled = enabled
+    }
 
     /**
      * Gets the speed of the speech.

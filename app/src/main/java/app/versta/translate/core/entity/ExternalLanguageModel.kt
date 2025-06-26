@@ -1,5 +1,6 @@
 package app.versta.translate.core.entity
 
+import app.versta.translate.core.model.DownloadTask
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.net.URI
@@ -95,8 +96,30 @@ data class ExternalLanguageModels(
 )
 
 data class ExternalLanguageDownloadTask(
-    val id: UUID = UUID.randomUUID(),
+    override val id: UUID = UUID.randomUUID(),
     val model: ExternalLanguagePairDefinition,
-    var status: DownloadStatus,
+    override val status: DownloadStatus,
     val onComplete: (ExternalLanguagePairDefinition) -> Unit = {},
-)
+) : DownloadTask {
+
+    override fun copyWithStatus(status: DownloadStatus): DownloadTask {
+        return copy(status = status)
+    }
+
+    override fun getWorkData(): Map<String, Any> {
+        return mapOf(
+            "taskId" to id.toString(),
+            "name" to "${model.pair.source.name} - ${model.pair.target.name}",
+            "uri" to model.bundleUri.toString(),
+            "checksum" to model.checksumUri.toString()
+        )
+    }
+
+    override fun getName(): String {
+        return "${model.pair.source.name} - ${model.pair.target.name}"
+    }
+
+    override fun onComplete() {
+        onComplete(model)
+    }
+}

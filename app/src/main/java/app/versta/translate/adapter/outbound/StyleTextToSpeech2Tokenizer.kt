@@ -10,9 +10,10 @@ import java.util.Locale
 
 private const val MAX_PHONEME_LENGTH = 512
 
-class StyleTextToSpeech2Tokenizer(context: Context) : TextToSpeechTokenizer {
-    private val _openJTalk = OpenJTalk(context)
-
+class StyleTextToSpeech2Tokenizer(
+    private val eSpeakNG: ESpeakNG,
+    private val openJTalk: OpenJTalk,
+) : TextToSpeechTokenizer {
     /**
      * Helper function to split a string on a regex, but keep the delimiters
      */
@@ -172,7 +173,11 @@ class StyleTextToSpeech2Tokenizer(context: Context) : TextToSpeechTokenizer {
 
         return split(normalized).filter { !it.first }.map {
             if (language.locale == Locale.JAPANESE) {
-                _openJTalk.phonemize(it.second)
+                if (!openJTalk.isReady()) {
+                    throw IllegalStateException("OpenJTalk is not ready")
+                }
+
+                openJTalk.phonemize(it.second)
                     .replace("G".toRegex(), "gw")
                     .replace("j".toRegex(), "y")
                     .replace("K".toRegex(), "kw")
@@ -192,7 +197,11 @@ class StyleTextToSpeech2Tokenizer(context: Context) : TextToSpeechTokenizer {
                     .replace("ᶉ".toRegex(), "ry")
                     .trim()
             } else {
-                var phonemes = ESpeakNG.getSession().phoneme(it.second, voice)
+                if (!eSpeakNG.isReady()) {
+                    throw IllegalStateException("eSpeakNG is not ready")
+                }
+
+                var phonemes = eSpeakNG.phoneme(it.second, voice)
                     .replace("\\([a-z]+\\)".toRegex(), "")
                     .replace("kəkˈoːɹoʊ".toRegex(), "kˈoʊkəɹoʊ")
                     .replace("kəkˈɔːɹəʊ".toRegex(), "kˈəʊkəɹəʊ")
@@ -245,10 +254,10 @@ class StyleTextToSpeech2Tokenizer(context: Context) : TextToSpeechTokenizer {
         language: Language
     ): String {
         return when (language) {
-            Language.fromIsoCode("en") -> return "en-US"
-            Language.fromIsoCode("pt") -> return "pt-BR"
-            Language.fromIsoCode("zh") -> return "cmn"
-            else -> return language.isoCode
+            Language.fromIsoCode("en") -> "en-US"
+            Language.fromIsoCode("pt") -> "pt-BR"
+            Language.fromIsoCode("zh") -> "cmn"
+            else -> language.isoCode
         }
     }
 
@@ -259,8 +268,6 @@ class StyleTextToSpeech2Tokenizer(context: Context) : TextToSpeechTokenizer {
     ): List<LongArray> {
         try {
             val phonemes = phonemize(text, language)
-
-            Timber.tag(TAG).d("phonemes: $phonemes")
 
             return phonemes.map {
                 if (it.length > MAX_PHONEME_LENGTH) {

@@ -68,6 +68,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.AudioMockPlayer
+import app.versta.translate.adapter.outbound.DataMemoryRepository
+import app.versta.translate.adapter.outbound.ExternalDataMemoryRepository
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
@@ -78,6 +80,8 @@ import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
+import app.versta.translate.bridge.speech.ESpeakNG
+import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.entity.AutoDetectLanguage
 import app.versta.translate.core.entity.TextToSpeechSynthesisState
 import app.versta.translate.core.entity.WritingDirection
@@ -94,7 +98,6 @@ import app.versta.translate.ui.component.TextToSpeechButton
 import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import kotlin.math.max
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -133,6 +136,7 @@ fun TextTranslation(
         TextToSpeechSynthesisState.Idle
     )
 
+    val textToSpeechAvailable by textToSpeechViewModel.textToSpeechReady.collectAsStateWithLifecycle(false)
     val textToSpeechVoiceAvailable by textToSpeechViewModel.voiceAvailable.collectAsStateWithLifecycle(
         false
     )
@@ -384,6 +388,7 @@ fun TextTranslation(
             TextTranslationOutputButtonRow(
                 translationInProgress = translationInProgress,
                 textToSpeechSynthesisState = textToSpeechSynthesisState,
+                textToSpeechAvailable = textToSpeechAvailable,
                 textToSpeechVoiceAvailable = textToSpeechVoiceAvailable,
                 modifier = Modifier
                     .onGloballyPositioned {
@@ -567,6 +572,7 @@ fun TextTranslationOutputButtonRow(
     modifier: Modifier = Modifier,
     translationInProgress: Boolean,
     textToSpeechSynthesisState: TextToSpeechSynthesisState,
+    textToSpeechAvailable: Boolean,
     textToSpeechVoiceAvailable: Boolean,
     onTextToSpeech: () -> Unit,
     onCancelTextToSpeech: () -> Unit,
@@ -586,6 +592,7 @@ fun TextTranslationOutputButtonRow(
             TextToSpeechButton(
                 enabled = !translationInProgress,
                 textToSpeechSynthesisState = textToSpeechSynthesisState,
+                textToSpeechAvailable = textToSpeechAvailable,
                 textToSpeechVoiceAvailable = textToSpeechVoiceAvailable,
                 onTextToSpeech = onTextToSpeech,
                 onCancelTextToSpeech = onCancelTextToSpeech,
@@ -668,12 +675,17 @@ fun TextTranslationPreview() {
         languageViewModel = languageViewModel,
         translationViewModel = translationViewModel,
         textToSpeechViewModel = TextToSpeechViewModel(
+            context = LocalContext.current,
+            espeakNG = ESpeakNG(),
+            openJTalk = OpenJTalk(),
             tokenizer = TextToSpeechMockTokenizer(),
             model = TextToSpeechMockInference(),
             audioPlayer = AudioMockPlayer(),
+            dataRepository = DataMemoryRepository(),
             voiceRepository = VoiceMemoryRepository(),
             textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalDataRepository = ExternalDataMemoryRepository(),
         )
     )
 }

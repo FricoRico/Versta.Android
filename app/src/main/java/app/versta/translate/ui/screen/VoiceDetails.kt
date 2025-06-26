@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,7 +40,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
-import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.core.entity.ExternalVoiceLanguageVoiceGenders
@@ -78,21 +78,20 @@ fun VoiceDetails(
         return
     }
 
-    val voiceLanguages = model!!.voices
-        .groupBy { it.language }
-        .map { (language, voices) ->
+    val voiceLanguages = model?.voices
+        ?.groupBy { it.language }
+        ?.map { (language, voices) ->
             ExternalVoiceLanguageVoiceGenders(
                 language = Language.fromIsoCode(language),
                 genders = voices.map { it.gender }
             )
-        }
+        } ?: emptyList()
     val voiceOptions = mapOf(
         VoiceGender.Female to stringResource(R.string.text_to_speech_settings_voice_gender_female),
         VoiceGender.Male to stringResource(R.string.text_to_speech_settings_voice_gender_male)
     )
 
-    val context = LocalContext.current
-    val orientation = context.resources.configuration.orientation
+    val orientation = LocalConfiguration.current.orientation
 
     val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
         MaterialTheme.spacing.medium

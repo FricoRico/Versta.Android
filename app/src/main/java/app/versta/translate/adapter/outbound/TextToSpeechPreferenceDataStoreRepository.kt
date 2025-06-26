@@ -11,6 +11,25 @@ import kotlinx.coroutines.flow.map
 class TextToSpeechPreferenceDataStoreRepository(
     private val dataStore: DataStore<Preferences>
 ) : TextToSpeechPreferenceRepository {
+    /**
+     * Gets whether text-to-speech is enabled.
+     */
+    override fun getTextToSpeechEnabled(): Flow<Boolean> {
+        return dataStore.data.map { preferences ->
+            preferences[SPEECH_ENABLED_KEY].toBoolean()
+        }
+    }
+
+    /**
+     * Sets whether text-to-speech is enabled.
+     * @param enabled True if text-to-speech is enabled, false otherwise.
+     */
+    override suspend fun setTextToSpeechEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SPEECH_ENABLED_KEY] = enabled.toString()
+        }
+    }
+
 
     /**
      * Gets the speed of the speech.
@@ -75,6 +94,7 @@ class TextToSpeechPreferenceDataStoreRepository(
     }
 
     companion object {
+        private val SPEECH_ENABLED_KEY = stringPreferencesKey("speech_enabled")
         private val SPEED_KEY = stringPreferencesKey("speech_speed")
         private val VOICE_GENDER_KEY = stringPreferencesKey("speech_voice_gender")
         private val THREAD_COUNT_KEY = stringPreferencesKey("speech_thread_count")

@@ -3,7 +3,6 @@ package app.versta.translate.core.entity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.nio.file.Path
-import kotlin.collections.isNotEmpty
 import kotlin.io.path.exists
 
 enum class VoiceModelArchitecture(val value: String) {
@@ -14,13 +13,12 @@ enum class VoiceModelArchitecture(val value: String) {
 @Serializable
 class VoiceModelMetadata(
     val version: String = "",
-    @SerialName("base_model") val baseModel: String,
-    val architectures: List<VoiceModelArchitecture>,
+    @SerialName("base_model") val baseModel: String = "",
+    val architectures: List<VoiceModelArchitecture> = emptyList(),
     val files: VoiceModelFilesMetadata,
-    var root: Path? = null
+    var root: Path? = null,
 ) {
-    fun isValid() =
-        baseModel.isNotBlank() && architectures.isNotEmpty() && (root != null && files.isValid(root!!)) && root?.isAbsolute == true
+    fun isValid() = baseModel.isNotBlank() && architectures.isNotEmpty() && (root != null && files.isValid(root!!)) && root?.isAbsolute == true
 
     fun setRootPath(path: Path): VoiceModelMetadata {
         root = path
@@ -30,24 +28,15 @@ class VoiceModelMetadata(
 }
 
 @Serializable
-data class VoiceMetadata(
-    val directory: String,
-)
-
-@Serializable
-class VoiceBundleMetadata(
-    val id: String,
-    val version: String,
-    val metadata: VoiceMetadata,
-) {
-    fun isValid() = metadata.directory.isNotEmpty()
-}
-
-@Serializable
 data class VoiceModelFilesMetadata(
-    val inference: VoiceInferenceFilesMetadata, val voices: List<String>
+    val inference: VoiceInferenceFilesMetadata,
+    val tokenizer: VoiceTokenizerFilesMetadata,
+    val voices: List<String> = emptyList()
 ) {
-    fun isValid(path: Path) = inference.isValid(path) && voices.all { path.resolve(it).exists() }
+    fun isValid(path: Path) =
+        inference.isValid(path) && tokenizer.isValid(path) && voices.all {
+            path.resolve(it).exists()
+        }
 }
 
 @Serializable
@@ -55,6 +44,27 @@ data class VoiceInferenceFilesMetadata(
     val model: String,
 ) {
     fun isValid(path: Path) = path.resolve(model).exists()
+}
+
+@Serializable
+data class VoiceTokenizerFilesMetadata(
+    val vocabulary: String,
+) {
+    fun isValid(path: Path) = path.resolve(vocabulary).exists()
+}
+
+@Serializable
+data class VoiceMetadataFile(
+    val directory: String,
+)
+
+@Serializable
+class VoiceBundleMetadata(
+    val id: String,
+    val version: String,
+    val metadata: VoiceMetadataFile,
+) {
+    fun isValid() = metadata.directory.isNotEmpty()
 }
 
 @Serializable

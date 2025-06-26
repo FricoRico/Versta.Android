@@ -24,12 +24,12 @@ internal const val OFFSET_SPEED = 0.9f
 const val MAX_TOKEN_LENGTH = 509
 const val STYLE_DIM = 256
 
-class KokoroInference(private val ortEnvironment: OrtEnvironment): TextToSpeechInference {
-    private var kokoroSession: OrtSession? = null
-    private var kokoroVoice: FloatArray? = null
+class StyleTextToSpeechInference(private val ortEnvironment: OrtEnvironment): TextToSpeechInference {
+    private var session: OrtSession? = null
+    private var voice: FloatArray? = null
 
     override fun synthesize(tokens: LongArray, speed: Float): Waveform {
-        if (kokoroSession == null) {
+        if (session == null) {
             throw IllegalStateException("Session is not loaded")
         }
 
@@ -44,7 +44,7 @@ class KokoroInference(private val ortEnvironment: OrtEnvironment): TextToSpeechI
 
         try {
             val inputs = styleTextToSpeech2Input.get()
-            val output = styleTextToSpeech2Output.parse(kokoroSession!!.run(inputs))
+            val output = styleTextToSpeech2Output.parse(session!!.run(inputs))
 
             return output ?: throw IllegalStateException("Waveform output is null")
         } catch (e: Exception) {
@@ -56,21 +56,21 @@ class KokoroInference(private val ortEnvironment: OrtEnvironment): TextToSpeechI
         }
     }
 
-    override fun setVoice(file: Path?) {
-        if (file == null) {
-            kokoroVoice = null
+    override fun setVoice(path: Path?) {
+        if (path == null) {
+            voice = null
             return
         }
 
-        kokoroVoice = NpyFile.read(file).asFloatArray()
+        voice = NpyFile.read(path).asFloatArray()
     }
 
     override fun clearVoice() {
-        kokoroVoice = null
+        voice = null
     }
 
     private fun getStyle(tokens: LongArray): FloatArray {
-        if (kokoroVoice == null) {
+        if (voice == null) {
             throw IllegalStateException("Voice style is not loaded")
         }
 
@@ -78,7 +78,7 @@ class KokoroInference(private val ortEnvironment: OrtEnvironment): TextToSpeechI
         val styleArray = FloatArray(STYLE_DIM)
 
         for (i in 0 until STYLE_DIM) {
-            styleArray[i] = kokoroVoice!![length * STYLE_DIM + i]
+            styleArray[i] = voice!![length * STYLE_DIM + i]
         }
 
         return styleArray
@@ -100,14 +100,14 @@ class KokoroInference(private val ortEnvironment: OrtEnvironment): TextToSpeechI
             addConfigEntry("kOrtSessionOptionsConfigAllowIntraOpSpinning", "0")
         }
 
-        kokoroSession = ortEnvironment.createSession(readFileToByteBuffer(modelFile), options)
+        session = ortEnvironment.createSession(readFileToByteBuffer(modelFile), options)
     }
 
     override fun close() {
-        kokoroSession?.close()
+        session?.close()
 
-        kokoroSession = null
-        kokoroVoice = null
+        session = null
+        voice = null
     }
 
 
@@ -121,6 +121,6 @@ class KokoroInference(private val ortEnvironment: OrtEnvironment): TextToSpeechI
     }
 
     companion object {
-        private val TAG = KokoroInference::class.java.simpleName
+        private val TAG = StyleTextToSpeechInference::class.java.simpleName
     }
 }

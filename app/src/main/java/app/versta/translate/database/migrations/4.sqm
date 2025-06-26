@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS Data (
+    id TEXT NOT NULL PRIMARY KEY,
+    type TEXT NOT NULL,
+    path TEXT NOT NULL,
+    version TEXT NOT NULL
+);

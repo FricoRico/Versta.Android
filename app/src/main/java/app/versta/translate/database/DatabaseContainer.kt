@@ -6,6 +6,7 @@ import app.cash.sqldelight.TransactionWithReturn
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import app.versta.translate.database.migrations.Migration3
+import app.versta.translate.database.migrations.Migration4
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.app.versta.translate.database.sqldelight.LanguageModel
@@ -38,8 +39,10 @@ class DatabaseContainer(
 
     private val _migrations = listOf(
         Migration3,
+        Migration4
     )
 
+    val data = _database.dataQueries
     val languages = _database.languageQueries
     val languageModels = _database.languageModelQueries
     val voices = _database.voiceQueries
@@ -51,7 +54,11 @@ class DatabaseContainer(
 
     private fun runMigrations() {
         _migrations.forEach { migration ->
-            migration.migrate(this)
+            try {
+                migration.migrate(this)
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Migration failed: ${migration::class.java.simpleName}")
+            }
         }
     }
 

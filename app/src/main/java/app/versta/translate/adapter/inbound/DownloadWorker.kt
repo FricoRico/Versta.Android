@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkManager
@@ -30,12 +29,11 @@ internal data class DownloadQueue(
     val checksum: URI,
 )
 
-abstract class DownloadWorker(context: Context, params: WorkerParameters) :
+abstract class DownloadWorker(private val context: Context, params: WorkerParameters) :
     CoroutineWorker(context, params) {
     protected open val downloadStatusIntent: Intent? = null
 
     private val _workManager = WorkManager.getInstance(context)
-    private val _broadcastManager = LocalBroadcastManager.getInstance(context)
 
     private var _previousProgress = 0
     private val _notification =
@@ -149,10 +147,10 @@ abstract class DownloadWorker(context: Context, params: WorkerParameters) :
             return
         }
 
-        downloadStatusIntent!!.putExtra("taskId", taskId.toString())
-        downloadStatusIntent!!.putExtra("status", status)
+        downloadStatusIntent?.putExtra("taskId", taskId.toString())
+        downloadStatusIntent?.putExtra("status", status)
 
-        _broadcastManager.sendBroadcast(downloadStatusIntent!!)
+        context.sendBroadcast(downloadStatusIntent)
     }
 
     private fun createForegroundInfo(name: String?, progress: Int = 0): ForegroundInfo {
@@ -194,7 +192,7 @@ abstract class DownloadWorker(context: Context, params: WorkerParameters) :
         private var _downloading = false
         private val _queue: Queue<DownloadQueue> = ArrayDeque()
 
-        internal val _serializer = Json { ignoreUnknownKeys = true }
+        internal val _serializer = Json { ignoreUnknownKeys = true; classDiscriminator = "type" }
 
         private val TAG = DownloadWorker::class.java.simpleName
     }

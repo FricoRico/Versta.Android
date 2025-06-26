@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -62,7 +63,7 @@ fun VoicesSettings(
 ) {
     val context = LocalContext.current
 
-    val orientation = context.resources.configuration.orientation
+    val orientation = LocalConfiguration.current.orientation
 
     val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
         MaterialTheme.spacing.medium
@@ -70,29 +71,29 @@ fun VoicesSettings(
         MaterialTheme.spacing.small
     }
 
-    val languageModels by voiceViewModel.voicesByState.collectAsStateWithLifecycle(
+    val voiceModels by voiceViewModel.voiceByState.collectAsStateWithLifecycle(
         ExternalVoiceModels()
     )
     val downloadTasks by voiceViewModel.downloadTasks.collectAsStateWithLifecycle()
 
     var voiceToBeDeleted by remember { mutableStateOf<ExternalVoiceModelDefinition?>(null) }
 
-    val queuedTasks = (languageModels.updates + languageModels.available).filter { model ->
+    val queuedTasks = (voiceModels.updates + voiceModels.available).filter { model ->
         downloadTasks.any { it.model == model }
     }
-    val filteredUpdates = languageModels.updates.filterNot { model ->
+    val filteredUpdates = voiceModels.updates.filterNot { model ->
         downloadTasks.any { it.model == model }
     }
-    val filteredAvailable = languageModels.available.filterNot { model ->
+    val filteredAvailable = voiceModels.available.filterNot { model ->
         downloadTasks.any { it.model == model }
     }
 
     fun onDownload(model: ExternalVoiceModelDefinition) {
-        voiceViewModel.queueDownload(context, model)
+        voiceViewModel.queueDownload(model)
     }
 
     fun onCancel() {
-        voiceViewModel.cancelDownload(context)
+        voiceViewModel.cancelDownload()
     }
 
     fun onClick(model: ExternalVoiceModelDefinition) {
@@ -149,7 +150,7 @@ fun VoicesSettings(
                 )
 
                 Voices(
-                    voices = languageModels.installed,
+                    voices = voiceModels.installed,
                     downloadTasks = downloadTasks,
                     header = { size ->
                         SettingsHeaderItem(

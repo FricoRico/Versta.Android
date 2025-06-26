@@ -1,38 +1,50 @@
 package app.versta.translate.bridge.speech
 
-import android.content.Context
-import app.versta.translate.R
-import app.versta.translate.adapter.inbound.CompressedFileExtractor
-import app.versta.translate.adapter.inbound.FileHashValidator
 import app.versta.translate.core.entity.Language
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import timber.log.Timber
+import java.nio.file.Path
 import kotlin.io.path.pathString
-
-const val EXTERNAL_DATA_DIR = "external-data"
-const val EXTERNAL_DATA_HASH_FILE = "external-data.sha256"
-const val ESPEAK_NG_DATA_DIR = "espeak-ng-data"
 
 interface SynthReadyCallback {
     fun onSynthDataReady(audioData: ByteArray)
     fun onSynthDataComplete()
 }
 
-class ESpeakNG private constructor() : AutoCloseable {
+class ESpeakNG() : AutoCloseable {
     private var _callback: SynthReadyCallback? = null
-    private var _initialized = false
+    private var _instance: MutableStateFlow<ESpeakNG?> = MutableStateFlow(null)
+
+    fun load(data: Path) {
+        if (_instance.value != null) {
+            close()
+        }
+
+        ESpeakNG().also { _instance.value = it }.construct(data.pathString)
+    }
+
+    fun isReady(): Boolean {
+        return _instance.value != null
+    }
+
+    fun isReadyStateFlow(): Flow<Boolean> {
+        return _instance.map { it != null }
+    }
 
     override fun close() {
-        if (!_initialized) {
+        if (_instance.value == null) {
             Timber.tag(TAG).w("Already closed")
             return
         }
 
         terminate()
-        _initialized = false
+        _instance.value = null
     }
 
     fun phoneme(text: String, language: String): String {
-        if (!_initialized) {
+        if (_instance.value == null) {
             throw IllegalStateException("Not initialized")
         }
 
@@ -40,7 +52,7 @@ class ESpeakNG private constructor() : AutoCloseable {
     }
 
     fun synthesize(text: String, language: Language) {
-        if (!_initialized) {
+        if (_instance.value == null) {
             throw IllegalStateException("Not initialized")
         }
 
@@ -48,7 +60,7 @@ class ESpeakNG private constructor() : AutoCloseable {
     }
 
     fun setCallback(callback: SynthReadyCallback) {
-        if (!_initialized) {
+        if (_instance.value == null) {
             throw IllegalStateException("Not initialized")
         }
 
@@ -65,7 +77,7 @@ class ESpeakNG private constructor() : AutoCloseable {
     }
 
     fun stop() {
-        if (!_initialized) {
+        if (_instance.value == null) {
             throw IllegalStateException("Not initialized")
         }
 
@@ -82,8 +94,6 @@ class ESpeakNG private constructor() : AutoCloseable {
     companion object {
         private val TAG: String = ESpeakNG::class.java.simpleName
 
-        private var _instance: ESpeakNG? = null
-
         @JvmStatic
         private external fun initialize(): Boolean
 
@@ -91,53 +101,6 @@ class ESpeakNG private constructor() : AutoCloseable {
             System.loadLibrary("app_versta_translate_bridge")
 
             initialize()
-        }
-
-        fun createSession(
-            context: Context,
-            extractor: CompressedFileExtractor,
-            validator: FileHashValidator
-        ) {
-            val instance = getSession()
-            if (instance._initialized == true) {
-                return
-            }
-
-            if (!validateData(context, validator)) {
-                extractData(context, extractor, validator)
-            }
-
-            instance.construct(
-                context.filesDir.resolve(EXTERNAL_DATA_DIR).resolve(ESPEAK_NG_DATA_DIR)
-                    .toPath().pathString
-            )
-            instance._initialized = true
-        }
-
-        fun getSession(): ESpeakNG {
-            return _instance ?: ESpeakNG().also { _instance = it }
-        }
-
-        private fun validateData(context: Context, validator: FileHashValidator): Boolean {
-            return validator.validate(
-                context.resources.openRawResource(R.raw.versta_data_hash),
-                context.filesDir.resolve(EXTERNAL_DATA_HASH_FILE)
-            )
-        }
-
-        private fun extractData(
-            context: Context,
-            extractor: CompressedFileExtractor,
-            validator: FileHashValidator
-        ) {
-            extractor.extract(
-                context.resources.openRawResource(R.raw.versta_data),
-                context.filesDir.resolve(EXTERNAL_DATA_DIR)
-            )
-            validator.archive(
-                context.resources.openRawResource(R.raw.versta_data_hash),
-                context.filesDir.resolve(EXTERNAL_DATA_HASH_FILE)
-            )
         }
     }
 }

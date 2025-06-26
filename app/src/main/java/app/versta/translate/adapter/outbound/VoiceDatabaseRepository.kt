@@ -1,23 +1,13 @@
 package app.versta.translate.adapter.outbound
 
-import app.cash.sqldelight.coroutines.asFlow
-import app.cash.sqldelight.db.AfterVersion
 import app.versta.translate.core.entity.Language
-import app.versta.translate.core.entity.VoiceInferenceFilesMetadata
+import app.versta.translate.core.entity.TextToSpeechDataMetadata
 import app.versta.translate.core.entity.VoiceModel
-import app.versta.translate.core.entity.VoiceModelFilesMetadata
-import app.versta.translate.core.entity.VoiceWithModelFiles
 import app.versta.translate.core.entity.VoiceModelMetadata
-import app.versta.translate.database.Database
+import app.versta.translate.core.entity.VoiceWithModelFiles
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.executeAsListFlow
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import okio.Path.Companion.toPath
 import timber.log.Timber
 import kotlin.io.path.ExperimentalPathApi
@@ -59,7 +49,7 @@ class VoiceDatabaseRepository(
     }
 
     /**
-     * Inserts or updates the text to speech model in the repository.
+     * Inserts or updates the voice model in the repository.
      * @param metadata The metadata to insert or update.
      */
     override fun upsertVoiceModel(metadata: VoiceModel) {
@@ -72,7 +62,7 @@ class VoiceDatabaseRepository(
     }
 
     /**
-     * Deletes the text to speech model in the repository.
+     * Deletes the voice model in the repository.
      */
     @OptIn(ExperimentalPathApi::class)
     override fun deleteVoiceModel(id: String) {
@@ -189,43 +179,6 @@ class VoiceDatabaseRepository(
                 gender = gender
             )
         }
-    }
-
-    init {
-        val migrationScope = CoroutineScope(Dispatchers.Default)
-
-        Database.Schema.migrate(
-            driver = database.driver,
-            oldVersion = 3,
-            newVersion = Database.Schema.version,
-            AfterVersion(4) {
-                migrationScope.launch {
-                    getVoiceModels().collect { models ->
-                        models.forEach { model ->
-                            val metadata = VoiceModelMetadata(
-                                version = model.version,
-                                baseModel = model.baseModel,
-                                architectures = model.architectures,
-                                files = VoiceModelFilesMetadata(
-                                    inference = VoiceInferenceFilesMetadata(
-                                        model = model.inference.model.absolutePathString()
-                                    ),
-                                    voices = model.voices.map { toString() }
-                                ),
-                            )
-
-                            Timber.tag(TAG).d("Running migration")
-                            insertOrIgnoreVoices(
-                                mapVoiceMetadataToVoiceDatabaseModel(
-                                    model.id,
-                                    metadata
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-        )
     }
 
     companion object {

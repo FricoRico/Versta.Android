@@ -1,0 +1,49 @@
+CREATE TABLE Data (
+    id TEXT NOT NULL PRIMARY KEY,
+    type TEXT NOT NULL,
+    path TEXT NOT NULL,
+    version TEXT NOT NULL
+);
+
+getAll:
+SELECT * FROM Data;
+
+getById:
+SELECT * FROM Data WHERE id = :id;
+
+getByIds:
+SELECT * FROM Data WHERE id IN :ids;
+
+getByType:
+SELECT * FROM Data WHERE type = :type;
+
+upsert {
+    UPDATE Data SET
+        path = :path,
+        version = :version
+    WHERE id = :id AND type = :type;
+
+    INSERT OR IGNORE INTO Data (
+        id,
+        type,
+        path,
+        version
+    ) VALUES (
+        :id,
+        :type,
+        :path,
+        :version
+    );
+}
+
+deleteById:
+DELETE FROM Data WHERE id = :id;
+
+deleteByType:
+DELETE FROM Data WHERE type = :type;
+
+deleteByIds:
+DELETE FROM Data WHERE id IN :ids;
+
+removeNotIn:
+DELETE FROM Data WHERE id NOT IN :ids;

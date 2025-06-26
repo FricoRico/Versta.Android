@@ -5,9 +5,9 @@ import android.content.Intent
 import androidx.work.WorkerParameters
 import app.versta.translate.MainApplication
 import app.versta.translate.core.entity.DownloadStatus
+import app.versta.translate.core.entity.VoiceModelMetadata
 import app.versta.translate.core.entity.VoiceBundleMetadata
 import app.versta.translate.core.entity.VoiceModel
-import app.versta.translate.core.entity.VoiceModelMetadata
 import timber.log.Timber
 import java.io.File
 import java.util.UUID

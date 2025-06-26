@@ -1,19 +1,8 @@
 package app.versta.translate.core.model
 
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.os.Build
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.WorkRequest
-import androidx.work.workDataOf
-import app.versta.translate.R
 import app.versta.translate.adapter.inbound.DOWNLOAD_LANGUAGE_STATUS_INTENT
 import app.versta.translate.adapter.inbound.DownloadLanguageWorker
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsRepository
@@ -39,13 +28,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.launch
-import java.net.SocketException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
-import java.util.UUID
-import kotlin.coroutines.cancellation.CancellationException
 
 enum class LanguageType {
     Source, Target
@@ -60,7 +43,6 @@ class LanguageViewModel(
     val pivotTranslationEnabled =
         languagePreferenceRepository.getPivotTranslation().distinctUntilChanged()
 
-    private val _broadcastManager = LocalBroadcastManager.getInstance(context)
     private val _languageDetector = LanguageDetect()
 
     private val _languageSelectionState = MutableStateFlow<LanguageType?>(null)
@@ -69,17 +51,22 @@ class LanguageViewModel(
     private val _languageSuggestionState = MutableStateFlow(false)
     val languageSuggestionState: StateFlow<Boolean> = _languageSuggestionState.asStateFlow()
 
-    private val _languageSuggestionOnCompleteCallback = MutableStateFlow<((ExternalLanguagePairDefinition) -> Unit)?>(null)
-    val languageSuggestionOnCompleteCallback: StateFlow<((ExternalLanguagePairDefinition) -> Unit)?> = _languageSuggestionOnCompleteCallback.asStateFlow()
+    private val _languageSuggestionOnCompleteCallback =
+        MutableStateFlow<((ExternalLanguagePairDefinition) -> Unit)?>(null)
+    val languageSuggestionOnCompleteCallback: StateFlow<((ExternalLanguagePairDefinition) -> Unit)?> =
+        _languageSuggestionOnCompleteCallback.asStateFlow()
 
     private val _autoDetectInput = MutableStateFlow("")
     val autoDetectLanguage = MutableStateFlow<Language?>(null)
 
-    private var _downloadWorker: WorkRequest? = null
-    private val _downloadTasks = MutableStateFlow<List<ExternalLanguageDownloadTask>>(
-        emptyList()
+    private val downloadManager = DownloadManager<ExternalLanguageDownloadTask>(
+        context = context,
+        statusIntentAction = DOWNLOAD_LANGUAGE_STATUS_INTENT,
+        workerClass = DownloadLanguageWorker::class.java
     )
-    val downloadTasks: StateFlow<List<ExternalLanguageDownloadTask>> = _downloadTasks.asStateFlow()
+
+    val downloadTasks: StateFlow<List<ExternalLanguageDownloadTask>> =
+        downloadManager.downloadTasks.asStateFlow()
 
     private val _importedLanguages = languageRepository.getLanguages().distinctUntilChanged()
     val importedLanguagePairs = languageRepository.getLanguagePairs().distinctUntilChanged()
@@ -168,24 +155,6 @@ class LanguageViewModel(
     }.distinctUntilChanged()
 
     /**
-     * Broadcast receiver for download status updates.
-     */
-    private val downloadStatusReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val taskId = UUID.fromString(intent.getStringExtra("taskId"))
-            val status = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                intent.getSerializableExtra("status", DownloadStatus::class.java)
-            } else {
-                intent.getSerializableExtra("status") as? DownloadStatus
-            }
-
-            status?.let {
-                updateDownloadStatus(context, taskId, it)
-            }
-        }
-    }
-
-    /**
      * Returns a flow of [ExternalLanguagePairDefinition] that contains the definitions of the
      * external language model for the given [LanguagePair].
      */
@@ -203,7 +172,10 @@ class LanguageViewModel(
     /**
      * Sets the language suggestion drawer state.
      */
-    fun setLanguageSuggestionState(enabled: Boolean, onComplete: ((ExternalLanguagePairDefinition) -> Unit)? = null) {
+    fun setLanguageSuggestionState(
+        enabled: Boolean,
+        onComplete: ((ExternalLanguagePairDefinition) -> Unit)? = null
+    ) {
         _languageSuggestionState.value = enabled
         _languageSuggestionOnCompleteCallback.value = onComplete
     }
@@ -295,146 +267,23 @@ class LanguageViewModel(
     /**
      * Queues a download for the given language model.
      */
-    fun queueDownload(context: Context, model: ExternalLanguagePairDefinition, onComplete: (ExternalLanguagePairDefinition) -> Unit = {}) {
-        var task = _downloadTasks.value.firstOrNull { it.model == model }
-
-        if (task != null) {
-            updateDownloadStatus(context, task.id, DownloadStatus.Queued)
-        } else {
-            task = ExternalLanguageDownloadTask(
-                model = model,
-                status = DownloadStatus.Queued,
-                onComplete = onComplete
-            )
-            _downloadTasks.value += task
-        }
-
-        val manager = WorkManager.getInstance(context)
-        val worker = OneTimeWorkRequestBuilder<DownloadLanguageWorker>().setInputData(
-            workDataOf(
-                "taskId" to task.id.toString(),
-                "name" to "${task.model.pair.source.name} - ${task.model.pair.target.name}",
-                "uri" to task.model.bundleUri.toString(),
-                "checksum" to task.model.checksumUri.toString()
-            )
-        ).build()
-
-        manager.enqueue(worker)
-        manager.getWorkInfoByIdLiveData(worker.id)
-
-        if (_downloadWorker == null) {
-            _downloadWorker = worker
-        }
+    fun queueDownload(
+        model: ExternalLanguagePairDefinition,
+        onComplete: (ExternalLanguagePairDefinition) -> Unit = {}
+    ) {
+        val task = ExternalLanguageDownloadTask(
+            model = model,
+            status = DownloadStatus.Queued,
+            onComplete = onComplete
+        )
+        downloadManager.queueDownload(task)
     }
 
     /**
      * Cancels all pending downloads.
      */
-    fun cancelDownload(context: Context) {
-        _downloadWorker?.let {
-            WorkManager.getInstance(context).cancelWorkById(it.id)
-        }
-        _downloadWorker = null
-    }
-
-    /**
-     * Updates the download status of a task.
-     */
-    private fun updateDownloadStatus(
-        context: Context, taskId: UUID, status: DownloadStatus
-    ) {
-        when (status) {
-            is DownloadStatus.Completed -> {
-                triggerDownloadTaskCallback(taskId)
-                removeDownloadTask(taskId)
-            }
-
-            is DownloadStatus.Error -> {
-                when (status.exception) {
-                    is CancellationException -> {}
-
-                    is SocketException,
-                    is SocketTimeoutException, is UnknownHostException -> {
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.download_error_no_internet),
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-
-                    else -> {
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.download_error_unknown),
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-
-                setDownloadStatus(taskId, status)
-            }
-
-            is DownloadStatus.Cancelled -> {
-                clearDownloadTasks()
-            }
-
-            else -> {
-                _downloadTasks.value = _downloadTasks.value.map {
-                    if (it.id == taskId) {
-                        return@map it.copy(status = status)
-                    }
-
-                    it
-                }
-            }
-        }
-    }
-
-    /**
-     * Sets the download status of a task.
-     */
-    private fun setDownloadStatus(
-        taskId: UUID, status: DownloadStatus
-    ) {
-        _downloadTasks.value = _downloadTasks.value.map {
-            if (it.id == taskId) {
-                return@map it.copy(status = status)
-            }
-
-            it
-        }
-    }
-
-    /**
-     * Removes the download task from the queue.
-     */
-    private fun triggerDownloadTaskCallback(taskId: UUID) {
-        _downloadTasks.value.find { it.id == taskId }?.let {
-            it.onComplete(it.model)
-        }
-    }
-
-    /**
-     * Removes the download task from the queue.
-     */
-    private fun removeDownloadTask(taskId: UUID) {
-        _downloadTasks.value = _downloadTasks.value.filter {
-            it.id != taskId
-        }
-    }
-
-    /**
-     * Clears the download tasks.
-     */
-    private fun clearDownloadTasks() {
-        _downloadTasks.value = emptyList()
-    }
-
-    /**
-     * Set the input.
-     */
-    fun setAutoDetectInput(text: String) {
-        _autoDetectInput.value = text
+    fun cancelDownload() {
+        downloadManager.cancelDownload()
     }
 
     /**
@@ -448,7 +297,10 @@ class LanguageViewModel(
         }
 
         viewModelScope.launch {
-            if (sourceLanguages.first().any { it.isoCode == result.language } || languageModels.first().any { it.pair.source.isoCode == result.language }) {
+            if (sourceLanguages.first()
+                    .any { it.isoCode == result.language } || languageModels.first()
+                    .any { it.pair.source.isoCode == result.language }
+            ) {
                 setAutoDetectLanguage(result.language)
             }
         }
@@ -475,17 +327,20 @@ class LanguageViewModel(
         }
     }
 
-    init {
-        _broadcastManager.registerReceiver(
-            downloadStatusReceiver, IntentFilter(DOWNLOAD_LANGUAGE_STATUS_INTENT)
-        )
+    /**
+     * Set the input.
+     */
+    fun setAutoDetectInput(text: String) {
+        _autoDetectInput.value = text
+    }
 
+    init {
+        downloadManager.register()
         autoDetectLanguage()
     }
 
     override fun onCleared() {
         super.onCleared()
-
-        _broadcastManager.unregisterReceiver(downloadStatusReceiver)
+        downloadManager.unregister()
     }
 }

@@ -35,6 +35,7 @@ import app.versta.translate.ui.theme.spacing
 fun TextToSpeechButton(
     enabled: Boolean = true,
     textToSpeechSynthesisState: TextToSpeechSynthesisState,
+    textToSpeechAvailable: Boolean,
     textToSpeechVoiceAvailable: Boolean,
     onTextToSpeech: () -> Unit,
     onCancelTextToSpeech: () -> Unit,
@@ -48,7 +49,7 @@ fun TextToSpeechButton(
         contentAlignment = Alignment.Center,
     ) {
         FilledIconButton(
-            enabled = enabled,
+            enabled = enabled && textToSpeechAvailable,
             colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
             onClick = {
                 when (textToSpeechSynthesisState) {
@@ -96,8 +97,8 @@ fun TextToSpeechButton(
             ) {
                 Surface(
                     shape = MaterialTheme.shapes.extraLarge,
-                    color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = if (enabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primaryContainer,
+                    color = if (enabled && textToSpeechAvailable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = if (enabled && textToSpeechAvailable) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier
                         .requiredSize(shieldSize)
                         .pointerInput(Unit) {

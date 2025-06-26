@@ -14,9 +14,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import app.versta.translate.ui.theme.spacing
+import app.versta.translate.utils.darken
 
 @Composable
 fun SettingsHeaderItem(
@@ -29,6 +31,7 @@ fun SettingsHeaderItem(
     shadowElevation: Dp = ListItemDefaults.Elevation,
     index: Int = 0,
     groupSize: Int = 1,
+    enabled: Boolean = true,
 ) {
     val isFirstItem = remember { index == 0 }
     val isLastItem = remember { index == groupSize - 1 }
@@ -50,8 +53,8 @@ fun SettingsHeaderItem(
             .then(modifier),
     ) {
         Surface(
-            contentColor = colors.headlineColor,
-            color = colors.containerColor,
+            contentColor = if (enabled) colors.headlineColor else colors.disabledHeadlineColor,
+            color = if (enabled) colors.containerColor else colors.containerColor.darken(0.1f),
             tonalElevation = tonalElevation,
             shadowElevation = shadowElevation,
         ) {
@@ -81,8 +84,10 @@ fun SettingsHeaderItem(
     shadowElevation: Dp = ListItemDefaults.Elevation,
     index: Int = 0,
     groupSize: Int = 1,
+    enabled: Boolean = true,
 ) {
     SettingsHeaderItem(
+        enabled = enabled,
         modifier = modifier,
         colors = colors,
         tonalElevation = tonalElevation,

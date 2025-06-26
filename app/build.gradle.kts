@@ -54,7 +54,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                targets("app_versta_translate_data", "app_versta_translate_bridge")
+                targets("app_versta_translate_bridge")
             }
         }
     }
@@ -114,58 +114,16 @@ android {
 }
 
 tasks.apply {
-    val dataArchiveName = "versta_data.tgz"
-
-    register("checkData") {
-        doFirst {
-            assert(layout.buildDirectory.file("generated/espeak-ng-data/en_dict").isPresent)
-            assert(layout.buildDirectory.file("generated/espeak-ng-data/intonations").isPresent)
-            assert(layout.buildDirectory.file("generated/espeak-ng-data/phondata").isPresent)
-            assert(layout.buildDirectory.file("generated/espeak-ng-data/phondata-manifest").isPresent)
-            assert(layout.buildDirectory.file("generated/espeak-ng-data/phonindex").isPresent)
-            assert(layout.buildDirectory.file("generated/espeak-ng-data/phontab").isPresent)
-            assert(layout.buildDirectory.file("generated/open-jtalk-data/char.bin").isPresent)
-            assert(layout.buildDirectory.file("generated/open-jtalk-data/matrix.bin").isPresent)
-            assert(layout.buildDirectory.file("generated/open-jtalk-data/sys.dic").isPresent)
-            assert(layout.buildDirectory.file("generated/open-jtalk-data/unk.dic").isPresent)
-        }
-    }
-
-    register("createDataArchive", Tar::class) {
-        isPreserveFileTimestamps = false
-        isReproducibleFileOrder = true
-        compression = Compression.GZIP
-
-        archiveFileName.set(dataArchiveName)
-        destinationDirectory.set(layout.projectDirectory.dir("src/main/res/raw"))
-
-        from(layout.buildDirectory.dir("generated/espeak-ng-data")) {
-            into("espeak-ng-data")
-        }
-
-        from(layout.buildDirectory.dir("generated/open-jtalk-data")) {
-            into("open-jtalk-data")
-        }
-    }
-
-    register("createDataHash", Checksum::class) {
-        dependsOn("createDataArchive")
-
-        checksumAlgorithm.set(Checksum.Algorithm.SHA256)
-        inputFiles.setFrom(layout.projectDirectory.file("src/main/res/raw/$dataArchiveName"))
-        outputDirectory.set(layout.buildDirectory.dir("intermediates/datahash"))
-    }
-
-    register("createDataVersion", Copy::class) {
-        dependsOn("createDataHash")
-        rename { "versta_data_hash.sha256" }
-
-        from(layout.buildDirectory.file("intermediates/datahash/$dataArchiveName.sha256"))
-        into(layout.projectDirectory.dir("src/main/res/raw"))
-    }
-
-    register("getLanguageModels") {
+    register("getRemoteData") {
         doLast {
+            URI("https://models.versta.app/data/data.json").toURL().openStream()
+                .use { input ->
+                    layout.projectDirectory.file("src/main/res/raw/versta_data.json").asFile.outputStream()
+                        .use { output ->
+                            input.copyTo(output)
+                        }
+                }
+
             URI("https://models.versta.app/translation/models.json").toURL().openStream()
                 .use { input ->
                     layout.projectDirectory.file("src/main/res/raw/versta_translation_models.json").asFile.outputStream()
@@ -185,35 +143,7 @@ tasks.apply {
     }
 
     preBuild {
-        dependsOn("getLanguageModels")
-    }
-}
-
-project.apply {
-    afterEvaluate {
-        tasks.named("checkData") {
-            dependsOn("externalNativeBuildDebug")
-        }
-        tasks.named("createDataArchive") {
-            dependsOn("externalNativeBuildDebug")
-        }
-
-        listOf(
-            "mapDebugSourceSetPaths",
-            "mergeDebugResources",
-            "packageDebugResources",
-            "generateDebugResources",
-            "generateDebugDatabaseInterface",
-            "mapReleaseSourceSetPaths",
-            "mergeReleaseResources",
-            "packageReleaseResources",
-            "generateReleaseResources",
-            "generateReleaseDatabaseInterface"
-        ).forEach {
-            tasks.named(it) {
-                dependsOn("createDataVersion", "createDataArchive")
-            }
-        }
+        dependsOn("getRemoteData")
     }
 }
 

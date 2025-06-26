@@ -1,5 +1,6 @@
 package app.versta.translate.core.entity
 
+import app.versta.translate.core.model.DownloadTask
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.net.URI
@@ -14,8 +15,8 @@ data class ExternalVoiceModelDefinition (
     val size: Long,
     var extracted: Long? = null,
     val version: String,
-    val voices: List<ExternalVoice>,
-    val architectures: List<VoiceModelArchitecture>,
+    val voices: List<ExternalVoice> = emptyList(),
+    val architectures: List<VoiceModelArchitecture> = emptyList(),
     private val bundle: String,
     private val checksum: String,
 ) {
@@ -52,10 +53,28 @@ data class ExternalVoiceModels(
 )
 
 data class ExternalVoiceDownloadTask(
-    val id: UUID = UUID.randomUUID(),
+    override val id: UUID = UUID.randomUUID(),
     val model: ExternalVoiceModelDefinition,
-    val status: DownloadStatus
-)
+    override val status: DownloadStatus
+) : DownloadTask {
+
+    override fun copyWithStatus(status: DownloadStatus): DownloadTask {
+        return copy(status = status)
+    }
+
+    override fun getWorkData(): Map<String, Any> {
+        return mapOf(
+            "taskId" to id.toString(),
+            "name" to model.name,
+            "uri" to model.bundleUri().toString(),
+            "checksum" to model.checksumUri().toString()
+        )
+    }
+
+    override fun getName(): String {
+        return model.name
+    }
+}
 
 data class ExternalVoiceLanguageVoiceGenders(
     val language: Language,

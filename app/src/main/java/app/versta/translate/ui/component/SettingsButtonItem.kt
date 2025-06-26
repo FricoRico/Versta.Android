@@ -27,6 +27,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -175,6 +177,7 @@ fun SettingsButtonItem(
     shadowElevation: Dp = ListItemDefaults.Elevation,
     index: Int = 0,
     groupSize: Int = 1,
+    enabled: Boolean = true,
 ) {
     SettingsButtonItem(
         modifier = modifier,
@@ -186,7 +189,7 @@ fun SettingsButtonItem(
                 Text(
                     text = supportingContent,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = colors.supportingTextColor,
+                    color = if (enabled) colors.supportingTextColor else colors.disabledHeadlineColor,
                 )
             }
         },
@@ -199,6 +202,7 @@ fun SettingsButtonItem(
         shadowElevation = shadowElevation,
         index = index,
         groupSize = groupSize,
+        enabled = enabled,
     )
 }
 
@@ -222,6 +226,7 @@ fun SettingsButtonItem(
     shadowElevation: Dp = ListItemDefaults.Elevation,
     index: Int = 0,
     groupSize: Int = 1,
+    enabled: Boolean = true,
 ) {
     val isFirstItem = remember { index == 0 }
     val isLastItem = remember { index == groupSize - 1 }
@@ -255,6 +260,7 @@ fun SettingsButtonItem(
                 tonalElevation = tonalElevation,
                 shadowElevation = shadowElevation,
                 onClick = onClick,
+                enabled = enabled,
             )
         }
     } else {
@@ -275,6 +281,7 @@ fun SettingsButtonItem(
                 tonalElevation = tonalElevation,
                 shadowElevation = shadowElevation,
                 onClick = onClick,
+                enabled = enabled,
             )
         }
     }
@@ -292,14 +299,15 @@ private fun SettingsButtonItemContent(
     colors: ListItemColors,
     tonalElevation: Dp,
     shadowElevation: Dp,
+    enabled: Boolean
 ) {
     Surface(
-        color = colors.containerColor,
-        contentColor = colors.headlineColor,
+        color = if (enabled) colors.containerColor else colors.containerColor.darken(0.1f),
+        contentColor = if (enabled) colors.headlineColor else colors.disabledHeadlineColor,
         tonalElevation = tonalElevation,
         shadowElevation = shadowElevation,
         modifier = Modifier
-            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
+            .then(if (onClick != null && enabled) Modifier.clickable { onClick() } else Modifier),
     ) {
         Column(
             modifier = Modifier
@@ -334,7 +342,6 @@ private fun SettingsButtonItemContent(
                             Text(
                                 text = headlineContent,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = colors.headlineColor,
                                 fontSize = MaterialTheme.typography.bodyLarge.fontSize,
                             )
                         }

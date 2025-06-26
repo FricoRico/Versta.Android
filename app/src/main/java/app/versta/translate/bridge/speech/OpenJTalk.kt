@@ -1,41 +1,47 @@
 package app.versta.translate.bridge.speech
 
-import android.content.Context
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import timber.log.Timber
+import java.nio.file.Path
 import kotlin.io.path.pathString
 
-const val OPEN_JTALK_DATA_DIR = "open-jtalk-data"
+class OpenJTalk() : AutoCloseable {
+    private var _handle: MutableStateFlow<Long?> = MutableStateFlow(null)
 
-class OpenJTalk(context: Context) : AutoCloseable {
-    private var _handle: Long
-
-    init {
-        _handle = construct(
-            context.filesDir.resolve(EXTERNAL_DATA_DIR).resolve(OPEN_JTALK_DATA_DIR)
-                .toPath().pathString
-        )
-
-        if (_handle == 0L) {
-            throw RuntimeException("Failed to initialize BeamSearch")
+    fun load(data: Path) {
+        if (_handle.value != null) {
+            close()
         }
+
+        _handle.value = construct(data.pathString)
+    }
+
+    fun isReady(): Boolean {
+        return _handle.value != null
+    }
+
+    fun isReadyStateFlow(): Flow<Boolean> {
+        return _handle.map { it != null }
     }
 
     override fun close() {
-        if (_handle == 0L) {
+        if (_handle.value == null) {
             Timber.tag(TAG).w("Already closed")
             return
         }
 
-        close(_handle)
-        _handle = 0L
+        close(_handle.value!!)
+        _handle.value = null
     }
 
     fun phonemize(text: String): String {
-        if (_handle == 0L) {
+        if (_handle.value == null) {
             throw IllegalStateException("Not initialized")
         }
 
-        return phonemize(_handle, text)
+        return phonemize(_handle.value!!, text)
     }
 
     private external fun construct(path: String): Long

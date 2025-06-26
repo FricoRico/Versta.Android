@@ -64,7 +64,7 @@ object ButtonDefaults {
         containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
         contentColor: Color = MaterialTheme.colorScheme.onSurface,
         disabledContainerColor: Color = Color.Transparent,
-        disabledContentColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.4f),
+        disabledContentColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
     ) = ButtonDefaults.buttonColors(
         containerColor = containerColor,
         contentColor = contentColor,

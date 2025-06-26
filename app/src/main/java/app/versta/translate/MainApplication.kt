@@ -14,9 +14,13 @@ import app.versta.translate.adapter.inbound.FileHashValidator
 import app.versta.translate.adapter.inbound.PrecomputedHashFileValidator
 import app.versta.translate.adapter.inbound.TarballExtractor
 import app.versta.translate.adapter.outbound.AudioTrackPlayer
+import app.versta.translate.adapter.outbound.DataDatabaseRepository
+import app.versta.translate.adapter.outbound.DataRepository
+import app.versta.translate.adapter.outbound.ExternalDataFileRepository
+import app.versta.translate.adapter.outbound.ExternalDataRepository
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsFileRepository
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsRepository
-import app.versta.translate.adapter.outbound.KokoroInference
+import app.versta.translate.adapter.outbound.StyleTextToSpeechInference
 import app.versta.translate.adapter.outbound.StyleTextToSpeech2Tokenizer
 import app.versta.translate.adapter.outbound.LanguageDatabaseRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceDataStoreRepository
@@ -37,6 +41,7 @@ import app.versta.translate.adapter.outbound.TranslationPreferenceDataStoreRepos
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
 import app.versta.translate.adapter.outbound.TranslationTokenizer
 import app.versta.translate.bridge.speech.ESpeakNG
+import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LoggingViewModel
 import app.versta.translate.core.model.TextToSpeechViewModel
@@ -54,6 +59,7 @@ val Context.dataStore by preferencesDataStore(name = "preferences")
 interface ApplicationModuleInterface {
     val database: DatabaseContainer
 
+    val dataRepository: DataRepository
     val languageRepository: LanguageRepository
     val languagePreferenceRepository: LanguagePreferenceRepository
     val licenseRepository: LicenseRepository
@@ -62,6 +68,7 @@ interface ApplicationModuleInterface {
     val textToSpeechPreferenceRepository: TextToSpeechPreferenceRepository
     val externalLanguageModelsRepository: ExternalLanguageModelsRepository
     val externalVoiceModelsRepository: ExternalVoiceModelsRepository
+    val externalDataRepository: ExternalDataRepository
 
     val languageViewModel: LanguageViewModel
     val translationViewModel: TranslationViewModel
@@ -73,6 +80,8 @@ interface ApplicationModuleInterface {
     val ortEnvironment: OrtEnvironment
     val extractor: CompressedFileExtractor
     val validator: FileHashValidator
+    val eSpeakNG: ESpeakNG
+    val openJTalk: OpenJTalk
     val intermediateTranslationTokenizer: TranslationTokenizer
     val intermediateTranslationInference: TranslationInference
     val outputTranslationTokenizer: TranslationTokenizer
@@ -83,6 +92,10 @@ interface ApplicationModuleInterface {
 
 class ApplicationModule(private val context: Context) : ApplicationModuleInterface {
     override val database = DatabaseContainer(context)
+
+    override val dataRepository: DataRepository by lazy {
+        DataDatabaseRepository(database)
+    }
 
     override val languageRepository: LanguageRepository by lazy {
         LanguageDatabaseRepository(database)
@@ -114,6 +127,10 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
 
     override val externalVoiceModelsRepository: ExternalVoiceModelsRepository by lazy {
         ExternalVoiceModelsFileRepository(context.resources.openRawResource((R.raw.versta_text_to_speech_models)))
+    }
+
+    override val externalDataRepository: ExternalDataRepository by lazy {
+        ExternalDataFileRepository(context.resources.openRawResource(R.raw.versta_data))
     }
 
     override val loggingViewModel: LoggingViewModel by lazy {
@@ -149,12 +166,17 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
 
     override val textToSpeechViewModel: TextToSpeechViewModel by lazy {
         TextToSpeechViewModel(
+            context = context,
+            espeakNG = eSpeakNG,
+            openJTalk = openJTalk,
             tokenizer = textToSpeechTokenizer,
             model = textToSpeechInference,
             audioPlayer = AudioTrackPlayer(),
+            dataRepository = dataRepository,
             voiceRepository = voiceRepository,
             textToSpeechPreferenceRepository = textToSpeechPreferenceRepository,
             languagePreferenceRepository = languagePreferenceRepository,
+            externalDataRepository = externalDataRepository
         )
     }
 
@@ -183,6 +205,14 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
         PrecomputedHashFileValidator()
     }
 
+    override val eSpeakNG: ESpeakNG by lazy {
+        ESpeakNG()
+    }
+
+    override val openJTalk: OpenJTalk by lazy {
+        OpenJTalk()
+    }
+
     override val intermediateTranslationTokenizer: TranslationTokenizer by lazy {
         MarianTokenizer()
     }
@@ -200,17 +230,11 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
     }
 
     override val textToSpeechTokenizer: TextToSpeechTokenizer by lazy {
-        ESpeakNG.createSession(
-            context,
-            extractor,
-            validator
-        )
-
-        StyleTextToSpeech2Tokenizer(context)
+        StyleTextToSpeech2Tokenizer(eSpeakNG, openJTalk)
     }
 
     override val textToSpeechInference: TextToSpeechInference by lazy {
-        KokoroInference(ortEnvironment)
+        StyleTextToSpeechInference(ortEnvironment)
     }
 }
 

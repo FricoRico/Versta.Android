@@ -93,11 +93,11 @@ fun LanguageSettings(
     }
 
     fun onDownload(model: ExternalLanguagePairDefinition) {
-        languageViewModel.queueDownload(context, model)
+        languageViewModel.queueDownload(model)
     }
 
     fun onCancel() {
-        languageViewModel.cancelDownload(context)
+        languageViewModel.cancelDownload()
     }
 
     fun onClick(pair: LanguagePair) {
@@ -259,7 +259,11 @@ private fun LazyListScope.Languages(
         val score = model.metadata.map { it.score }.average()
         val rating = max(min((score / LANGUAGE_RATING_THRESHOLD) * 5, 5.0), 1.0)
 
-        val size = ((model.extracted ?: model.size) / 1e6)
+        val size = if (onDownload != null) {
+            model.size / 1e6
+        } else {
+            (model.extracted ?: model.size) / 1e6
+        }
 
         SettingsButtonItem(
             index = it + 1,
@@ -296,7 +300,7 @@ private fun LazyListScope.Languages(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            if (model.extracted != null) Icons.Filled.Save else Icons.Filled.CloudDownload,
+                            if (onDownload != null) Icons.Filled.CloudDownload else Icons.Filled.Save,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.requiredSize(MaterialTheme.spacing.medium)

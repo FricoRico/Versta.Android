@@ -1,7 +1,6 @@
 package app.versta.translate.ui.screen
 
 import android.annotation.SuppressLint
-import android.view.HapticFeedbackConstants
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.AnimationConstants.DefaultDurationMillis
 import androidx.compose.animation.core.tween
@@ -31,7 +30,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -41,6 +39,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.AudioMockPlayer
+import app.versta.translate.adapter.outbound.DataMemoryRepository
+import app.versta.translate.adapter.outbound.ExternalDataMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
@@ -50,9 +50,10 @@ import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryReposit
 import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
+import app.versta.translate.bridge.speech.ESpeakNG
+import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.entity.TextToSpeechSynthesisState
 import app.versta.translate.core.model.LanguageViewModel
-import app.versta.translate.core.model.LoadingProgress
 import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
@@ -90,6 +91,9 @@ fun MinimalTextTranslation(
         TextToSpeechSynthesisState.Idle
     )
 
+    val textToSpeechAvailable by textToSpeechViewModel.textToSpeechReady.collectAsStateWithLifecycle(
+        false
+    )
     val textToSpeechVoiceAvailable by textToSpeechViewModel.voiceAvailable.collectAsStateWithLifecycle(
         false
     )
@@ -162,6 +166,7 @@ fun MinimalTextTranslation(
         MinimalTextTranslationOutputButtonRow(
             translationInProgress = translationInProgress,
             textToSpeechSynthesisState = textToSpeechSynthesisState,
+            textToSpeechAvailable = textToSpeechAvailable,
             textToSpeechVoiceAvailable = textToSpeechVoiceAvailable,
             onTextToSpeech = {
                 onTextToSpeech()
@@ -247,6 +252,7 @@ fun MinimalTextTranslationOutput(
 fun MinimalTextTranslationOutputButtonRow(
     translationInProgress: Boolean,
     textToSpeechSynthesisState: TextToSpeechSynthesisState,
+    textToSpeechAvailable: Boolean,
     textToSpeechVoiceAvailable: Boolean,
     onTextToSpeech: () -> Unit,
     onCancelTextToSpeech: () -> Unit,
@@ -267,6 +273,7 @@ fun MinimalTextTranslationOutputButtonRow(
             TextToSpeechButton(
                 enabled = !translationInProgress,
                 textToSpeechSynthesisState = textToSpeechSynthesisState,
+                textToSpeechAvailable = textToSpeechAvailable,
                 textToSpeechVoiceAvailable = textToSpeechVoiceAvailable,
                 onTextToSpeech = onTextToSpeech,
                 onCancelTextToSpeech = onCancelTextToSpeech,
@@ -358,12 +365,17 @@ fun MinimalTextTranslationPreview() {
             )
         ),
         textToSpeechViewModel = TextToSpeechViewModel(
+            context = LocalContext.current,
+            espeakNG = ESpeakNG(),
+            openJTalk = OpenJTalk(),
             tokenizer = TextToSpeechMockTokenizer(),
             model = TextToSpeechMockInference(),
             audioPlayer = AudioMockPlayer(),
+            dataRepository = DataMemoryRepository(),
             voiceRepository = VoiceMemoryRepository(),
             textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalDataRepository = ExternalDataMemoryRepository(),
         )
     )
 }

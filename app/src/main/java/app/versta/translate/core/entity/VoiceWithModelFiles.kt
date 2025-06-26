@@ -20,6 +20,7 @@ data class VoiceWithModelFiles(
     val version: String,
     val size: Long = 0,
     val inference: VoiceModelInferenceFiles,
+    val tokenizer: VoiceModelTokenizerFiles,
     val voices: VoiceModelVoiceFiles
 ) {
     fun isValid() = inference.isValid() &&
@@ -31,11 +32,12 @@ data class VoiceWithModelFiles(
         fun load(id: String, path: Path): VoiceWithModelFiles {
             val metadataFile = File(path.toFile(), "metadata.json")
             if (!metadataFile.exists()) {
-                throw IllegalArgumentException("Text-to-speech model metadata file not found: ${metadataFile.absolutePath}")
+                throw IllegalArgumentException("Voice model metadata file not found: ${metadataFile.absolutePath}")
             }
 
             val metadata =
                 serializer.decodeFromString<VoiceModelMetadata>(metadataFile.readText())
+
             val files = VoiceWithModelFiles(
                 id = id,
                 path = path,
@@ -46,6 +48,9 @@ data class VoiceWithModelFiles(
                 inference = VoiceModelInferenceFiles(
                     model = path.resolve(metadata.files.inference.model)
                 ),
+                tokenizer = VoiceModelTokenizerFiles(
+                    vocabulary = path.resolve(metadata.files.tokenizer.vocabulary)
+                ),
                 voices = VoiceModelVoiceFiles().apply {
                     addAll(metadata.files.voices.map {
                         path.resolve(it)
@@ -54,7 +59,7 @@ data class VoiceWithModelFiles(
             )
 
             if (!files.isValid()) {
-                throw IllegalArgumentException("Text-to-speech model files are not complete and valid: $files")
+                throw IllegalArgumentException("Voice model files are not complete and valid: $files")
             }
 
             return files
@@ -88,6 +93,13 @@ data class VoiceModelInferenceFiles(
     val model: Path,
 ) {
     fun isValid() = model.exists()
+}
+
+@Serializable
+data class VoiceModelTokenizerFiles(
+    val vocabulary: Path,
+) {
+    fun isValid() = vocabulary.exists()
 }
 
 @Serializable
