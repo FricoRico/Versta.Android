@@ -1,0 +1,40 @@
+name: "\U0001F4D6 Story"
+description: Describe a new user-facing feature or improvement.
+labels: [story, enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to propose a new feature or user story.
+  - type: input
+    id: title
+    attributes:
+      label: Story title
+      description: Short, descriptive title for the story.
+      placeholder: e.g. "As a user, I want to export models to SD card"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What is the user need or problem? What is the desired outcome?
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements
+      description: List clear, testable conditions for this story to be considered complete.
+      placeholder: |
+        - [ ] Exported models are visible in the SD card directory
+        - [ ] User receives a success notification
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Any other context, links, or suggestions.
+    validations:
+      required: false

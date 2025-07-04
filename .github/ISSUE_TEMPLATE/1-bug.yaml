@@ -1,0 +1,22 @@
+name: "\U0001F41B Bug"
+description: Report a reproducible problem or defect in the project.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill out the form below so we can help you quickly.
+  - type: input
+    id: summary
+    attributes:
+      label: Bug summary
+      description: Briefly describe the bug.
+      placeholder: e.g. "Script crashes when exporting model"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: shell

@@ -1,0 +1,33 @@
+name: "\U0001F4CB Task"
+description: Track a technical or non-user-facing task.
+labels: [task]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for technical tasks, refactoring, or chores.
+  - type: input
+    id: summary
+    attributes:
+      label: Task summary
+      description: Briefly describe the task.
+      placeholder: e.g. "Refactor model export CLI"
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What needs to be done? Any specific requirements?
+    validations:
+      required: false
+  - type: textarea
+    id: checklist
+    attributes:
+      label: Checklist
+      description: List steps or subtasks.
+      placeholder: |
+        - [ ] Update CLI argument parsing
+        - [ ] Add unit tests
+    validations:
+      required: false
