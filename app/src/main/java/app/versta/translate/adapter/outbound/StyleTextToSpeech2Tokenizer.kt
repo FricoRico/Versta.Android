@@ -1,13 +1,42 @@
 package app.versta.translate.adapter.outbound
 
 import app.versta.translate.bridge.speech.ESpeakNG
+import app.versta.translate.bridge.tokenize.Vocabulary
 import app.versta.translate.core.entity.Language
+import app.versta.translate.core.entity.VoiceWithModelFiles
 import java.util.Locale
 
 private const val MAX_PHONEME_LENGTH = 512
 
 class StyleTextToSpeech2Tokenizer : TextToSpeechTokenizer {
     private val _japaneseTransliterator = JapaneseTransliterator()
+    private var _vocabulary: Map<String, Int> = _defaultVocabulary
+    private var _loadedVocabularyPath: String? = null
+
+    fun load(files: VoiceWithModelFiles) {
+        // Only load vocabulary file if model supports it and has vocabulary file
+        if (files.supportsVocabularyFile() && files.hasVocabularyFile()) {
+            val vocabPath = files.vocabulary!!.toString()
+            
+            // Only reload if vocabulary path has changed
+            if (_loadedVocabularyPath != vocabPath) {
+                try {
+                    val vocabList = Vocabulary.load(vocabPath)
+                    _vocabulary = vocabList.mapIndexed { index, symbol -> symbol to index }.toMap()
+                    _loadedVocabularyPath = vocabPath
+                } catch (e: Exception) {
+                    // Fall back to default vocabulary if loading fails
+                    _vocabulary = _defaultVocabulary
+                    _loadedVocabularyPath = null
+                    throw IllegalArgumentException("Failed to load vocabulary file: $vocabPath", e)
+                }
+            }
+        } else {
+            // Use default vocabulary for older models or models without vocabulary file
+            _vocabulary = _defaultVocabulary
+            _loadedVocabularyPath = null
+        }
+    }
 
     /**
      * Helper function to split a string on a regex, but keep the delimiters
@@ -285,7 +314,7 @@ class StyleTextToSpeech2Tokenizer : TextToSpeechTokenizer {
             pattern = "(\\s*[${Regex.escape(";:,.!?¡¿—…\"«»“”(){}[]")}]+\\s*)+",
             option = RegexOption.IGNORE_CASE
         )
-        private val _vocabulary = (listOf("$") +
+        private val _defaultVocabulary = (listOf("$") +
                 ";:,.!?¡¿—…\"«»“” ".toList() +
                 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toList() +
                 "ɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞↓↑→↗↘'̩'ᵻ".toList())

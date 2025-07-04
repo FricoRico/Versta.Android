@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.versta.translate.adapter.outbound.AudioPlayer
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
+import app.versta.translate.adapter.outbound.StyleTextToSpeech2Tokenizer
 import app.versta.translate.adapter.outbound.TextToSpeechInference
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceRepository
 import app.versta.translate.adapter.outbound.VoiceRepository
@@ -216,6 +217,11 @@ class TextToSpeechViewModel(
                 _loadingProgress.value = LoadingProgress.InProgress
 
                 try {
+                    // Load the tokenizer vocabulary if available and supported
+                    if (tokenizer is StyleTextToSpeech2Tokenizer) {
+                        tokenizer.load(files)
+                    }
+                    
                     model.load(files.inference, threadCount.first())
                     _loadingProgress.value = LoadingProgress.Completed
                 } catch (e: Exception) {

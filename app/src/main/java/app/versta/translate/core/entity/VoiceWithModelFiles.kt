@@ -20,10 +20,34 @@ data class VoiceWithModelFiles(
     val version: String,
     val size: Long = 0,
     val inference: VoiceModelInferenceFiles,
-    val voices: VoiceModelVoiceFiles
+    val voices: VoiceModelVoiceFiles,
+    val vocabulary: Path? = null
 ) {
     fun isValid() = inference.isValid() &&
-            voices.isValid()
+            voices.isValid() &&
+            (vocabulary == null || vocabulary.exists())
+
+    fun hasVocabularyFile() = vocabulary != null
+
+    fun supportsVocabularyFile(): Boolean {
+        // Vocabulary files are supported from version 1.2.0 onwards
+        return compareVersion(version, "v1.2.0") >= 0
+    }
+
+    private fun compareVersion(version1: String, version2: String): Int {
+        val v1 = version1.removePrefix("v").split(".").map { it.toIntOrNull() ?: 0 }
+        val v2 = version2.removePrefix("v").split(".").map { it.toIntOrNull() ?: 0 }
+        
+        for (i in 0 until maxOf(v1.size, v2.size)) {
+            val part1 = v1.getOrNull(i) ?: 0
+            val part2 = v2.getOrNull(i) ?: 0
+            when {
+                part1 > part2 -> return 1
+                part1 < part2 -> return -1
+            }
+        }
+        return 0
+    }
 
     companion object {
         private val serializer = Json { ignoreUnknownKeys = true }
@@ -50,7 +74,8 @@ data class VoiceWithModelFiles(
                     addAll(metadata.files.voices.map {
                         path.resolve(it)
                     })
-                }
+                },
+                vocabulary = metadata.files.vocabulary?.let { path.resolve(it) }
             )
 
             if (!files.isValid()) {

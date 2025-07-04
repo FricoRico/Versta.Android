@@ -45,9 +45,12 @@ class VoiceBundleMetadata(
 
 @Serializable
 data class VoiceModelFilesMetadata(
-    val inference: VoiceInferenceFilesMetadata, val voices: List<String>
+    val inference: VoiceInferenceFilesMetadata, 
+    val voices: List<String>,
+    val vocabulary: String? = null
 ) {
-    fun isValid(path: Path) = inference.isValid(path) && voices.all { path.resolve(it).exists() }
+    fun isValid(path: Path) = inference.isValid(path) && voices.all { path.resolve(it).exists() } && 
+            (vocabulary == null || path.resolve(vocabulary).exists())
 }
 
 @Serializable
