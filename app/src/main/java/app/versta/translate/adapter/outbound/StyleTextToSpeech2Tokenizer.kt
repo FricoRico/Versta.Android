@@ -14,8 +14,8 @@ class StyleTextToSpeech2Tokenizer : TextToSpeechTokenizer {
     private var _loadedVocabularyPath: String? = null
 
     fun load(files: VoiceWithModelFiles) {
-        // Only load vocabulary file if model supports it and has vocabulary file
-        if (files.supportsVocabularyFile() && files.hasVocabularyFile()) {
+        // Only load vocabulary file if model has vocabulary file
+        if (files.hasVocabularyFile()) {
             val vocabPath = files.vocabulary!!.pathString
             
             // Only reload if vocabulary path has changed
