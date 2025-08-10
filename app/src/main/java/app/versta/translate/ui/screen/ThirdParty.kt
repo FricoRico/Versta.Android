@@ -10,6 +10,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -22,15 +23,19 @@ import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.theme.spacing
 import com.mikepenz.aboutlibraries.ui.compose.LibraryDefaults
-import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
-import com.mikepenz.aboutlibraries.ui.compose.m3.libraryColors
 import androidx.compose.ui.platform.LocalConfiguration
+import com.mikepenz.aboutlibraries.ui.compose.LibraryDefaults.chipPadding
+import com.mikepenz.aboutlibraries.ui.compose.android.rememberLibraries
+import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
+import com.mikepenz.aboutlibraries.ui.compose.m3.chipColors
+import com.mikepenz.aboutlibraries.ui.compose.m3.libraryColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThirdParty(
     navController: NavController
 ) {
+    val libraries by rememberLibraries(R.raw.aboutlibraries)
     val orientation = LocalConfiguration.current.orientation
 
     val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
@@ -62,7 +67,9 @@ fun ThirdParty(
                 modifier = Modifier
                     .nestedScroll(scrollConnection),
                 padding = LibraryDefaults.libraryPadding(
-                    badgePadding = PaddingValues(top = MaterialTheme.spacing.small),
+                    licensePadding = chipPadding(
+                        containerPadding = PaddingValues(top = MaterialTheme.spacing.small),
+                    )
                 ),
                 colors = LibraryDefaults.libraryColors(
                     backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -72,7 +79,8 @@ fun ThirdParty(
                     bottom = insets.calculateBottomPadding() + landscapeContentPadding,
                     start = landscapeContentPadding,
                     end = landscapeContentPadding
-                )
+                ),
+                libraries = libraries
             )
         }
     )

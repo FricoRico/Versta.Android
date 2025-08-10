@@ -17,7 +17,6 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,7 +49,7 @@ import app.versta.translate.ui.theme.spacing
 import androidx.compose.ui.platform.LocalConfiguration
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun About(
     navController: NavController, licenseViewModel: LicenseViewModel
@@ -94,7 +93,7 @@ fun About(
                         modifier = Modifier
                             .padding(bottom = MaterialTheme.spacing.large)
                             .size(MaterialTheme.spacing.extraLarge * 3)
-                            .clip(MaterialTheme.shapes.extraExtraLarge),
+                            .clip(MaterialTheme.shapes.extraLarge),
                     ) {
                         Image(
                             imageVector = ImageVector.vectorResource(R.drawable.ic_launcher_background),
@@ -251,7 +250,8 @@ fun About(
 @Preview(showBackground = true)
 fun AboutPreview() {
     About(
-        navController = NavController(LocalContext.current), licenseViewModel = LicenseViewModel(
+        navController = NavController(LocalContext.current),
+        licenseViewModel = LicenseViewModel(
             licenseRepository = LicenseMemoryRepository()
         )
     )

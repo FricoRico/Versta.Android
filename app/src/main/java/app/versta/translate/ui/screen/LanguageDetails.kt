@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -82,7 +83,7 @@ fun LanguageDetails(
     )
 
     val context = LocalContext.current
-    val orientation = context.resources.configuration.orientation
+    val orientation = LocalConfiguration.current.orientation
 
     val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
         MaterialTheme.spacing.medium

@@ -4,40 +4,27 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Attribution
 import androidx.compose.material.icons.outlined.CreditCardOff
 import androidx.compose.material.icons.outlined.DataObject
-import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.net.toUri
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.LicenseMemoryRepository
@@ -56,7 +43,7 @@ fun Troubleshooting(
     licenseViewModel: LicenseViewModel
 ) {
     val context = LocalContext.current
-    val orientation = context.resources.configuration.orientation
+    val orientation = LocalConfiguration.current.orientation
 
     val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
         MaterialTheme.spacing.medium

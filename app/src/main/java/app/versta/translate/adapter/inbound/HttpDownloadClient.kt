@@ -1,15 +1,12 @@
 package app.versta.translate.adapter.inbound
 
-import kotlinx.coroutines.CancellationException
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
-import okhttp3.internal.wait
 import okio.buffer
 import okio.sink
-import timber.log.Timber
 import java.io.File
 import java.io.IOException
 import java.io.InputStream

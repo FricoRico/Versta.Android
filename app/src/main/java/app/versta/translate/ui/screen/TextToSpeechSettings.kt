@@ -260,7 +260,6 @@ fun TextToSpeechSettings(
                                 tooltip = {
                                     RichTooltip(
                                         colors = TooltipDefaults.richTooltipColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
-                                        caretSize = DpSize(12.dp, 8.dp),
                                         shadowElevation = 6.dp,
                                     ) {
                                         Text(
