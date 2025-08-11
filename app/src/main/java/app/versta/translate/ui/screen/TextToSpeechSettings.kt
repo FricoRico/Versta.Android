@@ -7,18 +7,14 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -49,27 +45,32 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.AudioMockPlayer
 import app.versta.translate.adapter.outbound.DEFAULT_SPEED
 import app.versta.translate.adapter.outbound.DEFAULT_VOICE_GENDER
+import app.versta.translate.adapter.outbound.DataMemoryRepository
+import app.versta.translate.adapter.outbound.ExternalDataMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.adapter.outbound.TextToSpeechMockInference
 import app.versta.translate.adapter.outbound.TextToSpeechMockTokenizer
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryRepository
+import app.versta.translate.adapter.outbound.VoiceMemoryRepository
+import app.versta.translate.bridge.speech.ESpeakNG
+import app.versta.translate.bridge.speech.OpenJTalk
+import app.versta.translate.core.entity.DownloadStatus
 import app.versta.translate.core.entity.VoiceGender
 import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.ui.component.ListDivider
@@ -82,18 +83,11 @@ import app.versta.translate.ui.theme.FilledIconButtonDefaults
 import app.versta.translate.ui.theme.spacing
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
-import app.versta.translate.adapter.outbound.DataMemoryRepository
-import app.versta.translate.adapter.outbound.ExternalDataMemoryRepository
-import app.versta.translate.bridge.speech.ESpeakNG
-import app.versta.translate.bridge.speech.OpenJTalk
-import app.versta.translate.core.entity.DownloadStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TextToSpeechSettings(
-    navController: NavController,
+    backStack: NavBackStack,
     textToSpeechViewModel: TextToSpeechViewModel,
 ) {
     val orientation = LocalConfiguration.current.orientation
@@ -139,7 +133,7 @@ fun TextToSpeechSettings(
             textToSpeechViewModel.reloadVoice()
         }
 
-        navController.popBackStack()
+        backStack.removeLastOrNull()
     }
 
     LaunchedEffect(downloadTask) {
@@ -506,7 +500,7 @@ fun TextToSpeechDataDownloadProgress(
 @SuppressLint("ViewModelConstructorInComposable")
 fun TextToSpeechSettingsPreview() {
     TextToSpeechSettings(
-        navController = rememberNavController(),
+        backStack = rememberNavBackStack<Screens>(),
         textToSpeechViewModel = TextToSpeechViewModel(
             context = LocalContext.current,
             espeakNG = ESpeakNG(),

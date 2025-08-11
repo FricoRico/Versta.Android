@@ -12,7 +12,6 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Attribution
 import androidx.compose.material.icons.outlined.CreditCardOff
 import androidx.compose.material.icons.outlined.DataObject
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -25,7 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.net.toUri
-import androidx.navigation.NavController
+import androidx.navigation3.runtime.NavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.LicenseMemoryRepository
 import app.versta.translate.core.model.LicenseViewModel
@@ -35,11 +34,9 @@ import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.theme.spacing
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Troubleshooting(
-    navController: NavController,
+    backStack: NavBackStack,
     licenseViewModel: LicenseViewModel
 ) {
     val context = LocalContext.current
@@ -52,7 +49,7 @@ fun Troubleshooting(
     }
 
     fun onBackNavigation() {
-        navController.popBackStack()
+        backStack.removeLastOrNull()
     }
 
     fun onResetLicense() {
@@ -96,7 +93,7 @@ fun Troubleshooting(
                         headlineContent = stringResource(R.string.troubleshooting_application_logs_title),
                         supportingContent = stringResource(R.string.troubleshooting_application_logs_description),
                         onClick = {
-                            navController.navigate(Screens.ApplicationLogs())
+                            backStack.add(Screens.ApplicationLogs)
                         },
                         leadingContent = {
                             Icon(
@@ -155,7 +152,7 @@ fun Troubleshooting(
 @SuppressLint("ViewModelConstructorInComposable")
 fun TroubleshootingPreview() {
     Troubleshooting(
-        navController = NavController(LocalContext.current),
+        backStack = NavBackStack(),
         licenseViewModel = LicenseViewModel(
             LicenseMemoryRepository()
         )

@@ -64,8 +64,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.AudioMockPlayer
 import app.versta.translate.adapter.outbound.DataMemoryRepository
@@ -103,7 +103,7 @@ import kotlin.math.max
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TextTranslation(
-    navController: NavController,
+    backStack: NavBackStack,
     languageViewModel: LanguageViewModel,
     translationViewModel: TranslationViewModel,
     textTranslationViewModel: TextTranslationViewModel,
@@ -282,11 +282,7 @@ fun TextTranslation(
             CenterAlignedTopAppBar(
                 navigationIcon = {
                     IconButton(onClick = {
-                        navController.navigate(Screens.Home()) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                inclusive = true
-                            }
-                        }
+                        backStack.removeLastOrNull()
                     }) {
                         Icon(
                             Icons.AutoMirrored.Outlined.ArrowBack,
@@ -667,7 +663,7 @@ fun TextTranslationPreview() {
     )
 
     TextTranslation(
-        navController = rememberNavController(),
+        backStack = rememberNavBackStack<Screens>(),
         textTranslationViewModel = TextTranslationViewModel(
             translationViewModel = translationViewModel,
             languageViewModel = languageViewModel

@@ -40,7 +40,7 @@ open class MainActivity : ComponentActivity() {
         }
     )
 
-    private var initialRoute by mutableStateOf<String?>(null)
+    private var initialRoute by mutableStateOf<Screens?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -119,7 +119,7 @@ open class MainActivity : ComponentActivity() {
             MainApplication.module.textTranslationViewModel.setTranslateOnInput(true)
             MainApplication.module.textTranslationViewModel.setInput(input)
 
-            initialRoute = Screens.TextTranslation()
+            initialRoute = Screens.TextTranslation
         }
     }
 

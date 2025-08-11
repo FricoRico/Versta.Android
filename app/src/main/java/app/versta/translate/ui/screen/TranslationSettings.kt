@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -22,13 +21,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.DEFAULT_CACHE_ENABLED
 import app.versta.translate.adapter.outbound.DEFAULT_CACHE_SIZE
@@ -40,7 +40,6 @@ import app.versta.translate.adapter.outbound.DEFAULT_REPETITION_PENALTY
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
@@ -55,12 +54,10 @@ import app.versta.translate.ui.component.SliderLogarithmic
 import app.versta.translate.ui.component.SliderPredefinedValues
 import app.versta.translate.ui.theme.spacing
 import kotlin.math.roundToInt
-import androidx.compose.ui.platform.LocalConfiguration
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TranslationSettings(
-    navController: NavController,
+    backStack: NavBackStack,
     translationViewModel: TranslationViewModel,
     languageViewModel: LanguageViewModel
 ) {
@@ -108,7 +105,7 @@ fun TranslationSettings(
             translationViewModel.reload()
         }
 
-        navController.popBackStack()
+        backStack.removeLastOrNull()
     }
 
     BackHandler {
@@ -369,7 +366,7 @@ fun TranslationSettings(
 @SuppressLint("ViewModelConstructorInComposable")
 fun TranslationSettingsPreview() {
     TranslationSettings(
-        navController = rememberNavController(),
+        backStack = rememberNavBackStack<Screens>(),
         translationViewModel = TranslationViewModel(
             intermediateTokenizer = TranslationMockTokenizer(),
             intermediateModel = TranslationMockInference(),

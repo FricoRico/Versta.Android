@@ -55,8 +55,6 @@ fun LanguageSuggestionDrawer(
     languageViewModel: LanguageViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-
     val downloadTasks by languageViewModel.downloadTasks.collectAsStateWithLifecycle()
 
     val autoDetectLanguage by languageViewModel.autoDetectLanguage.collectAsStateWithLifecycle()

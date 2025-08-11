@@ -1,11 +1,8 @@
 package app.versta.translate.adapter.outbound
 
-import android.content.Context
 import app.versta.translate.bridge.speech.ESpeakNG
 import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.entity.Language
-import app.versta.translate.ui.screen.TAG
-import timber.log.Timber
 import java.util.Locale
 
 private const val MAX_PHONEME_LENGTH = 512

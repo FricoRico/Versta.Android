@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -16,25 +15,24 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.NavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.theme.spacing
-import androidx.compose.ui.platform.LocalConfiguration
 
 data class PrivacyPolicyParagraph(
     val title: String,
     val content: String
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrivacyPolicy(
-    navController: NavController
+    backStack: NavBackStack
 ) {
     val orientation = LocalConfiguration.current.orientation
 
@@ -45,7 +43,7 @@ fun PrivacyPolicy(
     }
 
     fun onBackNavigation() {
-        navController.popBackStack()
+        backStack.removeLastOrNull()
     }
 
     val privacyPolicyContent = listOf(
@@ -138,5 +136,5 @@ fun PrivacyPolicyTextParagraph(
 @Composable
 @Preview(showBackground = true)
 fun PrivacyPolicyPreview() {
-    PrivacyPolicy(navController = NavController(LocalContext.current))
+    PrivacyPolicy(backStack = rememberNavBackStack<Screens>())
 }

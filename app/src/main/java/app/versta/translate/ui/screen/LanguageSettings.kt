@@ -16,7 +16,6 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,8 +33,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
@@ -60,10 +59,9 @@ import app.versta.translate.ui.theme.spacing
 import kotlin.math.max
 import kotlin.math.min
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LanguageSettings(
-    navController: NavController,
+    backStack: NavBackStack,
     languageViewModel: LanguageViewModel,
 ) {
     val context = LocalContext.current
@@ -102,7 +100,7 @@ fun LanguageSettings(
     }
 
     fun onClick(pair: LanguagePair) {
-        navController.navigate(Screens.LanguageDetails.withArgs(pair.id))
+        backStack.add(Screens.LanguageDetails(pair.id))
     }
 
     ScaffoldLargeHeader(
@@ -114,7 +112,7 @@ fun LanguageSettings(
         },
         navigationIcon = {
             IconButton(onClick = {
-                navController.popBackStack()
+                backStack.removeLastOrNull()
             }) {
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
             }
@@ -350,7 +348,7 @@ private fun LazyListScope.Languages(
 @SuppressLint("ViewModelConstructorInComposable")
 private fun PreviewLanguageSettings() {
     LanguageSettings(
-        navController = rememberNavController(),
+        backStack = rememberNavBackStack<Screens>(),
         languageViewModel = LanguageViewModel(
             context = LocalContext.current,
             languageRepository = LanguageMemoryRepository(),

@@ -23,8 +23,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
@@ -47,11 +45,13 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun Home(
-    navController: NavHostController,
+    backStack: NavBackStack,
     licenseViewModel: LicenseViewModel,
     languageViewModel: LanguageViewModel,
     textTranslationViewModel: TextTranslationViewModel
@@ -96,7 +96,7 @@ fun Home(
         },
         actions = {
             IconButton(onClick = {
-                navController.navigate(Screens.Settings())
+                backStack.add(Screens.Settings)
             }) {
                 Icon(Icons.Outlined.Settings, stringResource(R.string.settings))
             }
@@ -124,7 +124,7 @@ fun Home(
                         textTranslationViewModel = textTranslationViewModel,
                         onSubmit = {
                             textTranslationViewModel.setTranslateOnInput(true)
-                            navController.navigate(Screens.TextTranslation())
+                            backStack.add(Screens.TextTranslation)
                         },
                         onClear = {
                             textTranslationViewModel.clearInput()
@@ -157,7 +157,7 @@ private fun HomePreview() {
     )
 
     Home(
-        navController = rememberNavController(),
+        backStack = rememberNavBackStack<Screens>(),
         licenseViewModel = LicenseViewModel(
             licenseRepository = LicenseMemoryRepository()
         ),

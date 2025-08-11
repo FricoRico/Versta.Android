@@ -16,7 +16,6 @@ import androidx.compose.material.icons.outlined.Attribution
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,13 +30,15 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.LicenseMemoryRepository
 import app.versta.translate.core.model.LicenseViewModel
@@ -46,13 +47,12 @@ import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.theme.spacing
-import androidx.compose.ui.platform.LocalConfiguration
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun About(
-    navController: NavController, licenseViewModel: LicenseViewModel
+    backStack: NavBackStack,
+    licenseViewModel: LicenseViewModel
 ) {
     val orientation = LocalConfiguration.current.orientation
     val version = LocalContext.current.packageManager?.getPackageInfo(LocalContext.current.packageName, 0)?.versionName ?: "x.x.x"
@@ -66,7 +66,7 @@ fun About(
     }
 
     fun onBackNavigation() {
-        navController.popBackStack()
+        backStack.removeLastOrNull()
     }
 
     ScaffoldLargeHeader(
@@ -176,7 +176,7 @@ fun About(
                         headlineContent = stringResource(R.string.about_language_models_title),
                         supportingContent = stringResource(R.string.about_language_models_description),
                         onClick = {
-                            navController.navigate(Screens.LanguageAttributions())
+                            backStack.add(Screens.LanguageAttributions)
                         },
                         leadingContent = {
                             Icon(
@@ -194,7 +194,7 @@ fun About(
                         headlineContent = stringResource(R.string.about_voice_models_title),
                         supportingContent = stringResource(R.string.about_voice_models_description),
                         onClick = {
-                            navController.navigate(Screens.VoiceAttributions())
+                            backStack.add(Screens.VoiceAttributions)
                         },
                         leadingContent = {
                             Icon(
@@ -212,7 +212,7 @@ fun About(
                         headlineContent = stringResource(R.string.about_third_party_title),
                         supportingContent = stringResource(R.string.about_third_party_description),
                         onClick = {
-                            navController.navigate(Screens.ThirdParty())
+                            backStack.add(Screens.ThirdParty)
                         },
                         leadingContent = {
                             Icon(
@@ -230,7 +230,7 @@ fun About(
                         headlineContent = stringResource(R.string.about_privacy_policy_title),
                         supportingContent = stringResource(R.string.about_privacy_policy_description),
                         onClick = {
-                            navController.navigate(Screens.PrivacyPolicy())
+                            backStack.add(Screens.PrivacyPolicy)
                         },
                         leadingContent = {
                             Icon(
@@ -250,7 +250,7 @@ fun About(
 @Preview(showBackground = true)
 fun AboutPreview() {
     About(
-        navController = NavController(LocalContext.current),
+        backStack = rememberNavBackStack<Screens>(),
         licenseViewModel = LicenseViewModel(
             licenseRepository = LicenseMemoryRepository()
         )

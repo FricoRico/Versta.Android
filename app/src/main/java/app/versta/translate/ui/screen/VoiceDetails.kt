@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,8 +36,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
@@ -53,22 +52,14 @@ import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.VoiceDeletionConfirmationDialog
 import app.versta.translate.ui.theme.spacing
-import timber.log.Timber
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VoiceDetails(
-    navController: NavController,
-    voiceViewModel: VoiceViewModel,
+    id: String,
+    backStack: NavBackStack,
+    voiceViewModel: VoiceViewModel
 ) {
-    val argument = remember { navController.currentBackStackEntry?.arguments?.getString("id") }
-    if (argument == null) {
-        navController.popBackStack()
-        Timber.tag(TAG).e("Missing voice id argument")
-        return
-    }
-
-    val model by voiceViewModel.getVoiceModelDefinition(argument)
+    val model by voiceViewModel.getVoiceModelDefinition(id)
         .collectAsStateWithLifecycle(null)
     val importedLanguagePairs by voiceViewModel.importedVoices.collectAsStateWithLifecycle(
         emptyList()
@@ -102,7 +93,7 @@ fun VoiceDetails(
     var voiceToBeDeleted by remember { mutableStateOf<ExternalVoiceModelDefinition?>(null) }
 
     fun onBackNavigation() {
-        navController.popBackStack()
+        backStack.removeLastOrNull()
     }
 
     ScaffoldLargeHeader(
@@ -335,7 +326,8 @@ fun VoiceDetailsData(
 @SuppressLint("ViewModelConstructorInComposable")
 fun VoiceDetailsPreview() {
     VoiceDetails(
-        navController = rememberNavController(),
+        id = "kokoro",
+        backStack = rememberNavBackStack<Screens>(),
         voiceViewModel = VoiceViewModel(
             context = LocalContext.current,
             voiceRepository = VoiceMemoryRepository(),

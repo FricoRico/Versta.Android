@@ -18,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,10 +37,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
@@ -57,26 +55,18 @@ import app.versta.translate.ui.component.ListDivider
 import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.theme.spacing
-import timber.log.Timber
 import kotlin.math.max
 import kotlin.math.min
 
 internal const val TAG = "LanguageDetails"
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LanguageDetails(
-    navController: NavController,
+    id: String,
+    backStack: NavBackStack,
     languageViewModel: LanguageViewModel,
 ) {
-    val argument = remember { navController.currentBackStackEntry?.arguments?.getString("pair") }
-    if (argument == null) {
-        navController.popBackStack()
-        Timber.tag(TAG).e("Missing source language pair argument")
-        return
-    }
-
-    val pair = LanguagePair.fromId(argument)
+    val pair = LanguagePair.fromId(id)
     val model by languageViewModel.getLanguageDefinition(pair).collectAsStateWithLifecycle(null)
     val importedLanguagePairs by languageViewModel.importedLanguagePairs.collectAsStateWithLifecycle(
         emptyList()
@@ -94,7 +84,7 @@ fun LanguageDetails(
     var languageToBeDeleted by remember { mutableStateOf<LanguagePair?>(null) }
 
     fun onBackNavigation() {
-        navController.popBackStack()
+        backStack.removeLastOrNull()
     }
 
     ScaffoldLargeHeader(
@@ -373,7 +363,8 @@ fun LanguageDetailsData(
 @SuppressLint("ViewModelConstructorInComposable")
 fun LanguageDetailsPreview() {
     LanguageDetails(
-        navController = rememberNavController(),
+        id = "en-nl",
+        backStack = rememberNavBackStack<Screens>(),
         languageViewModel = LanguageViewModel(
             context = LocalContext.current,
             languageRepository = LanguageMemoryRepository(),

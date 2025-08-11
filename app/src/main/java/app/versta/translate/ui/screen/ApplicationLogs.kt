@@ -13,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Save
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -22,12 +21,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.FileSaverCallback
 import app.versta.translate.adapter.outbound.LogFileSaver
@@ -36,14 +36,13 @@ import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.theme.spacing
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ApplicationLogs(
-    navController: NavController,
+    backStack: NavBackStack,
     loggingViewModel: LoggingViewModel
 ) {
     val context = LocalContext.current
-    val orientation = context.resources.configuration.orientation
+    val orientation = LocalConfiguration.current.orientation
 
     val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
         MaterialTheme.spacing.large
@@ -54,7 +53,7 @@ fun ApplicationLogs(
     val logs by loggingViewModel.logs.collectAsStateWithLifecycle()
 
     fun onBackNavigation() {
-        navController.popBackStack()
+        backStack.removeLastOrNull()
     }
 
     val onSaveLocationPicked: FileSaverCallback = object : FileSaverCallback {
@@ -127,7 +126,7 @@ fun ApplicationLogs(
 @SuppressLint("ViewModelConstructorInComposable")
 fun ApplicationLogsPreview() {
     ApplicationLogs(
-        navController = rememberNavController(),
+        backStack = rememberNavBackStack<Screens>(),
         loggingViewModel = LoggingViewModel(LocalContext.current.getExternalFilesDir(null))
     )
 }

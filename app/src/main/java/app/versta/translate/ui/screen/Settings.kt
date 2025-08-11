@@ -6,13 +6,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.MicNone
 import androidx.compose.material.icons.outlined.RecordVoiceOver
 import androidx.compose.material.icons.outlined.Translate
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -21,12 +18,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.LicenseMemoryRepository
 import app.versta.translate.core.model.LicenseViewModel
@@ -36,12 +33,10 @@ import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.component.TrialLicenseCard
 import app.versta.translate.ui.theme.spacing
-import androidx.compose.ui.platform.LocalConfiguration
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Settings(
-    navController: NavController,
+    backStack: NavBackStack,
     licenseViewModel: LicenseViewModel
 ) {
     val hasLicense by licenseViewModel.hasLicense.collectAsStateWithLifecycle(false)
@@ -62,7 +57,7 @@ fun Settings(
         },
         navigationIcon = {
             IconButton(onClick = {
-                navController.popBackStack()
+                backStack.removeLastOrNull()
             }) {
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
             }
@@ -83,7 +78,7 @@ fun Settings(
                         headlineContent = stringResource(R.string.settings_languages_title),
                         supportingContent = stringResource(R.string.settings_languages_description),
                         onClick = {
-                            navController.navigate(Screens.LanguageSettings())
+                            backStack.add(Screens.LanguageSettings)
                         },
                         leadingContent = {
                             Icon(
@@ -101,7 +96,7 @@ fun Settings(
                         headlineContent = "Voices",
                         supportingContent = "Manage voices, download new voices",
                         onClick = {
-                            navController.navigate(Screens.VoicesSettings())
+                            backStack.add(Screens.VoicesSettings)
                         },
                         leadingContent = {
                             Icon(
@@ -129,7 +124,7 @@ fun Settings(
                         headlineContent = stringResource(R.string.settings_translation_title),
                         supportingContent = stringResource(R.string.settings_translation_description),
                         onClick = {
-                            navController.navigate(Screens.TranslationSettings())
+                            backStack.add(Screens.TranslationSettings)
                         },
                         leadingContent = {
                             Icon(
@@ -147,7 +142,7 @@ fun Settings(
                         headlineContent = stringResource(R.string.settings_text_to_speech_title),
                         supportingContent = stringResource(R.string.settings_text_to_speech_description),
                         onClick = {
-                            navController.navigate(Screens.TextToSpeechSettings())
+                            backStack.add(Screens.TextToSpeechSettings)
                         },
                         leadingContent = {
                             Icon(
@@ -167,7 +162,7 @@ fun Settings(
                         headlineContent = stringResource(R.string.settings_about_title),
                         supportingContent = stringResource(R.string.settings_about_description),
                         onClick = {
-                            navController.navigate(Screens.About())
+                            backStack.add(Screens.About)
                         },
                         index = 0,
                         groupSize = 2
@@ -179,7 +174,7 @@ fun Settings(
                         headlineContent = stringResource(R.string.settings_troubleshooting_title),
                         supportingContent = stringResource(R.string.settings_troubleshooting_description),
                         onClick = {
-                            navController.navigate(Screens.Troubleshooting())
+                            backStack.add(Screens.Troubleshooting)
                         },
                         index = 1,
                         groupSize = 2
@@ -195,7 +190,7 @@ fun Settings(
 @SuppressLint("ViewModelConstructorInComposable")
 fun SettingsPreview() {
     return Settings(
-        navController = rememberNavController(),
+        backStack = rememberNavBackStack<Screens>(),
         licenseViewModel = LicenseViewModel(
             licenseRepository = LicenseMemoryRepository()
         )

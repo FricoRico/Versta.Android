@@ -4,7 +4,6 @@ import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -13,27 +12,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.theme.spacing
 import com.mikepenz.aboutlibraries.ui.compose.LibraryDefaults
-import androidx.compose.ui.platform.LocalConfiguration
 import com.mikepenz.aboutlibraries.ui.compose.LibraryDefaults.chipPadding
 import com.mikepenz.aboutlibraries.ui.compose.android.rememberLibraries
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
-import com.mikepenz.aboutlibraries.ui.compose.m3.chipColors
 import com.mikepenz.aboutlibraries.ui.compose.m3.libraryColors
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThirdParty(
-    navController: NavController
+    backStack: NavBackStack
 ) {
     val libraries by rememberLibraries(R.raw.aboutlibraries)
     val orientation = LocalConfiguration.current.orientation
@@ -45,7 +42,7 @@ fun ThirdParty(
     }
 
     fun onBackNavigation() {
-        navController.popBackStack()
+        backStack.removeLastOrNull()
     }
 
     ScaffoldLargeHeader(
@@ -89,5 +86,5 @@ fun ThirdParty(
 @Composable
 @Preview(showBackground = true)
 fun ThirdPartyPreview() {
-    ThirdParty(navController = NavController(LocalContext.current))
+    ThirdParty(backStack = rememberNavBackStack<Screens>())
 }

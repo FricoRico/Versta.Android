@@ -1,52 +1,54 @@
 package app.versta.translate.ui.screen
 
-enum class StatusBarStyle {
-    Light,
-    Dark
-}
+import androidx.navigation3.runtime.NavKey
+import kotlinx.serialization.Serializable
 
-enum class Screens (
-    private val args: List<String> = emptyList(),
-    val statusBarStyle: StatusBarStyle = StatusBarStyle.Light
-) {
-    Home,
-    Settings,
-    LanguageSettings,
-    LanguageDetails(
-        listOf("pair")
-    ),
-    LanguageAttributions,
-    TextTranslation,
-    TranslationSettings,
-    TextToSpeechSettings,
-    VoicesSettings,
-    VoiceDetails(
-        listOf("id")
-    ),
-    VoiceAttributions,
-    About,
-    ThirdParty,
-    PrivacyPolicy,
-    Troubleshooting,
-    ApplicationLogs;
+sealed class Screens : NavKey {
+    @Serializable
+    data object Home : Screens()
 
-    operator fun invoke(): String {
-        val argList = StringBuilder()
-        args.let { nnArgs ->
-            nnArgs.forEach { arg -> argList.append("/{$arg}") }
-        }
-        return name + argList
-    }
+    @Serializable
+    data object Settings : Screens()
 
-    fun withArgs(vararg args: Any): String {
-        val destination = StringBuilder()
-        args.forEach { arg -> destination.append("/$arg") }
-        return name + destination
-    }
+    @Serializable
+    data object LanguageSettings : Screens()
 
-    companion object {
-        fun byRoute(route: String): Screens {
-            return valueOf(route.split("/").first())
-        }
-    }
+    @Serializable
+    data class LanguageDetails(val id: String) : Screens()
+
+    @Serializable
+    data object LanguageAttributions : Screens()
+
+    @Serializable
+    data object TextTranslation : Screens()
+
+    @Serializable
+    data object TranslationSettings : Screens()
+
+    @Serializable
+    data object TextToSpeechSettings : Screens()
+
+    @Serializable
+    data object VoicesSettings : Screens()
+
+    @Serializable
+    data class VoiceDetails(val id: String) : Screens()
+
+    @Serializable
+    data object VoiceAttributions : Screens()
+
+    @Serializable
+    data object About : Screens()
+
+    @Serializable
+    data object ThirdParty : Screens()
+
+    @Serializable
+    data object PrivacyPolicy : Screens()
+
+    @Serializable
+    data object Troubleshooting : Screens()
+
+    @Serializable
+    data object ApplicationLogs : Screens()
 }

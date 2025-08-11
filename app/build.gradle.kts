@@ -175,6 +175,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.material3.adaptive)
     implementation(libs.androidx.splash.screen)
     implementation(libs.appache.commons.compress)
     implementation(libs.atilika.kuromoji.ipadic)
@@ -184,11 +185,11 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.material.icons)
     implementation(libs.material.icons.extended)
-    implementation(libs.navigation.compose)
+    implementation(libs.navigation3.runtime)
+    implementation(libs.navigation3.ui)
     implementation(libs.squareup.okhttp)
     implementation(libs.sqldelight.android)
     implementation(libs.sqldelight.coroutines)
 
     implementation(libs.onnxruntime)
-//    implementation(libs.onnxruntime.extensions)
 }

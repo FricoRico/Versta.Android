@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,8 +32,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
@@ -55,10 +54,9 @@ import app.versta.translate.ui.component.SettingsHeaderItem
 import app.versta.translate.ui.component.VoiceDeletionConfirmationDialog
 import app.versta.translate.ui.theme.spacing
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VoicesSettings(
-    navController: NavController,
+    backStack: NavBackStack,
     voiceViewModel: VoiceViewModel,
 ) {
     val context = LocalContext.current
@@ -97,7 +95,7 @@ fun VoicesSettings(
     }
 
     fun onClick(model: ExternalVoiceModelDefinition) {
-        navController.navigate(Screens.VoiceDetails.withArgs(model.id))
+        backStack.add(Screens.VoiceDetails(model.id))
     }
 
     ScaffoldLargeHeader(
@@ -109,7 +107,7 @@ fun VoicesSettings(
         },
         navigationIcon = {
             IconButton(onClick = {
-                navController.popBackStack()
+                backStack.removeLastOrNull()
             }) {
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
             }
@@ -326,7 +324,7 @@ private fun LazyListScope.Voices(
 @SuppressLint("ViewModelConstructorInComposable")
 private fun PreviewVoicesSettings() {
     VoicesSettings(
-        navController = rememberNavController(),
+        backStack = rememberNavBackStack<Screens>(),
         voiceViewModel = VoiceViewModel(
             context = LocalContext.current,
             voiceRepository = VoiceMemoryRepository(),

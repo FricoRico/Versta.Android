@@ -327,7 +327,7 @@ class TextToSpeechViewModel(
     /**
      * Loads the voice model from given files.
      */
-    fun loadVoice(files: VoiceWithModelFiles) {
+    private fun loadVoice(files: VoiceWithModelFiles) {
         close()
         cancelSynthesis()
 
@@ -381,9 +381,9 @@ class TextToSpeechViewModel(
         }
 
         viewModelScope.launch {
-            _language.combine(_voiceModel) { language, files ->
+            combine(_language, _voiceModel) { language, files ->
                 Pair(language, files)
-            }.conflate().collect { (language, files) ->
+            }.collect { (language, files) ->
                 if (language == null || files == null) {
                     clearVoice()
                     return@collect
@@ -397,7 +397,7 @@ class TextToSpeechViewModel(
     /**
      * Reloads the text-to-speech data.
      */
-    fun reloadData() {
+    private fun reloadData() {
         viewModelScope.launch {
             _textToSpeechData.collect { data ->
                 loadData(data)

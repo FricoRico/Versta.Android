@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +31,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
@@ -41,10 +41,9 @@ import app.versta.translate.ui.component.ScaffoldLargeHeader
 import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
 import app.versta.translate.ui.theme.spacing
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VoiceAttributions(
-    navController: NavController,
+    backStack: NavBackStack,
     voiceViewModel: VoiceViewModel
 ) {
     val context = LocalContext.current
@@ -59,7 +58,7 @@ fun VoiceAttributions(
     }
 
     fun onBackNavigation() {
-        navController.popBackStack()
+        backStack.removeLastOrNull()
     }
 
     ScaffoldLargeHeader(
@@ -159,7 +158,7 @@ fun VoiceAttributions(
 @SuppressLint("ViewModelConstructorInComposable")
 fun VoiceAttributionsPreview() {
     VoiceAttributions(
-        navController = NavController(LocalContext.current),
+        backStack = rememberNavBackStack<Screens>(),
         voiceViewModel = VoiceViewModel(
             context = LocalContext.current,
             voiceRepository = VoiceMemoryRepository(),

@@ -42,7 +42,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 
 internal const val NESTED_SCROLL_VELOCITY_THRESHOLD = 128f
 
-@OptIn(ExperimentalMaterial3Api::class)
 object ScaffoldLargeHeaderDefaults {
     @Composable
     fun topAppBarPrimaryColor(
@@ -272,7 +271,6 @@ fun ScaffoldLargeHeader(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview(showBackground = true)
 fun ScaffoldLargeHeaderPreview() {
