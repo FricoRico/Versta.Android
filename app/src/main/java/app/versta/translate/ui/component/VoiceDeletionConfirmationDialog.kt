@@ -3,8 +3,6 @@ package app.versta.translate.ui.component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -12,7 +10,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -34,7 +34,7 @@ fun VoiceDeletionConfirmationDialog(
         shape = MaterialTheme.shapes.extraLarge,
         icon = {
             Icon(
-                Icons.Outlined.Error,
+                ImageVector.vectorResource(R.drawable.round_error_24),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.error
             )

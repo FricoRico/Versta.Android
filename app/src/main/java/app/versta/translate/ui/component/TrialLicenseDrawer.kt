@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -28,8 +26,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -166,7 +166,7 @@ fun TrialLicenseDrawer(
                                     text = stringResource(R.string.license_upgrade_buy_license),
                                 )
                                 Icon(
-                                    Icons.AutoMirrored.Outlined.OpenInNew,
+                                    ImageVector.vectorResource(R.drawable.rounded_open_in_browser_24),
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -181,7 +181,6 @@ fun TrialLicenseDrawer(
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 private fun TrialLicenseDrawerPreview() {
     TrialLicenseDrawer(
         LicenseViewModel(

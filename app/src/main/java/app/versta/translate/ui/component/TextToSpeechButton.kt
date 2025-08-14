@@ -1,7 +1,6 @@
 package app.versta.translate.ui.component
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -9,9 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -21,8 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,16 +60,16 @@ fun TextToSpeechButton(
             Box {
                 AnimatedVisibility(
                     visible = textToSpeechSynthesisState == TextToSpeechSynthesisState.Idle,
-                    enter = fadeIn(animationSpec = tween(500)),
-                    exit = fadeOut(animationSpec = tween(500))
+                    enter = fadeIn(),
+                    exit = fadeOut()
                 ) {
-                    Icon(Icons.Outlined.GraphicEq, contentDescription = stringResource(R.string.text_to_speak_speak))
+                    Icon(ImageVector.vectorResource(R.drawable.rounded_graphic_eq_24), contentDescription = stringResource(R.string.text_to_speak_speak))
                 }
 
                 AnimatedVisibility(
                     visible = textToSpeechSynthesisState == TextToSpeechSynthesisState.Preparing,
-                    enter = fadeIn(animationSpec = tween(500)),
-                    exit = fadeOut(animationSpec = tween(500))
+                    enter = fadeIn(),
+                    exit = fadeOut()
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
@@ -82,10 +80,10 @@ fun TextToSpeechButton(
 
                 AnimatedVisibility(
                     visible = textToSpeechSynthesisState == TextToSpeechSynthesisState.Synthesizing,
-                    enter = fadeIn(animationSpec = tween(500)),
-                    exit = fadeOut(animationSpec = tween(500))
+                    enter = fadeIn(),
+                    exit = fadeOut()
                 ) {
-                    Icon(Icons.Filled.Stop, contentDescription = stringResource(R.string.text_to_speech_stop))
+                    Icon(ImageVector.vectorResource(R.drawable.rounded_stop_24), contentDescription = stringResource(R.string.text_to_speech_stop))
                 }
             }
         }

@@ -1,23 +1,17 @@
 package app.versta.translate.ui.screen
 
-import android.annotation.SuppressLint
-import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.icu.text.DecimalFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,14 +21,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation3.runtime.NavBackStack
-import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
@@ -46,34 +39,32 @@ import app.versta.translate.core.entity.ExternalLanguagePairDefinition
 import app.versta.translate.core.entity.LANGUAGE_RATING_THRESHOLD
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.model.LanguageViewModel
+import app.versta.translate.core.model.NavigationViewModel
+import app.versta.translate.core.model.ScaffoldViewModel
 import app.versta.translate.ui.component.DownloadButton
 import app.versta.translate.ui.component.LanguageDeletionConfirmationDialog
 import app.versta.translate.ui.component.LanguagePairBadge
 import app.versta.translate.ui.component.ListDivider
-import app.versta.translate.ui.component.ScaffoldLargeHeader
-import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
+import app.versta.translate.ui.component.ScaffoldCompactBarBackNavigationIcon
+import app.versta.translate.ui.component.ScaffoldCompactBarEmptyActions
+import app.versta.translate.ui.component.ScaffoldCompactBarTitle
+import app.versta.translate.ui.component.ScaffoldComponentProvider
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.component.SettingsDefaults
 import app.versta.translate.ui.component.SettingsHeaderItem
 import app.versta.translate.ui.theme.spacing
+import timber.log.Timber
 import kotlin.math.max
 import kotlin.math.min
 
 @Composable
 fun LanguageSettings(
-    backStack: NavBackStack,
+    innerPadding: PaddingValues,
+    scaffoldViewModel: ScaffoldViewModel,
+    navigationViewModel: NavigationViewModel,
     languageViewModel: LanguageViewModel,
 ) {
-    val context = LocalContext.current
-
-    val orientation = LocalConfiguration.current.orientation
-
-    val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
-        MaterialTheme.spacing.medium
-    } else {
-        MaterialTheme.spacing.small
-    }
-
+    Timber.tag("LanguageSettings").d("Showing Language Settings screen")
     val languageModels by languageViewModel.languageModelsByState.collectAsStateWithLifecycle(
         ExternalLanguageModels()
     )
@@ -91,6 +82,8 @@ fun LanguageSettings(
         downloadTasks.any { it.model == model }
     }
 
+    val layoutDirection = LocalLayoutDirection.current
+
     fun onDownload(model: ExternalLanguagePairDefinition) {
         languageViewModel.queueDownload(model)
     }
@@ -100,129 +93,128 @@ fun LanguageSettings(
     }
 
     fun onClick(pair: LanguagePair) {
-        backStack.add(Screens.LanguageDetails(pair.id))
+        navigationViewModel.navigate(Screens.LanguageDetails(pair.id), Screens.LanguageSettings)
     }
 
-    ScaffoldLargeHeader(
-        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
+    ScaffoldComponentProvider(
+        scaffoldViewModel = scaffoldViewModel,
         title = {
-            Text(
-                text = stringResource(R.string.language_settings_title),
-            )
+            ScaffoldCompactBarTitle(text = stringResource(R.string.settings_languages_title))
         },
         navigationIcon = {
-            IconButton(onClick = {
-                backStack.removeLastOrNull()
-            }) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
-            }
+            ScaffoldCompactBarBackNavigationIcon(navigationViewModel = navigationViewModel)
         },
-        content = { insets, scrollConnection ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(scrollConnection),
-                contentPadding = PaddingValues(
-                    top = landscapeContentPadding + MaterialTheme.spacing.extraSmall,
-                    bottom = insets.calculateBottomPadding() + landscapeContentPadding,
-                    start = landscapeContentPadding,
-                    end = landscapeContentPadding
-                )
-            ) {
-                Languages(
-                    languages = queuedTasks,
-                    downloadTasks = downloadTasks,
-                    header = { size ->
-                        SettingsHeaderItem(
-                            content = stringResource(R.string.downloading),
-                            groupSize = size + 1, index = 0
-                        )
-                    },
-                    onDownload = {
-                        onDownload(it)
-                    },
-                    onCancel = {
-                        onCancel()
-                    },
-                    onClick = {
-                        onClick(it)
-                    },
-                    onSwipeToDelete = { language ->
-                        languageToBeDeleted = language
-                    }
-                )
-
-                Languages(
-                    languages = languageModels.installed,
-                    downloadTasks = downloadTasks,
-                    header = { size ->
-                        SettingsHeaderItem(
-                            content = stringResource(R.string.installed_headline),
-                            groupSize = size + 1, index = 0
-                        )
-                    },
-                    onClick = {
-                        onClick(it)
-                    },
-                    onSwipeToDelete = { language ->
-                        languageToBeDeleted = language
-                    }
-                )
-
-                Languages(
-                    languages = filteredUpdates,
-                    downloadTasks = downloadTasks,
-                    header = { size ->
-                        SettingsHeaderItem(
-                            content = stringResource(R.string.updates_headline),
-                            groupSize = size + 1, index = 0
-                        )
-                    },
-                    onDownload = {
-                        onDownload(it)
-                    },
-                    onCancel = {
-                        onCancel()
-                    },
-                    onClick = {
-                        onClick(it)
-                    },
-                    onSwipeToDelete = { language ->
-                        languageToBeDeleted = language
-                    }
-                )
-
-                Languages(
-                    languages = filteredAvailable,
-                    downloadTasks = downloadTasks,
-                    header = { size ->
-                        SettingsHeaderItem(
-                            content = stringResource(R.string.available_headline),
-                            groupSize = size + 1, index = 0
-                        )
-                    },
-                    onDownload = {
-                        onDownload(it)
-                    },
-                    onCancel = {
-                        onCancel()
-                    },
-                    onClick = {
-                        onClick(it)
-                    }
-                )
-            }
-
-            LanguageDeletionConfirmationDialog(
-                pair = languageToBeDeleted,
-                onConfirmation = {
-                    languageViewModel.removeLanguageModel(it, true)
-                    languageToBeDeleted = null
+        navigationIconContentKey = "ScaffoldCompactBarBackNavigationIcon",
+        actions = {
+            ScaffoldCompactBarEmptyActions()
+        },
+        actionsContentKey = "ScaffoldCompactBarEmptyActions",
+        wrapContent = true
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+            )
+        ) {
+            Languages(
+                languages = queuedTasks,
+                downloadTasks = downloadTasks,
+                header = { size ->
+                    SettingsHeaderItem(
+                        content = stringResource(R.string.downloading),
+                        groupSize = size + 1, index = 0
+                    )
                 },
-                onDismissRequest = {
-                    languageToBeDeleted = null
-                })
-        })
+                onDownload = {
+                    onDownload(it)
+                },
+                onCancel = {
+                    onCancel()
+                },
+                onClick = {
+                    onClick(it)
+                },
+                onSwipeToDelete = { language ->
+                    languageToBeDeleted = language
+                }
+            )
+
+            Languages(
+                languages = languageModels.installed,
+                downloadTasks = downloadTasks,
+                header = { size ->
+                    SettingsHeaderItem(
+                        content = stringResource(R.string.installed_headline),
+                        groupSize = size + 1, index = 0
+                    )
+                },
+                onClick = {
+                    onClick(it)
+                },
+                onSwipeToDelete = { language ->
+                    languageToBeDeleted = language
+                }
+            )
+
+            Languages(
+                languages = filteredUpdates,
+                downloadTasks = downloadTasks,
+                header = { size ->
+                    SettingsHeaderItem(
+                        content = stringResource(R.string.updates_headline),
+                        groupSize = size + 1, index = 0
+                    )
+                },
+                onDownload = {
+                    onDownload(it)
+                },
+                onCancel = {
+                    onCancel()
+                },
+                onClick = {
+                    onClick(it)
+                },
+                onSwipeToDelete = { language ->
+                    languageToBeDeleted = language
+                }
+            )
+
+            Languages(
+                languages = filteredAvailable,
+                downloadTasks = downloadTasks,
+                header = { size ->
+                    SettingsHeaderItem(
+                        content = stringResource(R.string.available_headline),
+                        groupSize = size + 1, index = 0
+                    )
+                },
+                onDownload = {
+                    onDownload(it)
+                },
+                onCancel = {
+                    onCancel()
+                },
+                onClick = {
+                    onClick(it)
+                }
+            )
+        }
+
+        LanguageDeletionConfirmationDialog(
+            pair = languageToBeDeleted,
+            onConfirmation = {
+                languageViewModel.removeLanguageModel(it, true)
+                languageToBeDeleted = null
+            },
+            onDismissRequest = {
+                languageToBeDeleted = null
+            })
+    }
 }
 
 private fun LazyListScope.Languages(
@@ -281,7 +273,7 @@ private fun LazyListScope.Languages(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            Icons.Filled.Star,
+                            ImageVector.vectorResource(R.drawable.round_star_rate_24),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.requiredSize(MaterialTheme.spacing.medium)
@@ -299,7 +291,7 @@ private fun LazyListScope.Languages(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            if (onDownload != null) Icons.Filled.CloudDownload else Icons.Filled.Save,
+                            if (onDownload != null) ImageVector.vectorResource(R.drawable.round_cloud_download_24) else ImageVector.vectorResource(R.drawable.round_save_24),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.requiredSize(MaterialTheme.spacing.medium)
@@ -345,10 +337,15 @@ private fun LazyListScope.Languages(
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 private fun PreviewLanguageSettings() {
+    val navigationViewModel = NavigationViewModel(Screens.TextTranslation)
+
     LanguageSettings(
-        backStack = rememberNavBackStack<Screens>(),
+        innerPadding = PaddingValues(),
+        scaffoldViewModel = ScaffoldViewModel(
+            navigationViewModel = navigationViewModel
+        ),
+        navigationViewModel = navigationViewModel,
         languageViewModel = LanguageViewModel(
             context = LocalContext.current,
             languageRepository = LanguageMemoryRepository(),

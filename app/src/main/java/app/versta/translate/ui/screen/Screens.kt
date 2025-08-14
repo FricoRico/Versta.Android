@@ -5,7 +5,10 @@ import kotlinx.serialization.Serializable
 
 sealed class Screens : NavKey {
     @Serializable
-    data object Home : Screens()
+    data object TextTranslation : Screens()
+
+    @Serializable
+    data object Vision : Screens()
 
     @Serializable
     data object Settings : Screens()
@@ -20,7 +23,7 @@ sealed class Screens : NavKey {
     data object LanguageAttributions : Screens()
 
     @Serializable
-    data object TextTranslation : Screens()
+    data object TextTranslationLegacy : Screens()
 
     @Serializable
     data object TranslationSettings : Screens()
@@ -29,7 +32,7 @@ sealed class Screens : NavKey {
     data object TextToSpeechSettings : Screens()
 
     @Serializable
-    data object VoicesSettings : Screens()
+    data object VoiceSettings : Screens()
 
     @Serializable
     data class VoiceDetails(val id: String) : Screens()

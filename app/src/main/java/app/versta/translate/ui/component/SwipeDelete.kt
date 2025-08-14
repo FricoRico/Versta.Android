@@ -4,9 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
@@ -17,9 +14,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import app.versta.translate.R
 import app.versta.translate.ui.theme.spacing
@@ -84,7 +83,7 @@ fun DeleteBackground(
         contentAlignment = Alignment.CenterEnd
     ) {
         Icon(
-            imageVector = if (progress > 0.33f && progress < 0.99f) Icons.Outlined.DeleteForever else Icons.Outlined.Delete,
+            imageVector = if (progress > 0.33f && progress < 0.99f) ImageVector.vectorResource(R.drawable.round_delete_forever_24) else ImageVector.vectorResource(R.drawable.round_delete_outline_24),
             contentDescription = stringResource(R.string.remove),
             tint = MaterialTheme.colorScheme.onError,
         )

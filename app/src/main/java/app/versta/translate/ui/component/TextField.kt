@@ -9,12 +9,17 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.tooling.preview.Preview
+import app.versta.translate.core.entity.Language
+import app.versta.translate.utils.darken
 import app.versta.translate.utils.lighten
 import androidx.compose.material3.TextFieldDefaults as MaterialTextFieldDefaults
 
@@ -22,16 +27,16 @@ object TextFieldDefaults {
     @Composable
     fun colors(
         unfocusedContainerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
-        focusedContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        focusedIndicatorColor: Color = MaterialTheme.colorScheme.primary,
-        unfocusedIndicatorColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-        unfocusedTextColor: Color = MaterialTheme.colorScheme.onSurface.lighten(0.1f),
+        focusedContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
+        focusedIndicatorColor: Color = Color.Transparent,
+        unfocusedIndicatorColor: Color = Color.Transparent,
         focusedTextColor: Color = MaterialTheme.colorScheme.onSurface,
+        unfocusedTextColor: Color = focusedTextColor.lighten(0.1f),
         cursorColor: Color = MaterialTheme.colorScheme.primary,
-        unfocusedLabelColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+        unfocusedLabelColor: Color = focusedTextColor.copy(alpha = 0.4f),
         focusedLabelColor: Color = MaterialTheme.colorScheme.primary,
-        focusedPlaceholderColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.lighten(0.4f),
-        unfocusedPlaceholderColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.lighten(0.4f),
+        focusedPlaceholderColor: Color = focusedTextColor.copy(alpha = 0.4f),
+        unfocusedPlaceholderColor: Color = focusedTextColor.copy(alpha = 0.4f),
     ) = MaterialTextFieldDefaults.colors(
         unfocusedContainerColor = unfocusedContainerColor,
         focusedContainerColor = focusedContainerColor,
@@ -52,13 +57,13 @@ object TextFieldDefaults {
         focusedContainerColor: Color = Color.Transparent,
         focusedIndicatorColor: Color = Color.Transparent,
         unfocusedIndicatorColor: Color = Color.Transparent,
-        unfocusedTextColor: Color = MaterialTheme.colorScheme.onSurface.lighten(0.1f),
-        focusedTextColor: Color = MaterialTheme.colorScheme.onSurface,
-        cursorColor: Color = MaterialTheme.colorScheme.onSurface,
+        unfocusedTextColor: Color = LocalTextStyle.current.color.darken(0.1f),
+        focusedTextColor: Color = LocalTextStyle.current.color,
+        cursorColor: Color = LocalTextStyle.current.color,
         unfocusedLabelColor: Color = MaterialTheme.colorScheme.surfaceBright,
         focusedLabelColor: Color = MaterialTheme.colorScheme.primary,
-        focusedPlaceholderColor: Color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-        unfocusedPlaceholderColor: Color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+        focusedPlaceholderColor: Color = LocalTextStyle.current.color.copy(alpha = 0.4f),
+        unfocusedPlaceholderColor: Color = LocalTextStyle.current.color.copy(alpha = 0.4f),
     ) = colors(
         unfocusedContainerColor = unfocusedContainerColor,
         focusedContainerColor = focusedContainerColor,
@@ -103,34 +108,61 @@ object TextFieldDefaults {
 
 @Composable
 fun TextField(
-    placeholder: String,
+    modifier: Modifier = Modifier,
+    placeholder: String? = null,
     onValueChange: (String) -> Unit,
     onSubmit: (() -> Unit)? = null,
+    onFocus: (() -> Unit)? = null,
+    onBlur: (() -> Unit)? = null,
+    sourceLocale: Language? = null,
     textStyle: TextStyle = LocalTextStyle.current,
     colors: TextFieldColors = TextFieldDefaults.colors(),
     shape: Shape = MaterialTheme.shapes.medium,
+    trailingIcon: @Composable (() -> Unit)? = null,
     value: String = "",
     enabled: Boolean = true,
+    minLines: Int = 1,
     maxLines: Int = Int.MAX_VALUE,
-    modifier: Modifier = Modifier,
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
 
     TextField(
         modifier = Modifier
+            .onFocusChanged { focusState ->
+                if (focusState.isFocused) {
+                    onFocus?.invoke()
+                    return@onFocusChanged
+                }
+
+                onBlur?.invoke()
+            }
             .then(modifier),
         value = value,
         onValueChange = onValueChange,
-        keyboardOptions = if (onSubmit != null) KeyboardOptions(imeAction = ImeAction.Done) else KeyboardOptions.Default,
+        keyboardOptions = KeyboardOptions.Default.copy(
+            imeAction = onSubmit?.let { ImeAction.Done } ?: ImeAction.Default,
+            hintLocales = sourceLocale?.let {
+                LocaleList(
+                    Locale(sourceLocale.isoCode)
+                )
+            }
+        ),
         keyboardActions = KeyboardActions(
             onDone = {
                 onSubmit?.invoke()
                 keyboardController?.hide()
             }),
         placeholder = {
-            Text(placeholder)
+            placeholder?.let {
+                Text(
+                    text = it,
+                    style = textStyle,
+                )
+            }
         },
+        trailingIcon = trailingIcon,
         textStyle = textStyle,
+        minLines = minLines,
         maxLines = maxLines,
         enabled = enabled,
         colors = colors,

@@ -1,6 +1,5 @@
 package app.versta.translate.ui.component
 
-import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -19,8 +18,6 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -34,10 +31,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -53,7 +51,6 @@ import app.versta.translate.core.entity.LanguageOption
 import app.versta.translate.core.model.LanguageType
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.ui.theme.spacing
-import org.apache.commons.codec.language.bm.Lang
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -243,7 +240,7 @@ fun LanguageSelectionListItem(
                             .size(MaterialTheme.spacing.extraLarge)
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.AutoAwesome,
+                            imageVector = ImageVector.vectorResource(R.drawable.rounded_wand_stars_24),
                             contentDescription = stringResource(R.string.detect_language),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
@@ -284,7 +281,6 @@ fun LanguageSelectionListItem(
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 fun LanguageSelectionDrawerPreview() {
     LanguageSelectionDrawer(
         languageViewModel = LanguageViewModel(

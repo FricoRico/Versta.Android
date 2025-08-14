@@ -37,14 +37,14 @@ fun SettingsHeaderItem(
     val isLastItem = remember { index == groupSize - 1 }
 
     val borderRadius = RoundedCornerShape(
-        topStart = if (isFirstItem) MaterialTheme.shapes.extraLarge.topStart else MaterialTheme.shapes.medium.topStart,
-        topEnd = if (isFirstItem) MaterialTheme.shapes.extraLarge.topEnd else MaterialTheme.shapes.medium.topEnd,
-        bottomStart = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomStart else MaterialTheme.shapes.medium.bottomStart,
-        bottomEnd = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomEnd else MaterialTheme.shapes.medium.bottomEnd,
+        topStart = if (isFirstItem) MaterialTheme.shapes.extraLarge.topStart else MaterialTheme.shapes.small.topStart,
+        topEnd = if (isFirstItem) MaterialTheme.shapes.extraLarge.topEnd else MaterialTheme.shapes.small.topEnd,
+        bottomStart = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomStart else MaterialTheme.shapes.small.bottomStart,
+        bottomEnd = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomEnd else MaterialTheme.shapes.small.bottomEnd,
     )
 
     val topPadding =
-        if (!isFirstItem) MaterialTheme.spacing.extraSmall else MaterialTheme.spacing.none
+        if (!isFirstItem) MaterialTheme.spacing.hairline else MaterialTheme.spacing.none
 
     Box(
         modifier = Modifier

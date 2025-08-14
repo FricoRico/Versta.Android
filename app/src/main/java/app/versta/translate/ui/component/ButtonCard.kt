@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
@@ -21,9 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import app.versta.translate.R
 import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.darken
 import app.versta.translate.utils.lighten
@@ -177,6 +177,6 @@ fun ButtonCardPreview() {
         colors = ButtonCardDefaults.colorsPrimary(),
         title = "Take a photo",
         subtitle = "Use your camera to take a photo",
-        icon = Icons.Outlined.CameraAlt,
+        icon = ImageVector.vectorResource(R.drawable.round_camera_alt_24),
     )
 }

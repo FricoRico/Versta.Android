@@ -57,6 +57,33 @@ fun Color.shift(hueOffset: Float = 0f, saturationFactor: Float = 1f, lightnessFa
     return hslToColor(a, hsl)
 }
 
+fun Color.lightness(): Float {
+    val argb = this.toArgb()
+    val r = (argb shr 16) and 0xFF
+    val g = (argb shr 8) and 0xFF
+    val b = argb and 0xFF
+
+    val hsl = FloatArray(3)
+    rgbToHsl(r, g, b, hsl)
+    return hsl[2]
+}
+
+fun Color.complementary(): Color {
+    val argb = this.toArgb()
+    val a = (argb shr 24) and 0xFF
+    val r = (argb shr 16) and 0xFF
+    val g = (argb shr 8) and 0xFF
+    val b = argb and 0xFF
+
+    val hsl = FloatArray(3)
+    rgbToHsl(r, g, b, hsl)
+
+    // Shift the hue by 180 degrees to get the complementary color
+    hsl[0] = (hsl[0] + 180f) % 360f
+
+    return hslToColor(a, hsl)
+}
+
 private fun rgbToHsl(r: Int, g: Int, b: Int, outHsl: FloatArray) {
     val rf = r / 255f
     val gf = g / 255f

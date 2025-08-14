@@ -17,12 +17,6 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.FileDownload
-import androidx.compose.material.icons.outlined.HourglassEmpty
-import androidx.compose.material.icons.outlined.Replay
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,11 +27,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -182,8 +177,8 @@ fun LanguageSuggestionDownloadButton(
         ) {
             this@Button.AnimatedVisibility(
                 visible = status is DownloadStatus.Idle,
-                enter = fadeIn(animationSpec = tween(500)),
-                exit = fadeOut(animationSpec = tween(500)),
+                enter = fadeIn(),
+                exit = fadeOut(),
                 modifier = Modifier.align(Alignment.Center)
             ) {
                 Row(
@@ -194,7 +189,7 @@ fun LanguageSuggestionDownloadButton(
                         text = "Download"
                     )
                     Icon(
-                        Icons.Outlined.FileDownload,
+                        ImageVector.vectorResource(R.drawable.rounded_download_24),
                         contentDescription = null,
                     )
                 }
@@ -202,8 +197,8 @@ fun LanguageSuggestionDownloadButton(
 
             this@Button.AnimatedVisibility(
                 visible = status is DownloadStatus.Queued,
-                enter = fadeIn(animationSpec = tween(500)),
-                exit = fadeOut(animationSpec = tween(500)),
+                enter = fadeIn(),
+                exit = fadeOut(),
                 modifier = Modifier.align(Alignment.Center)
             ) {
                 Row(
@@ -214,7 +209,7 @@ fun LanguageSuggestionDownloadButton(
                         text = "Queued"
                     )
                     Icon(
-                        Icons.Outlined.HourglassEmpty,
+                        ImageVector.vectorResource(R.drawable.round_hourglass_empty_24),
                         contentDescription = null,
                     )
                 }
@@ -223,22 +218,22 @@ fun LanguageSuggestionDownloadButton(
 
             this@Button.AnimatedVisibility(
                 visible = status is DownloadStatus.Progress || status is DownloadStatus.Processing,
-                enter = fadeIn(animationSpec = tween(500)),
-                exit = fadeOut(animationSpec = tween(500)),
+                enter = fadeIn(),
+                exit = fadeOut(),
                 modifier = Modifier
                     .align(Alignment.Center)
                     .requiredSize(MaterialTheme.spacing.medium)
             ) {
                 Icon(
-                    Icons.Filled.Stop,
+                    ImageVector.vectorResource(R.drawable.rounded_stop_24),
                     contentDescription = null,
                 )
             }
 
             this@Button.AnimatedVisibility(
                 visible = status is DownloadStatus.Progress,
-                enter = fadeIn(animationSpec = tween(500)),
-                exit = fadeOut(animationSpec = tween(500)),
+                enter = fadeIn(),
+                exit = fadeOut(),
                 modifier = Modifier.align(Alignment.Center)
             ) {
                 if (status !is DownloadStatus.Progress) return@AnimatedVisibility
@@ -254,8 +249,8 @@ fun LanguageSuggestionDownloadButton(
 
             this@Button.AnimatedVisibility(
                 visible = status is DownloadStatus.Processing,
-                enter = fadeIn(animationSpec = tween(500)),
-                exit = fadeOut(animationSpec = tween(500)),
+                enter = fadeIn(),
+                exit = fadeOut(),
                 modifier = Modifier.align(Alignment.Center)
             ) {
                 CircularProgressIndicator(
@@ -267,8 +262,8 @@ fun LanguageSuggestionDownloadButton(
 
             this@Button.AnimatedVisibility(
                 visible = status is DownloadStatus.Completed,
-                enter = fadeIn(animationSpec = tween(500)),
-                exit = fadeOut(animationSpec = tween(500)),
+                enter = fadeIn(),
+                exit = fadeOut(),
                 modifier = Modifier.align(Alignment.Center)
             ) {
                 Row(
@@ -276,7 +271,7 @@ fun LanguageSuggestionDownloadButton(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        Icons.Outlined.Check,
+                        ImageVector.vectorResource(R.drawable.rounded_check_small_24),
                         contentDescription = null,
                     )
                     Text(
@@ -287,8 +282,8 @@ fun LanguageSuggestionDownloadButton(
 
             this@Button.AnimatedVisibility(
                 visible = status is DownloadStatus.Error,
-                enter = fadeIn(animationSpec = tween(500)),
-                exit = fadeOut(animationSpec = tween(500)),
+                enter = fadeIn(),
+                exit = fadeOut(),
                 modifier = Modifier.align(Alignment.Center)
             ) {
                 Row(
@@ -299,7 +294,7 @@ fun LanguageSuggestionDownloadButton(
                         text = "Retry"
                     )
                     Icon(
-                        Icons.Outlined.Replay,
+                        ImageVector.vectorResource(R.drawable.round_replay_24),
                         contentDescription = null,
                     )
                 }
@@ -310,7 +305,6 @@ fun LanguageSuggestionDownloadButton(
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 fun LanguageSuggestionDrawerPreview() {
     LanguageSuggestionDrawer(
         languageViewModel = LanguageViewModel(

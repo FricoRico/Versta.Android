@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -18,8 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -85,7 +85,7 @@ fun ErrorAlertDialog(
             ) {
                 item {
                     Icon(
-                        Icons.Outlined.Error,
+                        ImageVector.vectorResource(R.drawable.round_error_24),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.error
                     )
@@ -165,14 +165,16 @@ fun LazyListScope.TextToSpeechError(error: Throwable?) {
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 fun ErrorAlertDialogPreview() {
+    val translationMockInference = TranslationMockInference()
+    val translationMockTokenizer = TranslationMockTokenizer()
+
     ErrorAlertDialog(
         translationViewModel = TranslationViewModel(
-            intermediateTokenizer = TranslationMockTokenizer(),
-            intermediateModel = TranslationMockInference(),
-            outputTokenizer = TranslationMockTokenizer(),
-            outputModel = TranslationMockInference(),
+            intermediateTokenizer = translationMockTokenizer,
+            intermediateModel = translationMockInference,
+            outputTokenizer = translationMockTokenizer,
+            outputModel = translationMockInference,
             translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
             languageViewModel = LanguageViewModel(
                 context = LocalContext.current,

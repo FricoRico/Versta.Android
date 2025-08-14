@@ -18,9 +18,9 @@ object FilledIconButtonDefaults {
 
     @Composable
     fun surfaceIconButtonColors(
-        containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+        containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
         contentColor: Color = MaterialTheme.colorScheme.onSurface,
-        disabledContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        disabledContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
         disabledContentColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest
     ) = IconButtonDefaults.filledIconButtonColors(
         containerColor = containerColor,

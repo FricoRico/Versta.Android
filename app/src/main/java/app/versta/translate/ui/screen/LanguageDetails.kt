@@ -1,12 +1,12 @@
 package app.versta.translate.ui.screen
 
-import android.annotation.SuppressLint
-import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.icu.text.DecimalFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,10 +14,6 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,14 +28,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation3.runtime.NavBackStack
-import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
@@ -49,12 +43,16 @@ import app.versta.translate.core.entity.ExternalLanguagePairDefinition
 import app.versta.translate.core.entity.LANGUAGE_RATING_THRESHOLD
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.model.LanguageViewModel
+import app.versta.translate.core.model.NavigationViewModel
+import app.versta.translate.core.model.ScaffoldViewModel
 import app.versta.translate.ui.component.LanguageDeletionConfirmationDialog
 import app.versta.translate.ui.component.LanguagePairBadge
 import app.versta.translate.ui.component.ListDivider
-import app.versta.translate.ui.component.ScaffoldLargeHeader
-import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
+import app.versta.translate.ui.component.ScaffoldCompactBarBackNavigationIcon
+import app.versta.translate.ui.component.ScaffoldCompactBarTitle
+import app.versta.translate.ui.component.ScaffoldComponentProvider
 import app.versta.translate.ui.theme.spacing
+import timber.log.Timber
 import kotlin.math.max
 import kotlin.math.min
 
@@ -63,98 +61,81 @@ internal const val TAG = "LanguageDetails"
 @Composable
 fun LanguageDetails(
     id: String,
-    backStack: NavBackStack,
+    innerPadding: PaddingValues,
+    scaffoldViewModel: ScaffoldViewModel,
+    navigationViewModel: NavigationViewModel,
     languageViewModel: LanguageViewModel,
 ) {
+    Timber.tag("LanguageDetails").d("Showing details for language pair: $id")
     val pair = LanguagePair.fromId(id)
     val model by languageViewModel.getLanguageDefinition(pair).collectAsStateWithLifecycle(null)
     val importedLanguagePairs by languageViewModel.importedLanguagePairs.collectAsStateWithLifecycle(
         emptyList()
     )
 
-    val context = LocalContext.current
-    val orientation = LocalConfiguration.current.orientation
-
-    val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
-        MaterialTheme.spacing.medium
-    } else {
-        MaterialTheme.spacing.small
-    }
-
     var languageToBeDeleted by remember { mutableStateOf<LanguagePair?>(null) }
 
-    fun onBackNavigation() {
-        backStack.removeLastOrNull()
-    }
+    val layoutDirection = LocalLayoutDirection.current
 
-    ScaffoldLargeHeader(
-        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
+    ScaffoldComponentProvider(
+        scaffoldViewModel = scaffoldViewModel,
         title = {
-            Text(
-                text = "${pair.source.name} - ${pair.target.name}",
-            )
+            ScaffoldCompactBarTitle(text = "${pair.source.name} - ${pair.target.name}")
         },
         navigationIcon = {
-            IconButton(onClick = {
-                onBackNavigation()
-            }) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
-            }
+            ScaffoldCompactBarBackNavigationIcon(navigationViewModel = navigationViewModel)
         },
+        navigationIconContentKey = "ScaffoldCompactBarBackNavigationIcon",
         actions = {
             if (importedLanguagePairs.contains(
-                pair
-            )) {
+                    pair
+                )
+            ) {
                 IconButton(onClick = {
                     languageToBeDeleted = pair
                 }) {
                     Icon(
-                        imageVector = Icons.Outlined.Delete,
+                        imageVector = ImageVector.vectorResource(R.drawable.round_delete_forever_24),
                         contentDescription = stringResource(R.string.delete)
                     )
                 }
             }
         },
-        content = { insets, scrollConnection ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(scrollConnection),
-                contentPadding = PaddingValues(
-                    top = landscapeContentPadding + MaterialTheme.spacing.extraSmall,
-                    bottom = insets.calculateBottomPadding() + landscapeContentPadding,
-                    start = landscapeContentPadding,
-                    end = landscapeContentPadding
-                ),
-            ) {
-                if (model == null) {
-                    return@LazyColumn
-                }
-
-                Details(
-                    definition = model!!
-                )
-
-                ListDivider()
-
-                Metadata(
-                    metadata = model!!.metadata
-                )
+        wrapContent = true
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+            )
+        ) {
+            if (model == null) {
+                return@LazyColumn
             }
-        }
-    )
 
-    LanguageDeletionConfirmationDialog(
-        pair = languageToBeDeleted,
-        onConfirmation = {
-            onBackNavigation()
+            Details(
+                definition = model!!
+            )
+
+            ListDivider()
+
+            Metadata(
+                metadata = model!!.metadata
+            )
+        }
+
+        LanguageDeletionConfirmationDialog(pair = languageToBeDeleted, onConfirmation = {
+            navigationViewModel.back()
 
             languageViewModel.removeLanguageModel(it, true)
             languageToBeDeleted = null
-        },
-        onDismissRequest = {
+        }, onDismissRequest = {
             languageToBeDeleted = null
         })
+    }
 }
 
 fun LazyListScope.Details(
@@ -166,10 +147,9 @@ fun LazyListScope.Details(
 
     return item {
         Surface(
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = MaterialTheme.colorScheme.surfaceContainer,
             contentColor = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.extraLarge)
+            modifier = Modifier.clip(MaterialTheme.shapes.extraLarge)
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
@@ -227,8 +207,7 @@ fun LazyListScope.Metadata(
         val last = it == metadata.size - 1
 
         val pair = LanguagePair(
-            source = data.source,
-            target = data.target
+            source = data.source, target = data.target
         )
 
         val scoreFormat = DecimalFormat("#.#")
@@ -248,7 +227,7 @@ fun LazyListScope.Metadata(
         }
 
         Surface(
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = MaterialTheme.colorScheme.surfaceContainer,
             contentColor = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
                 .padding(bottom = MaterialTheme.spacing.extraSmall)
@@ -276,8 +255,7 @@ fun LazyListScope.Metadata(
                     modifier = Modifier.padding(bottom = MaterialTheme.spacing.small)
                 ) {
                     LanguagePairBadge(
-                        pair = pair,
-                        bidirectional = false
+                        pair = pair, bidirectional = false
                     )
 
                     Text(
@@ -293,7 +271,7 @@ fun LazyListScope.Metadata(
                     LanguageDetailsData(
                         label = stringResource(R.string.language_details_rating_label),
                         value = ratingFormat.format(rating),
-                        icon = Icons.Filled.Star
+                        icon = ImageVector.vectorResource(R.drawable.round_star_rate_24)
                     )
 
                     LanguageDetailsData(
@@ -326,8 +304,7 @@ fun LanguageDetailsData(
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.hairline)
     ) {
         Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge
+            text = label, style = MaterialTheme.typography.labelLarge
         )
 
         if (icon != null) {
@@ -360,11 +337,16 @@ fun LanguageDetailsData(
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 fun LanguageDetailsPreview() {
+    val navigationViewModel = NavigationViewModel(Screens.TextTranslation)
+
     LanguageDetails(
         id = "en-nl",
-        backStack = rememberNavBackStack<Screens>(),
+        innerPadding = PaddingValues(),
+        scaffoldViewModel = ScaffoldViewModel(
+            navigationViewModel = navigationViewModel
+        ),
+        navigationViewModel = navigationViewModel,
         languageViewModel = LanguageViewModel(
             context = LocalContext.current,
             languageRepository = LanguageMemoryRepository(),

@@ -1,15 +1,11 @@
 package app.versta.translate.ui.screen
 
-import android.annotation.SuppressLint
-import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.icu.text.DecimalFormat
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -20,15 +16,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation3.runtime.NavBackStack
-import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.DEFAULT_CACHE_ENABLED
 import app.versta.translate.adapter.outbound.DEFAULT_CACHE_SIZE
@@ -44,10 +37,14 @@ import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.core.model.LanguageViewModel
+import app.versta.translate.core.model.NavigationViewModel
+import app.versta.translate.core.model.ScaffoldViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.ui.component.ListDivider
-import app.versta.translate.ui.component.ScaffoldLargeHeader
-import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
+import app.versta.translate.ui.component.ScaffoldCompactBarBackNavigationIcon
+import app.versta.translate.ui.component.ScaffoldCompactBarEmptyActions
+import app.versta.translate.ui.component.ScaffoldCompactBarTitle
+import app.versta.translate.ui.component.ScaffoldComponentProvider
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.component.SettingsHeaderItem
 import app.versta.translate.ui.component.SliderLogarithmic
@@ -57,17 +54,13 @@ import kotlin.math.roundToInt
 
 @Composable
 fun TranslationSettings(
-    backStack: NavBackStack,
+    innerPadding: PaddingValues,
+    scaffoldViewModel: ScaffoldViewModel,
+    navigationViewModel: NavigationViewModel,
     translationViewModel: TranslationViewModel,
     languageViewModel: LanguageViewModel
 ) {
-    val orientation = LocalConfiguration.current.orientation
-
-    val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
-        MaterialTheme.spacing.medium
-    } else {
-        MaterialTheme.spacing.small
-    }
+    val layoutDirection = LocalLayoutDirection.current
 
     val maxThreadCount = remember { Runtime.getRuntime().availableProcessors() }
     val cacheSizeOptions = remember { listOf(16, 32, 64, 128, 256, 512, Int.MAX_VALUE) }
@@ -100,46 +93,44 @@ fun TranslationSettings(
         mutableStateOf(false)
     }
 
-    fun onBackNavigation() {
-        if (settingsChanged) {
-            translationViewModel.reload()
+    navigationViewModel.onNavigationCallback {
+        if (!settingsChanged) {
+            return@onNavigationCallback
         }
 
-        backStack.removeLastOrNull()
+        translationViewModel.reload()
     }
 
-    BackHandler {
-        onBackNavigation()
-    }
-
-    ScaffoldLargeHeader(
-        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
+    ScaffoldComponentProvider(
+        scaffoldViewModel = scaffoldViewModel,
         title = {
-            Text(
-                text = stringResource(R.string.translation_settings_title),
-            )
+            ScaffoldCompactBarTitle(text = stringResource(R.string.translation_settings_title))
         },
         navigationIcon = {
-            IconButton(onClick = {
-                onBackNavigation()
-            }) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
-            }
+            ScaffoldCompactBarBackNavigationIcon(navigationViewModel = navigationViewModel)
         },
-        content = { insets, scrollConnection ->
-            LazyColumn(
-                modifier = Modifier
-                    .nestedScroll(scrollConnection),
-                contentPadding = PaddingValues(
-                    top = landscapeContentPadding + MaterialTheme.spacing.extraSmall,
-                    bottom = insets.calculateBottomPadding() + landscapeContentPadding,
-                    start = landscapeContentPadding,
-                    end = landscapeContentPadding
-                )
-            ) {
+        navigationIconContentKey = "ScaffoldCompactBarBackNavigationIcon",
+        actions = {
+            ScaffoldCompactBarEmptyActions()
+        },
+        actionsContentKey = "ScaffoldCompactBarEmptyActions",
+        wrapContent = true
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+            )
+        ) {
                 item {
                     SettingsHeaderItem(
-                        content = stringResource(R.string.translation_settings_history_headline), groupSize = 3, index = 0
+                        content = stringResource(R.string.translation_settings_history_headline),
+                        groupSize = 3,
+                        index = 0
                     )
                 }
 
@@ -195,7 +186,9 @@ fun TranslationSettings(
 
                 item {
                     SettingsHeaderItem(
-                        content = stringResource(R.string.translation_settings_inference_headline), groupSize = 7, index = 0
+                        content = stringResource(R.string.translation_settings_inference_headline),
+                        groupSize = 7,
+                        index = 0
                     )
                 }
 
@@ -358,33 +351,38 @@ fun TranslationSettings(
                     )
                 }
             }
-        })
+        }
 }
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 fun TranslationSettingsPreview() {
+    val navigationViewModel = NavigationViewModel(Screens.TextTranslation)
+
+    val languageViewModel = LanguageViewModel(
+        context = LocalContext.current,
+        languageRepository = LanguageMemoryRepository(),
+        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
+    )
+
+    val translationMockInference = TranslationMockInference()
+    val translationMockTokenizer = TranslationMockTokenizer()
+
     TranslationSettings(
-        backStack = rememberNavBackStack<Screens>(),
-        translationViewModel = TranslationViewModel(
-            intermediateTokenizer = TranslationMockTokenizer(),
-            intermediateModel = TranslationMockInference(),
-            outputTokenizer = TranslationMockTokenizer(),
-            outputModel = TranslationMockInference(),
-            translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
-            languageViewModel = LanguageViewModel(
-                context = LocalContext.current,
-                languageRepository = LanguageMemoryRepository(),
-                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-                externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-            )
+        innerPadding = PaddingValues(),
+        scaffoldViewModel = ScaffoldViewModel(
+            navigationViewModel = navigationViewModel
         ),
-        languageViewModel = LanguageViewModel(
-            context = LocalContext.current,
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-        )
+        navigationViewModel = navigationViewModel,
+        translationViewModel = TranslationViewModel(
+            intermediateTokenizer = translationMockTokenizer,
+            intermediateModel = translationMockInference,
+            outputTokenizer = translationMockTokenizer,
+            outputModel = translationMockInference,
+            translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+            languageViewModel = languageViewModel
+        ),
+        languageViewModel = languageViewModel
     )
 }

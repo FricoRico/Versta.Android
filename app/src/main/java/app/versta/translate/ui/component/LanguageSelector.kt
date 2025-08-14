@@ -1,6 +1,5 @@
 package app.versta.translate.ui.component
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.Image
@@ -16,12 +15,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.SyncAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledIconButton
@@ -33,23 +30,23 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
-import app.versta.translate.adapter.inbound.HttpDownloadClient
-import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.inbound.TranslateBubbleShortcut
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.core.entity.AutoDetectLanguage
@@ -88,14 +85,16 @@ fun LanguageSelector(
 
     Box(
         modifier = Modifier
+            .fillMaxWidth()
             .then(modifier),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .fillMaxWidth()
+                .align(Alignment.Center)
+                .widthIn(max = 480.dp)
                 .background(
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    color = MaterialTheme.colorScheme.surfaceContainer,
                     shape = MaterialTheme.shapes.extraLarge,
                 )
         ) {
@@ -104,7 +103,6 @@ fun LanguageSelector(
                 language = sourceLanguage,
                 autoDetectLanguage = autoDetectLanguage,
                 text = stringResource(R.string.select_language),
-                placeholder = stringResource(R.string.select_language_from),
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Source) },
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(
@@ -126,7 +124,6 @@ fun LanguageSelector(
                 language = targetLanguage,
                 autoDetectLanguage = null,
                 text = stringResource(R.string.select_language),
-                placeholder = stringResource(R.string.select_language_to),
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Target) },
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(
@@ -178,7 +175,7 @@ fun LanguageSelector(
                 ),
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.SyncAlt,
+                    imageVector = ImageVector.vectorResource(R.drawable.rounded_sync_alt_24),
                     contentDescription = stringResource(R.string.swap_languages),
                 )
             }
@@ -193,7 +190,6 @@ fun LanguageSelectorButton(
     language: LanguageOption?,
     autoDetectLanguage: Language?,
     text: String,
-    placeholder: String,
     onClick: () -> Unit,
     contentPadding: PaddingValues = PaddingValues(
         MaterialTheme.spacing.large,
@@ -214,17 +210,6 @@ fun LanguageSelectorButton(
             .then(modifier),
     ) {
         Column {
-            Text(
-                text = placeholder,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                modifier = Modifier.padding(
-                    bottom = MaterialTheme.spacing.small,
-                    end = MaterialTheme.spacing.small,
-                )
-            )
-
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
@@ -256,7 +241,7 @@ fun LanguageSelectorButton(
                             }
 
                             Icon(
-                                imageVector = Icons.Outlined.AutoAwesome,
+                                imageVector = ImageVector.vectorResource(R.drawable.rounded_wand_stars_24),
                                 contentDescription = stringResource(R.string.detect_language),
                                 modifier = Modifier
                                     .requiredSize(16.dp)
@@ -295,7 +280,6 @@ fun LanguageSelectorButton(
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 fun LanguageSelectorPreview() {
     return LanguageSelector(
         languageViewModel = LanguageViewModel(

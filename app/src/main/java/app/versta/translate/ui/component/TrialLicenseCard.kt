@@ -1,6 +1,5 @@
 package app.versta.translate.ui.component
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,9 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.CallMade
-import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -21,7 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
@@ -75,7 +73,7 @@ fun TrialLicenseCard(
                     .padding(MaterialTheme.spacing.small),
             ) {
                 Icon(
-                    Icons.Filled.Bolt,
+                    ImageVector.vectorResource(R.drawable.round_bolt_24),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.tertiary.shift(-30f, 1.2f, 0.9f),
                 )
@@ -106,7 +104,7 @@ fun TrialLicenseCard(
                     .padding(MaterialTheme.spacing.small),
             ) {
                 Icon(
-                    Icons.AutoMirrored.Outlined.CallMade,
+                    ImageVector.vectorResource(R.drawable.rounded_call_made_24),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onTertiaryContainer,
                 )
@@ -117,7 +115,6 @@ fun TrialLicenseCard(
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 private fun TrialLicenseCardPreview() {
         TrialLicenseCard(
             licenseViewModel = LicenseViewModel(

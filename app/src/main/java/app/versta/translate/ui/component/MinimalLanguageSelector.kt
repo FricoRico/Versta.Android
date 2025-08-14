@@ -20,9 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.SyncAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledIconButton
@@ -39,9 +36,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -177,7 +176,7 @@ fun MinimalLanguageSelector(
                 ),
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.SyncAlt,
+                    imageVector = ImageVector.vectorResource(R.drawable.rounded_sync_alt_24),
                     contentDescription = stringResource(R.string.swap_languages),
                     modifier = Modifier.size(MaterialTheme.spacing.medium),
                 )
@@ -245,7 +244,7 @@ fun MinimalLanguageSelectorButton(
                             }
 
                             Icon(
-                                imageVector = Icons.Outlined.AutoAwesome,
+                                imageVector = ImageVector.vectorResource(R.drawable.rounded_wand_stars_24),
                                 contentDescription = stringResource(R.string.detect_language),
                                 modifier = Modifier
                                     .requiredSize(16.dp)
@@ -283,7 +282,6 @@ fun MinimalLanguageSelectorButton(
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 fun MinimalLanguageSelectorPreview() {
     return MinimalLanguageSelector(
         languageViewModel = LanguageViewModel(

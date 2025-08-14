@@ -1,6 +1,5 @@
 package app.versta.translate.ui.component
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,20 +8,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.MicNone
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -94,7 +89,7 @@ fun TranslationTextField(
                         colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Close,
+                            imageVector = ImageVector.vectorResource(R.drawable.rounded_close_small_24),
                             contentDescription = stringResource(R.string.clear)
                         )
                     }
@@ -106,7 +101,7 @@ fun TranslationTextField(
                     colors = FilledIconButtonDefaults.primaryIconButtonColors(),
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                        imageVector = ImageVector.vectorResource(R.drawable.rounded_arrow_forward_24),
                         contentDescription = stringResource(R.string.translate)
                     )
                 }
@@ -118,7 +113,6 @@ fun TranslationTextField(
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 fun TranslationTextFieldMinimalPreview() {
     val languageViewModel = LanguageViewModel(
         context = LocalContext.current,
@@ -127,14 +121,17 @@ fun TranslationTextFieldMinimalPreview() {
         externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
     )
 
+    val translationMockInference = TranslationMockInference()
+    val translationMockTokenizer = TranslationMockTokenizer()
+
     TranslationTextField(
         textTranslationViewModel = TextTranslationViewModel(
             languageViewModel = languageViewModel,
             translationViewModel = TranslationViewModel(
-                intermediateTokenizer = TranslationMockTokenizer(),
-                intermediateModel = TranslationMockInference(),
-                outputTokenizer = TranslationMockTokenizer(),
-                outputModel = TranslationMockInference(),
+                intermediateTokenizer = translationMockTokenizer,
+                intermediateModel = translationMockInference,
+                outputTokenizer = translationMockTokenizer,
+                outputModel = translationMockInference,
                 translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
                 languageViewModel = languageViewModel
             )

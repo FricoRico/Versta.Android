@@ -1,6 +1,5 @@
 package app.versta.translate.ui.screen
 
-import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.AnimationConstants.DefaultDurationMillis
 import androidx.compose.animation.core.tween
@@ -13,10 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,27 +24,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
-import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.AudioMockPlayer
 import app.versta.translate.adapter.outbound.DataMemoryRepository
 import app.versta.translate.adapter.outbound.ExternalDataMemoryRepository
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.adapter.outbound.TextToSpeechMockInference
 import app.versta.translate.adapter.outbound.TextToSpeechMockTokenizer
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
+import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.bridge.speech.ESpeakNG
 import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.entity.TextToSpeechSynthesisState
@@ -294,7 +291,7 @@ fun MinimalTextTranslationOutputButtonRow(
                     colors = FilledIconButtonDefaults.primaryIconButtonColors(),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Stop,
+                        imageVector = ImageVector.vectorResource(R.drawable.rounded_stop_24),
                         contentDescription = stringResource(R.string.cancel)
                     )
                 }
@@ -309,7 +306,7 @@ fun MinimalTextTranslationOutputButtonRow(
                 colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.ContentCopy,
+                    imageVector = ImageVector.vectorResource(R.drawable.rounded_content_copy_24),
                     contentDescription = stringResource(R.string.copy)
                 )
             }
@@ -319,7 +316,7 @@ fun MinimalTextTranslationOutputButtonRow(
                 colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.Share,
+                    imageVector = ImageVector.vectorResource(R.drawable.rounded_ios_share_24),
                     contentDescription = stringResource(R.string.share)
                 )
             }
@@ -329,7 +326,6 @@ fun MinimalTextTranslationOutputButtonRow(
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 fun MinimalTextTranslationPreview() {
     val languageViewModel = LanguageViewModel(
         context = LocalContext.current,
@@ -338,31 +334,29 @@ fun MinimalTextTranslationPreview() {
         externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
     )
 
+    val translationMockInference = TranslationMockInference()
+    val translationMockTokenizer = TranslationMockTokenizer()
+
     MinimalTextTranslation(
         languageViewModel = languageViewModel,
         textTranslationViewModel = TextTranslationViewModel(
             languageViewModel = languageViewModel,
             translationViewModel = TranslationViewModel(
-                intermediateTokenizer = TranslationMockTokenizer(),
-                intermediateModel = TranslationMockInference(),
-                outputTokenizer = TranslationMockTokenizer(),
-                outputModel = TranslationMockInference(),
+                intermediateTokenizer = translationMockTokenizer,
+                intermediateModel = translationMockInference,
+                outputTokenizer = translationMockTokenizer,
+                outputModel = translationMockInference,
                 translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
                 languageViewModel = languageViewModel
             )
         ),
         translationViewModel = TranslationViewModel(
-            intermediateTokenizer = TranslationMockTokenizer(),
-            intermediateModel = TranslationMockInference(),
-            outputTokenizer = TranslationMockTokenizer(),
-            outputModel = TranslationMockInference(),
+            intermediateTokenizer = translationMockTokenizer,
+            intermediateModel = translationMockInference,
+            outputTokenizer = translationMockTokenizer,
+            outputModel = translationMockInference,
             translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
-            languageViewModel = LanguageViewModel(
-                context = LocalContext.current,
-                languageRepository = LanguageMemoryRepository(),
-                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-                externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-            )
+            languageViewModel = languageViewModel
         ),
         textToSpeechViewModel = TextToSpeechViewModel(
             context = LocalContext.current,

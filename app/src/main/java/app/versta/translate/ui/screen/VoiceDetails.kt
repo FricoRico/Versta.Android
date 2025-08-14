@@ -1,21 +1,19 @@
 package app.versta.translate.ui.screen
 
-import android.annotation.SuppressLint
-import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import android.icu.text.DecimalFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Delete
+
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,14 +28,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation3.runtime.NavBackStack
-import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
@@ -45,18 +41,23 @@ import app.versta.translate.core.entity.ExternalVoiceLanguageVoiceGenders
 import app.versta.translate.core.entity.ExternalVoiceModelDefinition
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.VoiceGender
+import app.versta.translate.core.model.NavigationViewModel
+import app.versta.translate.core.model.ScaffoldViewModel
 import app.versta.translate.core.model.VoiceViewModel
 import app.versta.translate.ui.component.LanguageBadge
 import app.versta.translate.ui.component.ListDivider
-import app.versta.translate.ui.component.ScaffoldLargeHeader
-import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
+import app.versta.translate.ui.component.ScaffoldCompactBarBackNavigationIcon
+import app.versta.translate.ui.component.ScaffoldCompactBarTitle
+import app.versta.translate.ui.component.ScaffoldComponentProvider
 import app.versta.translate.ui.component.VoiceDeletionConfirmationDialog
 import app.versta.translate.ui.theme.spacing
 
 @Composable
 fun VoiceDetails(
     id: String,
-    backStack: NavBackStack,
+    innerPadding: PaddingValues,
+    scaffoldViewModel: ScaffoldViewModel,
+    navigationViewModel: NavigationViewModel,
     voiceViewModel: VoiceViewModel
 ) {
     val model by voiceViewModel.getVoiceModelDefinition(id)
@@ -82,34 +83,19 @@ fun VoiceDetails(
         VoiceGender.Male to stringResource(R.string.text_to_speech_settings_voice_gender_male)
     )
 
-    val orientation = LocalConfiguration.current.orientation
-
-    val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
-        MaterialTheme.spacing.medium
-    } else {
-        MaterialTheme.spacing.small
-    }
-
     var voiceToBeDeleted by remember { mutableStateOf<ExternalVoiceModelDefinition?>(null) }
 
-    fun onBackNavigation() {
-        backStack.removeLastOrNull()
-    }
+    val layoutDirection = LocalLayoutDirection.current
 
-    ScaffoldLargeHeader(
-        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
+    ScaffoldComponentProvider(
+        scaffoldViewModel = scaffoldViewModel,
         title = {
-            Text(
-                text = model!!.name,
-            )
+            ScaffoldCompactBarTitle(text = model!!.name)
         },
         navigationIcon = {
-            IconButton(onClick = {
-                onBackNavigation()
-            }) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
-            }
+            ScaffoldCompactBarBackNavigationIcon(navigationViewModel = navigationViewModel)
         },
+        navigationIconContentKey = "ScaffoldCompactBarBackNavigationIcon",
         actions = {
             if (importedLanguagePairs.any {
                     it.id == model!!.id
@@ -118,47 +104,47 @@ fun VoiceDetails(
                     voiceToBeDeleted = model
                 }) {
                     Icon(
-                        imageVector = Icons.Outlined.Delete,
+                        imageVector = ImageVector.vectorResource(R.drawable.round_delete_forever_24),
                         contentDescription = stringResource(R.string.delete)
                     )
                 }
             }
         },
-        content = { insets, scrollConnection ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(scrollConnection),
-                contentPadding = PaddingValues(
-                    top = landscapeContentPadding + MaterialTheme.spacing.extraSmall,
-                    bottom = insets.calculateBottomPadding() + landscapeContentPadding,
-                    start = landscapeContentPadding,
-                    end = landscapeContentPadding
-                ),
-            ) {
-                Details(
-                    definition = model!!
-                )
+        wrapContent = true
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+            )
+        ) {
+            Details(
+                definition = model!!
+            )
 
-                ListDivider()
+            ListDivider()
 
-                Voices(
-                    voiceLanguages = voiceLanguages,
-                    voiceOptions = voiceOptions
-                )
-            }
+            Voices(
+                voiceLanguages = voiceLanguages,
+                voiceOptions = voiceOptions
+            )
         }
-    )
 
-    VoiceDeletionConfirmationDialog(
-        model = voiceToBeDeleted,
-        onConfirmation = {
-            voiceViewModel.deleteVoiceModel(it)
-            voiceToBeDeleted = null
-        },
-        onDismissRequest = {
-            voiceToBeDeleted = null
-        })
+        VoiceDeletionConfirmationDialog(
+            model = voiceToBeDeleted,
+            onConfirmation = {
+                voiceViewModel.deleteVoiceModel(it)
+                voiceToBeDeleted = null
+            },
+            onDismissRequest = {
+                voiceToBeDeleted = null
+            }
+        )
+    }
 }
 
 fun LazyListScope.Details(
@@ -170,7 +156,7 @@ fun LazyListScope.Details(
 
     return item {
         Surface(
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = MaterialTheme.colorScheme.surfaceContainer,
             contentColor = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
                 .clip(MaterialTheme.shapes.extraLarge)
@@ -226,7 +212,7 @@ fun LazyListScope.Voices(
 ) {
     return item {
         Surface(
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = MaterialTheme.colorScheme.surfaceContainer,
             contentColor = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
                 .padding(bottom = MaterialTheme.spacing.extraSmall)
@@ -323,11 +309,16 @@ fun VoiceDetailsData(
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 fun VoiceDetailsPreview() {
+    val navigationViewModel = NavigationViewModel(Screens.TextTranslation)
+
     VoiceDetails(
         id = "kokoro",
-        backStack = rememberNavBackStack<Screens>(),
+        innerPadding = PaddingValues(),
+        scaffoldViewModel = ScaffoldViewModel(
+            navigationViewModel = navigationViewModel
+        ),
+        navigationViewModel = navigationViewModel,
         voiceViewModel = VoiceViewModel(
             context = LocalContext.current,
             voiceRepository = VoiceMemoryRepository(),

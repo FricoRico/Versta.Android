@@ -7,9 +7,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.outlined.SyncAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -17,7 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
+import app.versta.translate.R
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.ui.theme.spacing
@@ -92,7 +91,7 @@ fun LanguagePairBadge(
         ) {
             Icon(
                 icon
-                    ?: if (bidirectional) Icons.Outlined.SyncAlt else Icons.AutoMirrored.Outlined.ArrowForward,
+                    ?: if (bidirectional) ImageVector.vectorResource(R.drawable.rounded_sync_alt_24) else ImageVector.vectorResource(R.drawable.rounded_arrow_forward_24),
                 contentDescription = null,
                 tint = colors.badgeContentColor,
             )

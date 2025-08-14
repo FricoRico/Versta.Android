@@ -109,7 +109,6 @@ fun TrialLicenseConfirmationDialog(
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 fun TrialLicenseConfirmationDialogPreview() {
     TrialLicenseConfirmationDialog(
         licenseViewModel = LicenseViewModel(

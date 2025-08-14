@@ -68,7 +68,6 @@ fun ModelLoadingProgressDialog(
 
 @Composable
 @Preview(showBackground = true)
-@SuppressLint("ViewModelConstructorInComposable")
 fun ModelLoadingProgressDialogPreview() {
     val languageViewModel = LanguageViewModel(
         context = LocalContext.current,
@@ -77,11 +76,14 @@ fun ModelLoadingProgressDialogPreview() {
         externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
     )
 
+    val translationMockInference = TranslationMockInference()
+    val translationMockTokenizer = TranslationMockTokenizer()
+
     val translationViewModel = TranslationViewModel(
-        intermediateTokenizer = TranslationMockTokenizer(),
-        intermediateModel = TranslationMockInference(),
-        outputTokenizer = TranslationMockTokenizer(),
-        outputModel = TranslationMockInference(),
+        intermediateTokenizer = translationMockTokenizer,
+        intermediateModel = translationMockInference,
+        outputTokenizer = translationMockTokenizer,
+        outputModel = translationMockInference,
         translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
         languageViewModel = languageViewModel
     )

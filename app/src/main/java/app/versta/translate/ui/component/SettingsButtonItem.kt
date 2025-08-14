@@ -1,6 +1,5 @@
 package app.versta.translate.ui.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,14 +7,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -27,22 +22,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import app.versta.translate.R
 import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.darken
 import app.versta.translate.utils.lighten
 
 object SettingsDefaults {
-    val DefaultDisabledAlpha = 0.38f
+    const val DefaultDisabledAlpha = 0.38f
 
     @Composable
     fun colors(
-        containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
         headlineColor: Color = MaterialTheme.colorScheme.onSurface,
         supportingColor: Color = headlineColor.lighten(0.2f),
         leadingIconColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -50,7 +45,7 @@ object SettingsDefaults {
         trailingIconColor: Color = leadingIconColor,
         disabledHeadlineColor: Color = headlineColor.copy(DefaultDisabledAlpha),
         disabledLeadingIconColor: Color = disabledHeadlineColor,
-        disabledTrailingIconColor: Color = disabledHeadlineColor,
+        disabledTrailingIconColor: Color = disabledHeadlineColor
     ) = ListItemDefaults.colors(
         containerColor = containerColor,
         headlineColor = headlineColor,
@@ -232,14 +227,14 @@ fun SettingsButtonItem(
     val isLastItem = remember { index == groupSize - 1 }
 
     val borderRadius = RoundedCornerShape(
-        topStart = if (isFirstItem) MaterialTheme.shapes.extraLarge.topStart else MaterialTheme.shapes.medium.topStart,
-        topEnd = if (isFirstItem) MaterialTheme.shapes.extraLarge.topEnd else MaterialTheme.shapes.medium.topEnd,
-        bottomStart = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomStart else MaterialTheme.shapes.medium.bottomStart,
-        bottomEnd = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomEnd else MaterialTheme.shapes.medium.bottomEnd,
+        topStart = if (isFirstItem) MaterialTheme.shapes.extraLarge.topStart else MaterialTheme.shapes.small.topStart,
+        topEnd = if (isFirstItem) MaterialTheme.shapes.extraLarge.topEnd else MaterialTheme.shapes.small.topEnd,
+        bottomStart = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomStart else MaterialTheme.shapes.small.bottomStart,
+        bottomEnd = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomEnd else MaterialTheme.shapes.small.bottomEnd,
     )
 
     val topPadding =
-        if (!isFirstItem) MaterialTheme.spacing.extraSmall else MaterialTheme.spacing.none
+        if (!isFirstItem) MaterialTheme.spacing.hairline else MaterialTheme.spacing.none
 
     if (onSwipeToDelete != null) {
         SwipeDelete(
@@ -378,7 +373,7 @@ private fun SettingsButtonItemPreview() {
         supportingContent = "Import languages, download languages",
         leadingContent = {
             Icon(
-                Icons.Outlined.Translate,
+                ImageVector.vectorResource(R.drawable.rounded_translate_24),
                 contentDescription = "Localized description",
             )
         },

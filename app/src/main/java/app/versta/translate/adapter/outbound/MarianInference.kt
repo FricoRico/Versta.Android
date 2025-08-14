@@ -100,7 +100,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
                 step++
 
                 if (beamSearch.complete(completeOnRepeat)) {
-                    break;
+                    break
                 }
 
                 val inputs = decoderInput.get(

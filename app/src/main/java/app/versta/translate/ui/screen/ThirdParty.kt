@@ -1,26 +1,21 @@
 package app.versta.translate.ui.screen
 
-import android.content.res.Configuration.ORIENTATION_LANDSCAPE
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.navigation3.runtime.NavBackStack
-import androidx.navigation3.runtime.rememberNavBackStack
 import app.versta.translate.R
-import app.versta.translate.ui.component.ScaffoldLargeHeader
-import app.versta.translate.ui.component.ScaffoldLargeHeaderDefaults
+import app.versta.translate.core.model.NavigationViewModel
+import app.versta.translate.core.model.ScaffoldViewModel
+import app.versta.translate.ui.component.ScaffoldCompactBarBackNavigationIcon
+import app.versta.translate.ui.component.ScaffoldCompactBarEmptyActions
+import app.versta.translate.ui.component.ScaffoldCompactBarTitle
+import app.versta.translate.ui.component.ScaffoldComponentProvider
 import app.versta.translate.ui.theme.spacing
 import com.mikepenz.aboutlibraries.ui.compose.LibraryDefaults
 import com.mikepenz.aboutlibraries.ui.compose.LibraryDefaults.chipPadding
@@ -30,61 +25,57 @@ import com.mikepenz.aboutlibraries.ui.compose.m3.libraryColors
 
 @Composable
 fun ThirdParty(
-    backStack: NavBackStack
+    innerPadding: PaddingValues,
+    scaffoldViewModel: ScaffoldViewModel,
+    navigationViewModel: NavigationViewModel,
 ) {
+    val layoutDirection = LocalLayoutDirection.current
     val libraries by rememberLibraries(R.raw.aboutlibraries)
-    val orientation = LocalConfiguration.current.orientation
 
-    val landscapeContentPadding = if (orientation == ORIENTATION_LANDSCAPE) {
-        MaterialTheme.spacing.medium
-    } else {
-        0.dp
-    }
-
-    fun onBackNavigation() {
-        backStack.removeLastOrNull()
-    }
-
-    ScaffoldLargeHeader(
-        topAppBarColors = ScaffoldLargeHeaderDefaults.topAppBarsurfaceContainerLowestColor(),
+    ScaffoldComponentProvider(
+        scaffoldViewModel = scaffoldViewModel,
         title = {
-            Text(
-                text = stringResource(R.string.third_party_title),
-            )
+            ScaffoldCompactBarTitle(text = stringResource(R.string.third_party_title))
         },
         navigationIcon = {
-            IconButton(onClick = {
-                onBackNavigation()
-            }) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
-            }
+            ScaffoldCompactBarBackNavigationIcon(navigationViewModel = navigationViewModel)
         },
-        content = { insets, scrollConnection ->
-            LibrariesContainer(
-                modifier = Modifier
-                    .nestedScroll(scrollConnection),
-                padding = LibraryDefaults.libraryPadding(
-                    licensePadding = chipPadding(
-                        containerPadding = PaddingValues(top = MaterialTheme.spacing.small),
-                    )
-                ),
-                colors = LibraryDefaults.libraryColors(
-                    backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                ),
-                contentPadding = PaddingValues(
-                    top = landscapeContentPadding + MaterialTheme.spacing.extraSmall,
-                    bottom = insets.calculateBottomPadding() + landscapeContentPadding,
-                    start = landscapeContentPadding,
-                    end = landscapeContentPadding
-                ),
-                libraries = libraries
-            )
-        }
-    )
+        navigationIconContentKey = "ScaffoldCompactBarBackNavigationIcon",
+        actions = {
+            ScaffoldCompactBarEmptyActions()
+        },
+        actionsContentKey = "ScaffoldCompactBarEmptyActions",
+        wrapContent = true
+    ) {
+        LibrariesContainer(
+            padding = LibraryDefaults.libraryPadding(
+                licensePadding = chipPadding(
+                    containerPadding = PaddingValues(top = MaterialTheme.spacing.small),
+                )
+            ),
+            colors = LibraryDefaults.libraryColors(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+            ),
+            contentPadding = PaddingValues(
+                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+            ),
+            libraries = libraries
+        )
+    }
 }
 
 @Composable
 @Preview(showBackground = true)
 fun ThirdPartyPreview() {
-    ThirdParty(backStack = rememberNavBackStack<Screens>())
+    val navigationViewModel = NavigationViewModel(Screens.TextTranslation)
+    ThirdParty(
+        innerPadding = PaddingValues(),
+        scaffoldViewModel = ScaffoldViewModel(
+            navigationViewModel = navigationViewModel
+        ),
+        navigationViewModel = navigationViewModel,
+    )
 }

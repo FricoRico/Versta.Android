@@ -42,13 +42,25 @@ import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
 import app.versta.translate.adapter.outbound.TranslationTokenizer
 import app.versta.translate.bridge.speech.ESpeakNG
 import app.versta.translate.bridge.speech.OpenJTalk
+import app.versta.translate.core.model.CustomThemeViewModel
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LoggingViewModel
+import app.versta.translate.core.model.NavigationViewModel
+import app.versta.translate.core.model.ScaffoldActionsComponent
+import app.versta.translate.core.model.ScaffoldNavigationIconComponent
+import app.versta.translate.core.model.ScaffoldTitleComponent
+import app.versta.translate.core.model.ScaffoldViewModel
 import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.core.model.VoiceViewModel
 import app.versta.translate.database.DatabaseContainer
+import app.versta.translate.ui.component.LanguageSelector
+import app.versta.translate.ui.component.ScaffoldCompactBarSettingsActions
+import app.versta.translate.ui.component.ScaffoldCompactBarMenuNavigationIcon
+import app.versta.translate.ui.screen.Screens
+import app.versta.translate.ui.theme.ObsidianColorScheme
+import app.versta.translate.utils.CustomTheme
 import app.versta.translate.utils.FileLoggingTree
 import timber.log.Timber
 import timber.log.Timber.Forest.plant
@@ -70,6 +82,9 @@ interface ApplicationModuleInterface {
     val externalVoiceModelsRepository: ExternalVoiceModelsRepository
     val externalDataRepository: ExternalDataRepository
 
+    val navigationViewModel: NavigationViewModel
+    val scaffoldViewModel: ScaffoldViewModel
+    val customThemeViewModel: CustomThemeViewModel
     val languageViewModel: LanguageViewModel
     val translationViewModel: TranslationViewModel
     val textTranslationViewModel: TextTranslationViewModel
@@ -131,6 +146,50 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
 
     override val externalDataRepository: ExternalDataRepository by lazy {
         ExternalDataFileRepository(context.resources.openRawResource(R.raw.versta_data))
+    }
+
+    override val navigationViewModel: NavigationViewModel by lazy {
+        NavigationViewModel(
+            initialRoute = Screens.TextTranslation,
+        )
+    }
+
+    override val scaffoldViewModel: ScaffoldViewModel by lazy {
+        ScaffoldViewModel(
+            navigationViewModel = navigationViewModel,
+            defaultTitle = ScaffoldTitleComponent(
+                contentKey = "ScaffoldCompactBarLanguageSelector",
+                component = {
+                    LanguageSelector(
+                        languageViewModel = languageViewModel,
+                    )
+                }
+            ),
+            defaultNavigationIcon = ScaffoldNavigationIconComponent(
+                contentKey = "ScaffoldCompactBarMenuNavigationIcon",
+                component = {
+                    ScaffoldCompactBarMenuNavigationIcon(
+                        navigationViewModel = navigationViewModel
+                    )
+                }
+            ),
+            defaultActions = ScaffoldActionsComponent(
+                contentKey = "ScaffoldCompactBarSettingsActions",
+                component = {
+                    ScaffoldCompactBarSettingsActions(
+                        navigationViewModel = navigationViewModel
+                    )
+                }
+            )
+        )
+    }
+
+    override val customThemeViewModel: CustomThemeViewModel by lazy {
+        CustomThemeViewModel(
+            mapOf(
+                CustomTheme.Obsidian to ObsidianColorScheme,
+            )
+        )
     }
 
     override val loggingViewModel: LoggingViewModel by lazy {
@@ -271,7 +330,7 @@ class MainApplication : Application() {
             getString(R.string.download_progress_notification_channel_title),
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-           description = getString(R.string.download_progress_notification_channel_description)
+            description = getString(R.string.download_progress_notification_channel_description)
         }
 
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
