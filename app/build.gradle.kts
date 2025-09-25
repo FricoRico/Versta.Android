@@ -42,7 +42,7 @@ android {
 
     defaultConfig {
         applicationId = "app.versta.translate"
-        minSdk = 27
+        minSdk = 26
         targetSdk = 36
         versionCode = 12
         versionName = "1.3.1"
@@ -55,6 +55,7 @@ android {
         externalNativeBuild {
             cmake {
                 targets("app_versta_translate_bridge")
+                arguments += "-DANDROID_ARM_NEON=ON"
             }
         }
     }
@@ -113,6 +114,31 @@ android {
             version = "3.31.6"
         }
     }
+    flavorDimensions += "abi"
+
+    productFlavors {
+        create("arm64-v8a") {
+            dimension = "abi"
+        }
+        create("armeabi-v7a") {
+            dimension = "abi"
+        }
+        create("x86") {
+            dimension = "abi"
+        }
+        create("x86_64") {
+            dimension = "abi"
+        }
+    }
+//
+//    splits {
+//        abi {
+//            isEnable = true
+//            reset()
+//            include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+//            isUniversalApk = false
+//        }
+//    }
 }
 
 tasks.apply {
@@ -158,6 +184,7 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -174,21 +201,30 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.compose)
+    implementation(libs.androidx.camera.effects)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
     implementation(libs.androidx.compose.material3.adaptive)
     implementation(libs.androidx.compose.material3.adaptive.layout)
     implementation(libs.androidx.compose.material3.adaptive.navigation)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.splash.screen)
     implementation(libs.appache.commons.compress)
     implementation(libs.atilika.kuromoji.ipadic)
     implementation(libs.jakewharton.timber)
     implementation(libs.jetbrains.bio.npy)
     implementation(libs.kotlinx.serialization)
-    implementation(libs.lifecycle.viewmodel.compose)
-    implementation(libs.navigation3.runtime)
-    implementation(libs.navigation3.ui)
     implementation(libs.squareup.okhttp)
     implementation(libs.sqldelight.android)
     implementation(libs.sqldelight.coroutines)
 
-    implementation(libs.onnxruntime)
+    add("arm64-v8aImplementation", files("$projectDir/libs/arm64-v8a/onnxruntime-1.23.0.aar"))
+    add("armeabi-v7aImplementation", files("$projectDir/libs/armeabi-v7a/onnxruntime-1.23.0.aar"))
+    add("x86Implementation", files("$projectDir/libs/x86/onnxruntime-1.23.0.aar"))
+    add("x86_64Implementation", files("$projectDir/libs/x86_64/onnxruntime-1.23.0.aar"))
 }

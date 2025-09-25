@@ -339,7 +339,7 @@ class TranslationViewModel(
                 cache = _cache.get(sanitized, languages)
 
                 if (cache != null) {
-                    return cache.toString()
+                    return cache
                 }
 
                 _translationInProgress.value = true
@@ -363,7 +363,13 @@ class TranslationViewModel(
                 )
                 _translationInProgress.value = false
 
-                return outputTokenizer.decode(tokenIds)
+                val output = outputTokenizer.decode(tokenIds)
+
+                if (cacheEnabled.first()) {
+                    _cache.put(input, output, languages)
+                }
+
+                return output
             }
         } catch (e: Exception) {
             setTranslationError(e)

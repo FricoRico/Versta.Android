@@ -38,7 +38,6 @@ import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.core.model.VoiceViewModel
 import app.versta.translate.ui.screen.About
 import app.versta.translate.ui.screen.ApplicationLogs
-import app.versta.translate.ui.screen.TextTranslation
 import app.versta.translate.ui.screen.LanguageAttributions
 import app.versta.translate.ui.screen.LanguageDetails
 import app.versta.translate.ui.screen.LanguageSettings
@@ -46,6 +45,7 @@ import app.versta.translate.ui.screen.PrivacyPolicy
 import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.screen.Settings
 import app.versta.translate.ui.screen.TextToSpeechSettings
+import app.versta.translate.ui.screen.TextTranslation
 import app.versta.translate.ui.screen.TextTranslationLegacy
 import app.versta.translate.ui.screen.ThirdParty
 import app.versta.translate.ui.screen.TranslationSettings
@@ -77,7 +77,7 @@ fun Router(
             horizontalPartitionSpacerSize = 0.dp
         )
     }
-    val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>(
+    val listDetailStrategy: ListDetailSceneStrategy<NavKey> = rememberListDetailSceneStrategy(
         backNavigationBehavior = BackNavigationBehavior.PopUntilContentChange,
         directive = directive
     )

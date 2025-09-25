@@ -12,3 +12,6 @@
 [submodule "app/native/jni/third_party/open-jtalk"]
 	path = app/native/jni/third_party/open-jtalk
 	url = https://github.com/r9y9/open_jtalk.git
+[submodule "app/native/jni/third_party/neon-sse"]
+	path = app/native/jni/third_party/neon-sse
+	url = https://github.com/intel/ARM_NEON_2_x86_SSE.git
