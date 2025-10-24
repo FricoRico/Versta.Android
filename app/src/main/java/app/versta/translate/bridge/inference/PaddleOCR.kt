@@ -21,21 +21,42 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.EnumSet
 
-const val MAX_OBJECTS = 100
+const val RECOGNIZE_HEIGHT = 48
 
 class PaddleOCR(
     private val ortEnvironment: OrtEnvironment,
-    val detectWidth: Int = 640,
-    val detectHeight: Int = 640,
-    val recognizeWidth: Int = 960,
-    val recognizeHeight: Int = 960,
-    val cropWidth: Int = 640,
-    val recognizeMaxBatchSize: Int = 24,
+    val detectSize: Int = 640,
+    val recognizeSize: Int = 960,
+    val cropHeight: Int = RECOGNIZE_HEIGHT,
+    val maxCropSize: Int = 640,
+    val unclipRatio: Float = 1.5f,
+    val maxCandidates: Int = 100,
+    val batchSize: Int = 24,
+    val threads: Int = 4,
 ) : AutoCloseable {
-    class OcrColors (
+    private var _handle: Long
+
+    init {
+        _handle = construct(
+            detectSize = detectSize,
+            recognizeSize = recognizeSize,
+            cropHeight = cropHeight,
+            maxCropSize = maxCropSize,
+            unclipRatio = unclipRatio,
+            maxCandidates = maxCandidates,
+            threads = threads
+        )
+
+        if (_handle == 0L) {
+            throw RuntimeException("Failed to initialize BeamSearch")
+        }
+    }
+
+    class OcrColors(
         val background: Color,
         val foreground: Color
     )
+
     class OcrResults(
         val points: Array<PointF>,
         var score: Float = 0f,
@@ -52,11 +73,11 @@ class PaddleOCR(
     private var _recognizeSession: OrtSession? = null
 
     private val detectInputBuffer: ByteBuffer =
-        ByteBuffer.allocateDirect(3 * detectWidth * detectHeight * OnnxJavaType.FLOAT.size)
+        ByteBuffer.allocateDirect(3 * detectSize * detectSize * OnnxJavaType.FLOAT.size)
             .order(ByteOrder.nativeOrder())
 
     // Shape: [batch_size, channels, width, height]
-    val detectInputShape = longArrayOf(1, 3, detectWidth.toLong(), detectHeight.toLong())
+    val detectInputShape = longArrayOf(1, 3, detectSize.toLong(), detectSize.toLong())
     val detectInputTensor =
         OnnxTensor.createTensor(
             ortEnvironment,
@@ -66,10 +87,10 @@ class PaddleOCR(
         )
 
     val detectOutputBuffer: ByteBuffer =
-        ByteBuffer.allocateDirect(detectWidth * detectHeight * OnnxJavaType.FLOAT.size)
+        ByteBuffer.allocateDirect(detectSize * detectSize * OnnxJavaType.FLOAT.size)
             .order(ByteOrder.nativeOrder())
 
-    val detectOutputShape = longArrayOf(1, 1, detectWidth.toLong(), detectHeight.toLong())
+    val detectOutputShape = longArrayOf(1, 1, detectSize.toLong(), detectSize.toLong())
     val detectOutputTensor =
         OnnxTensor.createTensor(
             ortEnvironment,
@@ -79,11 +100,11 @@ class PaddleOCR(
         )
 
     val detectResultBuffer =
-        ByteBuffer.allocateDirect(1 + MAX_OBJECTS * 4 * 2 * OnnxJavaType.INT32.size)
+        ByteBuffer.allocateDirect(1 + maxCandidates * 4 * 2 * OnnxJavaType.INT32.size)
             .order(ByteOrder.nativeOrder())
 
     var recognizeInputBuffer: ByteBuffer =
-        ByteBuffer.allocateDirect(3 * 48 * cropWidth * OnnxJavaType.FLOAT.size)
+        ByteBuffer.allocateDirect(3 * 48 * maxCropSize * OnnxJavaType.FLOAT.size)
             .order(ByteOrder.nativeOrder())
     var recognizeOutputBuffer: ByteBuffer =
         ByteBuffer.allocateDirect(60 * 838 * OnnxJavaType.FLOAT.size)
@@ -91,72 +112,103 @@ class PaddleOCR(
 
     val tokenizer = PaddleTokenizer()
 
+    external fun construct(
+        detectSize: Int,
+        recognizeSize: Int,
+        cropHeight: Int,
+        maxCropSize: Int,
+        unclipRatio: Float = 1.5f,
+        maxCandidates: Int,
+        threads: Int = 4,
+    ): Long
+
+    external fun close(handle: Long): Boolean
+
     external fun preProcessDetect(
+        handle: Long,
         input: Buffer,
         output: Buffer,
-        debug: Buffer? = null,
         inputWidth: Int,
         inputHeight: Int,
-        outputWidth: Int = detectWidth,
-        outputHeight: Int = detectHeight,
         outputRotation: Int = 0,
-        threads: Int = 4,
     ): Boolean
 
     external fun postProcessDetect(
+        handle: Long,
         input: Buffer,
         output: Buffer,
-        detectedWidth: Int = detectWidth,
-        detectedHeight: Int = detectHeight,
-        outputWidth: Int = recognizeWidth,
-        outputHeight: Int = recognizeHeight,
         threshold: Float = 0.3f,
-        maxValue: Int = 1,
-        threads: Int = 4,
+        maxValue: Float = 1f,
     ): Int
 
     external fun preProcessRecognize(
+        handle: Long,
         origin: Buffer,
         input: Buffer,
         output: Buffer,
         originWidth: Int,
         originHeight: Int,
         originRotation: Int = 0,
-        detectedWidth: Int = recognizeWidth,
-        detectedHeight: Int = recognizeHeight,
-        threads: Int = 4,
     ): Boolean
 
     external fun postProcessRecognize(
+        handle: Long,
         outputBuffer: Buffer,
         outputShape: LongArray,
         tokenBuffer: Buffer
     ): Boolean
 
     external fun getPixelColorFromImage(
+        handle: Long,
         origin: Buffer,
         input: Buffer,
         originWidth: Int,
         originHeight: Int,
         originRotation: Int = 0,
-        detectedWidth: Int = recognizeWidth,
-        detectHeight: Int = recognizeHeight,
-        threads: Int = 4,
     ): IntArray
 
-    private fun preProcessDetect(imageProxy: ImageProxy): Boolean {
+    private fun preProcessDetect(input: Buffer, width: Int, height: Int, rotation: Int): Boolean {
         return preProcessDetect(
-            input = imageProxy.planes[0].buffer,
+            handle = _handle,
+            input = input,
             output = detectInputBuffer,
-            inputWidth = imageProxy.width,
-            inputHeight = imageProxy.height,
-            outputRotation = imageProxy.imageInfo.rotationDegrees,
+            inputWidth = width,
+            inputHeight = height,
+            outputRotation = rotation,
         )
     }
 
+    fun getPixelColorFromRGBAByteBuffer(
+        origin: Buffer,
+        input: Buffer,
+        originWidth: Int,
+        originHeight: Int,
+        originRotation: Int,
+    ): List<OcrColors> {
+        val colors = getPixelColorFromImage(
+            handle = _handle,
+            origin = origin,
+            input = input,
+            originWidth = originWidth,
+            originHeight = originHeight,
+            originRotation = originRotation,
+        )
+
+        return colors.toList().chunked(2) { chunk ->
+            OcrColors(Color(chunk[0]), Color(chunk[1]))
+        }.reversed()
+    }
+
     fun processCameraFrame(imageProxy: ImageProxy): Pair<List<OcrResults>, Bitmap?> {
+        var totalInferenceTime = 0L
+
         try {
-            val success = preProcessDetect(imageProxy)
+            val success = preProcessDetect(
+                input = imageProxy.planes[0].buffer,
+                width = imageProxy.width,
+                height = imageProxy.height,
+                rotation = imageProxy.imageInfo.rotationDegrees,
+            )
             if (!success) {
                 throw IllegalStateException("Failed to preprocess camera frame.")
             }
@@ -175,9 +227,12 @@ class PaddleOCR(
             val outputName = _detectSession!!.outputNames.first()
             val outputs = mapOf(outputName to detectOutputTensor)
 
+            var startTime = System.currentTimeMillis()
             _detectSession!!.run(inputs, outputs)
+            totalInferenceTime += System.currentTimeMillis() - startTime
 
             val count = postProcessDetect(
+                handle = _handle,
                 input = detectOutputBuffer,
                 output = detectResultBuffer,
             )
@@ -190,16 +245,16 @@ class PaddleOCR(
                 throw IllegalStateException("PaddleOCR recognize session is not initialized.")
             }
 
-            // Allocate full buffers for all detected items. We'll slice these into batches below.
             recognizeInputBuffer =
-                ByteBuffer.allocateDirect(count * 3 * 48 * cropWidth * OnnxJavaType.FLOAT.size)
+                ByteBuffer.allocateDirect(count * 3 * 48 * maxCropSize * OnnxJavaType.FLOAT.size)
                     .order(ByteOrder.nativeOrder())
 
             recognizeOutputBuffer =
-                ByteBuffer.allocateDirect(count * cropWidth / 8 * 838 * OnnxJavaType.FLOAT.size)
+                ByteBuffer.allocateDirect(count * maxCropSize / 8 * 838 * OnnxJavaType.FLOAT.size)
                     .order(ByteOrder.nativeOrder())
 
             preProcessRecognize(
+                handle = _handle,
                 origin = imageProxy.planes[0].buffer,
                 input = detectResultBuffer,
                 output = recognizeInputBuffer,
@@ -212,17 +267,16 @@ class PaddleOCR(
             val floatByteSize = OnnxJavaType.FLOAT.size
             val intByteSize = OnnxJavaType.INT32.size
 
-            val perSampleInputBytes = 3 * 48 * cropWidth * floatByteSize
-            val perSampleOutputBytes = (cropWidth / 8) * 838 * floatByteSize
+            val perSampleInputBytes = 3 * 48 * maxCropSize * floatByteSize
+            val perSampleOutputBytes = (maxCropSize / 8) * 838 * floatByteSize
 
             val tokensList = mutableListOf<LongArray>()
             val scoresList = mutableListOf<Float>()
 
             var processed = 0
             while (processed < count) {
-                val batchSize = minOf(recognizeMaxBatchSize, count - processed)
+                val batchSize = minOf(batchSize, count - processed)
 
-                // Input slice for this batch
                 val inputOffsetBytes = processed * perSampleInputBytes
                 val inputSlice = recognizeInputBuffer.duplicate().order(ByteOrder.nativeOrder())
                     .apply {
@@ -230,7 +284,7 @@ class PaddleOCR(
                         limit(inputOffsetBytes + batchSize * perSampleInputBytes)
                     }.slice().order(ByteOrder.nativeOrder())
 
-                val batchInputShape = longArrayOf(batchSize.toLong(), 3, 48, cropWidth.toLong())
+                val batchInputShape = longArrayOf(batchSize.toLong(), 3, 48, maxCropSize.toLong())
 
                 // Output slice for this batch
                 val outputOffsetBytes = processed * perSampleOutputBytes
@@ -240,7 +294,8 @@ class PaddleOCR(
                         limit(outputOffsetBytes + batchSize * perSampleOutputBytes)
                     }.slice().order(ByteOrder.nativeOrder())
 
-                val batchOutputShape = longArrayOf(batchSize.toLong(), cropWidth.toLong() / 8, 838)
+                val batchOutputShape =
+                    longArrayOf(batchSize.toLong(), maxCropSize.toLong() / 8, 838)
 
                 val recognizeInputTensorBatch = OnnxTensor.createTensor(
                     ortEnvironment,
@@ -262,7 +317,9 @@ class PaddleOCR(
                 val recognizeOutputName = _recognizeSession!!.outputNames.first()
                 val recognizeOutputs = mapOf(recognizeOutputName to recognizeOutputTensorBatch)
 
+                startTime = System.currentTimeMillis()
                 _recognizeSession!!.run(recognizeInputs, recognizeOutputs)
+                totalInferenceTime += System.currentTimeMillis() - startTime
 
                 val scoreCountCapacity = batchSize * intByteSize
                 val tokenCountCapacity = batchSize * intByteSize
@@ -272,6 +329,7 @@ class PaddleOCR(
                         .order(ByteOrder.nativeOrder())
 
                 postProcessRecognize(
+                    handle = _handle,
                     outputBuffer = outputSlice,
                     outputShape = batchOutputShape,
                     tokenBuffer = tokenBufferBatch
@@ -326,6 +384,8 @@ class PaddleOCR(
         } catch (e: Exception) {
             Timber.tag(TAG).e(e)
             return Pair(emptyList(), null)
+        } finally {
+            Log.d(TAG, "Total inference time: $totalInferenceTime ms")
         }
     }
 
@@ -347,6 +407,18 @@ class PaddleOCR(
     }
 
     override fun close() {
+        if (_handle == 0L) {
+            Timber.tag(TAG).w("Already closed")
+            return
+        }
+
+        close(_handle)
+        _handle = 0L
+
+        unload()
+    }
+
+    fun unload() {
         try {
             _detectSession?.close()
             _recognizeSession?.close()
@@ -358,30 +430,6 @@ class PaddleOCR(
             _recognizeSession = null
             _recognizeSessionFile = null
         }
-    }
-
-    fun getPixelColorFromRGBAByteBuffer(
-        origin: Buffer,
-        input: Buffer,
-        originWidth: Int,
-        originHeight: Int,
-        originRotation: Int,
-        detectedWidth: Int = recognizeWidth,
-        detectedHeight: Int = recognizeHeight,
-    ): List<OcrColors> {
-        val colors = getPixelColorFromImage(
-            origin,
-            input,
-            originWidth,
-            originHeight,
-            originRotation,
-            detectedWidth,
-            detectedHeight
-        )
-
-        return colors.toList().chunked(2) { chunk ->
-            OcrColors(Color(chunk[0]), Color(chunk[1]))
-        }.reversed()
     }
 
     fun load() {
@@ -413,7 +461,7 @@ class PaddleOCR(
         }
         tokenizer.load(tempFile.toPath())
 
-        close()
+        unload()
         val options = OrtSession.SessionOptions().apply {
             setCPUArenaAllocator(true)
             setMemoryPatternOptimization(true)

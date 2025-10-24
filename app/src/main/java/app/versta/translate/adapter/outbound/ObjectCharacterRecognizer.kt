@@ -27,7 +27,12 @@ class ObjectCharacterRecognizer(
     }
 
     override fun analyze(imageProxy: ImageProxy) {
+        val startTime = System.currentTimeMillis()
         val (results, bitmap) = _paddleOCR.processCameraFrame(imageProxy)
+        Log.d(
+            TAG,
+            "Processed frame in ${System.currentTimeMillis() - startTime} ms with ${results.size} results"
+        )
 
         scope.launch {
             handleResults(
@@ -49,10 +54,15 @@ class ObjectCharacterRecognizer(
             return
         }
 
+        val startTime = System.currentTimeMillis()
         results.map { result ->
             val translated = _translationViewModel.translate(result.text, languages)
             result.translated = translated
         }
+        Log.d(
+            TAG,
+            "Translated frame in ${System.currentTimeMillis() - startTime} ms"
+        )
 
         onFrameProcessed(
             results,
