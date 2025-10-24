@@ -6,6 +6,7 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import app.versta.translate.MainApplication
 import app.versta.translate.bridge.inference.PaddleOCR
+import app.versta.translate.core.entity.ObjectCharacterRecognitionResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -13,10 +14,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class ObjectCharacterRecognizer(
-    private val onFrameProcessed: (List<PaddleOCR.OcrResults>, Bitmap?, Long) -> Unit
+    private val onFrameProcessed: (List<ObjectCharacterRecognitionResult>, Bitmap?, Long) -> Unit
 ) : ImageAnalysis.Analyzer {
-    // TODO: Make this dependancy injection through interface
-    private val _paddleOCR = PaddleOCR(MainApplication.module.ortEnvironment)
+    // TODO: Make this dependency injection through interface
+    private val _tokenizer = PaddleTokenizer()
+    private val _paddleOCR = PaddleOCR(
+        ortEnvironment = MainApplication.module.ortEnvironment,
+        tokenizer = _tokenizer
+    )
     private val _languageViewModel = MainApplication.module.languageViewModel
     private val _translationViewModel = MainApplication.module.translationViewModel
 
@@ -27,11 +32,24 @@ class ObjectCharacterRecognizer(
     }
 
     override fun analyze(imageProxy: ImageProxy) {
+        @Suppress("DEPRECATION")
         val (results, bitmap) = _paddleOCR.processCameraFrame(imageProxy)
 
         scope.launch {
             handleResults(
-                results = results,
+                results = results.map { oldResult ->
+                    ObjectCharacterRecognitionResult(
+                        points = oldResult.points,
+                        score = oldResult.score,
+                        tokens = oldResult.tokens,
+                        text = oldResult.text,
+                        translated = oldResult.translated,
+                        colors = app.versta.translate.core.entity.ObjectCharacterRecognitionColors(
+                            background = oldResult.colors.background,
+                            foreground = oldResult.colors.foreground
+                        )
+                    )
+                },
                 bitmap = bitmap,
                 imageProxy = imageProxy
             )
@@ -39,7 +57,7 @@ class ObjectCharacterRecognizer(
     }
 
     suspend fun handleResults(
-        results: List<PaddleOCR.OcrResults>,
+        results: List<ObjectCharacterRecognitionResult>,
         bitmap: Bitmap?,
         imageProxy: ImageProxy
     ) {
