@@ -59,6 +59,35 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
         }
     }
 
+    private fun encodeBatch(
+        inputIds: Array<LongArray>, attentionMask: Array<LongArray>
+    ): Array<EncoderHiddenStates> {
+        if (_encoderSession == null) {
+            throw IllegalStateException("Encoder session is not loaded")
+        }
+
+        val batchEncoderInput = MarianBatchEncoderInput(
+            ortEnvironment = ortEnvironment,
+            inputIds = inputIds,
+            attentionMask = attentionMask
+        )
+
+        val batchEncoderOutput = MarianBatchEncoderOutput()
+
+        try {
+            val inputs = batchEncoderInput.get()
+            val output = batchEncoderOutput.parse(_encoderSession!!.run(inputs))
+
+            return output ?: throw IllegalStateException("Encoder output is null")
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e)
+            throw e
+        } finally {
+            batchEncoderInput.destroy()
+            batchEncoderOutput.destroy()
+        }
+    }
+
     private fun decode(
         encoderHiddenStates: EncoderHiddenStates,
         attentionMask: EncoderAttentionMasks,
@@ -294,6 +323,80 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
         }
 
         return deduplicated.toLongArray()
+    }
+
+    override fun runBatch(
+        inputIds: Array<LongArray>,
+        attentionMask: Array<LongArray>,
+        eosId: Long,
+        padId: Long,
+        minP: Float,
+        repetitionPenalty: Float,
+        beamSize: Int,
+        maxSequenceLength: Int,
+    ): Array<LongArray> {
+        _runInference = true
+
+        val encoderHiddenStates = encodeBatch(
+            inputIds = inputIds,
+            attentionMask = attentionMask
+        )
+
+        val results = Array(inputIds.size) { index ->
+            val completeOnRepeat = inputIds[index].size <= 2
+
+            decode(
+                encoderHiddenStates = encoderHiddenStates[index],
+                attentionMask = attentionMask[index],
+                eosId = eosId,
+                padId = padId,
+                minP = minP,
+                repetitionPenalty = repetitionPenalty,
+                beamsSize = beamSize,
+                maxSequenceLength = maxSequenceLength,
+                completeOnRepeat = completeOnRepeat
+            )
+        }
+
+        return results
+    }
+
+    override fun runBatchAsFlow(
+        inputIds: Array<LongArray>,
+        attentionMask: Array<LongArray>,
+        eosId: Long,
+        padId: Long,
+        minP: Float,
+        repetitionPenalty: Float,
+        beamSize: Int,
+        maxSequenceLength: Int,
+    ): Flow<Array<LongArray>> {
+        _runInference = true
+
+        val encoderHiddenStates = encodeBatch(
+            inputIds = inputIds,
+            attentionMask = attentionMask
+        )
+
+        val flows = inputIds.indices.map { index ->
+            val completeOnRepeat = inputIds[index].size <= 4
+
+            decodeAsFlow(
+                encoderHiddenStates = encoderHiddenStates[index],
+                attentionMask = attentionMask[index],
+                eosId = eosId,
+                padId = padId,
+                minP = minP,
+                repetitionPenalty = repetitionPenalty,
+                beamsSize = beamSize,
+                maxSequenceLength = maxSequenceLength,
+                completeOnRepeat = completeOnRepeat
+            )
+        }
+
+        return kotlinx.coroutines.flow.combine(flows) { results ->
+            results.toTypedArray()
+        }.flowOn(Dispatchers.Default)
     }
 
     override fun cancel() {

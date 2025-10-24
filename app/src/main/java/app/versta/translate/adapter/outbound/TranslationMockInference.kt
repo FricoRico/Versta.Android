@@ -31,6 +31,32 @@ class TranslationMockInference: TranslationInference {
         return flowOf(LongArray(0))
     }
 
+    override fun runBatch(
+        inputIds: Array<LongArray>,
+        attentionMask: Array<LongArray>,
+        eosId: Long,
+        padId: Long,
+        minP: Float,
+        repetitionPenalty: Float,
+        beamSize: Int,
+        maxSequenceLength: Int,
+    ): Array<LongArray> {
+        return Array(inputIds.size) { LongArray(0) }
+    }
+
+    override fun runBatchAsFlow(
+        inputIds: Array<LongArray>,
+        attentionMask: Array<LongArray>,
+        eosId: Long,
+        padId: Long,
+        minP: Float,
+        repetitionPenalty: Float,
+        beamSize: Int,
+        maxSequenceLength: Int,
+    ): Flow<Array<LongArray>> {
+        return flowOf(Array(inputIds.size) { LongArray(0) })
+    }
+
     override fun cancel() {
         return
     }

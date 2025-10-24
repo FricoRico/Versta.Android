@@ -49,3 +49,40 @@ class MarianEncoderOutput {
         TensorUtils.closeTensor(_output)
     }
 }
+
+class MarianBatchEncoderInput(ortEnvironment: OrtEnvironment, inputIds: Array<LongArray>, attentionMask: Array<LongArray>) {
+    private val _inputIdsTensor = OnnxTensor.createTensor(ortEnvironment, inputIds)
+    private val _attentionMaskTensor = OnnxTensor.createTensor(ortEnvironment, attentionMask)
+
+    fun get(): Map<String, OnnxTensorLike> {
+        return mapOf(
+            "input_ids" to _inputIdsTensor,
+            "attention_mask" to _attentionMaskTensor
+        )
+    }
+
+    fun destroy() {
+        TensorUtils.closeTensor(_inputIdsTensor)
+        TensorUtils.closeTensor(_attentionMaskTensor)
+    }
+}
+
+class MarianBatchEncoderOutput {
+    private var _output: OrtSession.Result? = null
+
+    @Suppress("UNCHECKED_CAST")
+    fun parse(output: OrtSession.Result): Array<EncoderHiddenStates>? {
+        _output = output
+
+        val outputLastHiddenStates = output.get("last_hidden_state") ?: return null
+
+        // Shape: [batch_size, sequence_length, hidden_size]
+        val lastHiddenStates = outputLastHiddenStates.get().value as Array<EncoderHiddenStates>
+
+        return lastHiddenStates
+    }
+
+    fun destroy() {
+        TensorUtils.closeTensor(_output)
+    }
+}

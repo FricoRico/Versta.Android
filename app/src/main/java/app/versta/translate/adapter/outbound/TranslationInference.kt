@@ -26,6 +26,28 @@ interface TranslationInference {
         maxSequenceLength: Int,
     ): Flow<LongArray>
 
+    fun runBatch(
+        inputIds: Array<LongArray>,
+        attentionMask: Array<LongArray>,
+        eosId: Long,
+        padId: Long,
+        minP: Float,
+        repetitionPenalty: Float,
+        beamSize: Int,
+        maxSequenceLength: Int,
+    ): Array<LongArray>
+
+    fun runBatchAsFlow(
+        inputIds: Array<LongArray>,
+        attentionMask: Array<LongArray>,
+        eosId: Long,
+        padId: Long,
+        minP: Float,
+        repetitionPenalty: Float,
+        beamSize: Int,
+        maxSequenceLength: Int,
+    ): Flow<Array<LongArray>>
+
     fun cancel()
 
     fun load(files: LanguageModelInferenceFiles, threads: Int)
