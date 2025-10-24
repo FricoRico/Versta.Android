@@ -29,6 +29,9 @@ sealed class Screens : NavKey {
     data object TranslationSettings : Screens()
 
     @Serializable
+    data object ObjectCharacterRecognizerSettings : Screens()
+
+    @Serializable
     data object TextToSpeechSettings : Screens()
 
     @Serializable

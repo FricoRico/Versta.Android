@@ -181,4 +181,19 @@
     <string name="language_suggestion_description">%1$s is currently not available for translation.</string>
     <string name="language_suggestion_title">Download %1$s</string>
     <string name="language_suggestion_call_to_action">Do you want to download it now?</string>
+    <string name="object_character_recognizer_settings_title">Vision</string>
+    <string name="object_character_recognizer_settings_detection_headline">Detection</string>
+    <string name="object_character_recognizer_settings_detect_width_title">Detection width</string>
+    <string name="object_character_recognizer_settings_detect_width_description">The width of the detection model input. Higher values may improve detection accuracy, but will be slower.</string>
+    <string name="object_character_recognizer_settings_detect_height_title">Detection height</string>
+    <string name="object_character_recognizer_settings_detect_height_description">The height of the detection model input. Higher values may improve detection accuracy, but will be slower.</string>
+    <string name="object_character_recognizer_settings_recognition_headline">Recognition</string>
+    <string name="object_character_recognizer_settings_recognize_width_title">Recognition width</string>
+    <string name="object_character_recognizer_settings_recognize_width_description">The width of the recognition model input. Higher values may improve recognition accuracy, but will be slower.</string>
+    <string name="object_character_recognizer_settings_recognize_height_title">Recognition height</string>
+    <string name="object_character_recognizer_settings_recognize_height_description">The height of the recognition model input. Higher values may improve recognition accuracy, but will be slower.</string>
+    <string name="object_character_recognizer_settings_crop_width_title">Crop width</string>
+    <string name="object_character_recognizer_settings_crop_width_description">The width of each detected text region after cropping. Higher values support longer text lines but use more memory.</string>
+    <string name="object_character_recognizer_settings_max_batch_size_title">Max batch size</string>
+    <string name="object_character_recognizer_settings_max_batch_size_description">The maximum number of detected regions to process at once. Higher values may improve performance, but will use more memory.</string>
 </resources>
