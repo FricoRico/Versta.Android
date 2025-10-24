@@ -4,6 +4,8 @@ import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import app.versta.translate.bridge.inference.BeamSearch
 import app.versta.translate.core.entity.LanguageModelInferenceFiles
+import app.versta.translate.core.entity.MarianBatchEncoderInput
+import app.versta.translate.core.entity.MarianBatchEncoderOutput
 import app.versta.translate.core.entity.MarianDecoderInput
 import app.versta.translate.core.entity.MarianDecoderOutput
 import app.versta.translate.core.entity.EncoderAttentionMasks
@@ -371,29 +373,59 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
     ): Flow<Array<LongArray>> {
         _runInference = true
 
-        val encoderHiddenStates = encodeBatch(
-            inputIds = inputIds,
-            attentionMask = attentionMask
-        )
-
-        val flows = inputIds.indices.map { index ->
-            val completeOnRepeat = inputIds[index].size <= 4
-
-            decodeAsFlow(
-                encoderHiddenStates = encoderHiddenStates[index],
-                attentionMask = attentionMask[index],
-                eosId = eosId,
-                padId = padId,
-                minP = minP,
-                repetitionPenalty = repetitionPenalty,
-                beamsSize = beamSize,
-                maxSequenceLength = maxSequenceLength,
-                completeOnRepeat = completeOnRepeat
+        return flow {
+            val encoderHiddenStates = encodeBatch(
+                inputIds = inputIds,
+                attentionMask = attentionMask
             )
-        }
 
-        return kotlinx.coroutines.flow.combine(flows) { results ->
-            results.toTypedArray()
+            val flows = inputIds.indices.map { index ->
+                val completeOnRepeat = inputIds[index].size <= 4
+
+                decodeAsFlow(
+                    encoderHiddenStates = encoderHiddenStates[index],
+                    attentionMask = attentionMask[index],
+                    eosId = eosId,
+                    padId = padId,
+                    minP = minP,
+                    repetitionPenalty = repetitionPenalty,
+                    beamsSize = beamSize,
+                    maxSequenceLength = maxSequenceLength,
+                    completeOnRepeat = completeOnRepeat
+                )
+            }
+
+            // Combine all flows manually since combine has parameter limits
+            if (flows.isEmpty()) {
+                emit(emptyArray())
+                return@flow
+            }
+
+            if (flows.size == 1) {
+                flows[0].collect { result ->
+                    emit(arrayOf(result))
+                }
+                return@flow
+            }
+
+            // For multiple flows, we use a manual combination approach
+            // This collects from all flows and emits whenever any flow emits
+            val currentResults = Array(flows.size) { LongArray(0) }
+            val completed = BooleanArray(flows.size) { false }
+            
+            kotlinx.coroutines.coroutineScope {
+                flows.forEachIndexed { index, flow ->
+                    kotlinx.coroutines.launch {
+                        flow.collect { result ->
+                            currentResults[index] = result
+                            emit(currentResults.clone())
+                            if (result.isNotEmpty() && result.last() == eosId) {
+                                completed[index] = true
+                            }
+                        }
+                    }
+                }
+            }
         }.flowOn(Dispatchers.Default)
     }
 
