@@ -6,6 +6,8 @@
 #include <jni.h>
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include <unordered_map>
+#include <memory>
 #include <android/log.h>
 #include <ocr-clipper/ocr_clipper.hpp>
 #include "include/Log.h"
@@ -359,10 +361,452 @@ void write_filter_boxes_to_buffer(const std::vector<std::vector<std::vector<int>
     }
 }
 
-extern "C" JNIEXPORT jint JNICALL
+// PaddleOCR class for managing OCR operations with configurable properties
+class PaddleOCR {
+public:
+    PaddleOCR(int cropWidth, int threads)
+            : cropWidth(cropWidth),
+              threads(threads),
+              recImageShape({3, 48, cropWidth}) {
+        cv::setNumThreads(threads);
+    }
+
+    int postProcessDetect(
+            JNIEnv *env,
+            jobject input,
+            jobject output,
+            int inputWidth,
+            int inputHeight,
+            int outputWidth,
+            int outputHeight,
+            float threshold,
+            int maxValue
+    ) {
+        auto *inputData = static_cast<float *>(env->GetDirectBufferAddress(input));
+        auto *outputData = static_cast<int *>(env->GetDirectBufferAddress(output));
+        if (!inputData || !outputData) return 0;
+
+        pred = cv::Mat::zeros(inputWidth, inputHeight, CV_32F);
+        memcpy(pred.data, inputData, inputWidth * inputHeight * sizeof(float));
+
+        pred.convertTo(bitmap, CV_8UC1);
+
+        cv::threshold(bitmap, bitmap, threshold, maxValue, cv::THRESH_BINARY);
+
+        boxes = boxes_from_bitmap(pred, bitmap);
+
+        float ratioWidth = inputWidth * 1.0f / outputWidth;
+        float ratioHeight = inputHeight * 1.0f / outputHeight;
+
+        boxes = filter_tag_det_res(boxes, ratioHeight, ratioWidth, outputWidth, outputHeight);
+
+        write_filter_boxes_to_buffer(boxes, outputData, env->GetDirectBufferCapacity(output));
+
+        return static_cast<int>(boxes.size());
+    }
+
+    bool preProcessDetect(
+            JNIEnv *env,
+            jobject input,
+            jobject output,
+            jobject debug,
+            int inputWidth,
+            int inputHeight,
+            int outputWidth,
+            int outputHeight,
+            int outputRotation
+    ) {
+        auto *inputData = static_cast<uint8_t *>(env->GetDirectBufferAddress(input));
+        auto *outputData = static_cast<float *>(env->GetDirectBufferAddress(output));
+        auto *debugData = static_cast<float *>(env->GetDirectBufferAddress(debug));
+        if (!inputData || !outputData) return false;
+
+        const std::vector<float> mean = {0.485f, 0.456f, 0.406f};
+        const std::vector<float> scale = {1 / 0.229f, 1 / 0.224f, 1 / 0.225f};
+
+        frame = cv::Mat(inputHeight, inputWidth, CV_8UC4, inputData);
+        cv::cvtColor(frame, frame, cv::COLOR_RGBA2BGR);
+
+        rotate_img(frame, outputRotation);
+        resize_img(frame, outputWidth, outputHeight);
+        frame.convertTo(frame, CV_32FC3, 1.0f / 255.0f);
+
+        const int size = frame.cols * frame.rows;
+        neon_mean_scale(reinterpret_cast<const float *>(frame.data), outputData, size, mean, scale);
+
+        if (debugData) {
+            output_to_debug_buffer(outputData, debugData, frame.cols, frame.rows);
+        }
+
+        return true;
+    }
+
+    bool preProcessRecognize(
+            JNIEnv *env,
+            jobject origin,
+            jobject input,
+            jobject output,
+            int originWidth,
+            int originHeight,
+            int originRotation,
+            int detectedWidth,
+            int detectedHeight
+    ) {
+        auto *originData = static_cast<uint8_t *>(env->GetDirectBufferAddress(origin));
+        auto *inputData = static_cast<int *>(env->GetDirectBufferAddress(input));
+        auto *outputData = static_cast<float *>(env->GetDirectBufferAddress(output));
+        if (!originData || !inputData || !outputData)
+            throw std::runtime_error("Failed to get direct buffer address.");
+
+        auto boxes = buffer_to_filter_boxes(inputData, env->GetDirectBufferCapacity(input));
+        if (boxes.empty()) return false;
+
+        recognizeFrame = cv::Mat(originHeight, originWidth, CV_8UC4, originData);
+        cv::cvtColor(recognizeFrame, recognizeFrame, cv::COLOR_RGBA2BGR);
+
+        rotate_img(recognizeFrame, originRotation);
+        resize_img(recognizeFrame, detectedHeight, detectedWidth);
+        recognizeFrame.convertTo(recognizeFrame, CV_32FC3, 1.0f / 255.0f);
+
+        const std::vector<float> mean = {0.5f, 0.5f, 0.5f};
+        const std::vector<float> scale = {1 / 0.5f, 1 / 0.5f, 1 / 0.5f};
+
+        int batchCount = 0;
+        int outputIndex = 0;
+        int max_candidates = 100;
+
+        for (auto bp = boxes.crbegin(); bp != boxes.crend(); ++bp) {
+            const std::vector<std::vector<int>> &box = *bp;
+            crop_img = get_rotate_crop_image(recognizeFrame, box);
+
+            float wh_ratio = float(crop_img.cols) / float(crop_img.rows);
+            crop_img = crnn_resize_img(crop_img, wh_ratio);
+            crop_img = pad_crop_to_rec_shape(crop_img);
+
+            if (crop_img.cols != recImageShape[2] || crop_img.rows != recImageShape[1]) {
+                throw std::runtime_error("Cropped image has incorrect shape.");
+            }
+
+            neon_mean_scale(reinterpret_cast<const float *>(crop_img.data), outputData + outputIndex,
+                            crop_img.cols * crop_img.rows, mean, scale);
+            outputIndex += crop_img.cols * crop_img.rows * recImageShape[0];
+
+            batchCount++;
+            if (batchCount >= max_candidates) break;
+        }
+
+        return true;
+    }
+
+    bool postProcessRecognize(
+            JNIEnv *env,
+            jobject outputBuffer,
+            jlongArray outputShape,
+            jobject tokenBuffer
+    ) {
+        auto *outputData = static_cast<float *>(env->GetDirectBufferAddress(outputBuffer));
+        auto *tokenData = static_cast<int *>(env->GetDirectBufferAddress(tokenBuffer));
+        if (!outputData || !tokenData) return false;
+
+        auto *shapeArray = env->GetLongArrayElements(outputShape, nullptr);
+        int batchSize = static_cast<int>(shapeArray[0]);
+        int seqLen = static_cast<int>(shapeArray[1]);
+        int vocabSize = static_cast<int>(shapeArray[2]);
+        env->ReleaseLongArrayElements(outputShape, shapeArray, 0);
+
+        std::vector<std::vector<int>> batchTokens;
+        std::vector<float> batchScores;
+
+        for (int b = 0; b < batchSize; ++b) {
+            const float *batchStart = outputData + (b * seqLen * vocabSize);
+
+            std::vector<int> tokens;
+            float score = 0.f;
+            int lastIndex = 0;
+            int count = 0;
+
+            for (int n = 0; n < seqLen; ++n) {
+                const float *start = batchStart + (n * vocabSize);
+                const float *end = start + vocabSize;
+                int argmaxIndex = int(argmax(start, end));
+                float maxValue = *std::max_element(start, end);
+
+                if (argmaxIndex > 0 && !(n > 0 && argmaxIndex == lastIndex)) {
+                    score += maxValue;
+                    count += 1;
+                    tokens.push_back(argmaxIndex);
+                }
+                lastIndex = argmaxIndex;
+            }
+
+            score /= std::max(1.f, static_cast<float>(count));
+
+            batchTokens.push_back(tokens);
+            batchScores.push_back(score);
+        }
+
+        write_tokens_to_buffer(batchTokens, batchScores, tokenData,
+                               env->GetDirectBufferCapacity(tokenBuffer));
+
+        return true;
+    }
+
+    jintArray getPixelColorFromImage(
+            JNIEnv *env,
+            jobject origin,
+            jobject input,
+            int originWidth,
+            int originHeight,
+            int originRotation,
+            int detectedWidth,
+            int detectedHeight
+    ) {
+        auto *originData = static_cast<uint8_t *>(env->GetDirectBufferAddress(origin));
+        auto *inputData = static_cast<int *>(env->GetDirectBufferAddress(input));
+        if (!originData || !inputData) {
+            throw std::runtime_error("Failed to get direct buffer address.");
+        }
+
+        auto boxes = buffer_to_filter_boxes(inputData, env->GetDirectBufferCapacity(input));
+        if (boxes.empty()) {
+            throw std::runtime_error("No boxes found in input buffer.");
+        }
+
+        std::vector<jint> allColors;
+        allColors.reserve(boxes.size() * 2);
+
+        colorFrame = cv::Mat(originHeight, originWidth, CV_8UC4, originData);
+        rotate_img(colorFrame, originRotation);
+        resize_img(colorFrame, detectedHeight, detectedWidth);
+
+        for (const auto &box: boxes) {
+            cv::Mat crop_img = get_rotate_crop_image(colorFrame, box);
+
+            auto [textColor, backgroundColor] = extractColors(crop_img);
+
+            jint bgColor =
+                    (255 << 24) | ((int) backgroundColor[0] << 16) | ((int) backgroundColor[1] << 8) |
+                    (int) backgroundColor[2];
+            jint txtColor = (255 << 24) | ((int) textColor[0] << 16) | ((int) textColor[1] << 8) |
+                            (int) textColor[2];
+
+            allColors.push_back(bgColor);
+            allColors.push_back(txtColor);
+        }
+
+        jintArray result = env->NewIntArray(allColors.size());
+        if (!result) {
+            throw std::runtime_error("Failed to create color array.");
+        }
+
+        env->SetIntArrayRegion(result, 0, allColors.size(), allColors.data());
+        return result;
+    }
+
+private:
+    int cropWidth;
+    int threads;
+    std::vector<int> recImageShape;
+
+    // Cached matrices to avoid reallocations
+    cv::Mat pred;
+    cv::Mat bitmap;
+    cv::Mat frame;
+    cv::Mat recognizeFrame;
+    cv::Mat crop_img;
+    cv::Mat colorFrame;
+    std::vector<std::vector<std::vector<int>>> boxes;
+
+    cv::Mat crnn_resize_img(const cv::Mat &img, float wh_ratio) {
+        int imgC = recImageShape[0];
+        int imgW = recImageShape[2];
+        int imgH = recImageShape[1];
+
+        float ratio = float(img.cols) / float(img.rows);
+        int resize_w = 0;
+        if (ceilf(imgH * ratio) > imgW)
+            resize_w = imgW;
+        else
+            resize_w = int(ceilf(imgH * ratio));
+        
+        cv::Mat resize_img;
+        cv::resize(img, resize_img, cv::Size(resize_w, imgH));
+        return resize_img;
+    }
+
+    cv::Mat pad_crop_to_rec_shape(const cv::Mat &img) {
+        const int channels = recImageShape[0];
+        const int target_height = recImageShape[1];
+        const int target_width = recImageShape[2];
+
+        cv::Mat padded = cv::Mat(target_height, target_width, img.type(), cv::Scalar(0.5f, 0.5f, 0.5f));
+        img.copyTo(padded(cv::Rect(0, 0, img.cols, img.rows)));
+
+        return padded;
+    }
+
+    template<class ForwardIterator>
+    static inline size_t argmax(ForwardIterator first, ForwardIterator last) {
+        return std::distance(first, std::max_element(first, last));
+    }
+
+    static void write_tokens_to_buffer(const std::vector<std::vector<int>> &tokens,
+                                const std::vector<float> &scores,
+                                int *buffer, size_t buffer_size) {
+        if (tokens.size() != scores.size()) {
+            throw std::runtime_error("Tokens and scores size mismatch");
+        }
+
+        auto batchSize = tokens.size();
+
+        buffer[0] = static_cast<int>(batchSize);
+        buffer += 1;
+        buffer_size -= sizeof(int);
+
+        for (size_t i = 0; i < batchSize; ++i) {
+            int word_count = static_cast<int>(tokens[i].size());
+            auto required_size = (2 + word_count) * sizeof(int);
+
+            if (buffer_size < required_size) {
+                throw std::runtime_error(
+                        "Buffer too small to hold detected boxes for batch " + std::to_string(i));
+            }
+
+            buffer[0] = word_count;
+            buffer[1] = static_cast<int>(scores[i] * 1000);
+
+            int idx = 2;
+            for (const auto &word: tokens[i]) {
+                buffer[idx++] = word;
+            }
+
+            buffer += static_cast<size_t>(required_size / sizeof(int));
+            buffer_size -= required_size;
+        }
+    }
+
+    static std::vector<std::vector<std::vector<int>>>
+    buffer_to_filter_boxes(const int *buffer, size_t buffer_size) {
+        std::vector<std::vector<std::vector<int>>> boxes;
+        if (buffer_size < 1) return boxes;
+
+        int box_count = static_cast<int>(buffer[0]);
+        size_t expected_size = 1 + box_count * 4 * 2 * sizeof(int);
+        if (buffer_size < expected_size) return boxes;
+
+        int idx = 1;
+        for (int b = 0; b < box_count; ++b) {
+            std::vector<std::vector<int>> box;
+            for (int p = 0; p < 4; ++p) {
+                int x = static_cast<int>(buffer[idx++]);
+                int y = static_cast<int>(buffer[idx++]);
+                box.push_back({x, y});
+            }
+            boxes.push_back(box);
+        }
+        return boxes;
+    }
+
+    static std::pair<cv::Scalar, cv::Scalar> extractColors(const cv::Mat &image) {
+        auto wh_ratio = float(image.cols) / float(image.rows);
+        auto desired_width = int(64 * wh_ratio);
+        auto desired_height = 64;
+        cv::Mat resized;
+        cv::resize(image, resized, cv::Size(desired_width, desired_height));
+
+        cv::Mat pixels;
+        pixels = resized.reshape(1, resized.rows * resized.cols);
+        pixels.convertTo(pixels, CV_32F);
+
+        cv::Mat labels, centers;
+        cv::kmeans(
+                pixels, 2, labels,
+                cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 10, 1.0),
+                2, cv::KMEANS_PP_CENTERS, centers
+        );
+
+        cv::Scalar smallColors, bigColors;
+        smallColors = cv::Scalar(centers.at<float>(0, 0), centers.at<float>(0, 1),
+                                 centers.at<float>(0, 2));
+        bigColors = cv::Scalar(centers.at<float>(1, 0), centers.at<float>(1, 1),
+                               centers.at<float>(1, 2));
+
+        int textLabel = (cv::countNonZero(labels == 0) < cv::countNonZero(labels == 1)) ? 0 : 1;
+        cv::Scalar backgroundColor, textColor;
+        backgroundColor = (textLabel == 0) ? smallColors : bigColors;
+        textColor = (textLabel == 0) ? bigColors : smallColors;
+
+        auto calculateLuminance = [](const cv::Scalar &color) {
+            return 0.299f * color[2] + 0.587f * color[1] + 0.114f * color[0];
+        };
+
+        float textLuminance = calculateLuminance(textColor);
+        float bgLuminance = calculateLuminance(backgroundColor);
+
+        float contrastFactor = 0.3f;
+
+        if (textLuminance < bgLuminance) {
+            textColor[0] = std::max<float>(0.0f, textColor[0] * (1.0f - contrastFactor * 0.3f));
+            textColor[1] = std::max<float>(0.0f, textColor[1] * (1.0f - contrastFactor * 0.3f));
+            textColor[2] = std::max<float>(0.0f, textColor[2] * (1.0f - contrastFactor * 0.3f));
+        } else {
+            textColor[0] = std::min<float>(255.0f, textColor[0] * (1.0f + contrastFactor * 0.5f));
+            textColor[1] = std::min<float>(255.0f, textColor[1] * (1.0f + contrastFactor * 0.5f));
+            textColor[2] = std::min<float>(255.0f, textColor[2] * (1.0f + contrastFactor * 0.5f));
+        }
+
+        if (bgLuminance < textLuminance) {
+            backgroundColor[0] = std::max<float>(0.0f, backgroundColor[0] * (1.0f - contrastFactor * 0.3f));
+            backgroundColor[1] = std::max<float>(0.0f, backgroundColor[1] * (1.0f - contrastFactor * 0.3f));
+            backgroundColor[2] = std::max<float>(0.0f, backgroundColor[2] * (1.0f - contrastFactor * 0.3f));
+        } else {
+            backgroundColor[0] = std::min<float>(255.0f, backgroundColor[0] * (1.0f + contrastFactor * 0.5f));
+            backgroundColor[1] = std::min<float>(255.0f, backgroundColor[1] * (1.0f + contrastFactor * 0.5f));
+            backgroundColor[2] = std::min<float>(255.0f, backgroundColor[2] * (1.0f + contrastFactor * 0.5f));
+        }
+
+        return {backgroundColor, textColor};
+    }
+};
+
+// Global instance management similar to BeamSearch
+std::unordered_map<jlong, std::unique_ptr<PaddleOCR>> paddleOCRInstances;
+jlong paddleOCRInstanceCounter = 0;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+JNIEXPORT jlong JNICALL
+Java_app_versta_translate_bridge_inference_PaddleOCR_construct(
+        JNIEnv *env,
+        jobject,
+        jint cropWidth,
+        jint threads
+) {
+    auto paddleOCR = std::make_unique<PaddleOCR>(cropWidth, threads);
+    jlong handle = ++paddleOCRInstanceCounter;
+    paddleOCRInstances[handle] = std::move(paddleOCR);
+    return handle;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_app_versta_translate_bridge_inference_PaddleOCR_close(
+        JNIEnv *env,
+        jobject,
+        jlong handle
+) {
+    if (paddleOCRInstances.erase(handle) > 0) {
+        return JNI_TRUE;
+    }
+    return JNI_FALSE;
+}
+
+JNIEXPORT jint JNICALL
 Java_app_versta_translate_bridge_inference_PaddleOCR_postProcessDetect(
         JNIEnv *env,
         jobject,
+        jlong handle,
         jobject input,
         jobject output,
         jint inputWidth,
@@ -370,143 +814,26 @@ Java_app_versta_translate_bridge_inference_PaddleOCR_postProcessDetect(
         jint outputWidth,
         jint outputHeight,
         jfloat threshold,
-        jint maxValue,
-        jint threads
+        jint maxValue
 ) {
-    cv::setNumThreads(threads);
-
-    auto *inputData = static_cast<float *>(env->GetDirectBufferAddress(input));
-    auto *outputData = static_cast<int *>(env->GetDirectBufferAddress(output));
-    if (!inputData || !outputData) return 0;
-
-    static cv::Mat pred;
-    pred = cv::Mat::zeros(inputWidth, inputHeight, CV_32F);
-    memcpy(pred.data, inputData, inputWidth * inputHeight * sizeof(float));
-
-    static cv::Mat bitmap;
-    pred.convertTo(bitmap, CV_8UC1);
-
-    cv::threshold(bitmap, bitmap, threshold, maxValue, cv::THRESH_BINARY);
-
-    static std::vector<std::vector<std::vector<int>>> boxes;
-    boxes = boxes_from_bitmap(pred, bitmap);
-
-    float ratioWidth = inputWidth * 1.0f / outputWidth;
-    float ratioHeight = inputHeight * 1.0f / outputHeight;
-
-    boxes = filter_tag_det_res(boxes, ratioHeight, ratioWidth, outputWidth, outputHeight);
-
-    write_filter_boxes_to_buffer(boxes, outputData, env->GetDirectBufferCapacity(output));
-
-    return static_cast<int>(boxes.size());
-}
-
-void resize_img(cv::Mat &img, int width, int height) {
-    if (img.rows == height && img.cols == width) {
-        return;
+    auto paddleOCR = paddleOCRInstances[handle].get();
+    if (!paddleOCR) {
+        return 0;
     }
 
-    float src_aspect = static_cast<float>(img.cols) / img.rows;
-    float dst_aspect = static_cast<float>(width) / height;
-
-    int targetWidth, targetHeight;
-    if (src_aspect > dst_aspect) {
-        targetWidth = width;
-        targetHeight = static_cast<int>(width / src_aspect);
-    } else {
-        targetHeight = height;
-        targetWidth = static_cast<int>(height * src_aspect);
-    }
-
-    static cv::Mat resized;
-    cv::resize(img, resized, cv::Size(targetWidth, targetHeight));
-    img = cv::Mat(height, width, img.type(), cv::Scalar(0.485f, 0.456f, 0.406f));
-
-    int x = (width - targetWidth) / 2;
-    int y = (height - targetHeight) / 2;
-
-    resized.copyTo(img(cv::Rect(x, y, targetWidth, targetHeight)));
-}
-
-void rotate_img(cv::Mat &img, int angle) {
-    if (angle == 0) {
-        return;
-    } else if (angle == 90) {
-        cv::rotate(img, img, cv::ROTATE_90_CLOCKWISE);
-    } else if (angle == 180) {
-        cv::rotate(img, img, cv::ROTATE_180);
-    } else if (angle == 270) {
-        cv::rotate(img, img, cv::ROTATE_90_COUNTERCLOCKWISE);
-    }
-}
-
-void neon_mean_scale(const float *din, float *dout, int size,
-                     const std::vector<float> &mean,
-                     const std::vector<float> &scale) {
-    if (mean.size() != 3 || scale.size() != 3) {
-        return;
-    }
-
-    float32x4_t vmean0 = vdupq_n_f32(mean[0]);
-    float32x4_t vmean1 = vdupq_n_f32(mean[1]);
-    float32x4_t vmean2 = vdupq_n_f32(mean[2]);
-    float32x4_t vscale0 = vdupq_n_f32(scale[0]);
-    float32x4_t vscale1 = vdupq_n_f32(scale[1]);
-    float32x4_t vscale2 = vdupq_n_f32(scale[2]);
-
-    float *dout_c0 = dout;
-    float *dout_c1 = dout + size;
-    float *dout_c2 = dout + size * 2;
-
-    int i = 0;
-    for (; i < size - 3; i += 4) {
-        float32x4x3_t vin3 = vld3q_f32(din);
-        float32x4_t vsub0 = vsubq_f32(vin3.val[0], vmean0);
-        float32x4_t vsub1 = vsubq_f32(vin3.val[1], vmean1);
-        float32x4_t vsub2 = vsubq_f32(vin3.val[2], vmean2);
-        float32x4_t vs0 = vmulq_f32(vsub0, vscale0);
-        float32x4_t vs1 = vmulq_f32(vsub1, vscale1);
-        float32x4_t vs2 = vmulq_f32(vsub2, vscale2);
-        vst1q_f32(dout_c0, vs0);
-        vst1q_f32(dout_c1, vs1);
-        vst1q_f32(dout_c2, vs2);
-
-        din += 12;
-        dout_c0 += 4;
-        dout_c1 += 4;
-        dout_c2 += 4;
-    }
-    for (; i < size; i++) {
-        *(dout_c0++) = (*(din++) - mean[0]) * scale[0];
-        *(dout_c1++) = (*(din++) - mean[1]) * scale[1];
-        *(dout_c2++) = (*(din++) - mean[2]) * scale[2];
-    }
-}
-
-void output_to_debug_buffer(const float *outputData, float *debugData, int width, int height) {
-    const int size = width * height;
-
-    static cv::Mat debugFrame;
-    static std::vector<float> outputDataHWC(size * 3);
-
-    for (int i = 0; i < size; ++i) {
-        outputDataHWC[i * 3 + 0] = outputData[i];
-        outputDataHWC[i * 3 + 1] = outputData[i + size];
-        outputDataHWC[i * 3 + 2] = outputData[i + size * 2];
-    }
-
-    debugFrame = cv::Mat(width, height, CV_32FC3, outputDataHWC.data());
-    debugFrame.convertTo(debugFrame, CV_8UC3, 255.0);
-
-    cv::cvtColor(debugFrame, debugFrame, cv::COLOR_BGR2RGBA);
-
-    memcpy(debugData, debugFrame.data, debugFrame.cols * debugFrame.rows * sizeof(float));
+    return paddleOCR->postProcessDetect(
+            env, input, output,
+            inputWidth, inputHeight,
+            outputWidth, outputHeight,
+            threshold, maxValue
+    );
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
 Java_app_versta_translate_bridge_inference_PaddleOCR_preProcessDetect(
         JNIEnv *env,
         jobject,
+        jlong handle,
         jobject input,
         jobject output,
         jobject debug,
@@ -514,158 +841,26 @@ Java_app_versta_translate_bridge_inference_PaddleOCR_preProcessDetect(
         jint inputHeight,
         jint outputWidth,
         jint outputHeight,
-        jint outputRotation,
-        jint threads
+        jint outputRotation
 ) {
-    cv::setNumThreads(threads);
-
-    auto *inputData = static_cast<uint8_t *>(env->GetDirectBufferAddress(input));
-    auto *outputData = static_cast<float *>(env->GetDirectBufferAddress(output));
-    auto *debugData = static_cast<float *>(env->GetDirectBufferAddress(debug));
-    if (!inputData || !outputData) return JNI_FALSE;
-
-    const std::vector<float> mean = {0.485f, 0.456f, 0.406f};
-    const std::vector<float> scale = {1 / 0.229f, 1 / 0.224f, 1 / 0.225f};
-
-    static cv::Mat frame;
-    frame = cv::Mat(inputHeight, inputWidth, CV_8UC4, inputData);
-    cv::cvtColor(frame, frame, cv::COLOR_RGBA2BGR);
-
-    rotate_img(frame, outputRotation);
-    resize_img(frame, outputWidth, outputHeight);
-    frame.convertTo(frame, CV_32FC3, 1.0f / 255.0f);
-
-    const int size = frame.cols * frame.rows;
-    neon_mean_scale(reinterpret_cast<const float *>(frame.data), outputData, size, mean, scale);
-
-    if (debugData) {
-        output_to_debug_buffer(outputData, debugData, frame.cols, frame.rows);
+    auto paddleOCR = paddleOCRInstances[handle].get();
+    if (!paddleOCR) {
+        return JNI_FALSE;
     }
 
-    return JNI_TRUE;
-}
-
-// Brief explanation: This function reads a float buffer and reconstructs the nested vector structure.
-std::vector<std::vector<std::vector<int>>>
-buffer_to_filter_boxes(const int *buffer, size_t buffer_size) {
-    std::vector<std::vector<std::vector<int>>> boxes;
-    if (buffer_size < 1) return boxes;
-
-    int box_count = static_cast<int>(buffer[0]);
-    size_t expected_size = 1 + box_count * 4 * 2 * sizeof(int);
-    if (buffer_size < expected_size) return boxes;
-
-    int idx = 1;
-    for (int b = 0; b < box_count; ++b) {
-        std::vector<std::vector<int>> box;
-        for (int p = 0; p < 4; ++p) {
-            int x = static_cast<int>(buffer[idx++]);
-            int y = static_cast<int>(buffer[idx++]);
-            box.push_back({x, y});
-        }
-        boxes.push_back(box);
-    }
-    return boxes;
-}
-
-cv::Mat get_rotate_crop_image(const cv::Mat &srcimage,
-                              const std::vector<std::vector<int>> &box) {
-    std::vector<std::vector<int>> points = box;
-
-    int x_collect[4] = {box[0][0], box[1][0], box[2][0], box[3][0]};
-    int y_collect[4] = {box[0][1], box[1][1], box[2][1], box[3][1]};
-    int left = int(*std::min_element(x_collect, x_collect + 4));
-    int right = int(*std::max_element(x_collect, x_collect + 4));
-    int top = int(*std::min_element(y_collect, y_collect + 4));
-    int bottom = int(*std::max_element(y_collect, y_collect + 4));
-
-    cv::Mat img_crop;
-    srcimage(cv::Rect(left, top, right - left, bottom - top)).copyTo(img_crop);
-
-    for (int i = 0; i < points.size(); i++) {
-        points[i][0] -= left;
-        points[i][1] -= top;
-    }
-
-    int img_crop_width = int(sqrt(pow(points[0][0] - points[1][0], 2) +
-                                  pow(points[0][1] - points[1][1], 2)));
-    int img_crop_height = int(sqrt(pow(points[0][0] - points[3][0], 2) +
-                                   pow(points[0][1] - points[3][1], 2)));
-
-    cv::Point2f pts_std[4];
-    pts_std[0] = cv::Point2f(0., 0.);
-    pts_std[1] = cv::Point2f(img_crop_width, 0.);
-    pts_std[2] = cv::Point2f(img_crop_width, img_crop_height);
-    pts_std[3] = cv::Point2f(0.f, img_crop_height);
-
-    cv::Point2f pointsf[4];
-    pointsf[0] = cv::Point2f(points[0][0], points[0][1]);
-    pointsf[1] = cv::Point2f(points[1][0], points[1][1]);
-    pointsf[2] = cv::Point2f(points[2][0], points[2][1]);
-    pointsf[3] = cv::Point2f(points[3][0], points[3][1]);
-
-    cv::Mat M = cv::getPerspectiveTransform(pointsf, pts_std);
-
-    cv::Mat dst_img;
-    cv::warpPerspective(img_crop, dst_img, M,
-                        cv::Size(img_crop_width, img_crop_height),
-                        cv::BORDER_REPLICATE);
-
-    if (float(dst_img.rows) >= float(dst_img.cols) * 1.5) {
-        /*
-        cv::Mat srcCopy = cv::Mat(dst_img.rows, dst_img.cols, dst_img.depth());
-        cv::transpose(dst_img, srcCopy);
-        cv::flip(srcCopy, srcCopy, 0);
-        return srcCopy;
-        */
-        cv::transpose(dst_img, dst_img);
-        cv::flip(dst_img, dst_img, 0);
-        return dst_img;
-    } else {
-        return dst_img;
-    }
-}
-
-
-const std::string CHARACTER_TYPE = "en";
-const std::vector<int> REC_IMAGE_SHAPE = {3, 48, 640};
-
-cv::Mat crnn_resize_img(const cv::Mat &img, float wh_ratio) {
-    int imgC = REC_IMAGE_SHAPE[0];
-    int imgW = REC_IMAGE_SHAPE[2];
-    int imgH = REC_IMAGE_SHAPE[1];
-
-    if (CHARACTER_TYPE == "ch") {
-        imgW = int(32 * wh_ratio);
-    }
-
-    float ratio = float(img.cols) / float(img.rows);
-    int resize_w = 0;
-    if (ceilf(imgH * ratio) > imgW)
-        resize_w = imgW;
-    else
-        resize_w = int(ceilf(imgH * ratio));
-    static cv::Mat resize_img;
-    cv::resize(img, resize_img, cv::Size(resize_w, imgH));
-    return resize_img;
-}
-
-cv::Mat pad_crop_to_rec_shape(const cv::Mat &img) {
-    const int channels = REC_IMAGE_SHAPE[0];
-    const int target_height = REC_IMAGE_SHAPE[1];
-    const int target_width = REC_IMAGE_SHAPE[2];
-
-    static cv::Mat padded;
-    padded = cv::Mat(target_height, target_width, img.type(), cv::Scalar(0.5f, 0.5f, 0.5f));
-    img.copyTo(padded(cv::Rect(0, 0, img.cols, img.rows)));
-
-    return padded;
+    return paddleOCR->preProcessDetect(
+            env, input, output, debug,
+            inputWidth, inputHeight,
+            outputWidth, outputHeight,
+            outputRotation
+    ) ? JNI_TRUE : JNI_FALSE;
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
 Java_app_versta_translate_bridge_inference_PaddleOCR_preProcessRecognize(
         JNIEnv *env,
         jobject,
+        jlong handle,
         jobject origin,
         jobject input,
         jobject output,
@@ -673,221 +868,38 @@ Java_app_versta_translate_bridge_inference_PaddleOCR_preProcessRecognize(
         jint originHeight,
         jint originRotation,
         jint detectedWidth,
-        jint detectedHeight,
-        jint threads
+        jint detectedHeight
 ) {
-    cv::setNumThreads(threads);
-
-    auto *originData = static_cast<uint8_t *>(env->GetDirectBufferAddress(origin));
-    auto *inputData = static_cast<int *>(env->GetDirectBufferAddress(input));
-    auto *outputData = static_cast<float *>(env->GetDirectBufferAddress(output));
-    if (!originData || !inputData || !outputData)
-        throw std::runtime_error("Failed to get direct buffer address.");
-
-    auto boxes = buffer_to_filter_boxes(inputData, env->GetDirectBufferCapacity(input));
-    if (boxes.empty()) return JNI_FALSE;
-
-    static cv::Mat frame;
-    frame = cv::Mat(originHeight, originWidth, CV_8UC4, originData);
-    cv::cvtColor(frame, frame, cv::COLOR_RGBA2BGR);
-
-    rotate_img(frame, originRotation);
-    resize_img(frame, detectedHeight, detectedWidth);
-    frame.convertTo(frame, CV_32FC3, 1.0f / 255.0f);
-
-    const std::vector<float> mean = {0.5f, 0.5f, 0.5f};
-    const std::vector<float> scale = {1 / 0.5f, 1 / 0.5f, 1 / 0.5f};
-
-    int batchCount = 0;
-    int outputIndex = 0;
-    int max_candidates = 100;
-
-    for (auto bp = boxes.crbegin(); bp != boxes.crend(); ++bp) {
-        const std::vector<std::vector<int>> &box = *bp;
-        static cv::Mat crop_img;
-        crop_img = get_rotate_crop_image(frame, box);
-
-        float wh_ratio = float(crop_img.cols) / float(crop_img.rows);
-        crop_img = crnn_resize_img(crop_img, wh_ratio);
-        crop_img = pad_crop_to_rec_shape(crop_img);
-
-        if (crop_img.cols != REC_IMAGE_SHAPE[2] || crop_img.rows != REC_IMAGE_SHAPE[1]) {
-            throw std::runtime_error("Cropped image has incorrect shape.");
-        }
-
-        neon_mean_scale(reinterpret_cast<const float *>(crop_img.data), outputData + outputIndex,
-                        crop_img.cols * crop_img.rows, mean, scale);
-        outputIndex += crop_img.cols * crop_img.rows * REC_IMAGE_SHAPE[0];
-
-        batchCount++;
-        if (batchCount >= max_candidates) break;
+    auto paddleOCR = paddleOCRInstances[handle].get();
+    if (!paddleOCR) {
+        return JNI_FALSE;
     }
 
-    return JNI_TRUE;
-}
-
-template<class ForwardIterator>
-inline size_t argmax(ForwardIterator first, ForwardIterator last) {
-    return std::distance(first, std::max_element(first, last));
-}
-
-void write_tokens_to_buffer(const std::vector<std::vector<int>> &tokens,
-                            const std::vector<float> &scores,
-                            int *buffer, size_t buffer_size) {
-    if (tokens.size() != scores.size()) {
-        throw std::runtime_error("Tokens and scores size mismatch");
-    }
-
-    auto batchSize = tokens.size();
-
-    buffer[0] = static_cast<int>(batchSize);
-    buffer += 1;
-    buffer_size -= sizeof(int);
-
-    for (size_t i = 0; i < batchSize; ++i) {
-        int word_count = static_cast<int>(tokens[i].size());
-        auto required_size = (2 + word_count) * sizeof(int);
-
-        if (buffer_size < required_size) {
-            throw std::runtime_error(
-                    "Buffer too small to hold detected boxes for batch " + std::to_string(i));
-        }
-
-        buffer[0] = word_count;
-        buffer[1] = static_cast<int>(scores[i] * 1000);
-
-        int idx = 2;
-        for (const auto &word: tokens[i]) {
-            buffer[idx++] = word;
-        }
-
-        buffer += static_cast<size_t>(required_size / sizeof(int));
-        buffer_size -= required_size;
-    }
+    return paddleOCR->preProcessRecognize(
+            env, origin, input, output,
+            originWidth, originHeight,
+            originRotation,
+            detectedWidth, detectedHeight
+    ) ? JNI_TRUE : JNI_FALSE;
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
 Java_app_versta_translate_bridge_inference_PaddleOCR_postProcessRecognize(
         JNIEnv *env,
         jobject,
+        jlong handle,
         jobject outputBuffer,
         jlongArray outputShape,
         jobject tokenBuffer
 ) {
-    auto *outputData = static_cast<float *>(env->GetDirectBufferAddress(outputBuffer));
-    auto *tokenData = static_cast<int *>(env->GetDirectBufferAddress(tokenBuffer));
-    if (!outputData || !tokenData) return JNI_FALSE;
-
-    auto *shapeArray = env->GetLongArrayElements(outputShape, nullptr);
-    int batchSize = static_cast<int>(shapeArray[0]);
-    int seqLen = static_cast<int>(shapeArray[1]); // Usually crop width divided by 8, so 320 width -> 40
-    int vocabSize = static_cast<int>(shapeArray[2]);
-    env->ReleaseLongArrayElements(outputShape, shapeArray, 0);
-
-    std::vector<std::vector<int>> batchTokens;
-    std::vector<float> batchScores;
-
-    for (int b = 0; b < batchSize; ++b) {
-        const float *batchStart = outputData + (b * seqLen * vocabSize);
-
-        std::vector<int> tokens;
-        float score = 0.f;
-        int lastIndex = 0;
-        int count = 0;
-
-        for (int n = 0; n < seqLen; ++n) {
-            const float *start = batchStart + (n * vocabSize);
-            const float *end = start + vocabSize;
-            int argmaxIndex = int(argmax(start, end));
-            float maxValue = *std::max_element(start, end);
-
-            if (argmaxIndex > 0 && !(n > 0 && argmaxIndex == lastIndex)) {
-                score += maxValue;
-                count += 1;
-                tokens.push_back(argmaxIndex);
-            }
-            lastIndex = argmaxIndex;
-        }
-
-        score /= std::max(1.f, static_cast<float>(count));
-
-        batchTokens.push_back(tokens);
-        batchScores.push_back(score);
+    auto paddleOCR = paddleOCRInstances[handle].get();
+    if (!paddleOCR) {
+        return JNI_FALSE;
     }
 
-    write_tokens_to_buffer(batchTokens, batchScores, tokenData,
-                           env->GetDirectBufferCapacity(tokenBuffer));
-
-    return JNI_TRUE;
-}
-
-std::pair<cv::Scalar, cv::Scalar> extractColors(const cv::Mat &image) {
-    auto wh_ratio = float(image.cols) / float(image.rows);
-    auto desired_width = int(64 * wh_ratio);
-    auto desired_height = 64;
-    cv::Mat resized;
-    cv::resize(image, resized, cv::Size(desired_width, desired_height));
-
-    cv::Mat pixels;
-    pixels = resized.reshape(1, resized.rows * resized.cols);
-    pixels.convertTo(pixels, CV_32F);
-
-    cv::Mat labels, centers;
-    cv::kmeans(
-            pixels, 2, labels,
-            cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 10, 1.0),
-            2, cv::KMEANS_PP_CENTERS, centers
-    );
-
-    cv::Scalar smallColors, bigColors;
-    smallColors = cv::Scalar(centers.at<float>(0, 0), centers.at<float>(0, 1),
-                             centers.at<float>(0, 2));
-    bigColors = cv::Scalar(centers.at<float>(1, 0), centers.at<float>(1, 1),
-                           centers.at<float>(1, 2));
-
-    // Determine which cluster is text (smaller area)
-    int textLabel = (cv::countNonZero(labels == 0) < cv::countNonZero(labels == 1)) ? 0 : 1;
-    cv::Scalar backgroundColor, textColor;
-    backgroundColor = (textLabel == 0) ? smallColors : bigColors;
-    textColor = (textLabel == 0) ? bigColors : smallColors;
-
-    // Calculate luminance for each color
-    auto calculateLuminance = [](const cv::Scalar &color) {
-        return 0.299f * color[2] + 0.587f * color[1] + 0.114f * color[0];
-    };
-
-    float textLuminance = calculateLuminance(textColor);
-    float bgLuminance = calculateLuminance(backgroundColor);
-
-    float contrastFactor = 0.3f;
-
-    // Stretch text color toward black or white
-    if (textLuminance < bgLuminance) {
-        // Dark text: make it darker (closer to black)
-        textColor[0] = std::max<float>(0.0f, textColor[0] * (1.0f - contrastFactor * 0.3f));
-        textColor[1] = std::max<float>(0.0f, textColor[1] * (1.0f - contrastFactor * 0.3f));
-        textColor[2] = std::max<float>(0.0f, textColor[2] * (1.0f - contrastFactor * 0.3f));
-    } else {
-        // Light text: make it lighter (closer to white)
-        textColor[0] = std::min<float>(255.0f, textColor[0] * (1.0f + contrastFactor * 0.5f));
-        textColor[1] = std::min<float>(255.0f, textColor[1] * (1.0f + contrastFactor * 0.5f));
-        textColor[2] = std::min<float>(255.0f, textColor[2] * (1.0f + contrastFactor * 0.5f));
-    }
-
-    // Stretch background color in the opposite direction
-    if (bgLuminance < textLuminance) {
-        // Dark background: make it darker
-        backgroundColor[0] = std::max<float>(0.0f, backgroundColor[0] * (1.0f - contrastFactor * 0.3f));
-        backgroundColor[1] = std::max<float>(0.0f, backgroundColor[1] * (1.0f - contrastFactor * 0.3f));
-        backgroundColor[2] = std::max<float>(0.0f, backgroundColor[2] * (1.0f - contrastFactor * 0.3f));
-    } else {
-        // Light background: make it lighter
-        backgroundColor[0] = std::min<float>(255.0f, backgroundColor[0] * (1.0f + contrastFactor * 0.5f));
-        backgroundColor[1] = std::min<float>(255.0f, backgroundColor[1] * (1.0f + contrastFactor * 0.5f));
-        backgroundColor[2] = std::min<float>(255.0f, backgroundColor[2] * (1.0f + contrastFactor * 0.5f));
-    }
-
-    return {backgroundColor, textColor};
+    return paddleOCR->postProcessRecognize(
+            env, outputBuffer, outputShape, tokenBuffer
+    ) ? JNI_TRUE : JNI_FALSE;
 }
 
 extern "C"
@@ -895,55 +907,28 @@ JNIEXPORT jintArray JNICALL
 Java_app_versta_translate_bridge_inference_PaddleOCR_getPixelColorFromImage(
         JNIEnv *env,
         jobject,
+        jlong handle,
         jobject origin,
         jobject input,
         jint originWidth,
         jint originHeight,
         jint originRotation,
         jint detectedWidth,
-        jint detectedHeight,
-        jint threads
+        jint detectedHeight
 ) {
-    cv::setNumThreads(threads);
-    auto *originData = static_cast<uint8_t *>(env->GetDirectBufferAddress(origin));
-    auto *inputData = static_cast<int *>(env->GetDirectBufferAddress(input));
-    if (!originData || !inputData) {
-        throw std::runtime_error("Failed to get direct buffer address.");
+    auto paddleOCR = paddleOCRInstances[handle].get();
+    if (!paddleOCR) {
+        return nullptr;
     }
 
-    auto boxes = buffer_to_filter_boxes(inputData, env->GetDirectBufferCapacity(input));
-    if (boxes.empty()) {
-        throw std::runtime_error("No boxes found in input buffer.");
-    }
-
-    // Create a dynamic array to store all colors (2 colors per box: text and background)
-    std::vector<jint> allColors;
-    allColors.reserve(boxes.size() * 2);  // Pre-allocate space for efficiency
-
-    cv::Mat frame(originHeight, originWidth, CV_8UC4, originData);
-    rotate_img(frame, originRotation);
-    resize_img(frame, detectedHeight, detectedWidth);
-
-    for (const auto &box: boxes) {
-        cv::Mat crop_img = get_rotate_crop_image(frame, box);
-
-        auto [textColor, backgroundColor] = extractColors(crop_img);
-
-        jint bgColor =
-                (255 << 24) | ((int) backgroundColor[0] << 16) | ((int) backgroundColor[1] << 8) |
-                (int) backgroundColor[2];
-        jint txtColor = (255 << 24) | ((int) textColor[0] << 16) | ((int) textColor[1] << 8) |
-                        (int) textColor[2];
-
-        allColors.push_back(bgColor);
-        allColors.push_back(txtColor);
-    }
-
-    jintArray result = env->NewIntArray(allColors.size());
-    if (!result) {
-        throw std::runtime_error("Failed to create color array.");
-    }
-
-    env->SetIntArrayRegion(result, 0, allColors.size(), allColors.data());
-    return result;
+    return paddleOCR->getPixelColorFromImage(
+            env, origin, input,
+            originWidth, originHeight,
+            originRotation,
+            detectedWidth, detectedHeight
+    );
 }
+
+#ifdef __cplusplus
+}
+#endif
