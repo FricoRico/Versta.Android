@@ -219,7 +219,8 @@ class PaddleOCR(
             throw IllegalStateException("PaddleOCR recognize session is not initialized.")
         }
 
-        val count = input.detectResultBuffer.getInt(0)
+        input.detectResultBuffer.rewind()
+        val count = input.detectResultBuffer.int
         if (count <= 0) {
             return ObjectCharacterRecognizerRecognizerOutput(emptyList())
         }

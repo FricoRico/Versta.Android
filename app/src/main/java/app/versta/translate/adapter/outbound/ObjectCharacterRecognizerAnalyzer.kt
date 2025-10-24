@@ -9,6 +9,7 @@ import app.versta.translate.bridge.inference.PaddleOCR
 import app.versta.translate.core.entity.ObjectCharacterRecognitionResult
 import app.versta.translate.core.entity.ObjectCharacterRecognizerDetectorInput
 import app.versta.translate.core.entity.ObjectCharacterRecognizerRecognizerInput
+import timber.log.Timber
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -88,6 +89,7 @@ class ObjectCharacterRecognizerAnalyzer(
                 imageProxy.imageInfo.timestamp
             )
         } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Error analyzing image")
             onFrameProcessed(emptyList(), null, imageProxy.imageInfo.timestamp)
         } finally {
             imageProxy.close()
