@@ -342,7 +342,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
             attentionMask = attentionMask
         )
 
-        val results = Array(inputIds.size) { index ->
+        return Array(inputIds.size) { index ->
             val completeOnRepeat = inputIds[index].size <= 2
 
             decode(
@@ -357,8 +357,6 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
                 completeOnRepeat = completeOnRepeat
             )
         }
-
-        return results
     }
 
     override fun runBatchAsFlow(
