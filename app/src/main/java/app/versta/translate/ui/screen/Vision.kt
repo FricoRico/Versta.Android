@@ -56,10 +56,11 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import app.versta.translate.adapter.outbound.ObjectCharacterRecognizer
+import app.versta.translate.adapter.outbound.ObjectCharacterRecognizerAnalyzer
 import app.versta.translate.bridge.inference.PaddleOCR
 import app.versta.translate.core.model.NavigationViewModel
 import app.versta.translate.core.model.ScaffoldViewModel
+import app.versta.translate.core.model.VisionViewModel
 import app.versta.translate.ui.component.ScaffoldComponentProvider
 import app.versta.translate.ui.theme.spacing
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -146,85 +147,31 @@ fun CameraPermissionDenied(state: PermissionState) {
     }
 }
 
-class PreviewViewModel : ViewModel() {
-    private val _surfaceRequests = MutableStateFlow<SurfaceRequest?>(null)
-    val surfaceRequests: StateFlow<SurfaceRequest?> = _surfaceRequests.asStateFlow()
-
-    private val _cameraPreviewUseCase = Preview.Builder().build().apply {
-        setSurfaceProvider { newSurfaceRequest ->
-            _surfaceRequests.update { newSurfaceRequest }
-        }
-    }
-
-    private val _detectedBoxes = MutableStateFlow<List<PaddleOCR.OcrResults>>(emptyList())
-    val detectedBoxes: StateFlow<List<PaddleOCR.OcrResults>> = _detectedBoxes.asStateFlow()
-
-    private val _preprocessedFrame = MutableStateFlow<Bitmap?>(null)
-    val preprocessedFrame: StateFlow<Bitmap?> = _preprocessedFrame.asStateFlow()
-
-    private val _objectCharacterRecognizer = ObjectCharacterRecognizer(
-        onFrameProcessed = { objects, bitmap, timestamp ->
-            _detectedBoxes.value = objects
-            _preprocessedFrame.value = bitmap
-        }
-    )
-    private val _trackingExecutor = Executors.newCachedThreadPool()
-    private val _trackingImageAnalyzerUseCase = ImageAnalysis.Builder()
-        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-        .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
-        .setResolutionSelector(
-            ResolutionSelector.Builder().apply {
-                setResolutionStrategy(
-                    ResolutionStrategy(
-                        android.util.Size(960, 960),
-                        FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
-                    )
-                )
-            }.build()
-        )
-        .build()
-        .also {
-            it.setAnalyzer(_trackingExecutor, _objectCharacterRecognizer)
-        }
-
-    suspend fun bindToCamera(appContext: Context, lifecycleOwner: LifecycleOwner) {
-        val processCameraProvider = ProcessCameraProvider.awaitInstance(appContext)
-
-        val useCaseGroup = UseCaseGroup.Builder()
-            .addUseCase(_cameraPreviewUseCase)
-            .addUseCase(_trackingImageAnalyzerUseCase)
-            .build()
-
-        processCameraProvider.bindToLifecycle(
-            lifecycleOwner = lifecycleOwner,
-            cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
-            useCaseGroup = useCaseGroup
-        )
-
-        try {
-            awaitCancellation()
-        } finally {
-            processCameraProvider.unbindAll()
-        }
-    }
-
-    fun focusOnPoint(surfaceBounds: android.util.Size, x: Float, y: Float) {
-        // Create point for CameraX's CameraControl.startFocusAndMetering() and submit...
-    }
-}
+// PreviewViewModel has been moved to VisionViewModel in core/model package
+// to better handle OCR logic and translation
 
 @Composable
 fun CameraViewFinder(
-    previewViewModel: PreviewViewModel = viewModel(),
+    visionViewModel: VisionViewModel = viewModel(
+        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return VisionViewModel(
+                    languageViewModel = app.versta.translate.MainApplication.module.languageViewModel,
+                    translationViewModel = app.versta.translate.MainApplication.module.translationViewModel
+                ) as T
+            }
+        }
+    ),
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
 ) {
-    val currentSurfaceRequest: SurfaceRequest? by previewViewModel.surfaceRequests.collectAsState()
-    val results by previewViewModel.detectedBoxes.collectAsState()
-    val preprocessedFrame by previewViewModel.preprocessedFrame.collectAsState()
+    val currentSurfaceRequest: SurfaceRequest? by visionViewModel.surfaceRequests.collectAsState()
+    val results by visionViewModel.detectedBoxes.collectAsState()
+    val preprocessedFrame by visionViewModel.preprocessedFrame.collectAsState()
 
     val context = LocalContext.current
     LaunchedEffect(lifecycleOwner) {
-        previewViewModel.bindToCamera(context.applicationContext, lifecycleOwner)
+        visionViewModel.bindToCamera(context.applicationContext, lifecycleOwner)
     }
 
     Surface(
@@ -244,11 +191,8 @@ fun CameraViewFinder(
                             detectTapGestures {
                                 with(coordinateTransformer) {
                                     val surfaceCoords = it.transform()
-                                    previewViewModel.focusOnPoint(
-                                        surfaceRequest.resolution,
-                                        surfaceCoords.x,
-                                        surfaceCoords.y,
-                                    )
+                                    // TODO: Implement focus on point
+                                    // visionViewModel.focusOnPoint(...)
                                 }
                             }
                         },

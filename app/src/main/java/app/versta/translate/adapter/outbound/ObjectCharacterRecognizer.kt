@@ -13,6 +13,16 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+/**
+ * @deprecated This class has been replaced by ObjectCharacterRecognizerAnalyzer.
+ * The translation logic has been moved to VisionViewModel to better separate concerns.
+ * Use ObjectCharacterRecognizerAnalyzer for OCR analysis and VisionViewModel for managing
+ * the analysis pipeline and translation.
+ */
+@Deprecated(
+    message = "Use ObjectCharacterRecognizerAnalyzer instead. Translation logic moved to VisionViewModel.",
+    replaceWith = ReplaceWith("ObjectCharacterRecognizerAnalyzer", "app.versta.translate.adapter.outbound.ObjectCharacterRecognizerAnalyzer")
+)
 class ObjectCharacterRecognizer(
     private val onFrameProcessed: (List<ObjectCharacterRecognitionResult>, Bitmap?, Long) -> Unit
 ) : ImageAnalysis.Analyzer {
