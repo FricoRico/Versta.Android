@@ -715,13 +715,13 @@ public:
         return JNI_TRUE;
     }
 
-    int
+    jboolean
     postProcessDetect(JNIEnv *env, jobject input, jobject output, float threshold, float maxValue) {
         cv::setNumThreads(this->threads_);
 
         auto *inputData = static_cast<float *>(env->GetDirectBufferAddress(input));
         auto *outputData = static_cast<int *>(env->GetDirectBufferAddress(output));
-        if (!inputData || !outputData) return 0;
+        if (!inputData || !outputData) return JNI_FALSE;
 
         cachedPredictions_ = cv::Mat(detectSize_, detectSize_, CV_32F, inputData);
 
@@ -738,7 +738,7 @@ public:
 
         writeFilterBoxesToBuffer(boxesCache_, outputData, env->GetDirectBufferCapacity(output));
 
-        return static_cast<int>(boxesCache_.size());
+        return JNI_TRUE;
     }
 
     jboolean
@@ -842,6 +842,7 @@ public:
 
     jintArray getPixelColorFromImage(JNIEnv *env, jobject origin, jobject input, int originWidth, int originHeight, int originRotation) const {
         cv::setNumThreads(threads_);
+
         auto *originData = static_cast<uint8_t *>(env->GetDirectBufferAddress(origin));
         auto *inputData = static_cast<int *>(env->GetDirectBufferAddress(input));
         if (!originData || !inputData) {
@@ -947,7 +948,7 @@ Java_app_versta_translate_bridge_inference_PaddleOCR_preProcessDetect(
     return paddleOCR->preProcessDetect(env, input, output, inputWidth, inputHeight, outputRotation);
 }
 
-extern "C" JNIEXPORT jint JNICALL
+extern "C" JNIEXPORT jboolean JNICALL
 Java_app_versta_translate_bridge_inference_PaddleOCR_postProcessDetect(
         JNIEnv *env,
         jobject,

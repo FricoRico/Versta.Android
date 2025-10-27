@@ -267,7 +267,7 @@ JNIEXPORT void JNICALL Java_app_versta_translate_bridge_inference_BeamSearch_sea
 
 }
 
-JNIEXPORT jobject JNICALL Java_app_versta_translate_bridge_inference_BeamSearch_lastTokens__J(
+JNIEXPORT jobject JNICALL Java_app_versta_translate_bridge_inference_BeamSearch_lastTokens(
         JNIEnv *env,
         jobject,
         jlong handle
@@ -278,7 +278,7 @@ JNIEXPORT jobject JNICALL Java_app_versta_translate_bridge_inference_BeamSearch_
     }
 
     std::vector<std::vector<int64_t>> tokens = beamSearch->getLastTokens();
-    int64_t totalTokens = tokens.size();
+    auto totalTokens = tokens.size();
 
     size_t bufferSize = totalTokens * sizeof(int64_t);
     auto *buffer = new int64_t[totalTokens];

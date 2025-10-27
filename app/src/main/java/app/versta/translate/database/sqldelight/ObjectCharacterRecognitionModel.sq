@@ -1,0 +1,88 @@
+import kotlin.String;
+import kotlin.collections.List;
+
+CREATE TABLE ObjectCharacterRecognitionDetectorModel (
+    id TEXT NOT NULL PRIMARY KEY,
+    baseModel TEXT NOT NULL,
+    architectures TEXT AS List<String> NOT NULL,
+    path TEXT NOT NULL,
+    version TEXT NOT NULL
+);
+
+getAllDetectors:
+SELECT * FROM ObjectCharacterRecognitionDetectorModel;
+
+getDetectorById:
+SELECT * FROM ObjectCharacterRecognitionDetectorModel WHERE id = :id LIMIT 1;
+
+upsertDetector {
+    UPDATE ObjectCharacterRecognitionDetectorModel SET
+        baseModel = :baseModel,
+        architectures = :architectures,
+        path = :path,
+        version = :version
+    WHERE id = :id;
+
+    INSERT OR IGNORE INTO ObjectCharacterRecognitionDetectorModel (
+        id,
+        baseModel,
+        architectures,
+        path,
+        version
+    ) VALUES (
+        :id,
+        :baseModel,
+        :architectures,
+        :path,
+        :version
+    );
+}
+
+deleteDetectorById:
+DELETE FROM ObjectCharacterRecognitionDetectorModel WHERE id = :id;
+
+deleteDetectorByIds:
+DELETE FROM ObjectCharacterRecognitionDetectorModel WHERE id IN :ids;
+
+CREATE TABLE ObjectCharacterRecognitionRecognizerModel (
+    id TEXT NOT NULL PRIMARY KEY,
+    baseModel TEXT NOT NULL,
+    architectures TEXT AS List<String> NOT NULL,
+    path TEXT NOT NULL,
+    version TEXT NOT NULL
+);
+
+getAllRecognizers:
+SELECT * FROM ObjectCharacterRecognitionRecognizerModel;
+
+getRecognizerById:
+SELECT * FROM ObjectCharacterRecognitionRecognizerModel WHERE id = :id LIMIT 1;
+
+upsertRecognizer {
+    UPDATE ObjectCharacterRecognitionRecognizerModel SET
+        baseModel = :baseModel,
+        architectures = :architectures,
+        path = :path,
+        version = :version
+    WHERE id = :id;
+
+    INSERT OR IGNORE INTO ObjectCharacterRecognitionRecognizerModel (
+        id,
+        baseModel,
+        architectures,
+        path,
+        version
+    ) VALUES (
+        :id,
+        :baseModel,
+        :architectures,
+        :path,
+        :version
+    );
+}
+
+deleteRecognizerById:
+DELETE FROM ObjectCharacterRecognitionRecognizerModel WHERE id = :id;
+
+deleteRecognizerByIds:
+DELETE FROM ObjectCharacterRecognitionRecognizerModel WHERE id IN :ids;

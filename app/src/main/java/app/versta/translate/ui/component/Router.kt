@@ -26,6 +26,7 @@ import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import app.versta.translate.R
+import app.versta.translate.core.model.CameraTranslationViewModel
 import app.versta.translate.core.model.CustomThemeViewModel
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
@@ -50,7 +51,7 @@ import app.versta.translate.ui.screen.TextTranslationLegacy
 import app.versta.translate.ui.screen.ThirdParty
 import app.versta.translate.ui.screen.TranslationSettings
 import app.versta.translate.ui.screen.Troubleshooting
-import app.versta.translate.ui.screen.Vision
+import app.versta.translate.ui.screen.CameraTranslation
 import app.versta.translate.ui.screen.VoiceAttributions
 import app.versta.translate.ui.screen.VoiceDetails
 import app.versta.translate.ui.screen.VoiceSettings
@@ -63,6 +64,7 @@ fun Router(
     scaffoldViewModel: ScaffoldViewModel,
     customThemeViewModel: CustomThemeViewModel,
     navigationViewModel: NavigationViewModel,
+    cameraTranslationViewModel: CameraTranslationViewModel,
     languageViewModel: LanguageViewModel,
     licenseViewModel: LicenseViewModel,
     translationViewModel: TranslationViewModel,
@@ -154,10 +156,11 @@ fun Router(
                         entry<Screens.Vision>(
                             metadata = CustomThemeScene.obsidian()
                         ) {
-                            Vision(
+                            CameraTranslation(
                                 innerPadding = innerPadding,
                                 scaffoldViewModel = scaffoldViewModel,
                                 navigationViewModel = navigationViewModel,
+                                cameraTranslationViewModel = cameraTranslationViewModel
                             )
                         }
                         entry<Screens.Settings>(

@@ -452,6 +452,7 @@ class TranslationViewModel(
     fun reload() {
         viewModelScope.launch {
             cacheSize.conflate().collect { size ->
+                // TODO: Migrate to actual storage cache
                 _cache = TranslationMemoryCache(size)
             }
         }

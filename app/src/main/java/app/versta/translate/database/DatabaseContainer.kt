@@ -11,6 +11,8 @@ import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.app.versta.translate.database.sqldelight.LanguageModel
 import java.app.versta.translate.database.sqldelight.VoiceModel
+import java.app.versta.translate.database.sqldelight.ObjectCharacterRecognitionDetectorModel
+import java.app.versta.translate.database.sqldelight.ObjectCharacterRecognitionRecognizerModel
 
 interface Migration {
     fun migrate(database: DatabaseContainer)
@@ -35,6 +37,12 @@ class DatabaseContainer(
         VoiceModelAdapter = VoiceModel.Adapter(
             architecturesAdapter = ListOfStringsAdapter,
         ),
+        ObjectCharacterRecognitionDetectorModelAdapter = ObjectCharacterRecognitionDetectorModel.Adapter(
+            architecturesAdapter = ListOfStringsAdapter,
+        ),
+        ObjectCharacterRecognitionRecognizerModelAdapter = ObjectCharacterRecognitionRecognizerModel.Adapter(
+            architecturesAdapter = ListOfStringsAdapter,
+        ),
     )
 
     private val _migrations = listOf(
@@ -47,6 +55,7 @@ class DatabaseContainer(
     val languageModels = _database.languageModelQueries
     val voices = _database.voiceQueries
     val voiceModels = _database.voiceModelQueries
+    val objectCharacterRecognitionModels = _database.objectCharacterRecognitionModelQueries
 
     fun transaction(body: TransactionWithoutReturn.() -> Unit) = _database.transaction { body() }
     fun <T> transactionForResult(body: TransactionWithReturn<T>.() -> T) =

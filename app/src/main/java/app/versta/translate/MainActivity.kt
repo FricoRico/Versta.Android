@@ -68,6 +68,7 @@ open class MainActivity : ComponentActivity() {
                         scaffoldViewModel = MainApplication.module.scaffoldViewModel,
                         customThemeViewModel = MainApplication.module.customThemeViewModel,
                         navigationViewModel = MainApplication.module.navigationViewModel,
+                        cameraTranslationViewModel = MainApplication.module.cameraTranslationViewModel,
                         languageViewModel = MainApplication.module.languageViewModel,
                         licenseViewModel = _licenseViewModel,
                         translationViewModel = MainApplication.module.translationViewModel,

@@ -30,6 +30,10 @@ import app.versta.translate.adapter.outbound.LicenseDataStoreRepository
 import app.versta.translate.adapter.outbound.LicenseRepository
 import app.versta.translate.adapter.outbound.MarianInference
 import app.versta.translate.adapter.outbound.MarianTokenizer
+import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionInference
+import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepository
+import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepositoryDatabaseRepository
+import app.versta.translate.adapter.outbound.PaddleObjectCharacterRecognition
 import app.versta.translate.adapter.outbound.VoiceDatabaseRepository
 import app.versta.translate.adapter.outbound.TextToSpeechInference
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceDataStoreRepository
@@ -42,6 +46,7 @@ import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
 import app.versta.translate.adapter.outbound.TranslationTokenizer
 import app.versta.translate.bridge.speech.ESpeakNG
 import app.versta.translate.bridge.speech.OpenJTalk
+import app.versta.translate.core.model.CameraTranslationViewModel
 import app.versta.translate.core.model.CustomThemeViewModel
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LoggingViewModel
@@ -81,7 +86,9 @@ interface ApplicationModuleInterface {
     val externalLanguageModelsRepository: ExternalLanguageModelsRepository
     val externalVoiceModelsRepository: ExternalVoiceModelsRepository
     val externalDataRepository: ExternalDataRepository
+    val objectCharacterRecognizerRepository: ObjectCharacterRecognitionRepository
 
+    val cameraTranslationViewModel: CameraTranslationViewModel
     val navigationViewModel: NavigationViewModel
     val scaffoldViewModel: ScaffoldViewModel
     val customThemeViewModel: CustomThemeViewModel
@@ -103,6 +110,7 @@ interface ApplicationModuleInterface {
     val outputTranslationInference: TranslationInference
     val textToSpeechTokenizer: TextToSpeechTokenizer
     val textToSpeechInference: TextToSpeechInference
+    val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference
 }
 
 class ApplicationModule(private val context: Context) : ApplicationModuleInterface {
@@ -148,6 +156,10 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
         ExternalDataFileRepository(context.resources.openRawResource(R.raw.versta_data))
     }
 
+    override val objectCharacterRecognizerRepository: ObjectCharacterRecognitionRepository by lazy {
+        ObjectCharacterRecognitionRepositoryDatabaseRepository(database)
+    }
+
     override val navigationViewModel: NavigationViewModel by lazy {
         NavigationViewModel(
             initialRoute = Screens.TextTranslation,
@@ -181,6 +193,16 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
                     )
                 }
             )
+        )
+    }
+
+    override val cameraTranslationViewModel: CameraTranslationViewModel by lazy {
+        CameraTranslationViewModel(
+            objectCharacterRecognitionInference = objectCharacterRecognitionInference,
+            languageViewModel = languageViewModel,
+            languagePreferenceRepository = languagePreferenceRepository,
+            translationViewModel = translationViewModel,
+            objectCharacterRecognizerRepository = objectCharacterRecognizerRepository,
         )
     }
 
@@ -294,6 +316,10 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
 
     override val textToSpeechInference: TextToSpeechInference by lazy {
         StyleTextToSpeechInference(ortEnvironment)
+    }
+
+    override val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference by lazy {
+        PaddleObjectCharacterRecognition(ortEnvironment)
     }
 }
 

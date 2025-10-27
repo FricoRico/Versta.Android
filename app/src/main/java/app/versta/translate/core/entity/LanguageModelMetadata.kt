@@ -2,7 +2,6 @@ package app.versta.translate.core.entity
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.exists
 

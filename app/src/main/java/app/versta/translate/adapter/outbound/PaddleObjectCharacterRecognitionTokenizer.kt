@@ -4,14 +4,14 @@ import app.versta.translate.bridge.tokenize.Vocabulary
 import java.nio.file.Path
 import kotlin.io.path.pathString
 
-class PaddleTokenizer {
+class PaddleObjectCharacterRecognitionTokenizer {
     private var _vocabularyPath: String? = null
 
     private var _vocabulary: List<String> = emptyList()
 
     private val unknownToken = " "
 
-    private val vocabSize: Long
+    val vocabSize: Long
         get() = _vocabulary.size.toLong()
 
     fun decode(ids: LongArray): String {
