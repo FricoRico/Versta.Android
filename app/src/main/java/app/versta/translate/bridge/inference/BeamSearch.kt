@@ -4,6 +4,7 @@ import ai.onnxruntime.OnnxTensor
 import app.versta.translate.utils.TensorUtils
 import timber.log.Timber
 import java.nio.ByteBuffer
+import java.nio.LongBuffer
 
 class BeamSearch(
     beamSize: Int,
@@ -37,15 +38,26 @@ class BeamSearch(
 
     fun transposeBuffer(
         tensor: OnnxTensor
-    ): ByteBuffer {
+    ): ByteBuffer? {
         val ortApiHandle = TensorUtils.getOrtApiHandle()
         val tensorHandle = TensorUtils.getNativeHandle(tensor)
 
         return transposeBuffer(_handle, ortApiHandle, tensorHandle)
     }
 
-    fun lastTokens(): Array<LongArray> {
-        return lastTokens(_handle)
+    fun lastTokens(): Pair<LongBuffer, Int> {
+        try {
+            val buffer = lastTokens(_handle)
+            buffer.rewind()
+
+            val beamSize = buffer.capacity() / 8
+            val beamBuffer = buffer.asLongBuffer()
+
+            return Pair(beamBuffer, beamSize)
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Error parsing DirectBuffer for last tokens")
+            throw IllegalStateException("Failed to parse last tokens buffer: ${e.message}", e)
+        }
     }
 
     fun complete(completeOnRepeat: Boolean): Boolean {
@@ -79,7 +91,7 @@ class BeamSearch(
         apiHandle: Long,
         tensorHandle: Long,
     ): ByteBuffer
-    private external fun lastTokens(handle: Long): Array<LongArray>
+    private external fun lastTokens(handle: Long): ByteBuffer
     private external fun complete(handle: Long, completeOnRepeat: Boolean): Boolean
     private external fun best(handle: Long): LongArray
     private external fun close(handle: Long): Boolean

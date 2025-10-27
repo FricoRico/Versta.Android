@@ -55,39 +55,51 @@ public:
 
     void search(jfloat *tensorLogits, int size) {
         std::vector<Beam> newBeams;
+        newBeams.reserve(beamSize * 128);
 
         for (size_t i = 0; i < beams.size(); ++i) {
-            std::vector<float> beamLogits(tensorLogits + i * size, tensorLogits + (i + 1) * size);
+            jfloat *beamLogitsPtr = tensorLogits + i * size;
 
-            std::vector<float> probabilities = softmax(beamLogits);
-            std::vector<int> indices = minPIndices(probabilities, minP);
+            const int topK = std::min(256, size);
+            std::vector<int> topIndices;
+            topIndices.reserve(topK);
 
-#pragma omp parallel for
-            for (int token: indices) {
+            for (int j = 0; j < size; ++j) {
+                if (beamLogitsPtr[j] > minP) {
+                    topIndices.push_back(j);
+                }
+            }
+
+            std::sort(topIndices.begin(), topIndices.end(),
+                      [beamLogitsPtr](int a, int b) {
+                          return beamLogitsPtr[a] > beamLogitsPtr[b];
+                      });
+
+            if (topIndices.size() > topK) {
+                topIndices.resize(topK);
+            }
+
+            for (int token: topIndices) {
                 std::vector<int64_t> sequence = beams[i].sequence;
                 sequence.push_back(token);
 
-                float logit = std::max(probabilities[token], -1e-9f);
-                float score = beams[i].score + std::log(logit);
+                float logit = beamLogitsPtr[token];
+                float score = beams[i].score + logit;
                 score = penalizeRepetition(sequence, score, repetitionPenalty);
 
                 newBeams.emplace_back(i, sequence, score);
             }
         }
 
-        // Use unordered_set to remove duplicates
-        std::unordered_set<Beam, Beam::HashFunction>
-                uniqueBeams(newBeams.begin(), newBeams.end());
-
-        // Sort beams by score
-        std::vector<Beam> sortedBeams(uniqueBeams.begin(), uniqueBeams.end());
-        std::sort(sortedBeams.begin(), sortedBeams.end(), [](const Beam &a, const Beam &b) {
+        std::sort(newBeams.begin(), newBeams.end(), [](const Beam &a, const Beam &b) {
             return a.score > b.score;
         });
 
-        // Keep only the top N beams
-        beams.assign(sortedBeams.begin(),
-                     sortedBeams.begin() + std::min(sortedBeams.size(), beamSize));
+        beams.clear();
+        beams.reserve(beamSize);
+        for (size_t i = 0; i < std::min(static_cast<size_t>(beamSize), newBeams.size()); ++i) {
+            beams.push_back(std::move(newBeams[i]));
+        }
     }
 
     [[nodiscard]] std::vector<std::vector<int64_t>> getLastTokens() const {
@@ -255,7 +267,7 @@ JNIEXPORT void JNICALL Java_app_versta_translate_bridge_inference_BeamSearch_sea
 
 }
 
-JNIEXPORT jobjectArray JNICALL Java_app_versta_translate_bridge_inference_BeamSearch_lastTokens(
+JNIEXPORT jobject JNICALL Java_app_versta_translate_bridge_inference_BeamSearch_lastTokens__J(
         JNIEnv *env,
         jobject,
         jlong handle
@@ -266,16 +278,20 @@ JNIEXPORT jobjectArray JNICALL Java_app_versta_translate_bridge_inference_BeamSe
     }
 
     std::vector<std::vector<int64_t>> tokens = beamSearch->getLastTokens();
-    jobjectArray result = env->NewObjectArray(tokens.size(), env->FindClass("[J"), nullptr);
+    int64_t totalTokens = tokens.size();
+
+    size_t bufferSize = totalTokens * sizeof(int64_t);
+    auto *buffer = new int64_t[totalTokens];
 
     for (size_t i = 0; i < tokens.size(); ++i) {
-        jlongArray tokenArray = env->NewLongArray(tokens[i].size());
-        env->SetLongArrayRegion(tokenArray, 0, tokens[i].size(), tokens[i].data());
-        env->SetObjectArrayElement(result, i, tokenArray);
-        env->DeleteLocalRef(tokenArray);
+        if (!tokens[i].empty()) {
+            buffer[i] = tokens[i][0];
+        } else {
+            buffer[i] = 0;
+        }
     }
 
-    return result;
+    return env->NewDirectByteBuffer(buffer, static_cast<jlong>(bufferSize));
 }
 
 JNIEXPORT jboolean JNICALL Java_app_versta_translate_bridge_inference_BeamSearch_complete(
@@ -349,6 +365,10 @@ Java_app_versta_translate_bridge_inference_BeamSearch_transposeBuffer(
 
         std::vector<int> indices = beamSearch->getTopBeamIds();
         auto indicesLength = indices.size();
+
+        if (indicesLength == 0 || sizeBytes % indicesLength != 0) {
+            return nullptr;
+        }
 
         auto *transposed = new uint8_t[sizeBytes];
 

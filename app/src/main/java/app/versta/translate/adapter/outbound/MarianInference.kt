@@ -82,10 +82,13 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
             eosId = eosId
         )
 
+        val beamEncoderHiddenStates = Array(beamsSize) { encoderHiddenStates }
+        val beamAttentionMask = Array(beamsSize) { attentionMask }
+
         val decoderInput = MarianDecoderInput(
             ortEnvironment = ortEnvironment,
-            encoderHiddenStates = Array(beamsSize) { encoderHiddenStates },
-            encoderAttentionMask = Array(beamsSize) { attentionMask }
+            encoderHiddenStates = beamEncoderHiddenStates,
+            encoderAttentionMask = beamAttentionMask
         )
 
         val decoderOutput = MarianDecoderOutput(
@@ -103,12 +106,19 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
                     break
                 }
 
-                val inputs = decoderInput.get(
-                    inputIds = beamSearch.lastTokens(),
+                val (inputBuffer, beamCount) = beamSearch.lastTokens()
+                if (inputBuffer.capacity() == 0) {
+                    continue
+                }
+
+                val inputs = decoderInput.getFromDirectBuffer(
+                    inputIdsBuffer = inputBuffer,
+                    beamCount = beamCount,
                     cache = decoderOutput.cache
                 )
 
                 val outputs = _decoderSession!!.run(inputs)
+
                 decoderInput.close()
 
                 decoderOutput.search(outputs)
@@ -117,7 +127,10 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
                 outputs.close()
             }
 
-            val result = beamSearch.best().plus(eosId)
+            val bestSequence = beamSearch.best()
+            val result = LongArray(bestSequence.size + 1)
+            bestSequence.copyInto(result, 0)
+            result[bestSequence.size] = eosId
 
             if (completeOnRepeat) {
                 return distinct(result)
@@ -157,10 +170,13 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
                 eosId = eosId,
             )
 
+            val beamEncoderHiddenStates = Array(beamsSize) { encoderHiddenStates }
+            val beamAttentionMask = Array(beamsSize) { attentionMask }
+
             val decoderInput = MarianDecoderInput(
                 ortEnvironment = ortEnvironment,
-                encoderHiddenStates = Array(beamsSize) { encoderHiddenStates },
-                encoderAttentionMask = Array(beamsSize) { attentionMask }
+                encoderHiddenStates = beamEncoderHiddenStates,
+                encoderAttentionMask = beamAttentionMask
             )
 
             val decoderOutput = MarianDecoderOutput(
@@ -175,7 +191,10 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
                     step++
 
                     if (beamSearch.complete(completeOnRepeat)) {
-                        val result = beamSearch.best().plus(eosId)
+                        val bestSequence = beamSearch.best()
+                        val result = LongArray(bestSequence.size + 1)
+                        bestSequence.copyInto(result, 0)
+                        result[bestSequence.size] = eosId
 
                         if (completeOnRepeat) {
                             emit(distinct(result))
@@ -186,8 +205,14 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
                         break
                     }
 
-                    val inputs = decoderInput.get(
-                        inputIds = beamSearch.lastTokens(),
+                    val (inputBuffer, beamCount) = beamSearch.lastTokens()
+                    if (inputBuffer.capacity() == 0) {
+                        break
+                    }
+
+                    val inputs = decoderInput.getFromDirectBuffer(
+                        inputIdsBuffer = inputBuffer,
+                        beamCount = beamCount,
                         cache = decoderOutput.cache
                     )
 

@@ -6,6 +6,7 @@ import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import app.versta.translate.bridge.inference.BeamSearch
 import app.versta.translate.utils.TensorUtils
+import java.nio.LongBuffer
 
 class MarianDecoderInput(
     private val ortEnvironment: OrtEnvironment,
@@ -17,8 +18,38 @@ class MarianDecoderInput(
     private val _encoderAttentionMaskTensor =
         OnnxTensor.createTensor(ortEnvironment, encoderAttentionMask)
 
+    private val _cacheRegex = "past_key_values.\\d".toRegex()
+
     private var _inputIdsTensor: OnnxTensorLike? = null
     private var _useCacheTensor: OnnxTensorLike? = null
+
+    private val _inputs = mutableMapOf<String, OnnxTensorLike?>(
+        "input_ids" to null,
+        "use_cache_branch" to null,
+        "encoder_hidden_states" to _encoderHiddenStatesTensor,
+        "encoder_attention_mask" to _encoderAttentionMaskTensor
+    )
+
+    fun getFromDirectBuffer(
+        inputIdsBuffer: LongBuffer,
+        beamCount: Int,
+        cache: Map<String, OnnxTensorLike>? = null
+    ): Map<String, OnnxTensorLike?> {
+        val shape = longArrayOf(beamCount.toLong(), 1L)
+        _inputIdsTensor = OnnxTensor.createTensor(ortEnvironment, inputIdsBuffer, shape)
+        _useCacheTensor =
+            OnnxTensor.createTensor(ortEnvironment, booleanArrayOf(cache?.isNotEmpty() ?: false))
+
+        _inputs["input_ids"] = _inputIdsTensor
+        _inputs["use_cache_branch"] = _useCacheTensor
+
+        clearCache()
+        if (cache != null) {
+            _inputs.putAll(cache)
+        }
+
+        return _inputs
+    }
 
     fun get(
         inputIds: Array<LongArray>,
@@ -28,15 +59,22 @@ class MarianDecoderInput(
         _useCacheTensor =
             OnnxTensor.createTensor(ortEnvironment, booleanArrayOf(cache?.isNotEmpty() ?: false))
 
-        val inputs = mutableMapOf(
-            "input_ids" to _inputIdsTensor,
-            "use_cache_branch" to _useCacheTensor,
-            "encoder_hidden_states" to _encoderHiddenStatesTensor,
-            "encoder_attention_mask" to _encoderAttentionMaskTensor,
-        )
-        inputs.putAll(cache ?: emptyMap())
+        _inputs["input_ids"] = _inputIdsTensor
+        _inputs["use_cache_branch"] = _useCacheTensor
 
-        return inputs
+        clearCache()
+        if (cache != null) {
+            _inputs.putAll(cache)
+        }
+
+        return _inputs
+    }
+
+    private fun clearCache() {
+        val keys = _inputs.keys.filter { it.contains(_cacheRegex) }
+        for (key in keys) {
+            _inputs.remove(key)
+        }
     }
 
     fun close() {
@@ -90,6 +128,9 @@ class MarianDecoderOutput(
             }
 
             val buffer = beamSearch.transposeBuffer(tensor)
+            if (buffer == null) {
+                continue
+            }
 
             TensorUtils.closeTensorBuffer(_cache[key])
             TensorUtils.closeTensor(_cache[key])
