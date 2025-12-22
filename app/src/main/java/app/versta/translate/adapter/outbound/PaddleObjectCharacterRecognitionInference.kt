@@ -6,8 +6,6 @@ import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.providers.NNAPIFlags
 import androidx.camera.core.ImageProxy
-import app.versta.translate.MainApplication
-import app.versta.translate.R
 import app.versta.translate.bridge.inference.PaddleOCR
 import app.versta.translate.core.entity.ObjectCharacterRecogniserColors
 import app.versta.translate.core.entity.ObjectCharacterRecogniserResult
@@ -16,9 +14,12 @@ import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerWith
 import app.versta.translate.utils.DeviceUtils
 import timber.log.Timber
 import java.io.File
+import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.channels.FileChannel
 import java.util.EnumSet
+import kotlin.io.path.pathString
 
 const val RECOGNIZE_HEIGHT = 48
 
@@ -279,38 +280,22 @@ class PaddleObjectCharacterRecognition(
         } finally {
             _detectSession = null
             _detectSessionFile = null
+
             _recognizeSession = null
             _recognizeSessionFile = null
         }
     }
 
     override fun load(detect: ObjectCharacterRecognitionDetectorWithFiles, recognize: ObjectCharacterRecognitionRecognizerWithFiles, threads: Int) {
-        val detectModelStream =
-            MainApplication.context.resources.openRawResource(R.raw.model_det_fp16)
-        val detectModelBytes = detectModelStream.readBytes()
-        val detectModelBuffer = ByteBuffer.allocateDirect(detectModelBytes.size).apply {
-            order(ByteOrder.nativeOrder())
-            put(detectModelBytes)
-            rewind()
+        val detectFile = File(detect.inference.model.pathString)
+        val recognizeFile = File(recognize.inference.model.pathString)
+
+        if (_detectSessionFile?.equals(detectFile) == true && _recognizeSessionFile?.equals(recognizeFile) == true) {
+            return
         }
 
-        val recognizeModelStream =
-            MainApplication.context.resources.openRawResource(R.raw.model_rec_fp16)
-        val recognizeModelBytes = recognizeModelStream.readBytes()
-        val recognizeModelBuffer = ByteBuffer.allocateDirect(recognizeModelBytes.size).apply {
-            order(ByteOrder.nativeOrder())
-            put(recognizeModelBytes)
-            rewind()
-        }
-
-        val tokenizerFile = MainApplication.context.resources.openRawResource(R.raw.vocab_rec)
-        val tempFile = File.createTempFile("vocab_rec", ".bin")
-        tokenizerFile.use { input ->
-            tempFile.outputStream().use { output ->
-                input.copyTo(output)
-            }
-        }
-        tokenizer.load(tempFile.toPath())
+        // TODO: Move to view model instead.
+        tokenizer.load(recognize.tokenizer.vocabulary)
 
         close()
         val options = OrtSession.SessionOptions().apply {
@@ -333,8 +318,20 @@ class PaddleObjectCharacterRecognition(
             }
         }
 
-        _detectSession = ortEnvironment.createSession(detectModelBuffer, options)
-        _recognizeSession = ortEnvironment.createSession(recognizeModelBuffer, options)
+        _detectSession = ortEnvironment.createSession(readFileToByteBuffer(detectFile), options)
+        _detectSessionFile = detectFile
+
+        _recognizeSession = ortEnvironment.createSession(readFileToByteBuffer(recognizeFile), options)
+        _recognizeSessionFile = recognizeFile
+    }
+
+    private fun readFileToByteBuffer(file: File): ByteBuffer {
+        FileInputStream(file).use { inputStream ->
+            val channel = inputStream.channel
+            val size = channel.size()
+            val buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, size)
+            return buffer
+        }
     }
 
     companion object {

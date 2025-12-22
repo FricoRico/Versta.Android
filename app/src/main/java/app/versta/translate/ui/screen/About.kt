@@ -170,7 +170,7 @@ fun About(
                         )
                     },
                     index = 0,
-                    groupSize = 4
+                    groupSize = 5
                 )
             }
 
@@ -188,7 +188,25 @@ fun About(
                         )
                     },
                     index = 1,
-                    groupSize = 4
+                    groupSize = 5
+                )
+            }
+
+            item {
+                SettingsButtonItem(
+                    headlineContent = stringResource(R.string.about_ocr_models_title),
+                    supportingContent = stringResource(R.string.about_ocr_models_description),
+                    onClick = {
+                        navigationViewModel.navigate(Screens.ObjectCharacterRecognitionAttributions, Screens.About)
+                    },
+                    leadingContent = {
+                        Icon(
+                            ImageVector.vectorResource(R.drawable.rounded_photo_camera_24),
+                            contentDescription = null,
+                        )
+                    },
+                    index = 2,
+                    groupSize = 5
                 )
             }
 
@@ -205,8 +223,8 @@ fun About(
                             contentDescription = null,
                         )
                     },
-                    index = 2,
-                    groupSize = 4
+                    index = 3,
+                    groupSize = 5
                 )
             }
 
@@ -223,8 +241,8 @@ fun About(
                             contentDescription = null,
                         )
                     },
-                    index = 3,
-                    groupSize = 4
+                    index = 4,
+                    groupSize = 5
                 )
             }
         }

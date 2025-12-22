@@ -32,6 +32,7 @@ import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.core.model.LoggingViewModel
 import app.versta.translate.core.model.NavigationViewModel
+import app.versta.translate.core.model.ObjectCharacterRecognitionViewModel
 import app.versta.translate.core.model.ScaffoldViewModel
 import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
@@ -52,6 +53,9 @@ import app.versta.translate.ui.screen.ThirdParty
 import app.versta.translate.ui.screen.TranslationSettings
 import app.versta.translate.ui.screen.Troubleshooting
 import app.versta.translate.ui.screen.CameraTranslation
+import app.versta.translate.ui.screen.ObjectCharacterRecognitionAttributions
+import app.versta.translate.ui.screen.ObjectCharacterRecognitionDetails
+import app.versta.translate.ui.screen.ObjectCharacterRecognitionSettings
 import app.versta.translate.ui.screen.VoiceAttributions
 import app.versta.translate.ui.screen.VoiceDetails
 import app.versta.translate.ui.screen.VoiceSettings
@@ -71,6 +75,7 @@ fun Router(
     textTranslationViewModel: TextTranslationViewModel,
     textToSpeechViewModel: TextToSpeechViewModel,
     voiceViewModel: VoiceViewModel,
+    objectCharacterRecognitionViewModel: ObjectCharacterRecognitionViewModel,
     loggingViewModel: LoggingViewModel
 ) {
     val windowAdaptiveInfo = currentWindowAdaptiveInfo()
@@ -281,6 +286,43 @@ fun Router(
                                 scaffoldViewModel = scaffoldViewModel,
                                 navigationViewModel = navigationViewModel,
                                 voiceViewModel = voiceViewModel
+                            )
+                        }
+                        entry<Screens.ObjectCharacterRecognitionSettings>(
+                            metadata = ListDetailSceneStrategy.detailPane(
+                                sceneKey = settingsKey
+                            )
+                        ) {
+                            ObjectCharacterRecognitionSettings(
+                                innerPadding = innerPadding,
+                                scaffoldViewModel = scaffoldViewModel,
+                                navigationViewModel = navigationViewModel,
+                                objectCharacterRecognitionViewModel = objectCharacterRecognitionViewModel
+                            )
+                        }
+                        entry<Screens.ObjectCharacterRecognitionDetails>(
+                            metadata = ListDetailSceneStrategy.extraPane(
+                                sceneKey = settingsKey
+                            )
+                        ) {
+                            ObjectCharacterRecognitionDetails(
+                                id = it.id,
+                                innerPadding = innerPadding,
+                                scaffoldViewModel = scaffoldViewModel,
+                                navigationViewModel = navigationViewModel,
+                                objectCharacterRecognitionViewModel = objectCharacterRecognitionViewModel
+                            )
+                        }
+                        entry<Screens.ObjectCharacterRecognitionAttributions>(
+                            metadata = ListDetailSceneStrategy.extraPane(
+                                sceneKey = settingsKey
+                            )
+                        ) {
+                            ObjectCharacterRecognitionAttributions(
+                                innerPadding = innerPadding,
+                                scaffoldViewModel = scaffoldViewModel,
+                                navigationViewModel = navigationViewModel,
+                                objectCharacterRecognitionViewModel = objectCharacterRecognitionViewModel
                             )
                         }
                         entry<Screens.About>(

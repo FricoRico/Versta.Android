@@ -181,4 +181,11 @@
     <string name="language_suggestion_description">%1$s is currently not available for translation.</string>
     <string name="language_suggestion_title">Download %1$s</string>
     <string name="language_suggestion_call_to_action">Do you want to download it now?</string>
+    <string name="settings_ocr_title">OCR Models</string>
+    <string name="ocr_models_title">OCR models</string>
+    <string name="ocr_details_supported_languages_label">Supported languages</string>
+    <string name="delete_ocr_model_title">Delete OCR model</string>
+    <string name="delete_ocr_model_description">Are you sure you want to delete %1$s?</string>
+    <string name="about_ocr_models_title">OCR Models</string>
+    <string name="about_ocr_models_description">View all the OCR models used by the app</string>
 </resources>

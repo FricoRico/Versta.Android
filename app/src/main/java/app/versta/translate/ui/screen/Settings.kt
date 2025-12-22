@@ -78,7 +78,7 @@ fun Settings(
                         )
                     },
                     index = 0,
-                    groupSize = 2
+                    groupSize = 3
                 )
             }
 
@@ -99,7 +99,28 @@ fun Settings(
                         )
                     },
                     index = 1,
-                    groupSize = 2
+                    groupSize = 3
+                )
+            }
+
+            item {
+                SettingsButtonItem(
+                    headlineContent = "Vision",
+                    supportingContent = "Manage object character recognition models",
+                    onClick = {
+                        navigationViewModel.navigate(
+                            Screens.ObjectCharacterRecognitionSettings,
+                            Screens.Settings
+                        )
+                    },
+                    leadingContent = {
+                        Icon(
+                            ImageVector.vectorResource(R.drawable.rounded_record_voice_over_24),
+                            contentDescription = null,
+                        )
+                    },
+                    index = 2,
+                    groupSize = 3
                 )
             }
 

@@ -140,40 +140,48 @@ android {
 //        }
 //    }
 }
-//
-//tasks.apply {
-//    register("getRemoteData") {
-//        doLast {
-//            URI("https://models.versta.app/data/data.json").toURL().openStream()
-//                .use { input ->
-//                    layout.projectDirectory.file("src/main/res/raw/versta_data.json").asFile.outputStream()
-//                        .use { output ->
-//                            input.copyTo(output)
-//                        }
-//                }
-//
-//            URI("https://models.versta.app/translation/models.json").toURL().openStream()
-//                .use { input ->
-//                    layout.projectDirectory.file("src/main/res/raw/versta_translation_models.json").asFile.outputStream()
-//                        .use { output ->
-//                            input.copyTo(output)
-//                        }
-//                }
-//
-//            URI("https://models.versta.app/text-to-speech/models.json").toURL().openStream()
-//                .use { input ->
-//                    layout.projectDirectory.file("src/main/res/raw/versta_text_to_speech_models.json").asFile.outputStream()
-//                        .use { output ->
-//                            input.copyTo(output)
-//                        }
-//                }
-//        }
-//    }
-//
-//    preBuild {
-//        dependsOn("getRemoteData")
-//    }
-//}
+
+tasks.apply {
+    register("getRemoteData") {
+        doLast {
+            URI("https://models.versta.app/data/data.json").toURL().openStream()
+                .use { input ->
+                    layout.projectDirectory.file("src/main/res/raw/versta_data.json").asFile.outputStream()
+                        .use { output ->
+                            input.copyTo(output)
+                        }
+                }
+
+            URI("https://models.versta.app/translation/models.json").toURL().openStream()
+                .use { input ->
+                    layout.projectDirectory.file("src/main/res/raw/versta_translation_models.json").asFile.outputStream()
+                        .use { output ->
+                            input.copyTo(output)
+                        }
+                }
+
+            URI("https://models.versta.app/text-to-speech/models.json").toURL().openStream()
+                .use { input ->
+                    layout.projectDirectory.file("src/main/res/raw/versta_text_to_speech_models.json").asFile.outputStream()
+                        .use { output ->
+                            input.copyTo(output)
+                        }
+                }
+
+            URI("https://models.versta.app/object-character-recognition/models.json").toURL().openStream()
+                .use { input ->
+                    layout.projectDirectory.file("src/main/res/raw/versta_object_character_recognition_models.json").asFile.outputStream()
+                        .use { output ->
+                            input.copyTo(output)
+                        }
+                }
+        }
+    }
+
+    preBuild {
+        dependsOn("getRemoteData")
+    }
+}
 
 dependencies {
 

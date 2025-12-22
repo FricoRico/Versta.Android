@@ -110,13 +110,21 @@ class CameraTranslationViewModel(
     // TODO: Make thread count configurable from preferences
     private val _threads = flowOf(4)
 
-    private val _language = languagePreferenceRepository.getTargetLanguage().distinctUntilChanged()
+    private val _language = languagePreferenceRepository.getSourceLanguage().distinctUntilChanged()
 
     private val _detectorData = _language.filterNotNull().map { language ->
+        if (language !is app.versta.translate.core.entity.Language) {
+            return@map null
+        }
+
         objectCharacterRecognizerRepository.getObjectCharacterRecognitionDetectorByLanguage(language = language)
     }
 
     private val _recognizerData = _language.filterNotNull().map { language ->
+        if (language !is app.versta.translate.core.entity.Language) {
+            return@map null
+        }
+
         objectCharacterRecognizerRepository.getObjectCharacterRecognizerByLanguage(language = language)
     }.distinctUntilChanged()
 
@@ -338,7 +346,7 @@ class CameraTranslationViewModel(
         try {
             camera.cameraControl.setZoomRatio(clamped)
         } catch (e: Exception) {
-            Timber.Forest.tag("PreviewViewModel").e(e, "Failed to set zoom ratio")
+            Timber.tag("PreviewViewModel").e(e, "Failed to set zoom ratio")
         } finally {
             _currentZoomRatio.value = clamped
         }

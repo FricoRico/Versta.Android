@@ -9,9 +9,13 @@ enum class ObjectCharacterRecognitionArchitecture(val value: String) {
     PaddleOCR("PaddleOCR")
 }
 
-enum class ObjectCharacterRecognitionModel(val value: String) {
-    Detector("detector"),
-    Recognizer("recognizer")
+@Serializable
+enum class ObjectCharacterRecognitionModule {
+    @SerialName("detector")
+    Detector,
+
+    @SerialName("recognizer")
+    Recognizer
 }
 
 @Serializable
@@ -49,30 +53,15 @@ data class ObjectCharacterRecognitionDetectorInferenceFilesMetadata(
 }
 
 @Serializable
-data class ObjectCharacterRecognitionDetectorMetadataFile(
+data class ObjectCharacterRecognitionMetadataFile(
     val directory: String,
+    val languages: List<String>,
+    val module: ObjectCharacterRecognitionModule,
 )
 
 @Serializable
-class ObjectCharacterRecognitionDetectorBundleMetadata(
-    val id: String,
-    val version: String,
-    val metadata: ObjectCharacterRecognitionDetectorMetadataFile,
-) {
-    fun isValid() = metadata.directory.isNotEmpty()
-}
-
-@Serializable
-data class ObjectCharacterRecognitionDetectorModel(
-    val bundle: ObjectCharacterRecognitionDetectorBundleMetadata,
-    val model: ObjectCharacterRecognitionDetectorMetadata
-) {
-    val id: String
-        get() = bundle.id
-}
-
-@Serializable
 class ObjectCharacterRecognitionRecognizerMetadata(
+    val id: String = "",
     val version: String = "",
     @SerialName("base_model") val baseModel: String = "",
     val languages: List<String>,
@@ -114,22 +103,30 @@ data class ObjectCharacterRecognitionRecognizerTokenizerFilesMetadata(
 }
 
 @Serializable
-data class ObjectCharacterRecognitionRecognizerMetadataFile(
-    val directory: String,
-)
-
-@Serializable
-class ObjectCharacterRecognitionRecognizerBundleMetadata(
+class ObjectCharacterRecognitionBundleMetadata(
     val id: String,
     val version: String,
-    val metadata: ObjectCharacterRecognitionRecognizerMetadataFile,
+    val languages: List<String>,
+    val modules: List<String>,
+    val metadata: List<ObjectCharacterRecognitionMetadataFile>,
 ) {
-    fun isValid() = metadata.directory.isNotEmpty()
+    fun isValid() =
+        metadata.all { it.directory.isNotEmpty() } &&
+        modules.isNotEmpty()
+}
+
+@Serializable
+data class ObjectCharacterRecognitionDetectorModel(
+    val bundle: ObjectCharacterRecognitionBundleMetadata,
+    val model: ObjectCharacterRecognitionDetectorMetadata
+) {
+    val id: String
+        get() = bundle.id
 }
 
 @Serializable
 data class ObjectCharacterRecognitionRecognizerModel(
-    val bundle: ObjectCharacterRecognitionRecognizerBundleMetadata,
+    val bundle: ObjectCharacterRecognitionBundleMetadata,
     val model: ObjectCharacterRecognitionRecognizerMetadata
 ) {
     val id: String

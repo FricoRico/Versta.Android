@@ -18,6 +18,8 @@ import app.versta.translate.adapter.outbound.DataDatabaseRepository
 import app.versta.translate.adapter.outbound.DataRepository
 import app.versta.translate.adapter.outbound.ExternalDataFileRepository
 import app.versta.translate.adapter.outbound.ExternalDataRepository
+import app.versta.translate.adapter.outbound.ExternalObjectCharacterRecognitionModelsFileRepository
+import app.versta.translate.adapter.outbound.ExternalObjectCharacterRecognitionModelsRepository
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsFileRepository
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsRepository
 import app.versta.translate.adapter.outbound.StyleTextToSpeechInference
@@ -51,6 +53,7 @@ import app.versta.translate.core.model.CustomThemeViewModel
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.LoggingViewModel
 import app.versta.translate.core.model.NavigationViewModel
+import app.versta.translate.core.model.ObjectCharacterRecognitionViewModel
 import app.versta.translate.core.model.ScaffoldActionsComponent
 import app.versta.translate.core.model.ScaffoldNavigationIconComponent
 import app.versta.translate.core.model.ScaffoldTitleComponent
@@ -86,6 +89,7 @@ interface ApplicationModuleInterface {
     val externalLanguageModelsRepository: ExternalLanguageModelsRepository
     val externalVoiceModelsRepository: ExternalVoiceModelsRepository
     val externalDataRepository: ExternalDataRepository
+    val externalObjectCharacterRecognitionModelsRepository: ExternalObjectCharacterRecognitionModelsRepository
     val objectCharacterRecognizerRepository: ObjectCharacterRecognitionRepository
 
     val cameraTranslationViewModel: CameraTranslationViewModel
@@ -97,6 +101,7 @@ interface ApplicationModuleInterface {
     val textTranslationViewModel: TextTranslationViewModel
     val textToSpeechViewModel: TextToSpeechViewModel
     val voiceViewModel: VoiceViewModel
+    val objectCharacterRecognitionViewModel: ObjectCharacterRecognitionViewModel
     val loggingViewModel: LoggingViewModel
 
     val ortEnvironment: OrtEnvironment
@@ -154,6 +159,10 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
 
     override val externalDataRepository: ExternalDataRepository by lazy {
         ExternalDataFileRepository(context.resources.openRawResource(R.raw.versta_data))
+    }
+
+    override val externalObjectCharacterRecognitionModelsRepository: ExternalObjectCharacterRecognitionModelsRepository by lazy {
+        ExternalObjectCharacterRecognitionModelsFileRepository(context.resources.openRawResource(R.raw.versta_object_character_recognition_models))
     }
 
     override val objectCharacterRecognizerRepository: ObjectCharacterRecognitionRepository by lazy {
@@ -266,6 +275,14 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
             context = context,
             voiceRepository = voiceRepository,
             externalVoiceModelsRepository = externalVoiceModelsRepository
+        )
+    }
+
+    override val objectCharacterRecognitionViewModel: ObjectCharacterRecognitionViewModel by lazy {
+        ObjectCharacterRecognitionViewModel(
+            context = context,
+            objectCharacterRecognitionRepository = objectCharacterRecognizerRepository,
+            externalObjectCharacterRecognitionModelsRepository = externalObjectCharacterRecognitionModelsRepository
         )
     }
 

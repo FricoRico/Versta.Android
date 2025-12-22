@@ -50,7 +50,6 @@ class ObjectCharacterRecognitionRepositoryDatabaseRepository(
      */
     override fun upsertObjectCharacterRecognitionDetector(metadata: ObjectCharacterRecognitionDetectorModel) {
         val data = mapObjectCharacterRecognitionDetectorMetadataToObjectCharacterRecgonitionDetectorDatabaseModel(
-            id = metadata.id,
             data = metadata.model
         )
 
@@ -88,9 +87,15 @@ class ObjectCharacterRecognitionRepositoryDatabaseRepository(
      * Gets the object character recognizer available in the repository by language.
      * @param language The language to filter the object character recognizers.
      */
-    override fun getObjectCharacterRecognizerByLanguage(language: Language) = database.objectCharacterRecognitionModels.getAllRecognizers().executeAsList()
-        .map { mapObjectCharacterRecognitionRecognizerDatabaseModelToObjectCharacterRecognitionRecognizerFiles(it) }
-        .firstOrNull { detector -> detector?.languages?.any { it == language.isoCode } == true }
+    override fun getObjectCharacterRecognizerByLanguage(language: Language): ObjectCharacterRecognitionRecognizerWithFiles? {
+        val models = database.objectCharacterRecognitionModels.getAllRecognizers().executeAsList().map { mapObjectCharacterRecognitionRecognizerDatabaseModelToObjectCharacterRecognitionRecognizerFiles(it) }
+
+        return models.firstOrNull { model ->
+            model?.languages?.any { it == language.isoCode } == true
+        } ?: models.firstOrNull { model ->
+            model?.languages?.any { it == "*" } == true
+        }
+    }
 
     /**
      * Inserts or updates the object character recognition recognizer in the repository.
@@ -98,7 +103,6 @@ class ObjectCharacterRecognitionRepositoryDatabaseRepository(
      */
     override fun upsertObjectCharacterRecognitionRecognizer(metadata: ObjectCharacterRecognitionRecognizerModel) {
         val data = mapObjectCharacterRecognitionRecognizerMetadataToObjectCharacterRecgonitionRecognizerDatabaseModel(
-            id = metadata.id,
             data = metadata.model
         )
 
@@ -132,11 +136,10 @@ class ObjectCharacterRecognitionRepositoryDatabaseRepository(
     }
 
     private fun mapObjectCharacterRecognitionDetectorMetadataToObjectCharacterRecgonitionDetectorDatabaseModel(
-        id: String,
         data: ObjectCharacterRecognitionDetectorMetadata
     ): ObjectCharacterRecognitionDetectorDatabaseModel {
         return ObjectCharacterRecognitionDetectorDatabaseModel(
-            id = id,
+            id = data.id,
             baseModel = data.baseModel,
             architectures = data.architectures.map { it.value },
             path = data.root?.absolutePathString() ?: "",
@@ -175,11 +178,10 @@ class ObjectCharacterRecognitionRepositoryDatabaseRepository(
     }
 
     private fun mapObjectCharacterRecognitionRecognizerMetadataToObjectCharacterRecgonitionRecognizerDatabaseModel(
-        id: String,
         data: ObjectCharacterRecognitionRecognizerMetadata
     ): ObjectCharacterRecognitionRecognizerDatabaseModel {
         return ObjectCharacterRecognitionRecognizerDatabaseModel(
-            id = id,
+            id = data.id,
             baseModel = data.baseModel,
             architectures = data.architectures.map { it.value },
             path = data.root?.absolutePathString() ?: "",
