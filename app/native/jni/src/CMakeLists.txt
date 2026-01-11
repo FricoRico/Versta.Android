@@ -4,6 +4,7 @@ set(SRC_FILES
         ${SRC_DIR}/espeak_ng.cc
         ${SRC_DIR}/open_jtalk.cc
         ${SRC_DIR}/paddle_ocr.cc
+        ${SRC_DIR}/ocr_text_analyzer.cc
         ${SRC_DIR}/language_detect.cc
         ${SRC_DIR}/sentence_piece.cc
         ${SRC_DIR}/vocabulary.cc

@@ -35,7 +35,10 @@ import app.versta.translate.adapter.outbound.MarianTokenizer
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionInference
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepository
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepositoryDatabaseRepository
+import app.versta.translate.adapter.outbound.OcrPostProcessorPipeline
 import app.versta.translate.adapter.outbound.PaddleObjectCharacterRecognition
+import app.versta.translate.adapter.outbound.ParagraphGroupingPostProcessor
+import app.versta.translate.adapter.outbound.TextStyleAnalysisPostProcessor
 import app.versta.translate.adapter.outbound.VoiceDatabaseRepository
 import app.versta.translate.adapter.outbound.TextToSpeechInference
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceDataStoreRepository
@@ -46,6 +49,7 @@ import app.versta.translate.adapter.outbound.TranslationInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
 import app.versta.translate.adapter.outbound.TranslationTokenizer
+import app.versta.translate.bridge.inference.OcrTextAnalyzer
 import app.versta.translate.bridge.speech.ESpeakNG
 import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.model.CameraTranslationViewModel
@@ -206,12 +210,31 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
     }
 
     override val cameraTranslationViewModel: CameraTranslationViewModel by lazy {
+        val ocrPipeline = OcrPostProcessorPipeline(
+            listOf(
+                TextStyleAnalysisPostProcessor(
+                    ocrTextAnalyzer = OcrTextAnalyzer(
+                        threads = 4,
+                        boldThreshold = 0.20f,
+                    ),
+                    recognizeSize = 960
+                ),
+                ParagraphGroupingPostProcessor(
+                    verticalThresholdFactor = 1f,
+                    horizontalEps = 5f,
+                    colorTolerance = 0.15f,
+                    fontSizeTolerance = 0.25f
+                )
+            )
+        )
+
         CameraTranslationViewModel(
             objectCharacterRecognitionInference = objectCharacterRecognitionInference,
             languageViewModel = languageViewModel,
             languagePreferenceRepository = languagePreferenceRepository,
             translationViewModel = translationViewModel,
             objectCharacterRecognizerRepository = objectCharacterRecognizerRepository,
+            ocrPostProcessor = ocrPipeline
         )
     }
 

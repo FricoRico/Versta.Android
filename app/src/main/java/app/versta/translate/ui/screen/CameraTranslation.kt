@@ -1,10 +1,13 @@
 package app.versta.translate.ui.screen
 
 import android.Manifest
+import android.R.attr.lineHeight
 import android.graphics.Matrix
-import android.graphics.Paint
-import android.graphics.Rect
 import android.graphics.RectF
+import android.graphics.Typeface
+import android.os.Build
+import android.text.StaticLayout
+import android.text.TextPaint
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
@@ -70,6 +73,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
+import app.versta.translate.core.entity.FontWeight
 import app.versta.translate.core.model.NavigationViewModel
 import app.versta.translate.core.model.CameraTranslationViewModel
 import app.versta.translate.core.model.ScaffoldViewModel
@@ -521,10 +525,10 @@ fun CameraViewFinder(
 
                         results.forEach { result ->
                             val points = result.points
-                            val score = result.score
                             val text = result.translated
                             val colors = result.colors
-                            if (score < 0.8f) return@forEach
+                            val fontSize = result.fontSize
+                            val lineHeight = result.lineHeight
 
                             val mappedPoints = points.map { point ->
                                 val mapped = floatArrayOf(point.x, point.y)
@@ -532,7 +536,6 @@ fun CameraViewFinder(
                                 Offset(mapped[0], mapped[1])
                             }
 
-                            // Draw the polygon
                             val path = Path().apply {
                                 moveTo(mappedPoints.first().x, mappedPoints.first().y)
                                 mappedPoints.drop(1).forEach { p ->
@@ -549,47 +552,43 @@ fun CameraViewFinder(
                                 color = backgroundColor
                             )
 
-                            // Calculate the bounding box of the polygon
                             val minX = mappedPoints.minOf { it.x }
                             val maxX = mappedPoints.maxOf { it.x }
                             val minY = mappedPoints.minOf { it.y }
-                            val maxY = mappedPoints.maxOf { it.y }
 
-                            // Define padding
-                            val padding = 8f
-                            val availableWidth = maxX - minX - 2 * padding
-                            val availableHeight = maxY - minY - 2 * padding
+                            val availableWidth = maxX - minX
 
-                            // Create a Paint object for text
-                            val textPaint = Paint().apply {
+                            val textPaint = TextPaint().apply {
                                 isAntiAlias = true
                                 color = foregroundColor.toArgb()
+
+                                textSize = fontSize * scale
+
+                                typeface = if (result.fontWeight == FontWeight.BOLD) {
+                                    Typeface.create(
+                                        Typeface.DEFAULT,
+                                        Typeface.BOLD
+                                    )
+                                } else {
+                                    Typeface.DEFAULT
+                                }
                             }
 
-                            // Start with a reasonable text size
-                            var textSize = 24f
-                            textPaint.textSize = textSize
-
-                            // Measure the text width and height
-                            val textBounds = Rect()
-                            textPaint.getTextBounds(text, 0, text.length, textBounds)
-                            val textWidth = textPaint.measureText(text)
-                            val textHeight = textBounds.height().toFloat()
-
-                            val widthRatio = availableWidth / textWidth
-                            val heightRatio = availableHeight / textHeight
-                            val ratio = minOf(widthRatio, heightRatio)
-                            textSize *= ratio
-                            textPaint.textSize = textSize
-
-                            textPaint.getTextBounds(text, 0, text.length, textBounds)
-
-                            drawContext.canvas.nativeCanvas.drawText(
+                            val layout = StaticLayout.Builder.obtain(
                                 text,
-                                minX + padding,
-                                minY + padding - textBounds.top.toFloat(),
-                                textPaint
+                                0,
+                                text.length,
+                                textPaint,
+                                availableWidth.toInt()
+                            ).build()
+
+                            drawContext.canvas.nativeCanvas.save()
+                            drawContext.canvas.nativeCanvas.translate(
+                                minX,
+                                minY
                             )
+                            layout.draw(drawContext.canvas.nativeCanvas)
+                            drawContext.canvas.nativeCanvas.restore()
                         }
                     }
                 )

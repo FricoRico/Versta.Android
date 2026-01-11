@@ -19,6 +19,7 @@ import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionAnalyzer
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionInference
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepository
+import app.versta.translate.adapter.outbound.OcrPostProcessor
 import app.versta.translate.core.entity.CameraTranslationResult
 import app.versta.translate.core.entity.ObjectCharacterRecognitionDetectorWithFiles
 import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerWithFiles
@@ -52,7 +53,8 @@ class CameraTranslationViewModel(
     private val translationViewModel: TranslationViewModel,
     private val objectCharacterRecognizerRepository: ObjectCharacterRecognitionRepository,
     private val languageViewModel: LanguageViewModel,
-    private val languagePreferenceRepository: LanguagePreferenceRepository
+    private val languagePreferenceRepository: LanguagePreferenceRepository,
+    private val ocrPostProcessor: OcrPostProcessor? = null
 ) : ViewModel() {
     private val _surfaceRequests = MutableStateFlow<SurfaceRequest?>(null)
     val surfaceRequests: StateFlow<SurfaceRequest?> = _surfaceRequests.asStateFlow()
@@ -138,6 +140,7 @@ class CameraTranslationViewModel(
 
     private val _objectCharacterRecognitionAnalyzer = ObjectCharacterRecognitionAnalyzer(
         objectCharacterRecognitionInference = objectCharacterRecognitionInference,
+        postProcessor = ocrPostProcessor,
         beforeFrameProcessing = {
             viewModelScope.launch {
                 _cameraProvider?.unbindAll()
@@ -149,7 +152,9 @@ class CameraTranslationViewModel(
                 return@ObjectCharacterRecognitionAnalyzer
             }
 
-            val results = objects.map {
+            val results = objects.filter {
+                it.score >= 0.8f && it.text.isNotBlank()
+            }.map {
                 val translated = translationViewModel.translate(it.text, languages)
 
                 CameraTranslationResult(
@@ -157,7 +162,10 @@ class CameraTranslationViewModel(
                     score = it.score,
                     text = it.text,
                     translated = translated,
-                    colors = it.colors
+                    colors = it.colors,
+                    fontSize = it.fontSize,
+                    lineHeight = it.lineHeight,
+                    fontWeight = it.fontWeight
                 )
             }
 

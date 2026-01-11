@@ -31,7 +31,7 @@ class PaddleObjectCharacterRecognition(
     val maxCropSize: Int = 640,
     val unclipRatio: Float = 1.5f,
     val maxCandidates: Int = 100,
-    val batchSize: Int = 24,
+    val batchSize: Int = 16,
     val threads: Int = 4,
 ) : ObjectCharacterRecognitionInference, AutoCloseable {
     private val _paddleOCR = PaddleOCR(
@@ -84,6 +84,7 @@ class PaddleObjectCharacterRecognition(
     val tokenizer = PaddleObjectCharacterRecognitionTokenizer()
 
     override fun process(input: ImageProxy): List<ObjectCharacterRecogniserResult> {
+        val starTime = System.currentTimeMillis()
         try {
             val vocabSize = tokenizer.vocabSize.toInt() + 2
             val success = _paddleOCR.preProcessDetect(
@@ -231,10 +232,18 @@ class PaddleObjectCharacterRecognition(
                 colorResults = colorsList
             )
 
+            Timber.tag(TAG).d("PaddleOCR detected ${results.size} text regions.")
+            for (result in results) {
+                Timber.tag(TAG).d("Text: ${result.text}, Score: ${result.score}, Colors: ${result.colors}")
+            }
+
             return results
         } catch (e: Exception) {
             Timber.tag(TAG).e(e)
             return emptyList()
+        } finally {
+            val endTime = System.currentTimeMillis()
+            Timber.tag(TAG).d("PaddleOCR process time: ${endTime - starTime} ms")
         }
     }
 
@@ -297,11 +306,35 @@ class PaddleObjectCharacterRecognition(
         // TODO: Move to view model instead.
         tokenizer.load(recognize.tokenizer.vocabulary)
 
+        Timber.tag(TAG).d("Loading PaddleOCR models: detect=${detectFile.path}, recognize=${recognizeFile.path}")
+
         close()
         val options = OrtSession.SessionOptions().apply {
-            setCPUArenaAllocator(true)
+//            setCPUArenaAllocator(true)
             setMemoryPatternOptimization(true)
-            addXnnpack(mapOf("intra_op_num_threads" to threads.toString()))
+//            setIntraOpNumThreads(threads)
+//            setInterOpNumThreads(threads)
+//            addXnnpack(mapOf("intra_op_num_threads" to threads.toString()))
+            disableProfiling()
+            addConfigEntry("optimization.enable_gelu_approximation", "1")
+            addConfigEntry("session.disable_aot_function_inlining", "0")
+            addConfigEntry("optimization.minimal_build_optimizations", "")
+            addConfigEntry("optimization.enable_gemm_fastmath", "1")  // Faster MatMul (FP16-safe)
+            addConfigEntry("ep.webgpu.enable_command_recording", "1")  // Reuse command buffers
+            addConfigEntry("ep.webgpu.use_small_buffers", "0")  // Fewer memory transfers
+            addConfigEntry("session.allow_released_ops_only", "1")  // Allow optimized op release
+
+//            addConfigEntry("optimization.graph_optimizations_loop_level", "1")
+
+            addConfigEntry("memory.enable_memory_arena_shrinkage", "")  // Keep empty for performance
+            addConfigEntry("session.use_ort_model_bytes_directly", "1")
+            addConfigEntry("session.use_ort_model_bytes_for_initializers", "0")
+            addConfigEntry("session.set_denormal_as_zero", "1")
+            addConfigEntry("session.use_env_allocators", "1")
+            addConfigEntry("session.use_device_allocator_for_initializers", "1")
+
+            addConfigEntry("ep.dynamic.workload_type", "Default")  // Performance over power
+            addConfigEntry("session.qdq_matmulnbits_accuracy_level", "2") // 0:default, 1:FP32, 2:FP16, 3:BF16, 4:INT8
             addNnapi(EnumSet.of(NNAPIFlags.USE_FP16, NNAPIFlags.USE_NCHW))
             DeviceUtils.isEmulator.let {
                 if (it) {
@@ -332,6 +365,10 @@ class PaddleObjectCharacterRecognition(
             val buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, size)
             return buffer
         }
+    }
+
+    override fun getCachedDetectResultBuffer(): ByteBuffer {
+        return detectResultBuffer
     }
 
     companion object {
