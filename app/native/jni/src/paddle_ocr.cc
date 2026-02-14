@@ -21,6 +21,8 @@
 
 #endif
 
+#define LOG_TAG "PaddleOCR"
+
 class PaddleOCR {
 private:
     int detectSize_ = 320;
@@ -409,6 +411,7 @@ private:
         }
     }
 
+    // NCHW format for ONNX detection - channels stored separately [C0][C1][C2]
     static void neonMeanScale(const float *din, float *dout, int size,
                               const std::vector<float> &mean,
                               const std::vector<float> &scale) {
@@ -450,6 +453,49 @@ private:
             *(doutC0++) = (*(din++) - mean[0]) * scale[0];
             *(doutC1++) = (*(din++) - mean[1]) * scale[1];
             *(doutC2++) = (*(din++) - mean[2]) * scale[2];
+        }
+    }
+
+    // NHWC format for LiteRT recognition - channels interleaved [RGBRGBRGB]
+    static void neonMeanScaleNHWC(const float *din, float *dout, int size,
+                                  const std::vector<float> &mean,
+                                  const std::vector<float> &scale) {
+        if (mean.size() != 3 || scale.size() != 3) {
+            return;
+        }
+
+        float32x4_t vmean0 = vdupq_n_f32(mean[0]);
+        float32x4_t vmean1 = vdupq_n_f32(mean[1]);
+        float32x4_t vmean2 = vdupq_n_f32(mean[2]);
+        float32x4_t vscale0 = vdupq_n_f32(scale[0]);
+        float32x4_t vscale1 = vdupq_n_f32(scale[1]);
+        float32x4_t vscale2 = vdupq_n_f32(scale[2]);
+
+        float *doutRGB = dout;
+
+        int i = 0;
+        for (; i < size - 3; i += 4) {
+            float32x4x3_t vin3 = vld3q_f32(din);
+            float32x4_t vsub0 = vsubq_f32(vin3.val[0], vmean0);
+            float32x4_t vsub1 = vsubq_f32(vin3.val[1], vmean1);
+            float32x4_t vsub2 = vsubq_f32(vin3.val[2], vmean2);
+            float32x4_t vs0 = vmulq_f32(vsub0, vscale0);
+            float32x4_t vs1 = vmulq_f32(vsub1, vscale1);
+            float32x4_t vs2 = vmulq_f32(vsub2, vscale2);
+            
+            // Interleave RGB for NHWC format
+            float32x4x3_t vout3 = {vs0, vs1, vs2};
+            vst3q_f32(doutRGB, vout3);
+
+            din += 12;
+            doutRGB += 12;
+        }
+
+        for (; i < size; i++) {
+            // Interleave RGB for NHWC format
+            *(doutRGB++) = (*(din++) - mean[0]) * scale[0];
+            *(doutRGB++) = (*(din++) - mean[1]) * scale[1];
+            *(doutRGB++) = (*(din++) - mean[2]) * scale[2];
         }
     }
 
@@ -545,9 +591,40 @@ private:
         return cachedResized_;
     }
 
+    // For LiteRT recognition - use recognizeSize_ (960) instead of maxCropSize_ (640)
+    cv::Mat aspectRatioResizeForRecognition(const cv::Mat &img, float aspectRatio) {
+        auto height = cropHeight_;
+        auto width = recognizeSize_;  // Use 960 for LiteRT
+
+        if (characterType_ == "ch") {
+            width = int(32 * aspectRatio);
+        }
+
+        float ratio = float(img.cols) / float(img.rows);
+        int resizeW = 0;
+        if (ceilf(float(height) * ratio) > float(width))
+            resizeW = width;
+        else
+            resizeW = int(ceilf(float(height) * ratio));
+        cv::resize(img, cachedResized_, cv::Size(resizeW, height));
+        return cachedResized_;
+    }
+
     [[nodiscard]] cv::Mat padCropToRecShape(const cv::Mat &img) const {
         const int targetHeight = cropHeight_;
         const int targetWidth = maxCropSize_;
+
+        cachedPadded_.create(targetHeight, targetWidth, img.type());
+        cachedPadded_.setTo(cv::Scalar(0.5f, 0.5f, 0.5f));
+        img.copyTo(cachedPadded_(cv::Rect(0, 0, img.cols, img.rows)));
+
+        return cachedPadded_;
+    }
+
+    // For LiteRT recognition - use recognizeSize_ (960) instead of maxCropSize_ (640)
+    [[nodiscard]] cv::Mat padCropToRecShapeForRecognition(const cv::Mat &img) const {
+        const int targetHeight = cropHeight_;
+        const int targetWidth = recognizeSize_;  // Use 960 for LiteRT
 
         cachedPadded_.create(targetHeight, targetWidth, img.type());
         cachedPadded_.setTo(cv::Scalar(0.5f, 0.5f, 0.5f));
@@ -840,6 +917,53 @@ public:
         return JNI_TRUE;
     }
 
+    // Process single crop for LiteRT batch=1 inference
+    jboolean preProcessSingleCrop(JNIEnv *env, jobject origin, jobject boxInput, jobject output,
+                                   int originWidth, int originHeight, int originRotation,
+                                   int boxIndex) {
+        cv::setNumThreads(threads_);
+
+        auto *originData = static_cast<uint8_t *>(env->GetDirectBufferAddress(origin));
+        auto *boxData = static_cast<int *>(env->GetDirectBufferAddress(boxInput));
+        auto *outputData = static_cast<float *>(env->GetDirectBufferAddress(output));
+        if (!originData || !boxData || !outputData)
+            throw std::runtime_error("Failed to get direct buffer address.");
+
+        auto boxes = bufferToFilterBoxes(boxData, env->GetDirectBufferCapacity(boxInput));
+        if (boxes.empty() || boxIndex < 0 || boxIndex >= static_cast<int>(boxes.size())) {
+            return JNI_FALSE;
+        }
+
+        cv::Mat frame(originHeight, originWidth, CV_8UC4, originData);
+        cv::cvtColor(frame, frame, cv::COLOR_RGBA2BGR);
+
+        rotateImg(frame, originRotation);
+        resize(frame, recognizeSize_, recognizeSize_);
+        frame.convertTo(frame, CV_32FC3, 1.0f / 255.0f);
+
+        const std::vector<float> mean = {0.5f, 0.5f, 0.5f};
+        const std::vector<float> scale = {1 / 0.5f, 1 / 0.5f, 1 / 0.5f};
+
+        // Process single box
+        const auto &box = boxes[boxes.size() - 1 - boxIndex]; // Reverse order to match original
+        cachedCropImg_ = getRotateCropImage(frame, box);
+
+        float whRatio = float(cachedCropImg_.cols) / float(cachedCropImg_.rows);
+        cachedCropImg_ = aspectRatioResizeForRecognition(cachedCropImg_, whRatio);
+        cachedCropImg_ = padCropToRecShapeForRecognition(cachedCropImg_);
+
+        if (cachedCropImg_.cols != recognizeSize_ || cachedCropImg_.rows != cropHeight_) {
+            LOGE("Crop shape mismatch for recognition: expected [%d, %d], got [%d, %d]", 
+                 recognizeSize_, cropHeight_, cachedCropImg_.cols, cachedCropImg_.rows);
+            throw std::runtime_error("Cropped image has incorrect shape for recognition.");
+        }
+
+        neonMeanScaleNHWC(reinterpret_cast<const float *>(cachedCropImg_.data), outputData,
+                          cachedCropImg_.cols * cachedCropImg_.rows, mean, scale);
+
+        return JNI_TRUE;
+    }
+
     jintArray getPixelColorFromImage(JNIEnv *env, jobject origin, jobject input, int originWidth, int originHeight, int originRotation) const {
         cv::setNumThreads(threads_);
 
@@ -1021,4 +1145,319 @@ Java_app_versta_translate_bridge_inference_PaddleOCR_getPixelColorFromImage(
     }
 
     return paddleOCR->getPixelColorFromImage(env, origin, input, originWidth, originHeight, originRotation);
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_app_versta_translate_bridge_inference_PaddleOCR_preProcessSingleCrop(
+        JNIEnv *env,
+        jobject,
+        jlong handle,
+        jobject origin,
+        jobject boxInput,
+        jobject output,
+        jint originWidth,
+        jint originHeight,
+        jint originRotation,
+        jint boxIndex
+) {
+    auto paddleOCR = paddleOCRInstances[handle].get();
+    if (!paddleOCR) {
+        return JNI_FALSE;
+    }
+
+    return paddleOCR->preProcessSingleCrop(env, origin, boxInput, output, originWidth, originHeight, originRotation, boxIndex);
+}
+
+// ============================================
+// LiteRT Recognizer Implementation
+// ============================================
+
+#include "litert/litert/c/litert_common.h"
+#include "litert/litert/cc/litert_common.h"
+#include "litert/litert/cc/litert_compiled_model.h"
+#include "litert/litert/cc/litert_environment.h"
+#include "litert/litert/cc/litert_expected.h"
+#include "litert/litert/cc/litert_macros.h"
+#include "litert/litert/cc/litert_options.h"
+#include "litert/litert/cc/litert_tensor_buffer.h"
+#include <string>
+#include <memory>
+
+class PaddleOCRLiteRTRecognizer {
+private:
+    litert::CompiledModel compiledModel_;
+    std::vector<litert::TensorBuffer> inputBuffers_;
+    std::vector<litert::TensorBuffer> outputBuffers_;
+    
+    int batchSize_ = 1;
+    int cropHeight_ = 48;
+    int maxCropSize_ = 960;
+    int vocabSize_ = 838;
+    bool usingGpu_ = false;
+    
+    // Gray padding value (0.5f)
+    const float grayPaddingValue_ = 0.5f;
+    std::vector<float> grayPaddingBuffer_;
+    
+public:
+    PaddleOCRLiteRTRecognizer() = default;
+    ~PaddleOCRLiteRTRecognizer() = default;
+    
+    // Initialize with model path, auto-detect batch size, try GPU with CPU fallback
+    bool initialize(JNIEnv* env, const std::string& modelPath, bool preferGpu) {
+        // Create environment
+        auto envResult = litert::Environment::Create({});
+        if (!envResult) {
+            LOGE("Failed to create LiteRT environment");
+            return false;
+        }
+        litert::Environment environment = std::move(*envResult);
+        
+        auto optionsResult = litert::Options::Create();
+        if (!optionsResult) {
+            LOGE("Failed to create options");
+        } else {
+            auto& options = *optionsResult;
+            litert::HwAcceleratorSet accelerators(
+                    litert::HwAccelerators::kGpu |
+                    litert::HwAccelerators::kNpu |
+                    litert::HwAccelerators::kCpu
+            );
+            options.SetHardwareAccelerators(accelerators);
+
+            auto result = litert::CompiledModel::Create(environment, modelPath, options);
+
+            if (!result) {
+                LOGE("Failed to create compiled model");
+                return false;
+            }
+            compiledModel_ = std::move(*result);
+        }
+
+        // Create input/output buffers (signature_index = 0 for default)
+        auto inputBuffersResult = compiledModel_.CreateInputBuffers(0);
+        if (!inputBuffersResult || inputBuffersResult->empty()) {
+            LOGE("Failed to create input buffers");
+            return false;
+        }
+        inputBuffers_ = std::move(*inputBuffersResult);
+        
+        auto outputBuffersResult = compiledModel_.CreateOutputBuffers(0);
+        if (!outputBuffersResult || outputBuffersResult->empty()) {
+            LOGE("Failed to create output buffers");
+            return false;
+        }
+        outputBuffers_ = std::move(*outputBuffersResult);
+        
+        // Get input tensor type to determine batch size
+        auto inputTypeResult = inputBuffers_[0].TensorType();
+        if (!inputTypeResult) {
+            LOGE("Failed to get input tensor type");
+            return false;
+        }
+        
+        const auto& layout = inputTypeResult->Layout();
+        if (layout.Rank() >= 4) {
+            batchSize_ = layout.Dimensions()[0];
+            cropHeight_ = layout.Dimensions()[1];
+            maxCropSize_ = layout.Dimensions()[2];
+            LOGI("Auto-detected batch size: %d, dimensions: [%d, %d, %d, %d]",
+                 batchSize_, cropHeight_, maxCropSize_, 
+                 layout.Dimensions()[3]);
+        } else {
+            LOGI("Unexpected input rank: %zu, using default batch size 1",
+                 layout.Rank());
+            batchSize_ = 1;
+        }
+        
+        // Get output tensor type to determine vocab size
+        auto outputTypeResult = outputBuffers_[0].TensorType();
+        if (outputTypeResult && outputTypeResult->Layout().Rank() >= 3) {
+            vocabSize_ = outputTypeResult->Layout().Dimensions()[2];
+            LOGI("Auto-detected vocab size: %d", vocabSize_);
+        }
+        
+        // Pre-compute gray padding buffer
+        size_t bytesPerCrop = cropHeight_ * maxCropSize_ * 3 * sizeof(float);
+        grayPaddingBuffer_.resize(bytesPerCrop / sizeof(float));
+        std::fill(grayPaddingBuffer_.begin(), grayPaddingBuffer_.end(), grayPaddingValue_);
+        
+        return true;
+    }
+    
+    // Run inference on batch of preprocessed crops
+    bool runInference(const float* inputData, float* outputData, int cropCount) {
+        if (cropCount > batchSize_) {
+            LOGE("Crop count %d exceeds batch size %d", cropCount, batchSize_);
+            return false;
+        }
+        
+        // Calculate sizes
+        size_t inputElementsPerCrop = cropHeight_ * maxCropSize_ * 3;
+        size_t totalInputElements = batchSize_ * inputElementsPerCrop;
+        
+        // Prepare input buffer with padding
+        std::vector<float> inputBuffer(totalInputElements);
+        
+        // Copy actual crop data
+        size_t actualInputElements = cropCount * inputElementsPerCrop;
+        std::memcpy(inputBuffer.data(), inputData, actualInputElements * sizeof(float));
+        
+        // Pad remaining slots with gray values
+        if (cropCount < batchSize_) {
+            size_t paddingOffset = cropCount * inputElementsPerCrop;
+            for (int i = cropCount; i < batchSize_; ++i) {
+                std::memcpy(&inputBuffer[paddingOffset], grayPaddingBuffer_.data(), inputElementsPerCrop * sizeof(float));
+                paddingOffset += inputElementsPerCrop;
+            }
+        }
+        
+        // Write to TensorBuffer
+        auto writeResult = inputBuffers_[0].Write<float>(absl::MakeConstSpan(inputBuffer));
+        if (!writeResult) {
+            LOGE("Failed to write to input buffer");
+            return false;
+        }
+        
+        // Run inference (signature_index = 0)
+        auto runResult = compiledModel_.Run(static_cast<size_t>(0), absl::MakeConstSpan(inputBuffers_), absl::MakeConstSpan(outputBuffers_));
+        if (!runResult) {
+            LOGE("Inference failed");
+            return false;
+        }
+        
+        // Read output
+        size_t outputElementsPerCrop = (maxCropSize_ / 8) * vocabSize_;
+        size_t totalOutputElements = batchSize_ * outputElementsPerCrop;
+        std::vector<float> outputBuffer(totalOutputElements);
+        
+        auto readResult = outputBuffers_[0].Read<float>(absl::MakeSpan(outputBuffer));
+        if (!readResult) {
+            LOGE("Failed to read from output buffer");
+            return false;
+        }
+        
+        // Copy only actual crop outputs (not padding)
+        size_t actualOutputElements = cropCount * outputElementsPerCrop;
+        std::memcpy(outputData, outputBuffer.data(), actualOutputElements * sizeof(float));
+        
+        return true;
+    }
+    
+    // Getters
+    int getBatchSize() const { return batchSize_; }
+    int getCropHeight() const { return cropHeight_; }
+    int getMaxCropSize() const { return maxCropSize_; }
+    int getVocabSize() const { return vocabSize_; }
+    bool isUsingGpu() const { return usingGpu_; }
+};
+
+// Instance management
+std::unordered_map<jlong, std::unique_ptr<PaddleOCRLiteRTRecognizer>> liteRTRecognizerInstances;
+jlong liteRTRecognizerInstanceCounter = 0;
+
+// JNI Implementation
+extern "C" JNIEXPORT jlong JNICALL
+Java_app_versta_translate_bridge_inference_PaddleOCR_initLiteRTRecognizer(
+        JNIEnv *env,
+        jobject,
+        jstring modelPath,
+        jboolean useGpu
+) {
+    if (!modelPath) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), 
+                      "Model path cannot be null");
+        return 0L;
+    }
+    
+    const char* pathChars = env->GetStringUTFChars(modelPath, nullptr);
+    if (!pathChars) {
+        return 0L;
+    }
+    std::string modelPathStr(pathChars);
+    env->ReleaseStringUTFChars(modelPath, pathChars);
+    
+    auto recognizer = std::make_unique<PaddleOCRLiteRTRecognizer>();
+    if (!recognizer->initialize(env, modelPathStr, useGpu)) {
+        LOGE("Failed to initialize LiteRT recognizer");
+        env->ThrowNew(env->FindClass("java/lang/RuntimeException"), 
+                      "Failed to initialize LiteRT recognizer");
+        return 0L;
+    }
+    
+    jlong handle = ++liteRTRecognizerInstanceCounter;
+    liteRTRecognizerInstances[handle] = std::move(recognizer);
+    
+    LOGI("LiteRT recognizer created with handle: %ld", handle);
+    return handle;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_app_versta_translate_bridge_inference_PaddleOCR_runLiteRTInference(
+        JNIEnv *env,
+        jobject,
+        jlong handle,
+        jobject inputBuffer,
+        jobject outputBuffer,
+        jint cropCount
+) {
+    auto recognizer = liteRTRecognizerInstances[handle].get();
+    if (!recognizer) {
+        LOGE("Invalid LiteRT recognizer handle: %ld", handle);
+        return JNI_FALSE;
+    }
+    
+    if (cropCount <= 0) {
+        LOGE("Invalid crop count: %d", cropCount);
+        return JNI_FALSE;
+    }
+    
+    auto* inputData = static_cast<float*>(env->GetDirectBufferAddress(inputBuffer));
+    auto* outputData = static_cast<float*>(env->GetDirectBufferAddress(outputBuffer));
+    
+    if (!inputData || !outputData) {
+        LOGE("Failed to get direct buffer addresses");
+        return JNI_FALSE;
+    }
+    
+    return recognizer->runInference(inputData, outputData, cropCount) ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_app_versta_translate_bridge_inference_PaddleOCR_getLiteRTBatchSize(
+        JNIEnv *env,
+        jobject,
+        jlong handle
+) {
+    auto recognizer = liteRTRecognizerInstances[handle].get();
+    if (!recognizer) {
+        return 1;
+    }
+    
+    return recognizer->getBatchSize();
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_app_versta_translate_bridge_inference_PaddleOCR_isLiteRTUsingGpu(
+        JNIEnv *env,
+        jobject,
+        jlong handle
+) {
+    auto recognizer = liteRTRecognizerInstances[handle].get();
+    if (!recognizer) {
+        return JNI_FALSE;
+    }
+    
+    return recognizer->isUsingGpu() ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_app_versta_translate_bridge_inference_PaddleOCR_closeLiteRTRecognizer(
+        JNIEnv *env,
+        jobject,
+        jlong handle
+) {
+    if (liteRTRecognizerInstances.erase(handle) > 0) {
+        LOGI("LiteRT recognizer closed with handle: %ld", handle);
+    }
 }

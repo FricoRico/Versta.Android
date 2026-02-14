@@ -58,6 +58,10 @@ android {
                 arguments += "-DANDROID_ARM_NEON=ON"
             }
         }
+
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
 
     signingConfigs {
@@ -118,12 +122,6 @@ android {
 
     productFlavors {
         create("arm64-v8a") {
-            dimension = "abi"
-        }
-        create("armeabi-v7a") {
-            dimension = "abi"
-        }
-        create("x86") {
             dimension = "abi"
         }
         create("x86_64") {
@@ -233,7 +231,5 @@ dependencies {
     implementation(libs.sqldelight.coroutines)
 
     add("arm64-v8aImplementation", files("$projectDir/libs/arm64-v8a/onnxruntime-1.23.0.aar"))
-    add("armeabi-v7aImplementation", files("$projectDir/libs/armeabi-v7a/onnxruntime-1.23.0.aar"))
-    add("x86Implementation", files("$projectDir/libs/x86/onnxruntime-1.23.0.aar"))
     add("x86_64Implementation", files("$projectDir/libs/x86_64/onnxruntime-1.23.0.aar"))
 }

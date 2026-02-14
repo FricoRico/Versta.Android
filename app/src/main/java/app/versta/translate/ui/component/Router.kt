@@ -20,11 +20,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import app.versta.translate.R
 import app.versta.translate.core.model.CameraTranslationViewModel
 import app.versta.translate.core.model.CustomThemeViewModel
@@ -137,9 +135,8 @@ fun Router(
                     onBack = { navigationViewModel.back() },
                     sceneStrategy = listDetailStrategy,
                     entryDecorators = listOf(
-                        rememberSavedStateNavEntryDecorator(),
+                        rememberSaveableStateHolderNavEntryDecorator(),
                         rememberViewModelStoreNavEntryDecorator(),
-                        rememberSceneSetupNavEntryDecorator(),
                         rememberCustomThemeEntryDecorator(
                             customThemeViewModel = customThemeViewModel
                         )

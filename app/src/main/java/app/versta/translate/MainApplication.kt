@@ -36,7 +36,7 @@ import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionInference
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepository
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepositoryDatabaseRepository
 import app.versta.translate.adapter.outbound.OcrPostProcessorPipeline
-import app.versta.translate.adapter.outbound.PaddleObjectCharacterRecognition
+import app.versta.translate.adapter.outbound.PaddleObjectCharacterRecognitionInference
 import app.versta.translate.adapter.outbound.ParagraphGroupingPostProcessor
 import app.versta.translate.adapter.outbound.TextStyleAnalysisPostProcessor
 import app.versta.translate.adapter.outbound.VoiceDatabaseRepository
@@ -359,7 +359,10 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
     }
 
     override val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference by lazy {
-        PaddleObjectCharacterRecognition(ortEnvironment)
+        PaddleObjectCharacterRecognitionInference(
+            context = context,
+            ortEnvironment = ortEnvironment
+        )
     }
 }
 

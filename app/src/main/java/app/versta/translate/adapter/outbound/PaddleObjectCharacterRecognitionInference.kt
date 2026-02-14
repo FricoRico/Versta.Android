@@ -5,6 +5,7 @@ import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.providers.NNAPIFlags
+import android.content.Context
 import androidx.camera.core.ImageProxy
 import app.versta.translate.bridge.inference.PaddleOCR
 import app.versta.translate.core.entity.ObjectCharacterRecogniserColors
@@ -23,15 +24,15 @@ import kotlin.io.path.pathString
 
 const val RECOGNIZE_HEIGHT = 48
 
-class PaddleObjectCharacterRecognition(
+class PaddleObjectCharacterRecognitionInference(
+    private val context: Context,
     private val ortEnvironment: OrtEnvironment,
     val detectSize: Int = 640,
     val recognizeSize: Int = 960,
     val cropHeight: Int = RECOGNIZE_HEIGHT,
-    val maxCropSize: Int = 640,
+    val maxCropSize: Int = 960,
     val unclipRatio: Float = 1.5f,
     val maxCandidates: Int = 100,
-    val batchSize: Int = 16,
     val threads: Int = 4,
 ) : ObjectCharacterRecognitionInference, AutoCloseable {
     private val _paddleOCR = PaddleOCR(
@@ -44,11 +45,13 @@ class PaddleObjectCharacterRecognition(
         threads = threads
     )
 
+    // ONNX Detector (kept as-is)
     private var _detectSessionFile: File? = null
     private var _detectSession: OrtSession? = null
 
-    private var _recognizeSessionFile: File? = null
-    private var _recognizeSession: OrtSession? = null
+    // LiteRT Recognizer (REPLACES ONNX recognizer)
+    private var _recognizerLiteRT: PaddleOCRLiteRTRecognizer? = null
+    private var _recognizerModelPath: String? = null
 
     private val detectInputBuffer: ByteBuffer =
         ByteBuffer.allocateDirect(3 * detectSize * detectSize * OnnxJavaType.FLOAT.size)
@@ -85,8 +88,9 @@ class PaddleObjectCharacterRecognition(
 
     override fun process(input: ImageProxy): List<ObjectCharacterRecogniserResult> {
         val starTime = System.currentTimeMillis()
+        var inferenceTime = 0L
         try {
-            val vocabSize = tokenizer.vocabSize.toInt() + 2
+            // 1. DETECTION (ONNX - unchanged)
             val success = _paddleOCR.preProcessDetect(
                 input = input.planes[0].buffer,
                 output = detectInputBuffer,
@@ -99,11 +103,7 @@ class PaddleObjectCharacterRecognition(
             }
 
             if (_detectSession == null) {
-                throw InstantiationException("PaddleOCR session is not initialized.")
-            }
-
-            if (_recognizeSession == null) {
-                throw InstantiationException("PaddleOCR recognize session is not initialized.")
+                throw InstantiationException("PaddleOCR detection session is not initialized.")
             }
 
             val inputName = _detectSession!!.inputInfo.keys.first()
@@ -119,103 +119,44 @@ class PaddleObjectCharacterRecognition(
                 output = detectResultBuffer,
             )
 
+            Timber.tag(TAG).d("Detection results: ${detectResults.size} boxes found")
+            
             if (detectResults.isEmpty()) {
                 return detectResults
             }
 
             val count = detectResults.size
 
-            if (_recognizeSession == null) {
-                throw IllegalStateException("PaddleOCR recognize session is not initialized.")
+            // 2. RECOGNITION (LiteRT - REPLACES ONNX)
+            if (_recognizerLiteRT == null) {
+                throw IllegalStateException("PaddleOCR LiteRT recognizer is not initialized.")
             }
 
-            val recognizeInputBuffer =
-                ByteBuffer.allocateDirect(count * 3 * 48 * maxCropSize * OnnxJavaType.FLOAT.size)
-                    .order(ByteOrder.nativeOrder())
+            // 2. RECOGNITION (LiteRT with chunked preprocessing and batching)
+            if (_recognizerLiteRT == null) {
+                throw IllegalStateException("PaddleOCR LiteRT recognizer is not initialized.")
+            }
 
-            val recognizeOutputBuffer =
-                ByteBuffer.allocateDirect(count * maxCropSize / 8 * vocabSize * OnnxJavaType.FLOAT.size)
-                    .order(ByteOrder.nativeOrder())
-
-            _paddleOCR.preProcessRecognize(
-                origin = input.planes[0].buffer,
-                input = detectResultBuffer,
-                output = recognizeInputBuffer,
+            // Process all crops in batches with chunked preprocessing
+            val inferenceStartTime = System.currentTimeMillis()
+            val recognizeResults = _recognizerLiteRT!!.recognizeBatchFromDetection(
+                input = input,
+                detectResultBuffer = detectResultBuffer,
+                cropCount = count,
                 originWidth = input.width,
                 originHeight = input.height,
-                originRotation = input.imageInfo.rotationDegrees,
+                originRotation = input.imageInfo.rotationDegrees
             )
-
-            val floatByteSize = OnnxJavaType.FLOAT.size
-            val intByteSize = OnnxJavaType.INT32.size
-
-            val perSampleInputBytes = 3 * 48 * maxCropSize * floatByteSize
-            val perSampleOutputBytes = (maxCropSize / 8) * vocabSize * floatByteSize
-
-            var processed = 0
-            val recognizeResults = mutableListOf<ObjectCharacterRecogniserResult>()
-            while (processed < count) {
-                val batchSize = minOf(batchSize, count - processed)
-
-                val inputOffsetBytes = processed * perSampleInputBytes
-                val inputSlice = recognizeInputBuffer.duplicate().order(ByteOrder.nativeOrder())
-                    .apply {
-                        position(inputOffsetBytes)
-                        limit(inputOffsetBytes + batchSize * perSampleInputBytes)
-                    }.slice().order(ByteOrder.nativeOrder())
-
-                val batchInputShape = longArrayOf(batchSize.toLong(), 3, 48, maxCropSize.toLong())
-
-                val outputOffsetBytes = processed * perSampleOutputBytes
-                val outputSlice = recognizeOutputBuffer.duplicate().order(ByteOrder.nativeOrder())
-                    .apply {
-                        position(outputOffsetBytes)
-                        limit(outputOffsetBytes + batchSize * perSampleOutputBytes)
-                    }.slice().order(ByteOrder.nativeOrder())
-
-                val batchOutputShape =
-                    longArrayOf(batchSize.toLong(), maxCropSize.toLong() / 8, vocabSize.toLong())
-
-                val recognizeInputTensorBatch = OnnxTensor.createTensor(
-                    ortEnvironment,
-                    inputSlice,
-                    batchInputShape,
-                    OnnxJavaType.FLOAT
+            inferenceTime += (System.currentTimeMillis() - inferenceStartTime)
+            
+            // Decode tokens to text for all results
+            val resultsWithText = recognizeResults.map { result ->
+                val text = tokenizer.decode(result.tokens)
+                ObjectCharacterRecogniserResult(
+                    score = result.score,
+                    tokens = result.tokens,
+                    text = text
                 )
-
-                val recognizeOutputTensorBatch = OnnxTensor.createTensor(
-                    ortEnvironment,
-                    outputSlice,
-                    batchOutputShape,
-                    OnnxJavaType.FLOAT
-                )
-
-                val recognizeInputName = _recognizeSession!!.inputInfo.keys.first()
-                val recognizeInputs = mapOf(recognizeInputName to recognizeInputTensorBatch)
-
-                val recognizeOutputName = _recognizeSession!!.outputNames.first()
-                val recognizeOutputs = mapOf(recognizeOutputName to recognizeOutputTensorBatch)
-
-                _recognizeSession!!.run(recognizeInputs, recognizeOutputs)
-
-                val scoreCountCapacity = batchSize * intByteSize
-                val tokenCountCapacity = batchSize * intByteSize
-                val tokenCapacity = batchSize * 1024 * intByteSize
-                val tokenBufferBatch =
-                    ByteBuffer.allocateDirect(scoreCountCapacity + tokenCountCapacity + tokenCapacity)
-                        .order(ByteOrder.nativeOrder())
-
-                val results = _paddleOCR.postProcessRecognize(
-                    outputBuffer = outputSlice,
-                    outputShape = batchOutputShape,
-                    tokenBuffer = tokenBufferBatch
-                )
-                recognizeResults.addAll(results)
-
-                recognizeInputTensorBatch.close()
-                recognizeOutputTensorBatch.close()
-
-                processed += batchSize
             }
 
             val colorsList = _paddleOCR.getPixelColorFromRGBAByteBuffer(
@@ -228,7 +169,7 @@ class PaddleObjectCharacterRecognition(
 
             val results = combineResults(
                 detectResults = detectResults,
-                recognizeResults = recognizeResults,
+                recognizeResults = resultsWithText,
                 colorResults = colorsList
             )
 
@@ -243,7 +184,7 @@ class PaddleObjectCharacterRecognition(
             return emptyList()
         } finally {
             val endTime = System.currentTimeMillis()
-            Timber.tag(TAG).d("PaddleOCR process time: ${endTime - starTime} ms")
+            Timber.tag(TAG).d("PaddleOCR process time: ${endTime - starTime} ms, Inference time: ${inferenceTime} ms")
         }
     }
 
@@ -271,7 +212,7 @@ class PaddleObjectCharacterRecognition(
                 points = detectResult.points,
                 score = recognizeResult.score,
                 tokens = recognizeResult.tokens,
-                text = tokenizer.decode(recognizeResult.tokens),
+                text = recognizeResult.text,
                 colors = colors
             )
 
@@ -283,34 +224,34 @@ class PaddleObjectCharacterRecognition(
     override fun close() {
         try {
             _detectSession?.close()
-            _recognizeSession?.close()
+            _recognizerLiteRT?.close()
         } catch (e: Exception) {
             Timber.tag(TAG).e(e)
         } finally {
             _detectSession = null
             _detectSessionFile = null
-
-            _recognizeSession = null
-            _recognizeSessionFile = null
+            _recognizerLiteRT = null
+            _recognizerModelPath = null
         }
     }
 
     override fun load(detect: ObjectCharacterRecognitionDetectorWithFiles, recognize: ObjectCharacterRecognitionRecognizerWithFiles, threads: Int) {
         val detectFile = File(detect.inference.model.pathString)
-        val recognizeFile = File(recognize.inference.model.pathString)
+        val recognizeTflitePath = recognize.inference.model.pathString.replace(".ort", ".tflite")
+        val recognizeTfliteFile = File(recognizeTflitePath)
 
-        if (_detectSessionFile?.equals(detectFile) == true && _recognizeSessionFile?.equals(recognizeFile) == true) {
+        if (_detectSessionFile?.equals(detectFile) == true && _recognizerModelPath?.equals(recognizeTfliteFile) == true) {
             return
         }
 
-        // TODO: Move to view model instead.
+        // Load tokenizer
         tokenizer.load(recognize.tokenizer.vocabulary)
 
-        Timber.tag(TAG).d("Loading PaddleOCR models: detect=${detectFile.path}, recognize=${recognizeFile.path}")
+        Timber.tag(TAG).d("Loading PaddleOCR models: detect=${detectFile.path}, recognize=${recognizeTflitePath}")
 
         close()
-        val options = OrtSession.SessionOptions().apply {
-//            setCPUArenaAllocator(true)
+
+        val detectOptions = OrtSession.SessionOptions().apply {
             setMemoryPatternOptimization(true)
 //            setIntraOpNumThreads(threads)
 //            setInterOpNumThreads(threads)
@@ -351,11 +292,21 @@ class PaddleObjectCharacterRecognition(
             }
         }
 
-        _detectSession = ortEnvironment.createSession(readFileToByteBuffer(detectFile), options)
+        _detectSession = ortEnvironment.createSession(readFileToByteBuffer(detectFile), detectOptions)
         _detectSessionFile = detectFile
 
-        _recognizeSession = ortEnvironment.createSession(readFileToByteBuffer(recognizeFile), options)
-        _recognizeSessionFile = recognizeFile
+        // Load LiteRT Recognizer (REPLACES ONNX recognizer)
+        require(recognizeTfliteFile.exists()) {
+            "TFLite model not found: ${recognizeTflitePath}. Please ensure the model file exists."
+        }
+
+        _recognizerLiteRT = PaddleOCRLiteRTRecognizer(
+            context = context,
+            paddleOCR = _paddleOCR,
+            vocabSize = tokenizer.vocabSize.toInt() + 2
+        )
+        _recognizerLiteRT!!.load(recognizeTflitePath)
+        _recognizerModelPath = recognizeTflitePath
     }
 
     private fun readFileToByteBuffer(file: File): ByteBuffer {
@@ -372,7 +323,7 @@ class PaddleObjectCharacterRecognition(
     }
 
     companion object {
-        private val TAG: String = PaddleObjectCharacterRecognition::class.java.simpleName
+        private val TAG: String = PaddleObjectCharacterRecognitionInference::class.java.simpleName
 
         init {
             System.loadLibrary("app_versta_translate_bridge")

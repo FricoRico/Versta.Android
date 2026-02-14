@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.navEntryDecorator
 import app.versta.translate.core.model.CustomThemeViewModel
 import app.versta.translate.utils.CustomThemeScene.Companion.CustomThemeKey
 
@@ -36,16 +35,12 @@ class CustomThemeScene {
 fun rememberCustomThemeEntryDecorator(
     customThemeViewModel: CustomThemeViewModel,
 ): NavEntryDecorator<NavKey> =
-    remember { customThemeEntryDecorator(customThemeViewModel) }
+    remember(customThemeViewModel) {
+        NavEntryDecorator { entry ->
+            val theme = (entry.metadata[CustomThemeKey] as CustomThemeScene.ThemeMetadata?)?.theme
 
-internal fun customThemeEntryDecorator(
-    customThemeViewModel: CustomThemeViewModel,
-): NavEntryDecorator<NavKey> {
-    return navEntryDecorator { entry ->
-        val theme = (entry.metadata[CustomThemeKey] as CustomThemeScene.ThemeMetadata?)?.theme
+            customThemeViewModel.setTheme(theme)
 
-        customThemeViewModel.setTheme(theme)
-
-        entry.Content()
+            entry.Content()
+        }
     }
-}
