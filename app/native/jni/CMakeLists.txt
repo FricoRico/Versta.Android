@@ -18,14 +18,7 @@ add_library(${CMAKE_PROJECT_NAME} SHARED ${SRC_FILES})
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         $<BUILD_INTERFACE:${SRC_DIR}>
         $<BUILD_INTERFACE:${THIRD_PARTY_DIR}>
-        $<BUILD_INTERFACE:${THIRD_PARTY_DIR}/litert>
-        $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/_deps/abseil-cpp-src>
         ${OpenCV_INCLUDE_DIRS}
-)
-
-target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
-        LITERT_DISABLE_OPENCL_SUPPORT
 )
 
 target_link_options(${CMAKE_PROJECT_NAME} PRIVATE "-Wl,-z,max-page-size=16384")
@@ -40,15 +33,5 @@ target_link_libraries(
         espeak-ng
         sentencepiece
         openjtalk
-        litert_cc_api
-        absl::status
-        absl::statusor
-        absl::span
-        absl::strings
-        absl::log
-        absl::log_internal_check_op
-        absl::base
-        absl::raw_hash_set
-        flatbuffers::flatbuffers
         ${OpenCV_LIBS}
 )

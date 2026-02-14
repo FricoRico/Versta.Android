@@ -84,17 +84,6 @@ class PaddleOCR(
         tokenBuffer: Buffer
     ): Boolean
 
-    private external fun preProcessSingleCrop(
-        handle: Long,
-        origin: Buffer,
-        boxInput: Buffer,
-        output: Buffer,
-        originWidth: Int,
-        originHeight: Int,
-        originRotation: Int,
-        boxIndex: Int
-    ): Boolean
-
     private external fun getPixelColorFromImage(
         handle: Long,
         origin: Buffer,
@@ -103,31 +92,6 @@ class PaddleOCR(
         originHeight: Int,
         originRotation: Int = 0,
     ): IntArray
-
-    // LiteRT Recognizer JNI methods
-    external fun initLiteRTRecognizer(
-        modelPath: String,
-        useGpu: Boolean
-    ): Long
-
-    external fun runLiteRTInference(
-        handle: Long,
-        inputBuffer: Buffer,
-        outputBuffer: Buffer,
-        cropCount: Int
-    ): Boolean
-
-    external fun getLiteRTBatchSize(
-        handle: Long
-    ): Int
-
-    external fun isLiteRTUsingGpu(
-        handle: Long
-    ): Boolean
-
-    external fun closeLiteRTRecognizer(
-        handle: Long
-    )
 
     fun preProcessDetect(
         input: Buffer,
@@ -233,27 +197,6 @@ class PaddleOCR(
         }
 
         return results
-    }
-
-    fun preProcessSingleCrop(
-        origin: Buffer,
-        boxInput: Buffer,
-        output: Buffer,
-        originWidth: Int,
-        originHeight: Int,
-        originRotation: Int,
-        boxIndex: Int
-    ): Boolean {
-        return preProcessSingleCrop(
-            handle = _handle,
-            origin = origin,
-            boxInput = boxInput,
-            output = output,
-            originWidth = originWidth,
-            originHeight = originHeight,
-            originRotation = originRotation,
-            boxIndex = boxIndex
-        )
     }
 
     fun getPixelColorFromRGBAByteBuffer(

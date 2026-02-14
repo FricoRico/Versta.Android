@@ -9,6 +9,3 @@ add_subdirectory(neon-sse neon-sse)
 add_subdirectory(open-jtalk/src open-jtalk)
 add_subdirectory(onnxruntime onnxruntime)
 add_subdirectory(sentencepiece sentencepiece)
-add_subdirectory(litert litert/build)
-
-include_directories(litert)

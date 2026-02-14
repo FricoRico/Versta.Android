@@ -19,7 +19,7 @@ import app.versta.translate.ui.component.ScaffoldComponentProvider
 import app.versta.translate.ui.theme.spacing
 import com.mikepenz.aboutlibraries.ui.compose.LibraryDefaults
 import com.mikepenz.aboutlibraries.ui.compose.LibraryDefaults.chipPadding
-import com.mikepenz.aboutlibraries.ui.compose.android.rememberLibraries
+import com.mikepenz.aboutlibraries.ui.compose.android.produceLibraries
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 import com.mikepenz.aboutlibraries.ui.compose.m3.libraryColors
 
@@ -30,7 +30,7 @@ fun ThirdParty(
     navigationViewModel: NavigationViewModel,
 ) {
     val layoutDirection = LocalLayoutDirection.current
-    val libraries by rememberLibraries(R.raw.aboutlibraries)
+    val libraries by produceLibraries(R.raw.aboutlibraries)
 
     ScaffoldComponentProvider(
         scaffoldViewModel = scaffoldViewModel,
@@ -54,7 +54,7 @@ fun ThirdParty(
                 )
             ),
             colors = LibraryDefaults.libraryColors(
-                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                libraryBackgroundColor = MaterialTheme.colorScheme.surfaceContainer,
             ),
             contentPadding = PaddingValues(
                 start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
