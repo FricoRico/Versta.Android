@@ -28,6 +28,7 @@ data class LanguageModelFiles(
     val path: Path,
     val baseModel: String,
     val architectures: List<LanguageModelArchitecture>,
+    val architectureConfig: ArchitectureConfig? = null,
     val score: Double? = 0.0,
     val size: Long = 0,
     val version: String,
@@ -52,6 +53,7 @@ data class LanguageModelFiles(
                 path = path,
                 baseModel = metadata.baseModel,
                 architectures = metadata.architectures,
+                architectureConfig = metadata.architectureConfig,
                 version = metadata.version,
                 tokenizer = LanguageModelTokenizerFiles(
                     config = path.resolve(metadata.files.tokenizer.config),
@@ -68,7 +70,8 @@ data class LanguageModelFiles(
                 size = size(path.parent),
                 inference = LanguageModelInferenceFiles(
                     encoder = path.resolve(metadata.files.inference.encoder),
-                    decoder = path.resolve(metadata.files.inference.decoder)
+                    decoder = path.resolve(metadata.files.inference.decoder),
+                    architectureConfig = metadata.architectureConfig
                 )
             )
 
@@ -120,7 +123,8 @@ data class LanguageModelTokenizerFiles(
 @Serializable
 data class LanguageModelInferenceFiles(
     val encoder: Path,
-    val decoder: Path
+    val decoder: Path,
+    val architectureConfig: ArchitectureConfig? = null
 ) {
     fun isValid() = encoder.exists() &&
             decoder.exists()

@@ -3,6 +3,8 @@ package app.versta.translate.adapter.outbound
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import app.versta.translate.bridge.inference.BeamSearch
+import app.versta.translate.bridge.inference.DecoderCache
+import app.versta.translate.core.entity.ArchitectureConfig
 import app.versta.translate.core.entity.LanguageModelInferenceFiles
 import app.versta.translate.core.entity.MarianDecoderInput
 import app.versta.translate.core.entity.MarianDecoderOutput
@@ -27,6 +29,8 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
 
     private var _encoderSession: OrtSession? = null
     private var _decoderSession: OrtSession? = null
+
+    private var _architectureConfig: ArchitectureConfig? = null
 
     private var _runInference = false
 
@@ -74,6 +78,9 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
             throw IllegalStateException("Decoder session is not loaded")
         }
 
+        val architectureConfig = _architectureConfig
+            ?: throw IllegalStateException("Architecture config not loaded")
+
         val beamSearch = BeamSearch(
             beamSize = beamsSize,
             minP = minP,
@@ -81,6 +88,13 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
             padId = padId,
             eosId = eosId
         )
+
+        val decoderCache = DecoderCache(
+            ortEnvironment = ortEnvironment,
+            architectureConfig = architectureConfig
+        )
+
+        decoderCache.generateInitial(beamsSize)
 
         val beamEncoderHiddenStates = Array(beamsSize) { encoderHiddenStates }
         val beamAttentionMask = Array(beamsSize) { attentionMask }
@@ -92,7 +106,6 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
         )
 
         val decoderOutput = MarianDecoderOutput(
-            ortEnvironment = ortEnvironment,
             beamSearch = beamSearch
         )
 
@@ -114,7 +127,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
                 val inputs = decoderInput.getFromDirectBuffer(
                     inputIdsBuffer = inputBuffer,
                     beamCount = beamCount,
-                    cache = decoderOutput.cache
+                    decoderCache = decoderCache
                 )
 
                 val outputs = _decoderSession!!.run(inputs)
@@ -122,7 +135,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
                 decoderInput.close()
 
                 decoderOutput.search(outputs)
-                decoderOutput.cache(outputs)
+                decoderCache.update(outputs, beamSearch.getBeamIndices())
 
                 outputs.close()
             }
@@ -143,6 +156,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
         } finally {
             decoderInput.destroy()
             decoderOutput.destroy()
+            decoderCache.close()
         }
     }
 
@@ -162,6 +176,9 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
         }
 
         return flow {
+            val architectureConfig = _architectureConfig
+                ?: throw IllegalStateException("Architecture config not loaded")
+
             val beamSearch = BeamSearch(
                 beamSize = beamsSize,
                 minP = minP,
@@ -169,6 +186,13 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
                 padId = padId,
                 eosId = eosId,
             )
+
+            val decoderCache = DecoderCache(
+                ortEnvironment = ortEnvironment,
+                architectureConfig = architectureConfig
+            )
+
+            decoderCache.generateInitial(beamsSize)
 
             val beamEncoderHiddenStates = Array(beamsSize) { encoderHiddenStates }
             val beamAttentionMask = Array(beamsSize) { attentionMask }
@@ -180,7 +204,6 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
             )
 
             val decoderOutput = MarianDecoderOutput(
-                ortEnvironment = ortEnvironment,
                 beamSearch = beamSearch
             )
 
@@ -213,14 +236,14 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
                     val inputs = decoderInput.getFromDirectBuffer(
                         inputIdsBuffer = inputBuffer,
                         beamCount = beamCount,
-                        cache = decoderOutput.cache
+                        decoderCache = decoderCache
                     )
 
                     val outputs = _decoderSession!!.run(inputs)
                     decoderInput.close()
 
                     decoderOutput.search(outputs)
-                    decoderOutput.cache(outputs)
+                    decoderCache.update(outputs, beamSearch.getBeamIndices())
 
                     outputs.close()
 
@@ -232,6 +255,7 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
             } finally {
                 decoderInput.destroy()
                 decoderOutput.destroy()
+                decoderCache.close()
             }
         }.flowOn(Dispatchers.Default)
     }
@@ -248,9 +272,6 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
     ): LongArray {
         _runInference = true
 
-        // This is a workaround for the issue with various models that are overfitting on the
-        // training data, and start repeating when translating single words. This is a temporary
-        // solution until we can start retraining the models.
         val completeOnRepeat = inputIds.size <= 2
 
         val encoderHiddenStates = encode(
@@ -284,9 +305,6 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
     ): Flow<LongArray> {
         _runInference = true
 
-        // This is a workaround for the issue with various models that are overfitting on the
-        // training data, and start repeating when translating single words. This is a temporary
-        // solution until we can start retraining the models.
         val completeOnRepeat = inputIds.size <= 4
 
         val encoderHiddenStates = encode(
@@ -347,6 +365,8 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
 
         _decoderSession = ortEnvironment.createSession(readFileToByteBuffer(decoderFile), options)
         _decoderSessionFile = decoderFile
+
+        _architectureConfig = files.architectureConfig
     }
 
     override fun close() {
@@ -361,6 +381,8 @@ class MarianInference(private val ortEnvironment: OrtEnvironment) : TranslationI
 
             _decoderSession = null
             _decoderSessionFile = null
+
+            _architectureConfig = null
         }
     }
 

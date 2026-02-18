@@ -1,6 +1,7 @@
 set(SRC_FILES
         ${SRC_DIR}/tensor_utils.cc
         ${SRC_DIR}/beam_search.cc
+        ${SRC_DIR}/cache_generator.cc
         ${SRC_DIR}/espeak_ng.cc
         ${SRC_DIR}/open_jtalk.cc
         ${SRC_DIR}/paddle_ocr.cc

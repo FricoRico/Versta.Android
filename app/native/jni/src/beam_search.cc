@@ -335,58 +335,23 @@ JNIEXPORT jboolean JNICALL Java_app_versta_translate_bridge_inference_BeamSearch
     return JNI_FALSE;
 }
 
-JNIEXPORT jobject JNICALL
-Java_app_versta_translate_bridge_inference_BeamSearch_transposeBuffer(
+JNIEXPORT jintArray JNICALL Java_app_versta_translate_bridge_inference_BeamSearch_getBeamIndices(
         JNIEnv *env,
         jobject,
-        jlong handle,
-        jlong apiHandle,
-        jlong tensorHandle
+        jlong handle
 ) {
     auto beamSearch = beamSearchInstances[handle].get();
     if (!beamSearch) {
         return nullptr;
     }
 
-    const auto *api = (const OrtApi *) apiHandle;
-    auto *ortValue = (OrtValue *) tensorHandle;
-    TensorShape typeShape;
+    std::vector<int> indices = beamSearch->getTopBeamIds();
+    jintArray result = env->NewIntArray(indices.size());
+    env->SetIntArrayRegion(result, 0, indices.size(), indices.data());
 
-    try {
-        getTensorShape(env, &typeShape, api, ortValue);
-
-        size_t tensorSize = getTensorSize(typeShape.onnxTypeEnum);
-        size_t sizeBytes = typeShape.elementCount * tensorSize;
-
-        uint8_t *arr = nullptr;
-
-        checkTensorStatus(env, api, api->GetTensorMutableData(ortValue, (void **) &arr));
-
-
-        std::vector<int> indices = beamSearch->getTopBeamIds();
-        auto indicesLength = indices.size();
-
-        if (indicesLength == 0 || sizeBytes % indicesLength != 0) {
-            return nullptr;
-        }
-
-        auto *transposed = new uint8_t[sizeBytes];
-
-        size_t elementSize = sizeBytes / indicesLength;
-
-#pragma omp parallel for
-        for (size_t i = 0; i < indicesLength; ++i) {
-            auto oldIndex = indices[i];
-            auto newIndex = i;
-            std::memcpy(transposed + newIndex * elementSize, arr + oldIndex * elementSize,
-                        elementSize);
-        }
-
-        return env->NewDirectByteBuffer(transposed, (jlong) sizeBytes);
-    } catch (...) {
-        return nullptr;
-    }
+    return result;
 }
+
 #ifdef __cplusplus
 }
 #endif

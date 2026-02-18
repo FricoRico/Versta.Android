@@ -36,15 +36,6 @@ class BeamSearch(
         )
     }
 
-    fun transposeBuffer(
-        tensor: OnnxTensor
-    ): ByteBuffer? {
-        val ortApiHandle = TensorUtils.getOrtApiHandle()
-        val tensorHandle = TensorUtils.getNativeHandle(tensor)
-
-        return transposeBuffer(_handle, ortApiHandle, tensorHandle)
-    }
-
     fun lastTokens(): Pair<LongBuffer, Int> {
         try {
             val buffer = lastTokens(_handle)
@@ -68,6 +59,10 @@ class BeamSearch(
         return best(_handle)
     }
 
+    fun getBeamIndices(): List<Int> {
+        return getBeamIndices(_handle).toList()
+    }
+
     override fun close() {
         if (_handle == 0L) {
             Timber.tag(TAG).w("Already closed")
@@ -86,14 +81,10 @@ class BeamSearch(
         tensorHandle: Long,
         size: Int,
     )
-    private external fun transposeBuffer(
-        handle: Long,
-        apiHandle: Long,
-        tensorHandle: Long,
-    ): ByteBuffer
     private external fun lastTokens(handle: Long): ByteBuffer
     private external fun complete(handle: Long, completeOnRepeat: Boolean): Boolean
     private external fun best(handle: Long): LongArray
+    private external fun getBeamIndices(handle: Long): IntArray
     private external fun close(handle: Long): Boolean
 
     companion object {

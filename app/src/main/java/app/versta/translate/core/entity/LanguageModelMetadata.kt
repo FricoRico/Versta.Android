@@ -10,6 +10,18 @@ enum class LanguageModelArchitecture(val value: String) {
 }
 
 @Serializable
+data class ArchitectureConfig(
+    @SerialName("num_layers")
+    val numLayers: Int,
+    @SerialName("num_heads")
+    val numHeads: Int,
+    @SerialName("head_dim")
+    val headDim: Int,
+    @SerialName("d_model")
+    val dModel: Int
+)
+
+@Serializable
 data class LanguageModelMetadata(
     val version: String = "",
     @SerialName("base_model")
@@ -20,6 +32,8 @@ data class LanguageModelMetadata(
     val targetLanguage: String,
     val score: Double? = 0.0,
     val architectures: List<LanguageModelArchitecture>,
+    @SerialName("architecture_config")
+    val architectureConfig: ArchitectureConfig? = null,
     val files: LanguageModelFilesMetadata,
     var root: Path? = null
 ) {
