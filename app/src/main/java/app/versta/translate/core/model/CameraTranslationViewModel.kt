@@ -20,6 +20,7 @@ import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionAnalyzer
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionInference
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepository
 import app.versta.translate.adapter.outbound.OcrPostProcessor
+import app.versta.translate.adapter.outbound.PaddleObjectCharacterRecognitionTokenizer
 import app.versta.translate.core.entity.CameraTranslationResult
 import app.versta.translate.core.entity.ObjectCharacterRecognitionDetectorWithFiles
 import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerWithFiles
@@ -50,6 +51,7 @@ import kotlin.math.ln
 @OptIn(FlowPreview::class)
 class CameraTranslationViewModel(
     private val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference,
+    private val objectCharacterRecognitionTokenizer: PaddleObjectCharacterRecognitionTokenizer,
     private val translationViewModel: TranslationViewModel,
     private val objectCharacterRecognizerRepository: ObjectCharacterRecognitionRepository,
     private val languageViewModel: LanguageViewModel,
@@ -140,6 +142,7 @@ class CameraTranslationViewModel(
 
     private val _objectCharacterRecognitionAnalyzer = ObjectCharacterRecognitionAnalyzer(
         objectCharacterRecognitionInference = objectCharacterRecognitionInference,
+        tokenizer = objectCharacterRecognitionTokenizer,
         postProcessor = ocrPostProcessor,
         beforeFrameProcessing = {
             viewModelScope.launch {
@@ -385,6 +388,7 @@ class CameraTranslationViewModel(
                 _loadingProgress.value = LoadingProgress.InProgress
 
                 try {
+                    objectCharacterRecognitionTokenizer.load(recognize.tokenizer.vocabulary)
                     objectCharacterRecognitionInference.load(detect = detect, recognize = recognize, threads = 4)
                 } catch (e: Exception) {
                     Timber.tag(TAG).e(e)

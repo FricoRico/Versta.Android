@@ -2,6 +2,7 @@ package app.versta.translate.core.entity
 
 import android.graphics.PointF
 import androidx.compose.ui.graphics.Color
+import java.nio.ByteBuffer
 
 class ObjectCharacterRecogniserColors(
     val background: Color,
@@ -16,13 +17,9 @@ class ObjectCharacterRecogniserResult(
     var colors: ObjectCharacterRecogniserColors = ObjectCharacterRecogniserColors(Color.Black, Color.White),
     var lines: List<String> = emptyList(),
     var fontSize: Float = 0f,
-    var lineHeight: Float = 0f,  // NEW: Actual line height from analysis
+    var lineHeight: Float = 0f,
     var fontWeight: FontWeight = FontWeight.REGULAR
 ) {
-    /**
-     * Estimates the line height from the bounding box.
-     * Computed as the difference between max and min Y coordinates.
-     */
     fun estimatedLineHeight(): Float {
         val minY = points.minOfOrNull { it.y } ?: 0f
         val maxY = points.maxOfOrNull { it.y } ?: 0f
@@ -30,9 +27,47 @@ class ObjectCharacterRecogniserResult(
     }
 
     init {
-        // If lines is empty, default to single line with text
         if (lines.isEmpty() && text.isNotEmpty()) {
             lines = listOf(text)
         }
     }
 }
+
+data class DetectedRegion(
+    val points: Array<PointF>
+)
+
+data class RecognizedRegion(
+    val tokens: LongArray,
+    val score: Float,
+    val colors: ObjectCharacterRecogniserColors = ObjectCharacterRecogniserColors(
+        background = Color.Black,
+        foreground = Color.White
+    ),
+    val fontSize: Float = 0f,
+    val lineHeight: Float = 0f,
+    val fontWeight: Int = 0
+)
+
+data class DetectResult(
+    val regions: List<DetectedRegion>,
+    val resultBuffer: ByteBuffer
+)
+
+data class RecognizeResult(
+    val regions: List<RecognizedRegion>
+)
+
+data class CombinedOcrResult(
+    val regions: List<CombinedOcrRegion>
+)
+
+data class CombinedOcrRegion(
+    val points: Array<PointF>,
+    val tokens: LongArray,
+    val score: Float,
+    val colors: ObjectCharacterRecogniserColors,
+    val fontSize: Float,
+    val lineHeight: Float,
+    val fontWeight: Int
+)

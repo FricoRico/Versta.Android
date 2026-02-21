@@ -11,7 +11,6 @@ plugins {
     alias(libs.plugins.about.libraries)
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.gradle.crypto.checksum)
@@ -233,8 +232,8 @@ dependencies {
     implementation(libs.sqldelight.android)
     implementation(libs.sqldelight.coroutines)
 
-    add("arm64-v8aImplementation", files("$projectDir/libs/arm64-v8a/onnxruntime-1.23.0.aar"))
-    add("armeabi-v7aImplementation", files("$projectDir/libs/armeabi-v7a/onnxruntime-1.23.0.aar"))
-    add("x86Implementation", files("$projectDir/libs/x86/onnxruntime-1.23.0.aar"))
-    add("x86_64Implementation", files("$projectDir/libs/x86_64/onnxruntime-1.23.0.aar"))
+    add("arm64-v8aImplementation", files("$projectDir/libs/arm64-v8a/onnxruntime-1.24.1.aar"))
+    add("armeabi-v7aImplementation", files("$projectDir/libs/armeabi-v7a/onnxruntime-1.24.1.aar"))
+    add("x86Implementation", files("$projectDir/libs/x86/onnxruntime-1.24.1.aar"))
+    add("x86_64Implementation", files("$projectDir/libs/x86_64/onnxruntime-1.24.1.aar"))
 }

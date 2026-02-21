@@ -21,6 +21,22 @@
 
 #endif
 
+/**
+ * Text region metrics extracted during preprocessing
+ * Contains colors, font properties, and layout information
+ */
+struct TextRegionMetrics {
+    int backgroundColor;
+    int textColor;
+    int fontSize;
+    int lineHeight;
+    int fontWeight;
+};
+
+/**
+ * PaddleOCR - OCR text detection and recognition
+ * Optimized for mobile with minimal memory copies and efficient batch processing
+ */
 class PaddleOCR {
 private:
     int detectSize_ = 320;
@@ -597,78 +613,48 @@ private:
     }
 
     static std::pair<cv::Scalar, cv::Scalar> extractColors(const cv::Mat &image) {
-        auto whRatio = float(image.cols) / float(image.rows);
-        auto desiredWidth = int(32 * whRatio);  // Reduced from 64 for faster processing
-        auto desiredHeight = 32;                // Reduced from 64 for faster processing
+        float whRatio = static_cast<float>(image.cols) / image.rows;
         cv::Mat resized;
-        cv::resize(image, resized, cv::Size(desiredWidth, desiredHeight));
+        cv::resize(image, resized, cv::Size(static_cast<int>(32 * whRatio), 32));
 
-        cv::Mat pixels;
-        pixels = resized.reshape(1, resized.rows * resized.cols);
+        cv::Mat pixels = resized.reshape(1, resized.rows * resized.cols);
         pixels.convertTo(pixels, CV_32F);
 
         cv::Mat labels, centers;
-        cv::kmeans(
-                pixels, 2, labels,
-                cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 5, 2.0),  // Faster termination
-                2, cv::KMEANS_PP_CENTERS, centers
-        );
+        cv::kmeans(pixels, 2, labels,
+                   cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 5, 2.0),
+                   2, cv::KMEANS_PP_CENTERS, centers);
 
-        cv::Scalar smallColors, bigColors;
-        smallColors = cv::Scalar(centers.at<float>(0, 0), centers.at<float>(0, 1),
-                                 centers.at<float>(0, 2));
-        bigColors = cv::Scalar(centers.at<float>(1, 0), centers.at<float>(1, 1),
-                               centers.at<float>(1, 2));
+        cv::Scalar cluster0(centers.at<float>(0, 0), centers.at<float>(0, 1), centers.at<float>(0, 2));
+        cv::Scalar cluster1(centers.at<float>(1, 0), centers.at<float>(1, 1), centers.at<float>(1, 2));
 
-        // Determine which cluster is text (smaller area)
         int textLabel = (cv::countNonZero(labels == 0) < cv::countNonZero(labels == 1)) ? 0 : 1;
-        cv::Scalar backgroundColor, textColor;
-        backgroundColor = (textLabel == 0) ? smallColors : bigColors;
-        textColor = (textLabel == 0) ? bigColors : smallColors;
+        cv::Scalar textColor = (textLabel == 0) ? cluster0 : cluster1;
+        cv::Scalar backgroundColor = (textLabel == 0) ? cluster1 : cluster0;
 
-        // Calculate luminance for each color
-        auto calculateLuminance = [](const cv::Scalar &color) {
-            return 0.299f * color[2] + 0.587f * color[1] + 0.114f * color[0];
-        };
-
-        float textLuminance = calculateLuminance(textColor);
-        float bgLuminance = calculateLuminance(backgroundColor);
-
-        float contrastFactor = 0.3f;
-
-        // Stretch text color toward black or white
-        if (textLuminance < bgLuminance) {
-            // Dark text: make it darker (closer to black)
-            textColor[0] = std::max<float>(0.0f, textColor[0] * (1.0f - contrastFactor * 0.3f));
-            textColor[1] = std::max<float>(0.0f, textColor[1] * (1.0f - contrastFactor * 0.3f));
-            textColor[2] = std::max<float>(0.0f, textColor[2] * (1.0f - contrastFactor * 0.3f));
-        } else {
-            // Light text: make it lighter (closer to white)
-            textColor[0] = std::min<float>(255.0f, textColor[0] * (1.0f + contrastFactor * 0.5f));
-            textColor[1] = std::min<float>(255.0f, textColor[1] * (1.0f + contrastFactor * 0.5f));
-            textColor[2] = std::min<float>(255.0f, textColor[2] * (1.0f + contrastFactor * 0.5f));
-        }
-
-        // Stretch background color in the opposite direction
-        if (bgLuminance < textLuminance) {
-            // Dark background: make it darker
-            backgroundColor[0] = std::max<float>(0.0f, backgroundColor[0] *
-                                                       (1.0f - contrastFactor * 0.3f));
-            backgroundColor[1] = std::max<float>(0.0f, backgroundColor[1] *
-                                                       (1.0f - contrastFactor * 0.3f));
-            backgroundColor[2] = std::max<float>(0.0f, backgroundColor[2] *
-                                                       (1.0f - contrastFactor * 0.3f));
-        } else {
-            // Light background: make it lighter
-            backgroundColor[0] = std::min<float>(255.0f, backgroundColor[0] *
-                                                         (1.0f + contrastFactor * 0.5f));
-            backgroundColor[1] = std::min<float>(255.0f, backgroundColor[1] *
-                                                         (1.0f + contrastFactor * 0.5f));
-            backgroundColor[2] = std::min<float>(255.0f, backgroundColor[2] *
-                                                         (1.0f + contrastFactor * 0.5f));
-        }
+        enhanceContrast(backgroundColor, textColor);
 
         return {backgroundColor, textColor};
+    }
+
+    static void enhanceContrast(cv::Scalar &background, cv::Scalar &text) {
+        auto luminance = [](const cv::Scalar &c) { return 0.299f * c[2] + 0.587f * c[1] + 0.114f * c[0]; };
+        
+        float textLum = luminance(text);
+        float bgLum = luminance(background);
+        const float factor = 0.3f;
+
+        if (textLum < bgLum) {
+            for (int i = 0; i < 3; i++) text[i] = std::max<float>(0.0f, text[i] * (1.0f - factor * 0.3f));
+        } else {
+            for (int i = 0; i < 3; i++) text[i] = std::min<float>(255.0f, text[i] * (1.0f + factor * 0.5f));
+        }
+
+        if (bgLum < textLum) {
+            for (int i = 0; i < 3; i++) background[i] = std::max<float>(0.0f, background[i] * (1.0f - factor * 0.3f));
+        } else {
+            for (int i = 0; i < 3; i++) background[i] = std::min<float>(255.0f, background[i] * (1.0f + factor * 0.5f));
+        }
     }
 
 public:
@@ -840,49 +826,101 @@ public:
         return JNI_TRUE;
     }
 
-    jintArray getPixelColorFromImage(JNIEnv *env, jobject origin, jobject input, int originWidth, int originHeight, int originRotation) const {
+    static int packColor(const cv::Scalar& bgrColor) {
+        return (255 << 24) | 
+               (static_cast<int>(bgrColor[2] + 0.5f) << 16) |  // Red
+               (static_cast<int>(bgrColor[1] + 0.5f) << 8) |   // Green
+               static_cast<int>(bgrColor[0] + 0.5f);             // Blue
+    }
+
+    static TextRegionMetrics extractRegionMetrics(const cv::Mat& crop, const std::vector<std::vector<int>>& box) {
+        auto [backgroundColor, textColor] = extractColors(crop);
+        
+        float leftHeight = std::sqrt(std::pow(box[3][0] - box[0][0], 2) + std::pow(box[3][1] - box[0][1], 2));
+        float rightHeight = std::sqrt(std::pow(box[2][0] - box[1][0], 2) + std::pow(box[2][1] - box[1][1], 2));
+        float boxHeight = (leftHeight + rightHeight) / 2.0f;
+        float textImageHeight = static_cast<float>(crop.rows);
+        float fontSize = (0.4f * textImageHeight + 0.6f * boxHeight) * 0.8f;
+        
+        float lineHeight = textImageHeight + fontSize * 0.2f;
+        
+        cv::Scalar mean, stddev;
+        cv::meanStdDev(crop, mean, stddev);
+        float variance = stddev[0] * stddev[0];
+        int fontWeight = (variance / 3600.0f > 0.66f) ? 1 : 0;
+        
+        return {
+            packColor(backgroundColor),
+            packColor(textColor),
+            static_cast<int>(fontSize * 100),
+            static_cast<int>(lineHeight * 100),
+            fontWeight
+        };
+    }
+
+    jintArray preprocessTextRegions(JNIEnv *env, jobject origin, jobject input, jobject output,
+                                     int originWidth, int originHeight, int originRotation) {
         cv::setNumThreads(threads_);
 
         auto *originData = static_cast<uint8_t *>(env->GetDirectBufferAddress(origin));
         auto *inputData = static_cast<int *>(env->GetDirectBufferAddress(input));
-        if (!originData || !inputData) {
-            throw std::runtime_error("Failed to get direct buffer address.");
+        auto *outputData = static_cast<float *>(env->GetDirectBufferAddress(output));
+        
+        if (!originData || !inputData || !outputData) {
+            throw std::runtime_error("Failed to get direct buffer address");
         }
 
         auto boxes = bufferToFilterBoxes(inputData, env->GetDirectBufferCapacity(input));
         if (boxes.empty()) {
-            throw std::runtime_error("No boxes found in input buffer.");
+            return env->NewIntArray(0);
         }
 
-        std::vector<jint> allColors;
-        allColors.reserve(boxes.size() * 2);
+        std::vector<jint> allMetrics;
+        allMetrics.reserve(1 + boxes.size() * 5);
+        allMetrics.push_back(static_cast<jint>(boxes.size()));
 
         cv::Mat frame(originHeight, originWidth, CV_8UC4, originData);
+        cv::cvtColor(frame, frame, cv::COLOR_RGBA2BGR);
         rotateImg(frame, originRotation);
         resize(frame, recognizeSize_, recognizeSize_);
 
-        for (const auto &box: boxes) {
-            cv::Mat crop_img = getRotateCropImage(frame, box);
+        const std::vector<float> mean = {0.5f, 0.5f, 0.5f};
+        const std::vector<float> scale = {1 / 0.5f, 1 / 0.5f, 1 / 0.5f};
 
-            auto [textColor, backgroundColor] = extractColors(crop_img);
+        int batchCount = 0;
+        int outputIndex = 0;
 
-            jint bgColor =
-                    (255 << 24) | ((int) backgroundColor[0] << 16) |
-                    ((int) backgroundColor[1] << 8) |
-                    (int) backgroundColor[2];
-            jint txtColor = (255 << 24) | ((int) textColor[0] << 16) | ((int) textColor[1] << 8) |
-                            (int) textColor[2];
+        for (auto bp = boxes.crbegin(); bp != boxes.crend() && batchCount < maxCandidates_; ++bp) {
+            cachedCropImg_ = getRotateCropImage(frame, *bp);
+            
+            auto metrics = extractRegionMetrics(cachedCropImg_, *bp);
+            allMetrics.push_back(metrics.backgroundColor);
+            allMetrics.push_back(metrics.textColor);
+            allMetrics.push_back(metrics.fontSize);
+            allMetrics.push_back(metrics.lineHeight);
+            allMetrics.push_back(metrics.fontWeight);
 
-            allColors.push_back(bgColor);
-            allColors.push_back(txtColor);
+            cachedCropImg_.convertTo(cachedCropImg_, CV_32FC3, 1.0f / 255.0f);
+            float whRatio = float(cachedCropImg_.cols) / float(cachedCropImg_.rows);
+            cachedCropImg_ = aspectRatioResize(cachedCropImg_, whRatio);
+            cachedCropImg_ = padCropToRecShape(cachedCropImg_);
+
+            if (cachedCropImg_.cols != maxCropSize_ || cachedCropImg_.rows != 48) {
+                throw std::runtime_error("Cropped image has incorrect shape");
+            }
+
+            neonMeanScale(reinterpret_cast<const float *>(cachedCropImg_.data), 
+                         outputData + outputIndex,
+                         cachedCropImg_.cols * cachedCropImg_.rows, mean, scale);
+            outputIndex += cachedCropImg_.cols * cachedCropImg_.rows * 3;
+            batchCount++;
         }
 
-        jintArray result = env->NewIntArray(static_cast<int>(allColors.size()));
+        jintArray result = env->NewIntArray(static_cast<int>(allMetrics.size()));
         if (!result) {
-            throw std::runtime_error("Failed to create color array.");
+            throw std::runtime_error("Failed to create metrics array");
         }
-
-        env->SetIntArrayRegion(result, 0, static_cast<int>(allColors.size()), allColors.data());
+        env->SetIntArrayRegion(result, 0, static_cast<int>(allMetrics.size()), allMetrics.data());
         return result;
     }
 };
@@ -1003,22 +1041,28 @@ Java_app_versta_translate_bridge_inference_PaddleOCR_postProcessRecognize(
     return paddleOCR->postProcessRecognize(env, outputBuffer, outputShape, tokenBuffer);
 }
 
+/**
+ * JNI export for text region preprocessing with visual metrics extraction
+ * Combines recognition preprocessing with color/style extraction in a single pass
+ * Eliminates duplicate image processing and memory copies
+ */
 extern "C"
 JNIEXPORT jintArray JNICALL
-Java_app_versta_translate_bridge_inference_PaddleOCR_getPixelColorFromImage(
+Java_app_versta_translate_bridge_inference_PaddleOCR_preprocessTextRegions(
         JNIEnv *env,
         jobject,
         jlong handle,
         jobject origin,
         jobject input,
+        jobject output,
         jint originWidth,
         jint originHeight,
         jint originRotation
 ) {
     auto paddleOCR = paddleOCRInstances[handle].get();
     if (!paddleOCR) {
-        return JNI_FALSE;
+        return nullptr;
     }
 
-    return paddleOCR->getPixelColorFromImage(env, origin, input, originWidth, originHeight, originRotation);
+    return paddleOCR->preprocessTextRegions(env, origin, input, output, originWidth, originHeight, originRotation);
 }

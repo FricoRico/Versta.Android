@@ -2,7 +2,6 @@ package app.versta.translate.adapter.outbound
 
 import androidx.camera.core.ImageProxy
 import app.versta.translate.core.entity.ObjectCharacterRecogniserResult
-import java.nio.ByteBuffer
 
 /**
  * Context object passed through OCR post-processor pipeline
@@ -13,7 +12,5 @@ import java.nio.ByteBuffer
  */
 data class OcrPostProcessorContext(
     val imageProxy: ImageProxy,
-    val results: List<ObjectCharacterRecogniserResult>,
-    val detectResultBuffer: ByteBuffer
+    val results: List<ObjectCharacterRecogniserResult>
 )
-

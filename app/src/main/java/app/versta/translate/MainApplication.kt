@@ -37,8 +37,8 @@ import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepositor
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepositoryDatabaseRepository
 import app.versta.translate.adapter.outbound.OcrPostProcessorPipeline
 import app.versta.translate.adapter.outbound.PaddleObjectCharacterRecognition
+import app.versta.translate.adapter.outbound.PaddleObjectCharacterRecognitionTokenizer
 import app.versta.translate.adapter.outbound.ParagraphGroupingPostProcessor
-import app.versta.translate.adapter.outbound.TextStyleAnalysisPostProcessor
 import app.versta.translate.adapter.outbound.VoiceDatabaseRepository
 import app.versta.translate.adapter.outbound.TextToSpeechInference
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceDataStoreRepository
@@ -49,7 +49,6 @@ import app.versta.translate.adapter.outbound.TranslationInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
 import app.versta.translate.adapter.outbound.TranslationTokenizer
-import app.versta.translate.bridge.inference.OcrTextAnalyzer
 import app.versta.translate.bridge.speech.ESpeakNG
 import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.model.CameraTranslationViewModel
@@ -119,6 +118,7 @@ interface ApplicationModuleInterface {
     val outputTranslationInference: TranslationInference
     val textToSpeechTokenizer: TextToSpeechTokenizer
     val textToSpeechInference: TextToSpeechInference
+    val objectCharacterRecognitionTokenizer: PaddleObjectCharacterRecognitionTokenizer
     val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference
 }
 
@@ -210,15 +210,10 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
     }
 
     override val cameraTranslationViewModel: CameraTranslationViewModel by lazy {
+        // All text metrics (colors, font, style) extracted in PaddleOCR.preprocessTextRegions()
+        // TextStyleAnalysisPostProcessor removed - eliminates ~300ms duplicate processing
         val ocrPipeline = OcrPostProcessorPipeline(
             listOf(
-                TextStyleAnalysisPostProcessor(
-                    ocrTextAnalyzer = OcrTextAnalyzer(
-                        threads = 4,
-                        boldThreshold = 0.20f,
-                    ),
-                    recognizeSize = 960
-                ),
                 ParagraphGroupingPostProcessor(
                     verticalThresholdFactor = 1f,
                     horizontalEps = 5f,
@@ -230,6 +225,7 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
 
         CameraTranslationViewModel(
             objectCharacterRecognitionInference = objectCharacterRecognitionInference,
+            objectCharacterRecognitionTokenizer = objectCharacterRecognitionTokenizer,
             languageViewModel = languageViewModel,
             languagePreferenceRepository = languagePreferenceRepository,
             translationViewModel = translationViewModel,
@@ -356,6 +352,10 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
 
     override val textToSpeechInference: TextToSpeechInference by lazy {
         StyleTextToSpeechInference(ortEnvironment)
+    }
+
+    override val objectCharacterRecognitionTokenizer: PaddleObjectCharacterRecognitionTokenizer by lazy {
+        PaddleObjectCharacterRecognitionTokenizer()
     }
 
     override val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference by lazy {

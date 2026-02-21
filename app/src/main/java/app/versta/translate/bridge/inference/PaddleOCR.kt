@@ -7,9 +7,15 @@ import app.versta.translate.core.entity.ObjectCharacterRecogniserResult
 import timber.log.Timber
 import java.nio.Buffer
 import java.nio.ByteBuffer
-import kotlin.collections.get
 
 const val RECOGNIZE_HEIGHT = 48
+
+data class TextRegionMetrics(
+    val colors: ObjectCharacterRecogniserColors,
+    val fontSize: Float,
+    val lineHeight: Float,
+    val fontWeight: Int
+)
 
 class PaddleOCR(
     val detectSize: Int = 640,
@@ -67,7 +73,7 @@ class PaddleOCR(
         maxValue: Float = 1f,
     ): Boolean
 
-    private external fun preProcessRecognize(
+    private external fun preprocessTextRegions(
         handle: Long,
         origin: Buffer,
         input: Buffer,
@@ -75,7 +81,7 @@ class PaddleOCR(
         originWidth: Int,
         originHeight: Int,
         originRotation: Int = 0,
-    ): Boolean
+    ): IntArray
 
     private external fun postProcessRecognize(
         handle: Long,
@@ -83,15 +89,6 @@ class PaddleOCR(
         outputShape: LongArray,
         tokenBuffer: Buffer
     ): Boolean
-
-    private external fun getPixelColorFromImage(
-        handle: Long,
-        origin: Buffer,
-        input: Buffer,
-        originWidth: Int,
-        originHeight: Int,
-        originRotation: Int = 0,
-    ): IntArray
 
     fun preProcessDetect(
         input: Buffer,
@@ -142,16 +139,15 @@ class PaddleOCR(
         return results.reversed()
     }
 
-
-    fun preProcessRecognize(
+    fun preprocessTextRegions(
         origin: Buffer,
         input: Buffer,
         output: Buffer,
         originWidth: Int,
         originHeight: Int,
         originRotation: Int = 0
-    ): Boolean {
-        return preProcessRecognize(
+    ): Pair<Boolean, List<TextRegionMetrics>> {
+        val metrics = preprocessTextRegions(
             handle = _handle,
             origin = origin,
             input = input,
@@ -160,6 +156,47 @@ class PaddleOCR(
             originHeight = originHeight,
             originRotation = originRotation,
         )
+
+        val success = metrics.isNotEmpty() && metrics[0] > 0
+        val count = if (metrics.isNotEmpty()) metrics[0] else 0
+
+        val metricsList = mutableListOf<TextRegionMetrics>()
+        var i = 1
+        repeat(count) {
+            if (i + 4 < metrics.size) {
+                val packedBg = metrics[i]
+                val packedTxt = metrics[i + 1]
+
+                val bgAlpha = ((packedBg shr 24) and 0xFF) / 255f
+                val bgRed = ((packedBg shr 16) and 0xFF) / 255f
+                val bgGreen = ((packedBg shr 8) and 0xFF) / 255f
+                val bgBlue = (packedBg and 0xFF) / 255f
+
+                val txtAlpha = ((packedTxt shr 24) and 0xFF) / 255f
+                val txtRed = ((packedTxt shr 16) and 0xFF) / 255f
+                val txtGreen = ((packedTxt shr 8) and 0xFF) / 255f
+                val txtBlue = (packedTxt and 0xFF) / 255f
+
+                val bgColor = Color(bgRed, bgGreen, bgBlue, bgAlpha)
+                val txtColor = Color(txtRed, txtGreen, txtBlue, txtAlpha)
+
+                val fontSize = metrics[i + 2] / 100f
+                val lineHeight = metrics[i + 3] / 100f
+                val fontWeight = metrics[i + 4]
+
+                metricsList.add(
+                    TextRegionMetrics(
+                        colors = ObjectCharacterRecogniserColors(bgColor, txtColor),
+                        fontSize = fontSize,
+                        lineHeight = lineHeight,
+                        fontWeight = fontWeight
+                    )
+                )
+                i += 5
+            }
+        }
+
+        return Pair(success, metricsList)
     }
 
     fun postProcessRecognize(
@@ -167,57 +204,37 @@ class PaddleOCR(
         outputShape: LongArray,
         tokenBuffer: ByteBuffer
     ): List<ObjectCharacterRecogniserResult> {
-        postProcessRecognize(
+        val success = postProcessRecognize(
             handle = _handle,
             outputBuffer = outputBuffer,
             outputShape = outputShape,
             tokenBuffer = tokenBuffer
         )
 
+        if (!success) {
+            return emptyList()
+        }
+
         tokenBuffer.rewind()
-        val count = tokenBuffer.int
 
+        val batchSize = tokenBuffer.int
         val results = mutableListOf<ObjectCharacterRecogniserResult>()
-        repeat(count) {
-            val tokenCount = tokenBuffer.int
-            val score = (tokenBuffer.int / 1000f)
-            var tokens = longArrayOf()
 
-            repeat(tokenCount) {
-                val tokenId = tokenBuffer.int.toLong()
-                tokens = tokens.plus(tokenId)
+        repeat(batchSize) {
+            val wordCount = tokenBuffer.int
+            val score = tokenBuffer.int / 1000f
+
+            val tokens = LongArray(wordCount) {
+                tokenBuffer.int.toLong()
             }
 
-            results.add(
-                ObjectCharacterRecogniserResult(
-                    score = score,
-                    tokens = tokens
-                )
-            )
+            results.add(ObjectCharacterRecogniserResult(
+                score = score,
+                tokens = tokens
+            ))
         }
 
         return results
-    }
-
-    fun getPixelColorFromRGBAByteBuffer(
-        origin: Buffer,
-        input: Buffer,
-        originWidth: Int,
-        originHeight: Int,
-        originRotation: Int,
-    ): List<ObjectCharacterRecogniserColors> {
-        val colors = getPixelColorFromImage(
-            handle = _handle,
-            origin = origin,
-            input = input,
-            originWidth = originWidth,
-            originHeight = originHeight,
-            originRotation = originRotation,
-        )
-
-        return colors.toList().chunked(2) { chunk ->
-            ObjectCharacterRecogniserColors(Color(chunk[0]), Color(chunk[1]))
-        }.reversed()
     }
 
     override fun close() {
