@@ -107,6 +107,7 @@ android {
         noCompress += "ort"
         noCompress += "json"
         noCompress += "spm"
+        noCompress += "bin"
     }
     externalNativeBuild {
         cmake {
