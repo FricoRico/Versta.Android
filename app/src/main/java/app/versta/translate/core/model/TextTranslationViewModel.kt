@@ -5,28 +5,22 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.view.HapticFeedbackConstants
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.TransliterationAdapter
-import app.versta.translate.bridge.utils.LanguageDetect
 import app.versta.translate.core.entity.AutoDetectLanguage
 import app.versta.translate.core.entity.LanguagePair
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 
 @OptIn(FlowPreview::class)
@@ -78,18 +72,8 @@ class TextTranslationViewModel(
                 translationViewModel.load(files, languages)
             }
 
-            val (intermediary, output) = translationViewModel.translateAsFlow(text, languages) {
-                setIntermediate(_intermediate.value.take(it.length))
-            }
-
-            intermediary?.collect {
-                setIntermediate(it)
-            }
-
-            output.collect {
-                setTranslation(it)
-//                view.performHapticFeedback(HapticFeedbackConstants.TEXT_HANDLE_MOVE)
-            }
+            val output = translationViewModel.translate(text, languages)
+            setTranslation(output)
         }
     }
 

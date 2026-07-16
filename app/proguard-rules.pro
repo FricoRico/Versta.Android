@@ -21,3 +21,5 @@
 #-renamesourcefileattribute SourceFile
 
 -keep class ai.onnxruntime.** { *; }
+
+-keep class app.versta.translate.bridge.leanmt.** { *; }

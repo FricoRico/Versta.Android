@@ -4,10 +4,10 @@ import app.versta.translate.core.entity.AutoDetectLanguage
 import app.versta.translate.core.entity.LanguageBundleMetadata
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageModelMetadata
-import app.versta.translate.core.entity.LanguageModelFiles
-import app.versta.translate.core.entity.LanguagePair
-import app.versta.translate.core.entity.LanguagePairModelFiles
 import app.versta.translate.core.entity.LanguageModel
+import app.versta.translate.core.entity.LanguagePair
+import app.versta.translate.core.entity.LanguageModelPair
+import app.versta.translate.core.entity.LanguageBundleData
 import app.versta.translate.core.entity.PivotPair
 import app.versta.translate.core.entity.PivotPairModelFiles
 import app.versta.translate.database.DatabaseContainer
@@ -53,7 +53,7 @@ class LanguageDatabaseRepository(
     /**
      * Gets the language models metadata available in the repository.
      */
-    override fun getLanguages(): Flow<List<LanguagePairModelFiles>> =
+    override fun getLanguages(): Flow<List<LanguageModelPair>> =
         database.languages.getAll().executeAsListFlow().map {
             it.map { language ->
                 val languageModel = mapLanguageModelDatabaseModelToLanguageModelFiles(
@@ -61,7 +61,7 @@ class LanguageDatabaseRepository(
                         .executeAsOneOrNull()
                 ) ?: return@map null
 
-                LanguagePairModelFiles(
+                LanguageModelPair(
                     sourceLocale = Locale.forLanguageTag(language.source),
                     targetLocale = Locale.forLanguageTag(language.target),
                     files = languageModel
@@ -174,7 +174,7 @@ class LanguageDatabaseRepository(
      * Inserts or updates the language models in the repository.
      * @param metadata The metadata to insert or update.
      */
-    override fun upsertLanguageModels(metadata: LanguageModel) {
+    override fun upsertLanguageModels(metadata: LanguageBundleData) {
         database.languages.transaction {
             metadata.languages.forEach {
                 insertLanguageOrIgnore(
@@ -255,7 +255,6 @@ class LanguageDatabaseRepository(
         database.languageModels.upsert(
             languageId = data.languageId,
             baseModel = data.baseModel,
-            architectures = data.architectures,
             path = data.path,
             version = data.version,
         )
@@ -298,18 +297,17 @@ class LanguageDatabaseRepository(
         return LanguageModelDatabaseModel(
             languageId = pair.id,
             baseModel = data.baseModel,
-            architectures = data.architectures.map { it.value },
             path = data.root?.absolutePathString() ?: "",
             version = data.version,
         )
     }
 
     /**
-     * Maps a [LanguageModelDatabaseModel] to a [LanguageModelFiles].
+     * Maps a [LanguageModelDatabaseModel] to a [LanguageModel].
      * @param data The language model database model to map.
      * @return The mapped language model files.
      */
-    private fun mapLanguageModelDatabaseModelToLanguageModelFiles(data: LanguageModelDatabaseModel?): LanguageModelFiles? {
+    private fun mapLanguageModelDatabaseModelToLanguageModelFiles(data: LanguageModelDatabaseModel?): LanguageModel? {
         if (data == null) {
             return null
         }
@@ -317,7 +315,7 @@ class LanguageDatabaseRepository(
         val path = data.path.toPath().toNioPath()
 
         try {
-            return LanguageModelFiles.load(path = path)
+            return LanguageModel.load(path = path)
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Failed to load language model files")
             return null

@@ -2,33 +2,33 @@ package app.versta.translate.adapter.outbound
 
 import kotlinx.coroutines.flow.Flow
 
-internal const val DEFAULT_CACHE_SIZE = 64
-internal const val DEFAULT_CACHE_ENABLED = true
 internal const val DEFAULT_NUMBER_OF_BEAMS = 4
 internal const val DEFAULT_MAX_SEQUENCE_LENGTH = 256
 internal const val DEFAULT_MIN_PROBABILITY = 0.1f
 internal const val DEFAULT_REPETITION_PENALTY = 0.15f
+internal const val DEFAULT_CACHE_SIZE = 1024
+internal const val DEFAULT_CACHE_ENABLED = true
 
 interface TranslationPreferenceRepository {
     /**
-     * Gets the cache size.
+     * Gets the translation cache size (number of remembered translations).
      */
     fun getCacheSize(): Flow<Int>
 
     /**
-     * Sets the cache size.
-     * @param size The size of the cache.
+     * Sets the translation cache size (number of remembered translations).
+     * @param size The number of translations to remember.
      */
     suspend fun setCacheSize(size: Int)
 
     /**
-     * Gets the cache enabled status.
+     * Gets whether the translation cache is enabled.
      */
     fun getCacheEnabled(): Flow<Boolean>
 
     /**
-     * Sets the cache enabled status.
-     * @param enabled The enabled status of the cache.
+     * Sets whether the translation cache is enabled.
+     * @param enabled The enabled state of the cache.
      */
     suspend fun setCacheEnabled(enabled: Boolean)
 

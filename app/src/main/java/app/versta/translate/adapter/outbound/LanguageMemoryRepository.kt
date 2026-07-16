@@ -3,13 +3,12 @@ package app.versta.translate.adapter.outbound
 import app.versta.translate.core.entity.LanguageBundleMetadata
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageModelMetadata
-import app.versta.translate.core.entity.LanguageModelFiles
-import app.versta.translate.core.entity.LanguageModelInferenceFiles
-import app.versta.translate.core.entity.LanguageModelTokenizerFiles
-import app.versta.translate.core.entity.LanguagePair
-import app.versta.translate.core.entity.LanguagePairModelFiles
-import app.versta.translate.core.entity.LanguageModelArchitecture
 import app.versta.translate.core.entity.LanguageModel
+import app.versta.translate.core.entity.LanguageModelConfiguration
+import app.versta.translate.core.entity.LanguageModelFiles
+import app.versta.translate.core.entity.LanguagePair
+import app.versta.translate.core.entity.LanguageModelPair
+import app.versta.translate.core.entity.LanguageBundleData
 import app.versta.translate.core.entity.PivotPairModelFiles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -34,22 +33,21 @@ class LanguageMemoryRepository : LanguageRepository {
         )
     )
     private val _languageModels = mutableMapOf(
-        "en-ja" to LanguageModelFiles(
-            tokenizer = LanguageModelTokenizerFiles(
-                config = _mockPath,
-                sourceVocabulary = _mockPath,
-                targetVocabulary = _mockPath,
-                source = _mockPath,
-                target = _mockPath,
-            ),
+        "en-ja" to LanguageModel(
             baseModel = "Helsinki-NLP/opus-mt-en-ja",
             path = _mockPath,
-            architectures = listOf(LanguageModelArchitecture.MarianMTModel),
             version = "v1.0.0",
             score = 52.8,
-            inference = LanguageModelInferenceFiles(
-                encoder = _mockPath,
-                decoder = _mockPath,
+            files = LanguageModelFiles(
+                model = _mockPath,
+                vocabulary = _mockPath,
+                shortlist = _mockPath,
+            ),
+            config = LanguageModelConfiguration(
+                encoderLayers = 6,
+                decoderLayers = 6,
+                ffnDepth = 2,
+                numHeads = 8,
             )
         )
     )
@@ -72,12 +70,12 @@ class LanguageMemoryRepository : LanguageRepository {
     /**
      * Gets the language models metadata available in the repository.
      */
-    override fun getLanguages(): Flow<List<LanguagePairModelFiles>> = flow {
+    override fun getLanguages(): Flow<List<LanguageModelPair>> = flow {
         emit(
             _languages.map {
                 val files = _languageModels[it.id] ?: return@map null
 
-                LanguagePairModelFiles(
+                LanguageModelPair(
                     sourceLocale = it.source.locale,
                     targetLocale = it.target.locale,
                     files = files
@@ -137,22 +135,26 @@ class LanguageMemoryRepository : LanguageRepository {
         val targetLanguage = Language.fromIsoCode(metadata.targetLanguage)
 
         _languageModels[LanguagePair(sourceLanguage, targetLanguage).toString()] =
-            LanguageModelFiles(
+            LanguageModel(
                 path = path,
                 baseModel = metadata.baseModel,
-                tokenizer = LanguageModelTokenizerFiles(
-                    config = Path(metadata.files.tokenizer.config),
-                    sourceVocabulary = Path(metadata.files.tokenizer.sourceVocabulary),
-                    targetVocabulary = metadata.files.tokenizer.targetVocabulary?.let { Path(it) },
-                    source = Path(metadata.files.tokenizer.source),
-                    target = Path(metadata.files.tokenizer.target)
-                ),
-                architectures = metadata.architectures,
+
                 version = metadata.version,
                 score = metadata.score ?: 0.0,
-                inference = LanguageModelInferenceFiles(
-                    encoder = Path(metadata.files.inference.encoder),
-                    decoder = Path(metadata.files.inference.decoder)
+                files = LanguageModelFiles(
+                    model = Path(metadata.files.model),
+                    vocabulary = Path(metadata.files.vocabulary),
+                    targetVocabulary = metadata.files.targetVocabulary?.let {
+                        Path(it)
+                    },
+                    shortlist = Path(metadata.files.shortlist),
+                ),
+                config = LanguageModelConfiguration(
+                    encoderLayers = metadata.config.encoderLayers,
+                    decoderLayers = metadata.config.decoderLayers,
+                    ffnDepth = metadata.config.ffnDepth,
+                    numHeads = metadata.config.numHeads,
+                    splitMode = metadata.config.splitMode
                 )
             )
     }
@@ -161,7 +163,7 @@ class LanguageMemoryRepository : LanguageRepository {
      * Inserts or updates the language models in the repository.
      * @param metadata The metadata to insert or update.
      */
-    override fun upsertLanguageModels(metadata: LanguageModel) {
+    override fun upsertLanguageModels(metadata: LanguageBundleData) {
         metadata.languages.forEach {
             insertLanguageOrIgnore(metadata.bundle, it)
             upsertLanguageModel(it)

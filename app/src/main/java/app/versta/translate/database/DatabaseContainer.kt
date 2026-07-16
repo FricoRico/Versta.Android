@@ -7,9 +7,9 @@ import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import app.versta.translate.database.migrations.Migration3
 import app.versta.translate.database.migrations.Migration4
+import app.versta.translate.database.migrations.Migration6
 import kotlinx.serialization.json.Json
 import timber.log.Timber
-import java.app.versta.translate.database.sqldelight.LanguageModel
 import java.app.versta.translate.database.sqldelight.VoiceModel
 import java.app.versta.translate.database.sqldelight.ObjectCharacterRecognitionDetectorModel
 import java.app.versta.translate.database.sqldelight.ObjectCharacterRecognitionRecognizerModel
@@ -31,9 +31,6 @@ class DatabaseContainer(
 
     private val _database = Database(
         driver = driver,
-        LanguageModelAdapter = LanguageModel.Adapter(
-            architecturesAdapter = ListOfStringsAdapter,
-        ),
         VoiceModelAdapter = VoiceModel.Adapter(
             architecturesAdapter = ListOfStringsAdapter,
         ),
@@ -47,7 +44,8 @@ class DatabaseContainer(
 
     private val _migrations = listOf(
         Migration3,
-        Migration4
+        Migration4,
+        Migration6
     )
 
     val data = _database.dataQueries

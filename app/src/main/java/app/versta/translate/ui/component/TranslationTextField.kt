@@ -26,7 +26,6 @@ import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryReposit
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.TranslationMockInference
-import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
@@ -122,15 +121,12 @@ fun TranslationTextFieldMinimalPreview() {
     )
 
     val translationMockInference = TranslationMockInference()
-    val translationMockTokenizer = TranslationMockTokenizer()
 
     TranslationTextField(
         textTranslationViewModel = TextTranslationViewModel(
             languageViewModel = languageViewModel,
             translationViewModel = TranslationViewModel(
-                intermediateTokenizer = translationMockTokenizer,
                 intermediateModel = translationMockInference,
-                outputTokenizer = translationMockTokenizer,
                 outputModel = translationMockInference,
                 translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
                 languageViewModel = languageViewModel

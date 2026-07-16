@@ -1,41 +1,18 @@
 package app.versta.translate.adapter.outbound
 
-import app.versta.translate.core.entity.LanguageModelInferenceFiles
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import app.versta.translate.core.entity.LanguageModelConfiguration
+import app.versta.translate.core.entity.LanguageModelFiles
 
-class TranslationMockInference: TranslationInference {
-    override fun run(
-        inputIds: LongArray,
-        attentionMask: LongArray,
-        eosId: Long,
-        padId: Long,
-        minP: Float,
-        repetitionPenalty: Float,
-        beamSize: Int,
-        maxSequenceLength: Int,
-    ): LongArray {
-        return LongArray(0)
-    }
-
-    override fun runAsFlow(
-        inputIds: LongArray,
-        attentionMask: LongArray,
-        eosId: Long,
-        padId: Long,
-        minP: Float,
-        repetitionPenalty: Float,
-        beamSize: Int,
-        maxSequenceLength: Int,
-    ): Flow<LongArray> {
-        return flowOf(LongArray(0))
+class TranslationMockInference : TranslationInference {
+    override fun translate(text: String, maxBeamWidth: Int, maxSequenceLength: Int): String {
+        return ""
     }
 
     override fun cancel() {
         return
     }
 
-    override fun load(files: LanguageModelInferenceFiles, threads: Int) {
+    override fun load(files: LanguageModelFiles, config: LanguageModelConfiguration) {
         return
     }
 
