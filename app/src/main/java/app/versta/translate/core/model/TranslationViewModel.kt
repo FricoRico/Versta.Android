@@ -2,13 +2,13 @@ package app.versta.translate.core.model
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.versta.translate.adapter.outbound.BergamotTinyInference
 import app.versta.translate.adapter.outbound.TranslationInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
-import app.versta.translate.adapter.outbound.TranslationTokenizer
+import app.versta.translate.bridge.leanmt.LeanmtService
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.PivotPairModelFiles
-import app.versta.translate.core.entity.TranslationMemoryCache
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -17,17 +17,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.last
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -41,20 +34,20 @@ sealed class LoadingProgress {
     data object InProgress : LoadingProgress()
 
     data object Completed : LoadingProgress()
+
     data class Error(val exception: Exception) : LoadingProgress()
 }
 
 sealed class ReadyState {
     data object NotReady : ReadyState()
+
     data object Ready : ReadyState()
 }
 
 @OptIn(FlowPreview::class)
 class TranslationViewModel(
-    private val intermediateTokenizer: TranslationTokenizer,
-    private val intermediateModel: TranslationInference,
-    private val outputTokenizer: TranslationTokenizer,
-    private val outputModel: TranslationInference,
+    private var intermediateModel: TranslationInference,
+    private var outputModel: TranslationInference,
     private val translationPreferenceRepository: TranslationPreferenceRepository,
     private val languageViewModel: LanguageViewModel
 ) : ViewModel() {
@@ -63,13 +56,6 @@ class TranslationViewModel(
     val beamSize = translationPreferenceRepository.getNumberOfBeams().distinctUntilChanged()
     val maxSequenceLength =
         translationPreferenceRepository.getMaxSequenceLength().distinctUntilChanged()
-    val minProbability = translationPreferenceRepository.getMinProbability().distinctUntilChanged()
-    val repetitionPenalty =
-        translationPreferenceRepository.getRepetitionPenalty().distinctUntilChanged()
-    val threadCount = translationPreferenceRepository.getThreadCount().distinctUntilChanged()
-
-    private lateinit var _cache: TranslationMemoryCache
-    private val _queue = Mutex()
 
     private val _languages = languageViewModel.languageOptions.distinctUntilChanged()
     private val _languageModels = languageViewModel.languageModelFiles.distinctUntilChanged()
@@ -88,22 +74,62 @@ class TranslationViewModel(
 
     private val _loadMutex = Mutex()
 
+
     /**
-     * Sets the cache size.
+     * Recreates the underlying leanmt inference engines with the effective cache
+     * size. leanmt fixes the cache size at service construction, so a disabled
+     * cache is applied as size 0 while the user's chosen [getCacheSize] is
+     * preserved. The currently-selected model is reloaded into the new engines.
      */
-    fun setCacheSize(size: Int): Job {
-        return viewModelScope.launch {
-            translationPreferenceRepository.setCacheSize(size)
+    private fun reloadModel() {
+        viewModelScope.launch {
+            val files = _languageModels.first()
+            val pair = _languages.first()?.toLanguagePair()
+
+            _loadMutex.withLock {
+                intermediateModel.close()
+                outputModel.close()
+
+                intermediateModel =
+                    BergamotTinyInference(LeanmtService.create(getCacheSize().toLong()))
+                outputModel =
+                    BergamotTinyInference(LeanmtService.create(getCacheSize().toLong()))
+            }
+
+            if (files != null && pair != null) {
+                load(files, pair)
+            }
         }
     }
 
     /**
-     * Sets the cache enabled state.
+     * Sets the translation cache size (number of remembered translations). The
+     * size is preserved even when the cache is disabled; the effective size
+     * passed to the engine becomes 0 only while disabled.
+     */
+    fun setCacheSize(size: Int): Job {
+        return viewModelScope.launch {
+            translationPreferenceRepository.setCacheSize(size)
+            reloadModel()
+        }
+    }
+
+    /**
+     * Sets whether the translation cache is enabled. The engine is recreated with
+     * the effective cache size (0 while disabled, the chosen size while enabled).
      */
     fun setCacheEnabled(enabled: Boolean): Job {
         return viewModelScope.launch {
             translationPreferenceRepository.setCacheEnabled(enabled)
+            reloadModel()
         }
+    }
+
+    /**
+     * Gets the actual cache size if cache is enabled.
+     */
+    private suspend fun getCacheSize(): Int {
+        return if (cacheEnabled.first()) cacheSize.first() else -2
     }
 
     /**
@@ -125,33 +151,6 @@ class TranslationViewModel(
     }
 
     /**
-     * Sets the minimum probability.
-     */
-    fun setMinProbability(probability: Float): Job {
-        return viewModelScope.launch {
-            translationPreferenceRepository.setMinProbability(probability)
-        }
-    }
-
-    /**
-     * Sets the penalty for repeating tokens.
-     */
-    fun setRepetitionPenalty(penalty: Float): Job {
-        return viewModelScope.launch {
-            translationPreferenceRepository.setRepetitionPenalty(penalty)
-        }
-    }
-
-    /**
-     * Sets the thread count.
-     */
-    fun setThreadCount(count: Int): Job {
-        return viewModelScope.launch {
-            translationPreferenceRepository.setThreadCount(count)
-        }
-    }
-
-    /**
      * Sets the translation error.
      */
     fun setTranslationError(throwable: Throwable) {
@@ -167,209 +166,42 @@ class TranslationViewModel(
     }
 
     /**
-     * Translates the input text to the target language, returning the result as a flow. If the
-     * translation is already in the cache, it will be returned immediately.
-     */
-    suspend fun translateAsFlow(
-        input: String,
-        languages: LanguagePair,
-        onCompletion: (suspend (output: String) -> Unit)? = null
-    ): Pair<Flow<String>?, Flow<String>> {
-        val sanitized = sanitize(input)
-        var cache = _cache.get(sanitized, languages)
-        if (cache != null) {
-            return Pair(null, flowOf(cache))
-        }
-
-        return _queue.withLock {
-            cache = _cache.get(sanitized, languages)
-
-            if (cache != null) {
-                return@withLock Pair(null, flowOf(cache.toString()))
-            }
-
-            _translationInProgress.value = true
-            if (_languageModels.first()?.intermediary != null) {
-                val intermediateFlow = intermediateTranslateAsFlow(sanitized)
-                val outputFlow = flow {
-                    val finalIntermediateResult = intermediateFlow.last()
-
-                    emitAll(outputTranslateAsFlow(finalIntermediateResult) { output ->
-                        onTranslationCompletion(sanitized, output, languages, onCompletion)
-
-                        _translationInProgress.value = false
-                    })
-                }
-
-                return@withLock Pair(intermediateFlow, outputFlow)
-            }
-
-            return@withLock Pair(null, outputTranslateAsFlow(sanitized) { output ->
-                onTranslationCompletion(input, output, languages, onCompletion)
-
-                _translationInProgress.value = false
-            })
-        }
-    }
-
-    private suspend fun outputTranslateAsFlow(
-        input: String,
-        onCompletion: (suspend (output: String) -> Unit)? = null
-    ): Flow<String> {
-        val sanitized = sanitize(input)
-        val (inputIds, attentionMask) = outputTokenizer.encode(sanitized)
-        val minP = minProbability.first() * 100 / outputTokenizer.vocabSize
-
-        return outputModel.runAsFlow(
-            inputIds = inputIds,
-            attentionMask = attentionMask,
-            eosId = outputTokenizer.eosId,
-            padId = outputTokenizer.padId,
-            minP = minP,
-            repetitionPenalty = repetitionPenalty.first(),
-            beamSize = beamSize.first(),
-            maxSequenceLength = maxSequenceLength.first(),
-        )
-            .conflate()
-            .catch { e ->
-                setTranslationError(e)
-                Timber.tag(TAG).e(e)
-            }
-            .map { tokenIds ->
-                val output = outputTokenizer.decode(tokenIds)
-
-                if (tokenIds.last() == outputTokenizer.eosId) {
-                    onCompletion?.invoke(output)
-                }
-
-                output
-            }
-            .flowOn(Dispatchers.Default)
-    }
-
-    private suspend fun intermediateTranslateAsFlow(
-        input: String,
-        onCompletion: (suspend (intermediate: String) -> Unit)? = null
-    ): Flow<String> {
-        val sanitized = sanitize(input)
-        val (inputIds, attentionMask) = intermediateTokenizer.encode(sanitized)
-        val minP = minProbability.first() * 100 / intermediateTokenizer.vocabSize
-
-        return intermediateModel.runAsFlow(
-            inputIds = inputIds,
-            attentionMask = attentionMask,
-            eosId = intermediateTokenizer.eosId,
-            padId = intermediateTokenizer.padId,
-            minP = minP,
-            repetitionPenalty = repetitionPenalty.first(),
-            beamSize = beamSize.first(),
-            maxSequenceLength = maxSequenceLength.first(),
-        )
-            .conflate()
-            .catch { e ->
-                setTranslationError(e)
-                Timber.tag(TAG).e(e)
-            }
-            .map { tokenIds ->
-                val output = intermediateTokenizer.decode(tokenIds)
-
-                if (tokenIds.last() == intermediateTokenizer.eosId) {
-                    onCompletion?.invoke(output)
-                }
-
-                output
-            }
-            .flowOn(Dispatchers.Default)
-    }
-
-    private suspend fun onTranslationCompletion(
-        input: String,
-        output: String,
-        languages: LanguagePair,
-        onCompletion: (suspend (output: String) -> Unit)?
-    ) {
-        if (cacheEnabled.first()) {
-            _cache.put(input, output, languages)
-        }
-
-        onCompletion?.invoke(output)
-    }
-
-    private suspend fun intermediateTranslate(input: String): String {
-        try {
-            val sanitized = sanitize(input)
-            val (inputIds, attentionMask) = intermediateTokenizer.encode(sanitized)
-            val minP = minProbability.first() * 100 / intermediateTokenizer.vocabSize
-
-            val tokenIds = intermediateModel.run(
-                inputIds = inputIds,
-                attentionMask = attentionMask,
-                eosId = intermediateTokenizer.eosId,
-                padId = intermediateTokenizer.padId,
-                minP = minP,
-                repetitionPenalty = repetitionPenalty.first(),
-                beamSize = beamSize.first(),
-                maxSequenceLength = maxSequenceLength.first(),
-            )
-
-            return intermediateTokenizer.decode(tokenIds)
-        } catch (e: Exception) {
-            setTranslationError(e)
-            Timber.tag(TAG).e(e)
-
-            return ""
-        }
-    }
-
-    /**
-     * Translates the input text to the target language. If the translation is already in the cache,
-     * it will be returned immediately.
+     * Translates the input text to the target language.
      */
     suspend fun translate(input: String, languages: LanguagePair): String {
         try {
-            var sanitized = sanitize(input)
+            val sanitized = sanitize(input)
 
-            var cache = _cache.get(sanitized, languages)
-            if (cache != null) {
-                return cache
-            }
+            _translationInProgress.value = true
 
-            _queue.withLock {
-                // Check to see if the translation is already in the cache, if so return it.
-                cache = _cache.get(sanitized, languages)
+            try {
+                val intermediate = _loadMutex.withLock { intermediateModel }
+                val output = _loadMutex.withLock { outputModel }
 
-                if (cache != null) {
-                    return cache
-                }
-
-                _translationInProgress.value = true
+                var text = sanitized
 
                 if (_languageModels.first()?.intermediary != null) {
-                    sanitized = intermediateTranslate(sanitized)
+                    text = intermediate.translate(
+                        text = text,
+                        maxBeamWidth = beamSize.first(),
+                        maxSequenceLength = maxSequenceLength.first()
+                    )
                 }
 
-                val (inputIds, attentionMask) = outputTokenizer.encode(sanitized)
-                val minP = minProbability.first() * 100 / outputTokenizer.vocabSize
-
-                val tokenIds = outputModel.run(
-                    inputIds = inputIds,
-                    attentionMask = attentionMask,
-                    eosId = outputTokenizer.eosId,
-                    padId = outputTokenizer.padId,
-                    minP = minP,
-                    repetitionPenalty = repetitionPenalty.first(),
-                    beamSize = beamSize.first(),
-                    maxSequenceLength = maxSequenceLength.first(),
+                val result = output.translate(
+                    text = text,
+                    maxBeamWidth = beamSize.first(),
+                    maxSequenceLength = maxSequenceLength.first()
                 )
                 _translationInProgress.value = false
 
-                val output = outputTokenizer.decode(tokenIds)
+                return result
+            } catch (e: Exception) {
+                _translationInProgress.value = false
+                setTranslationError(e)
+                Timber.tag(TAG).e(e)
 
-                if (cacheEnabled.first()) {
-                    _cache.put(input, output, languages)
-                }
-
-                return output
+                return ""
             }
         } catch (e: Exception) {
             setTranslationError(e)
@@ -384,6 +216,7 @@ class TranslationViewModel(
      */
     fun cancelTranslation() {
         outputModel.cancel()
+        intermediateModel.cancel()
         _translationInProgress.value = false
     }
 
@@ -398,7 +231,7 @@ class TranslationViewModel(
     }
 
     /**
-     * Loads the model and tokenizer from the given files.
+     * Loads the model from the given files.
      */
     suspend fun load(files: PivotPairModelFiles?, languages: LanguagePair) {
         cancelTranslation()
@@ -410,15 +243,13 @@ class TranslationViewModel(
 
                 try {
                     if (files?.intermediary != null) {
-                        intermediateTokenizer.load(files.intermediary.tokenizer, languages)
-                        intermediateModel.load(files.intermediary.inference, threadCount.first())
+                        intermediateModel.load(files.intermediary.files, files.intermediary.config)
                     } else {
                         intermediateModel.close()
                     }
 
                     if (files?.output != null) {
-                        outputTokenizer.load(files.output.tokenizer, languages)
-                        outputModel.load(files.output.inference, threadCount.first())
+                        outputModel.load(files.output.files, files.output.config)
                     }
 
                     _languageReadyState.value = ReadyState.Ready
@@ -427,13 +258,12 @@ class TranslationViewModel(
                     Timber.tag(TAG).e(e)
                     _loadingProgress.value = LoadingProgress.Error(e)
                 }
-
             }
         }.await()
     }
 
     /**
-     * Unloads the model and tokenizer.
+     * Unloads the model.
      */
     private fun unload() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -447,16 +277,9 @@ class TranslationViewModel(
     }
 
     /**
-     * Reloads the model and tokenizer.
+     * Reloads the model.
      */
     fun reload() {
-        viewModelScope.launch {
-            cacheSize.conflate().collect { size ->
-                // TODO: Migrate to actual storage cache
-                _cache = TranslationMemoryCache(size)
-            }
-        }
-
         viewModelScope.launch {
             _languageModels.combine(_languages) { files, pair ->
                 Pair(files, pair)
@@ -470,6 +293,12 @@ class TranslationViewModel(
 
                     pair.toLanguagePair()?.let { load(files, it) }
                 }
+        }
+
+        viewModelScope.launch {
+            cacheEnabled.combine(cacheSize) { enabled, size -> if (enabled) size else 0 }
+                .conflate()
+                .collect { reloadModel() }
         }
     }
 

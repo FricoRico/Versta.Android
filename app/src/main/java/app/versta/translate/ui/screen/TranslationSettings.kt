@@ -1,6 +1,5 @@
 package app.versta.translate.ui.screen
 
-import android.icu.text.DecimalFormat
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -26,15 +25,12 @@ import app.versta.translate.R
 import app.versta.translate.adapter.outbound.DEFAULT_CACHE_ENABLED
 import app.versta.translate.adapter.outbound.DEFAULT_CACHE_SIZE
 import app.versta.translate.adapter.outbound.DEFAULT_MAX_SEQUENCE_LENGTH
-import app.versta.translate.adapter.outbound.DEFAULT_MIN_PROBABILITY
 import app.versta.translate.adapter.outbound.DEFAULT_NUMBER_OF_BEAMS
 import app.versta.translate.adapter.outbound.DEFAULT_PIVOT_TRANSLATION
-import app.versta.translate.adapter.outbound.DEFAULT_REPETITION_PENALTY
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.TranslationMockInference
-import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.NavigationViewModel
@@ -47,10 +43,8 @@ import app.versta.translate.ui.component.ScaffoldCompactBarTitle
 import app.versta.translate.ui.component.ScaffoldComponentProvider
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.component.SettingsHeaderItem
-import app.versta.translate.ui.component.SliderLogarithmic
 import app.versta.translate.ui.component.SliderPredefinedValues
 import app.versta.translate.ui.theme.spacing
-import kotlin.math.roundToInt
 
 @Composable
 fun TranslationSettings(
@@ -62,8 +56,7 @@ fun TranslationSettings(
 ) {
     val layoutDirection = LocalLayoutDirection.current
 
-    val maxThreadCount = remember { Runtime.getRuntime().availableProcessors() }
-    val cacheSizeOptions = remember { listOf(16, 32, 64, 128, 256, 512, Int.MAX_VALUE) }
+    val cacheSizeOptions = remember { listOf(64, 256, 1024, 4096, 8192, Int.MAX_VALUE) }
     val sequenceLengthOptions = remember { listOf(16, 32, 64, 128, 256, 512) }
 
     val cacheSize by translationViewModel.cacheSize.collectAsStateWithLifecycle(DEFAULT_CACHE_SIZE)
@@ -78,15 +71,6 @@ fun TranslationSettings(
     )
     val maxSequenceLength by translationViewModel.maxSequenceLength.collectAsStateWithLifecycle(
         DEFAULT_MAX_SEQUENCE_LENGTH
-    )
-    val minProbability by translationViewModel.minProbability.collectAsStateWithLifecycle(
-        DEFAULT_MIN_PROBABILITY
-    )
-    val repetitionPenalty by translationViewModel.repetitionPenalty.collectAsStateWithLifecycle(
-        DEFAULT_REPETITION_PENALTY
-    )
-    val threadCount by translationViewModel.threadCount.collectAsStateWithLifecycle(
-        maxThreadCount / 2
     )
 
     var settingsChanged by remember {
@@ -158,6 +142,7 @@ fun TranslationSettings(
 
                 item {
                     SettingsButtonItem(
+                        enabled = cacheEnabled,
                         headlineContent = stringResource(R.string.translation_settings_history_size_title),
                         supportingContent = stringResource(R.string.translation_settings_history_size_description),
                         trailingContent = {
@@ -187,7 +172,7 @@ fun TranslationSettings(
                 item {
                     SettingsHeaderItem(
                         content = stringResource(R.string.translation_settings_inference_headline),
-                        groupSize = 7,
+                        groupSize = 4,
                         index = 0
                     )
                 }
@@ -209,7 +194,7 @@ fun TranslationSettings(
                                 },
                             )
                         },
-                        groupSize = 7,
+                        groupSize = 4,
                         index = 1
                     )
                 }
@@ -236,7 +221,7 @@ fun TranslationSettings(
                                 steps = 6,
                             )
                         },
-                        groupSize = 7,
+                        groupSize = 4,
                         index = 2
                     )
                 }
@@ -262,92 +247,8 @@ fun TranslationSettings(
                                 },
                             )
                         },
-                        groupSize = 7,
+                        groupSize = 4,
                         index = 3
-                    )
-                }
-
-                item {
-                    SettingsButtonItem(
-                        headlineContent = stringResource(R.string.translation_settings_inference_min_p_title),
-                        supportingContent = stringResource(R.string.translation_settings_inference_min_p_description),
-                        trailingContent = {
-                            Text(
-                                text = DecimalFormat("0.000").format(minProbability),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontSize = 22.sp
-                            )
-                        },
-                        underlineContent = {
-                            SliderLogarithmic(
-                                value = minProbability,
-                                minValue = 0.01f,
-                                maxValue = 0.5f,
-                                onValueChange = {
-                                    settingsChanged = true
-
-                                    val rounded = (it * 1000).roundToInt() / 1000f
-                                    translationViewModel.setMinProbability(rounded)
-                                },
-                            )
-                        },
-                        groupSize = 7,
-                        index = 4
-                    )
-                }
-
-                item {
-                    SettingsButtonItem(
-                        headlineContent = stringResource(R.string.translation_settings_inference_repetition_penalty_title),
-                        supportingContent = stringResource(R.string.translation_settings_inference_repetition_penalty_description),
-                        trailingContent = {
-                            Text(
-                                text = DecimalFormat("0.00").format(repetitionPenalty),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontSize = 22.sp
-                            )
-                        },
-                        underlineContent = {
-                            Slider(
-                                value = repetitionPenalty,
-                                valueRange = 0.0f..2.0f,
-                                onValueChange = {
-                                    settingsChanged = true
-
-                                    val rounded = (it * 100).roundToInt() / 100f
-                                    translationViewModel.setRepetitionPenalty(rounded)
-                                },
-                            )
-                        },
-                        groupSize = 7,
-                        index = 5
-                    )
-                }
-
-                item {
-                    SettingsButtonItem(
-                        headlineContent = stringResource(R.string.translation_settings_inference_thread_limit_title),
-                        supportingContent = stringResource(R.string.translation_settings_inference_thread_limit_description),
-                        trailingContent = {
-                            Text(
-                                text = threadCount.toString(),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontSize = 22.sp
-                            )
-                        },
-                        underlineContent = {
-                            Slider(
-                                value = threadCount.toFloat(),
-                                onValueChange = {
-                                    settingsChanged = true
-                                    translationViewModel.setThreadCount(it.toInt())
-                                },
-                                valueRange = 1f..maxThreadCount.toFloat(),
-                                steps = maxThreadCount - 2,
-                            )
-                        },
-                        groupSize = 7,
-                        index = 6
                     )
                 }
             }
@@ -367,7 +268,6 @@ fun TranslationSettingsPreview() {
     )
 
     val translationMockInference = TranslationMockInference()
-    val translationMockTokenizer = TranslationMockTokenizer()
 
     TranslationSettings(
         innerPadding = PaddingValues(),
@@ -376,9 +276,7 @@ fun TranslationSettingsPreview() {
         ),
         navigationViewModel = navigationViewModel,
         translationViewModel = TranslationViewModel(
-            intermediateTokenizer = translationMockTokenizer,
             intermediateModel = translationMockInference,
-            outputTokenizer = translationMockTokenizer,
             outputModel = translationMockInference,
             translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
             languageViewModel = languageViewModel

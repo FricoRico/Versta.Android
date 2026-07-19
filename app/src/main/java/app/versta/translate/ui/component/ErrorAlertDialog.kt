@@ -37,7 +37,6 @@ import app.versta.translate.adapter.outbound.TextToSpeechMockInference
 import app.versta.translate.adapter.outbound.TextToSpeechMockTokenizer
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.TranslationMockInference
-import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.bridge.speech.ESpeakNG
 import app.versta.translate.bridge.speech.OpenJTalk
@@ -167,13 +166,10 @@ fun LazyListScope.TextToSpeechError(error: Throwable?) {
 @Preview(showBackground = true)
 fun ErrorAlertDialogPreview() {
     val translationMockInference = TranslationMockInference()
-    val translationMockTokenizer = TranslationMockTokenizer()
 
     ErrorAlertDialog(
         translationViewModel = TranslationViewModel(
-            intermediateTokenizer = translationMockTokenizer,
             intermediateModel = translationMockInference,
-            outputTokenizer = translationMockTokenizer,
             outputModel = translationMockInference,
             translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
             languageViewModel = LanguageViewModel(

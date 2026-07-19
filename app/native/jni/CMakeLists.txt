@@ -31,7 +31,7 @@ target_link_libraries(
         cld2
         ocr-clipper
         espeak-ng
-        sentencepiece
         openjtalk
+        leanmt
         ${OpenCV_LIBS}
 )

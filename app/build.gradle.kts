@@ -42,7 +42,7 @@ android {
 
     defaultConfig {
         applicationId = "app.versta.translate"
-        minSdk = 26
+        minSdk = 28
         targetSdk = 36
         versionCode = 12
         versionName = "1.3.1"
@@ -55,7 +55,8 @@ android {
         externalNativeBuild {
             cmake {
                 targets("app_versta_translate_bridge")
-                arguments += "-DANDROID_ARM_NEON=ON"
+                arguments += "-DUSE_MBROLA=OFF"
+                arguments += "-DUSE_ASYNC=OFF"
             }
         }
     }
@@ -107,6 +108,7 @@ android {
         noCompress += "ort"
         noCompress += "json"
         noCompress += "spm"
+        noCompress += "bin"
     }
     externalNativeBuild {
         cmake {
@@ -119,15 +121,39 @@ android {
     productFlavors {
         create("arm64-v8a") {
             dimension = "abi"
+            externalNativeBuild {
+                cmake {
+                    arguments += "-DLEANMT_ARM64_TUNE=ON"
+                    arguments += "-DANDROID_ARM_NEON=ON"
+                    arguments += "-DUSE_NEON=ON"
+                    cppFlags += "-O3"
+                }
+            }
         }
         create("armeabi-v7a") {
             dimension = "abi"
+            externalNativeBuild {
+                cmake {
+                    arguments += "-DANDROID_ARM_NEON=ON"
+                    arguments += "-DUSE_NEON=ON"
+                }
+            }
         }
         create("x86") {
             dimension = "abi"
+            externalNativeBuild {
+                cmake {
+                    arguments += "-DUSE_SSE2=ON"
+                }
+            }
         }
         create("x86_64") {
             dimension = "abi"
+            externalNativeBuild {
+                cmake {
+                    arguments += "-DUSE_SSE2=ON"
+                }
+            }
         }
     }
 //

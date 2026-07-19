@@ -73,7 +73,6 @@ import app.versta.translate.adapter.outbound.TextToSpeechMockInference
 import app.versta.translate.adapter.outbound.TextToSpeechMockTokenizer
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.TranslationMockInference
-import app.versta.translate.adapter.outbound.TranslationMockTokenizer
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.bridge.speech.ESpeakNG
@@ -93,6 +92,7 @@ import app.versta.translate.utils.darken
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
+import timber.log.Timber
 
 @OptIn(
     ExperimentalPermissionsApi::class, ExperimentalMaterial3ExpressiveApi::class,
@@ -323,7 +323,6 @@ private fun TextTranslationPreview() {
     val navigationViewModel = NavigationViewModel(Screens.TextTranslation)
 
     val translationMockInference = TranslationMockInference()
-    val translationMockTokenizer = TranslationMockTokenizer()
 
     TextTranslation(
         innerPadding = PaddingValues(),
@@ -334,9 +333,7 @@ private fun TextTranslationPreview() {
         textTranslationViewModel = TextTranslationViewModel(
             languageViewModel = languageViewModel,
             translationViewModel = TranslationViewModel(
-                intermediateTokenizer = translationMockTokenizer,
                 intermediateModel = translationMockInference,
-                outputTokenizer = translationMockTokenizer,
                 outputModel = translationMockInference,
                 translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
                 languageViewModel = languageViewModel

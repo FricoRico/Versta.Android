@@ -139,6 +139,7 @@ class CameraTranslationViewModel(
     val cameraTranslationState: StateFlow<ReadyState> = _cameraTranslationState.asStateFlow()
 
     private val _loadMutex = Mutex()
+    private val _frameMutex = Mutex()
 
     private val _objectCharacterRecognitionAnalyzer = ObjectCharacterRecognitionAnalyzer(
         objectCharacterRecognitionInference = objectCharacterRecognitionInference,
@@ -150,30 +151,37 @@ class CameraTranslationViewModel(
             }
         },
         onFrameProcessed = { objects, timestamp ->
-            val languages = languageViewModel.languagePair.first()
-            if (languages == null) {
-                return@ObjectCharacterRecognitionAnalyzer
+            viewModelScope.launch(Dispatchers.Default) {
+                if (!_frameMutex.tryLock()) {
+                    return@launch
+                }
+
+                try {
+                    val languages = languageViewModel.languagePair.first() ?: return@launch
+
+                    val results = objects.filter {
+                        it.score >= 0.8f && it.text.isNotBlank()
+                    }.map {
+                        val translated = translationViewModel.translate(it.text, languages)
+
+                        CameraTranslationResult(
+                            points = it.points,
+                            score = it.score,
+                            text = it.text,
+                            translated = translated,
+                            colors = it.colors,
+                            fontSize = it.fontSize,
+                            lineHeight = it.lineHeight,
+                            fontWeight = it.fontWeight
+                        )
+                    }
+
+                    _results.value = results
+                } finally {
+                    _translating.value = false
+                    _frameMutex.unlock()
+                }
             }
-
-            val results = objects.filter {
-                it.score >= 0.8f && it.text.isNotBlank()
-            }.map {
-                val translated = translationViewModel.translate(it.text, languages)
-
-                CameraTranslationResult(
-                    points = it.points,
-                    score = it.score,
-                    text = it.text,
-                    translated = translated,
-                    colors = it.colors,
-                    fontSize = it.fontSize,
-                    lineHeight = it.lineHeight,
-                    fontWeight = it.fontWeight
-                )
-            }
-
-            _results.value = results
-            _translating.value = false
         }
     )
 

@@ -19,13 +19,12 @@ data class LanguageModelMetadata(
     @SerialName("target_language")
     val targetLanguage: String,
     val score: Double? = 0.0,
-    val architectures: List<LanguageModelArchitecture>,
     val files: LanguageModelFilesMetadata,
+    val config: LanguageModelConfigurationMetadata,
     var root: Path? = null
 ) {
     fun isValid() = baseModel.isNotBlank()
             && sourceLanguage.isNotBlank()
-            && architectures.isNotEmpty()
             && (root != null && files.isValid(root!!))
             && root?.isAbsolute ?: false
 
@@ -69,44 +68,40 @@ data class LanguageBundleMetadata(
         }
     }
 }
-
 @Serializable
 data class LanguageModelFilesMetadata(
-    val tokenizer: LanguageModelTokenizerFilesMetadata,
-    val inference: LanguageModelInferenceFilesMetadata
-) {
-    fun isValid(path: Path) = tokenizer.isValid(path) &&
-            inference.isValid(path)
-}
-
-@Serializable
-data class LanguageModelTokenizerFilesMetadata(
-    val config: String,
+    val model: String,
     @SerialName("vocabulary")
-    val sourceVocabulary: String,
+    val vocabulary: String,
     @SerialName("target_vocabulary")
     val targetVocabulary: String? = null,
-    val source: String,
-    val target: String
+    val shortlist: String,
 ) {
-    fun isValid(path: Path) = path.resolve(config).exists() &&
-            path.resolve(sourceVocabulary).exists() &&
+    fun isValid(path: Path) = path.resolve(model).exists() &&
+            path.resolve(vocabulary).exists() &&
             targetVocabulary?.let { path.resolve(it).exists() } ?: true &&
-            path.resolve(source).exists() &&
-            path.resolve(target).exists()
+            path.resolve(shortlist).exists()
 }
 
 @Serializable
-data class LanguageModelInferenceFilesMetadata(
-    val encoder: String,
-    val decoder: String
+data class LanguageModelConfigurationMetadata(
+    @SerialName("encoder_layers")
+    val encoderLayers: Long,
+    @SerialName("decoder_layers")
+    val decoderLayers: Long,
+    @SerialName("ffn_depth")
+    val ffnDepth: Long = 2,
+    @SerialName("num_heads")
+    val numHeads: Long,
+    @SerialName("split_mode")
+    val splitMode: String = "sentence"
 ) {
-    fun isValid(path: Path) = path.resolve(encoder).exists() &&
-            path.resolve(decoder).exists()
+    fun isValid() = encoderLayers > 0 && decoderLayers > 0 &&
+            ffnDepth > 0 && numHeads > 0
 }
 
 @Serializable
-data class LanguageModel(
+data class LanguageBundleData(
     val bundle: LanguageBundleMetadata,
     val languages: List<LanguageModelMetadata>
 )

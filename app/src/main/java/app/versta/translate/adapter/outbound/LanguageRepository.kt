@@ -3,12 +3,10 @@ package app.versta.translate.adapter.outbound
 import app.versta.translate.core.entity.LanguageBundleMetadata
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageModelMetadata
-import app.versta.translate.core.entity.LanguageModelFiles
 import app.versta.translate.core.entity.LanguagePair
-import app.versta.translate.core.entity.LanguagePairModelFiles
-import app.versta.translate.core.entity.LanguageModel
+import app.versta.translate.core.entity.LanguageModelPair
+import app.versta.translate.core.entity.LanguageBundleData
 import app.versta.translate.core.entity.LanguageOption
-import app.versta.translate.core.entity.PivotPair
 import app.versta.translate.core.entity.PivotPairModelFiles
 import kotlinx.coroutines.flow.Flow
 
@@ -16,7 +14,7 @@ interface LanguageRepository {
     /**
      * Gets the language models metadata available in the repository.
      */
-    fun getLanguages(): Flow<List<LanguagePairModelFiles>>
+    fun getLanguages(): Flow<List<LanguageModelPair>>
 
     /**
      * Gets the languages available in the repository.
@@ -60,7 +58,7 @@ interface LanguageRepository {
      * Inserts or updates the language models in the repository.
      * @param metadata The metadata to insert or update.
      */
-    fun upsertLanguageModels(metadata: LanguageModel)
+    fun upsertLanguageModels(metadata: LanguageBundleData)
 
     /**
      * Deletes the language models in the repository by the source, including all related models.

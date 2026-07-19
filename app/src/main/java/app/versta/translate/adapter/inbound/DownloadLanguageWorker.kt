@@ -6,7 +6,7 @@ import androidx.work.WorkerParameters
 import app.versta.translate.MainApplication
 import app.versta.translate.core.entity.DownloadStatus
 import app.versta.translate.core.entity.LanguageBundleMetadata
-import app.versta.translate.core.entity.LanguageModel
+import app.versta.translate.core.entity.LanguageBundleData
 import app.versta.translate.core.entity.LanguageModelMetadata
 import timber.log.Timber
 import java.io.File
@@ -51,7 +51,7 @@ class DownloadLanguageWorker(context: Context, parameters: WorkerParameters) :
     /**
      * Reads the metadata file from the extracted model.
      */
-    private fun readMetadata(output: File?): LanguageModel {
+    private fun readMetadata(output: File?): LanguageBundleData {
         if (output == null) {
             throw Exception("Output file is null")
         }
@@ -77,7 +77,7 @@ class DownloadLanguageWorker(context: Context, parameters: WorkerParameters) :
             throw Exception("Invalid language metadata file")
         }
 
-        return LanguageModel(
+        return LanguageBundleData(
             bundle = languageBundleMetadata,
             languages = languageModelMetadata
         )

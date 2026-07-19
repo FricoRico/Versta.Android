@@ -28,10 +28,10 @@ import app.versta.translate.adapter.outbound.LanguageDatabaseRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
+import app.versta.translate.adapter.outbound.BergamotTinyInference
+import app.versta.translate.adapter.outbound.DEFAULT_CACHE_SIZE
 import app.versta.translate.adapter.outbound.LicenseDataStoreRepository
 import app.versta.translate.adapter.outbound.LicenseRepository
-import app.versta.translate.adapter.outbound.MarianInference
-import app.versta.translate.adapter.outbound.MarianTokenizer
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionInference
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepository
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepositoryDatabaseRepository
@@ -48,7 +48,7 @@ import app.versta.translate.adapter.outbound.TextToSpeechTokenizer
 import app.versta.translate.adapter.outbound.TranslationInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
-import app.versta.translate.adapter.outbound.TranslationTokenizer
+import app.versta.translate.bridge.leanmt.LeanmtService
 import app.versta.translate.bridge.speech.ESpeakNG
 import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.model.CameraTranslationViewModel
@@ -112,9 +112,8 @@ interface ApplicationModuleInterface {
     val validator: FileHashValidator
     val eSpeakNG: ESpeakNG
     val openJTalk: OpenJTalk
-    val intermediateTranslationTokenizer: TranslationTokenizer
+    val translationService: LeanmtService
     val intermediateTranslationInference: TranslationInference
-    val outputTranslationTokenizer: TranslationTokenizer
     val outputTranslationInference: TranslationInference
     val textToSpeechTokenizer: TextToSpeechTokenizer
     val textToSpeechInference: TextToSpeechInference
@@ -257,9 +256,7 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
 
     override val translationViewModel: TranslationViewModel by lazy {
         TranslationViewModel(
-            intermediateTokenizer = intermediateTranslationTokenizer,
             intermediateModel = intermediateTranslationInference,
-            outputTokenizer = outputTranslationTokenizer,
             outputModel = outputTranslationInference,
             translationPreferenceRepository = translatorPreferenceRepository,
             languageViewModel = languageViewModel
@@ -330,20 +327,16 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
         OpenJTalk()
     }
 
-    override val intermediateTranslationTokenizer: TranslationTokenizer by lazy {
-        MarianTokenizer()
+    override val translationService: LeanmtService by lazy {
+        LeanmtService.create(DEFAULT_CACHE_SIZE.toLong())
     }
 
     override val intermediateTranslationInference: TranslationInference by lazy {
-        MarianInference(ortEnvironment)
-    }
-
-    override val outputTranslationTokenizer: TranslationTokenizer by lazy {
-        MarianTokenizer()
+        BergamotTinyInference(translationService)
     }
 
     override val outputTranslationInference: TranslationInference by lazy {
-        MarianInference(ortEnvironment)
+        BergamotTinyInference(translationService)
     }
 
     override val textToSpeechTokenizer: TextToSpeechTokenizer by lazy {

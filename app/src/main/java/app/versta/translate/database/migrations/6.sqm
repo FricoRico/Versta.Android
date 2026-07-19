@@ -1,0 +1,8 @@
+DROP TABLE LanguageModel;
+
+CREATE TABLE LanguageModel (
+    languageId TEXT NOT NULL PRIMARY KEY REFERENCES Language(id) ON DELETE CASCADE,
+    baseModel TEXT NOT NULL,
+    path TEXT NOT NULL,
+    version TEXT NOT NULL
+);
