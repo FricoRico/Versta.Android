@@ -1,739 +1,647 @@
-# Graph Report - .  (2026-08-08)
+# Graph Report - app  (2026-08-11)
 
 ## Corpus Check
-- 251 files · ~111,517 words
+- 281 files · ~111,926 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2301 nodes · 4111 edges · 156 communities (138 shown, 18 thin omitted)
-- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 374 edges (avg confidence: 0.81)
-- Token cost: 42,000 input · 3,500 output
+- 2568 nodes · 6195 edges · 141 communities (111 shown, 30 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 80 edges (avg confidence: 0.81)
+- Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
-- Paddle OCR JNI Bridge
-- Voice Model File Repository
-- Project Docs & Issue Templates
-- LeanMT JNI Bridge
-- OCR Text Analyzer Native
-- Camera Translation Flow
-- Download Status State
-- TTS Preference DataStore
-- Frontend Design Skills
-- Audio Mock Player
-- Download Workers
-- OCR Inference
-- TextToSpeech ViewModel
-- OCR Recognition Database
-- Translation ViewModel State
-- External OCR Model Repository
-- Language ViewModel
+- JNI Primitive Types
+- Mesh Gradient Tests
+- Language Memory Repos & ViewModel
+- Mock Audio & TTS Infrastructure
+- Whisper Native Engine
+- LeanMT Native JNI
 - StyleTTS2 Inference
-- Language Database Repository
-- External Language Model Repository
-- ESpeak NG Bridge
-- PaddleOCR Tokenizer
-- Scaffold Navigation
-- Navigation Screens
-- TextTranslation ViewModel
-- SQLDelight Database Container
-- Download Client
-- Language Model Queries
-- OCR Recognition Repository
-- Tensor Utils
-- Navigation ViewModel
-- Language Badge UI
-- Language Detect JNI
-- Generic Transliterator
-- Download Button UI
-- GDPR Compliance Skill
-- PaddleOCR Detector
-- Android Models & API Skill
-- Bergamot Tiny Inference
-- Data Database Repository
+- OCR Text Analyzer Native
+- Scaffold Navigation Components
 - Language Preference DataStore
-- Scaffold Compact Bar UI
-- Theme Animation
-- OCR ViewModel
-- espeak-ng JNI Bridge
-- External OCR Model Metadata
+- License Management
+- Data Repos & Files
+- Language Repository Port
+- Divider & Badge UI
+- Camera Translation
+- Translation Inference Loading
+- Whisper Speech Tests
+- OCR Inference Bridge
+- Language Database Repository
+- External Voice Model Repos
+- External Language Model Catalog
+- Language Download & Database
+- Data Repos & Hash Validation
+- Vendored Native Libraries
+- TTS Voice Loading
+- App Navigation
+- TTS ViewModel
+- Translation ViewModel
+- Download Status State
+- OCR Post-Processing Pipeline
+- TTS Preference DataStore
+- Architecture Concepts
+- Fake Recognizer Test Helper
+- Speech Recognition External Repos
+- Voice Models UI
+- Download Worker Infrastructure
+- Data Database Repository
+- OCR Download Worker & Metadata
+- Navigation Screens
+- Speech Download & Database
+- Speech Model Definition Tests
+- OCR External Model Repos
+- StyleTTS2 Tokenizer & ESpeak
+- PaddleOCR Recognize ONNX
+- Text Translation ViewModel
+- Settings UI Components
+- OCR Repository Memory
+- HTTP Download Client
+- TTS Synthesis State
+- Voice Download Worker
+- Speech Recognition ViewModel
+- Settings & Download UI
+- CLD2 Language Detection Native
+- Speech Repo & Model Tests
+- OCR Repository & Download
+- Transliteration
+- Database Container & Migrations
+- Application Logs UI
+- OCR Repository Database
+- PaddleOCR Detect ONNX
+- Theme & Color Scheme
+- Speech Context Store Tests
+- ESpeakNG Native
 - Translation Preference DataStore
 - Translation Preference Memory
-- Translation Preference Repository
-- Plan Reviewer Skill
-- Compressed File Extractor
-- Language Preference Memory
-- OCR Analyzer
-- Paragraph Grouping Postprocessor
+- Translation Preference Port
+- Download Manager
+- Whisper Speech Kotlin
+- Language Detection & Logging
+- Archive Extraction
 - Voice Database Repository
-- Code Review Skill
-- Compose Component Reference
-- PaddleOCR Bridge
-- Mobile Design Reference
-- Audio Player
-- External Data & TTS Tokenizer
-- File Saver
-- Language Model Loading
-- OCR Detector Repository
-- OCR Text Analyzer Bridge
-- Language Pair Utils
-- Voice Model Metadata
-- Custom Theme ViewModel
-- License ViewModel
-- Logging ViewModel
-- Settings Button Item
-- Language Memory Repository
-- Language Preference Repository
-- TTS Synthesis State
-- Button Card UI
-- TextField UI
-- Android Navigation Reference
-- Material 3 Theming Reference
-- File Picker
-- External Data Memory Repository
-- Language Model Metadata Database
-- Data Metadata
-- Divider UI
-- Navigation Drawer
-- Scaffold Compact Bar
-- Clean Code Skill
-- TDD Skill
-- Bubble Notification
-- Data With Files
-- Language Repository
-- StyleTTS2 Tokenizer
-- OpenJTalk Bridge
+- OCR ViewModel & Tasks
+- Whisper Native JNI Handles
+- OCR Text Analyzer Kotlin
 - Bubble Activity
+- Microphone Capture
+- Whisper VAD Probe
+- Custom Theme & Nav
+- Whisper Recognizer Kotlin
+- Speech Recognition Files Tests
+- File Saver
+- PaddleOCR Kotlin Bridge
+- Logging ViewModel
+- Data Download Worker & Metadata
+- Language Preference Port
+- Speech Recognition Mock Inference
 - Main Activity
-- External Data File Repository
-- License DataStore Repository
-- Voice Repository
-- OCR Detector With Files
-- File Walk Utils
-- Main Application Setup
-- Color Extensions
-- License Memory Repository
-- Voice Model Files
-- Leanmt Service
-- Language Selection Drawer
-- OCR Deletion Dialog
-- Modal Bottom Sheet
-- Jetpack Compose UI Reference
-- Code Simplification Skill
-- Trial License Drawer
-- File Hash Validator
+- Swipe & Color UI
+- File Picker
+- OCR Camera Analyzer
+- Speech Repo Tests
+- Whisper Initial Prompts Tests
+- Speech Recognition Metadata Tests
+- Notifications
+- Settings Headers & Speech UI
+- Initial Prompts Tests
+- License Repository
+- StyleTTS2 Tokenizer
+- Compose Design Concepts
+- Bottom Sheet Scaffold
+- Whisper Native Model Handle
+- Camera Permission UI
+- OCR Tokenizer & Vocabulary
+- Speech Recognition Inference Port
+- LeanMT Kotlin Bridge
+- Language Pair Badge UI
 - Translate Bubble Shortcut
-- External Data Definitions
-- TTS Inference
-- TTS Mock Inference
-- Language Selector
-- Minimal Language Selector
-- Slider Predefined Values
-- Language Details Screen
-- Legacy TextTranslation UI
-- Button Color Defaults
-- C++ Coding Standards Skill
-- Language Detect Bridge
-- External Language Model Metadata
-- File Visitor Utils
-- Voice Voice Files
-- Settings Defaults Colors
-- Verification Skill
-- Vocabulary JNI
-- PaddleOCR Tokenizer
-- File Walk Utils
-- File Walk Utils
-- Privacy Policy Screen
-- Tensor Utils JNI
-- Notification Activity
+- External Voice File Repos
+- TextToSpeech Inference Port
+- Whisper Native JNI Create
+- Audio Player
+- AudioTrack Player
+- Speech Context Store
+- File System Utilities
+- Vocabulary Native
+- Whisper VAD Trailing Probe
+- External Language Model Tests
+- Whisper Model Kotlin
+- Tensor Utils Native
+- Translate Notification Activity
 - Moses Punctuation Normalizer
-- Font Weight
-- TTS Settings Screen
-- Theme Animations & Spacing
-- ViewModel Factory Utils
-- Gradle Wrapper Script
-- Voice Model Upsert
-- Vocabulary Loading
+- ViewModel Extensions
+- Writing Direction
+- Versta Logo
+- Text Annotation
+- Fake Model Test Helper
+- TTS Playback
+- TTS Synthesis
 - Content Color
 - Logarithmic Slider
-- Locale Utils
-- Device Utils
+- Driving Adapters
+- Native Header & Binding
+- Opaque Handle Pattern
+- Port Implementation Naming
+- Timber Logging
+- Utils Extensions
+- Threading Contract
+- Whisper Canonical Kotlin Shape
 
 ## God Nodes (most connected - your core abstractions)
-1. `NavigationViewModel` - 66 edges
-2. `Language` - 53 edges
-3. `PaddleOCR` - 51 edges
-4. `LanguageViewModel` - 50 edges
-5. `ScaffoldViewModel` - 49 edges
-6. `TextToSpeechViewModel` - 47 edges
-7. `LanguagePair` - 41 edges
-8. `ApplicationModuleInterface` - 37 edges
-9. `ApplicationModule` - 37 edges
-10. `CameraTranslationViewModel` - 37 edges
+1. `NavigationViewModel` - 96 edges
+2. `Language` - 89 edges
+3. `ScaffoldViewModel` - 77 edges
+4. `LanguageViewModel` - 74 edges
+5. `ApplicationModule` - 73 edges
+6. `Recognizer` - 62 edges
+7. `LanguagePair` - 60 edges
+8. `TextToSpeechViewModel` - 57 edges
+9. `PaddleOCR` - 51 edges
+10. `ScaffoldComponentProvider()` - 50 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Readability & Simplicity Axis` --semantically_similar_to--> `Code Simplification Skill`  [INFERRED] [semantically similar]
-  .agents/skills/code-review-and-quality/SKILL.md → .agents/skills/code-simplification/SKILL.md
-- `Top-level CMakeLists` --conceptually_related_to--> `whisper.cpp`  [AMBIGUOUS]
-  app/native/jni/CMakeLists.txt → AGENTS.md
-- `Android Kotlin Development Skill` --semantically_similar_to--> `Android Mobile Design Skill`  [INFERRED] [semantically similar]
-  .agents/skills/android-kotlin-development/SKILL.md → .agents/skills/mobile-android-design/SKILL.md
-- `Jetpack Compose UI Reference` --semantically_similar_to--> `Compose Component Library Reference`  [INFERRED] [semantically similar]
-  .agents/skills/android-kotlin-development/references/jetpack-compose-ui.md → .agents/skills/mobile-android-design/references/compose-components.md
-- `Clean Code Skill` --semantically_similar_to--> `Code Simplification Skill`  [INFERRED] [semantically similar]
-  .agents/skills/clean-code/SKILL.md → .agents/skills/code-simplification/SKILL.md
+- `DownloadWorker` --calls--> `HttpDownloadClient`  [INFERRED]
+  src/main/java/app/versta/translate/adapter/inbound/DownloadWorker.kt → src/main/java/app/versta/translate/adapter/inbound/HttpDownloadClient.kt
+- `WhisperSpeechRecognition` --calls--> `SpeechContextStore`  [INFERRED]
+  src/main/java/app/versta/translate/adapter/outbound/WhisperSpeechRecognition.kt → src/main/java/app/versta/translate/adapter/outbound/SpeechContextStore.kt
+- `LanguageModelPair` --calls--> `LanguagePair`  [INFERRED]
+  src/main/java/app/versta/translate/core/entity/LanguageWithModelFiles.kt → src/main/java/app/versta/translate/core/entity/Language.kt
+- `LanguageViewModel` --calls--> `DownloadManager`  [INFERRED]
+  src/main/java/app/versta/translate/core/model/LanguageViewModel.kt → src/main/java/app/versta/translate/core/model/DownloadManager.kt
+- `ObjectCharacterRecognitionViewModel` --calls--> `DownloadManager`  [INFERRED]
+  src/main/java/app/versta/translate/core/model/ObjectCharacterRecognitionViewModel.kt → src/main/java/app/versta/translate/core/model/DownloadManager.kt
 
 ## Import Cycles
 - None detected.
 
 ## Hyperedges (group relationships)
-- **Design Configuration Dials** — _agents_skills_design_taste_frontend_skill_design_variance, _agents_skills_design_taste_frontend_skill_motion_intensity, _agents_skills_design_taste_frontend_skill_visual_density [EXTRACTED 1.00]
-- **Five-Axis Code Review Framework** — _agents_skills_code_review_and_quality_skill_correctness_axis, _agents_skills_code_review_and_quality_skill_readability_axis, _agents_skills_code_review_and_quality_skill_architecture_axis, _agents_skills_code_review_and_quality_skill_security_axis, _agents_skills_code_review_and_quality_skill_performance_axis [EXTRACTED 1.00]
-- **MVVM Data Flow Across Reference Guides** — _agents_skills_android_kotlin_development_references_models_api_service_apiservice, _agents_skills_android_kotlin_development_references_mvvm_viewmodels_with_jetpack_userviewmodel, _agents_skills_android_kotlin_development_references_mvvm_viewmodels_with_jetpack_itemsviewmodel, _agents_skills_android_kotlin_development_references_jetpack_compose_ui_homescreen, _agents_skills_android_kotlin_development_references_jetpack_compose_ui_profilescreen [EXTRACTED 1.00]
-- **GitHub Issue Template System** — _github_issue_template_1_bug_yaml, _github_issue_template_2_story_yaml, _github_issue_template_3_task_yaml, _github_issue_template_config_yaml [EXTRACTED 1.00]
-- **On-Device Native Inference Stack** — agents_leanmt, agents_whisper_cpp, app_agents_paddle_ocr, agents_espeak_ng, agents_open_jtalk, agents_cld2, agents_styletts2, agents_onnxruntime [EXTRACTED 1.00]
-- **JNI Bridge Pattern** — app_native_agents_jni_binding, app_native_agents_opaque_handle, app_native_agents_threading, app_agents_jni_inference [EXTRACTED 1.00]
+- **Vendored Libraries Linked Into the Native Bridge** — app_native_jni_cmakelists_link_opencv, app_native_jni_cmakelists_link_ucd, app_native_jni_cmakelists_link_cld2, app_native_jni_cmakelists_link_ocr_clipper, app_native_jni_cmakelists_link_espeak_ng, app_native_jni_cmakelists_link_openjtalk, app_native_jni_cmakelists_link_leanmt, app_native_jni_cmakelists_link_whisper [EXTRACTED 1.00]
+- **JNI Binding Files of app_versta_translate_bridge** — app_native_jni_src_cmakelists_tensor_utils, app_native_jni_src_cmakelists_espeak_ng, app_native_jni_src_cmakelists_open_jtalk, app_native_jni_src_cmakelists_paddle_ocr, app_native_jni_src_cmakelists_ocr_text_analyzer, app_native_jni_src_cmakelists_language_detect, app_native_jni_src_cmakelists_vocabulary, app_native_jni_src_cmakelists_leanmt, app_native_jni_src_cmakelists_whisper [EXTRACTED 1.00]
+- **Native Inference Engines (JNI Bridge)** — app_agents_bridge, app_agents_leanmt, app_agents_whispercpp, app_agents_cld2, app_agents_espeakng, app_agents_openjtalk, app_agents_paddleocr [EXTRACTED 1.00]
+- **Storage Stack (SQLDelight + DataStore + Manual Migrations)** — app_agents_sqldelight, app_agents_datastore, app_agents_databasecontainer, app_agents_migrations [EXTRACTED 1.00]
+- **Compose Theming System** — app_agents_material3_expressive, app_agents_translatetheme, app_agents_obsidiantheme, app_agents_meshgradientbackground [EXTRACTED 1.00]
 
-## Communities (156 total, 18 thin omitted)
+## Communities (141 total, 30 thin omitted)
 
-### Community 0 - "Paddle OCR JNI Bridge"
+### Community 0 - "JNI Primitive Types"
 Cohesion: 0.06
-Nodes (47): argmax(), jfloat, jint, jlong, JNIEnv, JNIEXPORT, jobject, Mat (+39 more)
+Nodes (47): ForwardIterator, jlongArray, argmax(), jboolean, jfloat, jint, jintArray, jlong (+39 more)
 
-### Community 1 - "Voice Model File Repository"
-Cohesion: 0.06
-Nodes (27): ExternalVoiceModelsFileRepository, ExternalVoiceModelDefinitions, Flow, ExternalVoiceModelsMemoryRepository, ExternalVoiceModelDefinitions, Flow, ExternalVoiceModelsRepository, ExternalVoiceModelDefinitions (+19 more)
-
-### Community 2 - "Project Docs & Issue Templates"
+### Community 1 - "Mesh Gradient Tests"
 Cohesion: 0.08
-Nodes (50): Bug Issue Template, Story Issue Template, Task Issue Template, GitHub Issue Templates, Issue Template Config, app_versta_translate_bridge Native Library, cld2, espeak-ng (+42 more)
+Nodes (37): ButtonColors, Color, MeshGradientBackgroundTest, ButtonCard(), ButtonCardColors, ButtonCardDefaults, ButtonCardPreview(), Color (+29 more)
 
-### Community 3 - "LeanMT JNI Bridge"
+### Community 2 - "Language Memory Repos & ViewModel"
+Cohesion: 0.08
+Nodes (31): ExternalLanguageModelsMemoryRepository, LanguageMemoryRepository, LanguagePreferenceMemoryRepository, Job, LanguageType, Source, Target, LanguageViewModel (+23 more)
+
+### Community 3 - "Mock Audio & TTS Infrastructure"
+Cohesion: 0.09
+Nodes (26): AudioMockPlayer, DataMemoryRepository, ExternalDataMemoryRepository, TextToSpeechMockInference, TextToSpeechMockTokenizer, Flow, TextToSpeechPreferenceMemoryRepository, TranslationMockInference (+18 more)
+
+### Community 4 - "Whisper Native Engine"
+Cohesion: 0.04
+Nodes (50): jmethodID, Recognizer, abort_count, abort_deadline, callback_method, callback_obj, carried_prompt_ids, commit_compute_ms (+42 more)
+
+### Community 5 - "LeanMT Native JNI"
 Cohesion: 0.07
-Nodes (42): jclass, jlong, JNIEnv, JNIEXPORT, jobject, jstring, jobjectArray LEANMT_JNI(), jstr() (+34 more)
+Nodes (42): jobjectArray, JPCommon, Mecab, jclass, jlong, JNIEnv, JNIEXPORT, jobject (+34 more)
 
-### Community 4 - "OCR Text Analyzer Native"
+### Community 6 - "StyleTTS2 Inference"
+Cohesion: 0.08
+Nodes (21): ByteBuffer, FloatArray, LongArray, OrtSession, Waveform, StyleTextToSpeechInference, Buffer, TensorUtils (+13 more)
+
+### Community 7 - "OCR Text Analyzer Native"
 Cohesion: 0.10
 Nodes (28): jfloat, jint, jlong, JNIEnv, JNIEXPORT, jobject, Mat, Scalar (+20 more)
 
-### Community 5 - "Camera Translation Flow"
-Cohesion: 0.08
-Nodes (19): CameraTranslationResult, CameraTranslationViewModel, Context, Flow, LifecycleOwner, StateFlow, ViewModel, CameraPermissionDenied() (+11 more)
-
-### Community 6 - "Download Status State"
-Cohesion: 0.07
-Nodes (16): Cancelled, Completed, DownloadStatus, Error, Idle, Processing, Progress, Queued (+8 more)
-
-### Community 7 - "TTS Preference DataStore"
-Cohesion: 0.08
-Nodes (9): Flow, TextToSpeechPreferenceDataStoreRepository, Flow, TextToSpeechPreferenceMemoryRepository, Flow, TextToSpeechPreferenceRepository, VoiceGender, Female (+1 more)
-
-### Community 8 - "Frontend Design Skills"
-Cohesion: 0.07
-Nodes (36): Anti-Slop Frontend Design Skill, AI Tells (Forbidden Patterns), Anti-Center Bias, Anti-Default Discipline, Block Library, Brief Inference, Color Consistency Lock, Copy Self-Audit (+28 more)
-
-### Community 9 - "Audio Mock Player"
-Cohesion: 0.08
-Nodes (18): AudioMockPlayer, ByteArray, FloatArray, DataMemoryRepository, TextToSpeechMockTokenizer, TranslationMockInference, VoiceMemoryRepository, ErrorAlertDialog() (+10 more)
-
-### Community 10 - "Download Workers"
-Cohesion: 0.09
-Nodes (12): DownloadExternalDataWorker, DownloadLanguageWorker, DownloadObjectCharacterRecognitionWorker, DownloadVoiceWorker, DownloadQueue, DownloadWorker, DownloadListener, DownloadListener (+4 more)
-
-### Community 11 - "OCR Inference"
-Cohesion: 0.11
-Nodes (14): ImageProxy, ObjectCharacterRecognitionInference, AutoCloseable, ByteBuffer, ImageProxy, OrtSession, TextRegionMetrics, PaddleObjectCharacterRecognition (+6 more)
-
-### Community 12 - "TextToSpeech ViewModel"
-Cohesion: 0.11
-Nodes (6): FloatArray, Flow, Job, StateFlow, ViewModel, TextToSpeechViewModel
-
-### Community 13 - "OCR Recognition Database"
-Cohesion: 0.08
-Nodes (15): ObjectCharacterRecognitionArchitecture, PaddleOCR, ObjectCharacterRecognitionBundleMetadata, ObjectCharacterRecognitionDetectorFilesMetadata, ObjectCharacterRecognitionDetectorInferenceFilesMetadata, ObjectCharacterRecognitionDetectorMetadata, ObjectCharacterRecognitionMetadataFile, ObjectCharacterRecognitionModule (+7 more)
-
-### Community 14 - "Translation ViewModel State"
-Cohesion: 0.11
-Nodes (13): Completed, Error, Idle, InProgress, Flow, Job, StateFlow, ViewModel (+5 more)
-
-### Community 15 - "External OCR Model Repository"
-Cohesion: 0.11
-Nodes (9): ExternalObjectCharacterRecognitionModelsMemoryRepository, Flow, ExternalObjectCharacterRecognitionModelsRepository, Flow, ExternalObjectCharacterRecognitionDownloadTask, ExternalObjectCharacterRecognitionModelDefinition, ExternalObjectCharacterRecognitionModels, ExternalObjectCharacterRecognitionModelWithState (+1 more)
-
-### Community 16 - "Language ViewModel"
+### Community 8 - "Scaffold Navigation Components"
 Cohesion: 0.12
-Nodes (11): Job, StateFlow, ViewModel, LanguageType, Source, Target, LanguageViewModel, Modifier (+3 more)
+Nodes (33): ExternalObjectCharacterRecognitionModelsMemoryRepository, NavKey, ScaffoldComponent, ScaffoldRowScopeComponent, ViewModel, ScaffoldActionsComponent, ScaffoldBottomBarComponent, ScaffoldComponentMetadata (+25 more)
 
-### Community 17 - "StyleTTS2 Inference"
+### Community 9 - "Language Preference DataStore"
 Cohesion: 0.11
-Nodes (11): ByteBuffer, FloatArray, LongArray, OrtSession, Waveform, StyleTextToSpeechInference, OnnxTensorLike, OrtSession (+3 more)
+Nodes (13): Flow, LanguagePreferenceDataStoreRepository, Flow, AutoDetectLanguage, LanguageOption, LanguageOptionPair, Context, Modifier (+5 more)
+
+### Community 10 - "License Management"
+Cohesion: 0.12
+Nodes (24): Flow, LicenseMemoryRepository, DialogState, Closed, Confirm, Open, StateFlow, ViewModel (+16 more)
+
+### Community 11 - "Data Repos & Files"
+Cohesion: 0.11
+Nodes (13): Flow, ExternalDataFileRepository, ExternalDataDefinitions, Flow, ExternalDataDefinitions, Flow, ExternalDataDefinitions, Flow (+5 more)
+
+### Community 12 - "Language Repository Port"
+Cohesion: 0.08
+Nodes (7): Flow, LanguageRepository, LanguagePair, PivotPairModelFiles, Flow, StateFlow, ViewModel
+
+### Community 13 - "Divider & Badge UI"
+Cohesion: 0.13
+Nodes (27): app, Divider(), Dp, ListDivider(), Color, Dp, Modifier, LanguageBadge() (+19 more)
+
+### Community 14 - "Camera Translation"
+Cohesion: 0.12
+Nodes (11): Camera, ProcessCameraProvider, Size, CameraTranslationResult, CameraTranslationViewModel, Context, Flow, LifecycleOwner (+3 more)
+
+### Community 15 - "Translation Inference Loading"
+Cohesion: 0.09
+Nodes (9): BergamotTinyInference, Flow, AutoCloseable, LeanmtModel, LeanmtModelConfig, LeanmtPackage, LanguageModel, LanguageModelConfiguration (+1 more)
+
+### Community 17 - "OCR Inference Bridge"
+Cohesion: 0.13
+Nodes (15): ImageProxy, ObjectCharacterRecognitionInference, AutoCloseable, ByteBuffer, ImageProxy, OrtSession, TextRegionMetrics, PaddleObjectCharacterRecognition (+7 more)
 
 ### Community 18 - "Language Database Repository"
+Cohesion: 0.10
+Nodes (7): LanguageModelDatabaseModel, Flow, LanguageDatabaseRepository, LongArray, Context, Language, PivotPair
+
+### Community 19 - "External Voice Model Repos"
+Cohesion: 0.12
+Nodes (13): ExternalVoiceModelsMemoryRepository, ExternalVoiceModelDefinitions, Flow, ExternalVoiceModelsRepository, ExternalVoiceModelDefinitions, Flow, ExternalVoice, ExternalVoiceDownloadTask (+5 more)
+
+### Community 20 - "External Language Model Catalog"
 Cohesion: 0.14
-Nodes (6): Flow, LanguageDatabaseRepository, PivotPair, LanguageModelMetadata, LanguageDatabaseModel, LanguageModelDatabaseModel
+Nodes (13): ExternalLanguageModelDefinitions, ExternalLanguageModelsFileRepository, Flow, Flow, ExternalLanguageModelsRepository, Flow, ExternalLanguageMetadata, ExternalLanguageModelDefinition (+5 more)
 
-### Community 19 - "External Language Model Repository"
-Cohesion: 0.16
-Nodes (10): ExternalLanguageModelsFileRepository, Flow, ExternalLanguageModelsMemoryRepository, Flow, ExternalLanguageModelsRepository, Flow, ExternalLanguageMetadata, ExternalLanguageModels (+2 more)
+### Community 21 - "Language Download & Database"
+Cohesion: 0.10
+Nodes (11): LanguageDatabaseModel, DownloadLanguageWorker, LanguageBundleData, LanguageBundleMetadata, LanguageMetadata, LanguageModelArchitecture, BergamotTinyModel, MarianMTModel (+3 more)
 
-### Community 20 - "ESpeak NG Bridge"
+### Community 22 - "Data Repos & Hash Validation"
+Cohesion: 0.12
+Nodes (15): Application, OpenJTalk, FileHashValidator, PrecomputedHashFileValidator, ExternalDataRepository, ExternalObjectCharacterRecognitionModelsRepository, SpeechRecognitionRepository, LongArray (+7 more)
+
+### Community 23 - "Vendored Native Libraries"
+Cohesion: 0.10
+Nodes (28): C++17 Release Build Config, 16 KB ELF Page-Size Link Flag, jstr JNI String Helper, Vendored Git Submodules, whisper.cc Process-Loop Mutex, arm64 SIMD Flags (-march=armv8.2-a+dotprod+fp16), app_versta_translate_bridge Shared Library, cld2 Link Target (+20 more)
+
+### Community 24 - "TTS Voice Loading"
+Cohesion: 0.11
+Nodes (9): ArrayList, Flow, Flow, VoiceRepository, VoiceModelInferenceFiles, VoiceModelTokenizerFiles, VoiceModelVoiceFiles, VoiceWithModelFiles (+1 more)
+
+### Community 25 - "App Navigation"
+Cohesion: 0.14
+Nodes (12): NavBackStack, NavKey, ViewModel, NavigationViewModel, Modifier, ModalDrawerItem(), NavigationDrawer(), NavigationDrawerRailItem() (+4 more)
+
+### Community 26 - "TTS ViewModel"
+Cohesion: 0.13
+Nodes (3): FloatArray, Job, TextToSpeechViewModel
+
+### Community 27 - "Translation ViewModel"
+Cohesion: 0.12
+Nodes (13): Completed, Error, Idle, InProgress, Flow, Job, StateFlow, ViewModel (+5 more)
+
+### Community 28 - "Download Status State"
+Cohesion: 0.10
+Nodes (12): Serializable, Cancelled, Completed, DownloadStatus, Error, Idle, Processing, Progress (+4 more)
+
+### Community 29 - "OCR Post-Processing Pipeline"
+Cohesion: 0.14
+Nodes (7): OcrPostProcessor, OcrPostProcessorContext, OcrPostProcessorPipeline, Color, ParagraphGroupingPostProcessor, TextStyleAnalysisPostProcessor, ObjectCharacterRecogniserResult
+
+### Community 30 - "TTS Preference DataStore"
+Cohesion: 0.11
+Nodes (7): Flow, TextToSpeechPreferenceDataStoreRepository, Flow, TextToSpeechPreferenceRepository, VoiceGender, Female, Male
+
+### Community 31 - "Architecture Concepts"
+Cohesion: 0.09
+Nodes (26): adapter/outbound — Driven Adapters (Ports), androidTest Source Set, bridge — Kotlin JNI Wrappers, cld2 Language Detection, core/entity — Pure Domain Models, core/model — ViewModels, database — SQLDelight + Migrations, DatabaseContainer (+18 more)
+
+### Community 32 - "Fake Recognizer Test Helper"
+Cohesion: 0.09
+Nodes (9): FakeRecognizer, FloatArray, IntArray, WhisperSegmentCallback, AutoCloseable, FloatArray, IntArray, WhisperRecognizerHandle (+1 more)
+
+### Community 33 - "Speech Recognition External Repos"
+Cohesion: 0.17
+Nodes (9): ExternalSpeechRecognitionModelsFileRepository, Flow, ExternalSpeechRecognitionModelsMemoryRepository, Flow, ExternalSpeechRecognitionModelsRepository, Flow, ExternalSpeechRecognitionModelDefinition, ExternalSpeechRecognitionModels (+1 more)
+
+### Community 34 - "Voice Models UI"
+Cohesion: 0.17
+Nodes (18): ExternalVoiceLanguageVoiceGenders, VoiceViewModel, VoiceDeletionConfirmationDialog(), VoiceDeletionConfirmationDialogPreview(), PaddingValues, VoiceAttributions(), VoiceAttributionsPreview(), Details() (+10 more)
+
+### Community 35 - "Download Worker Infrastructure"
+Cohesion: 0.15
+Nodes (10): CoroutineWorker, ForegroundInfo, Result, DownloadExternalDataWorker, DownloadSpeechRecognitionWorker, DownloadQueue, DownloadWorker, DownloadListener (+2 more)
+
+### Community 36 - "Data Database Repository"
+Cohesion: 0.13
+Nodes (11): DataDatabaseModel, DataDatabaseRepository, DataRepository, Flow, DataModel, DataType, TTS, Flow (+3 more)
+
+### Community 37 - "OCR Download Worker & Metadata"
+Cohesion: 0.11
+Nodes (12): ObjectCharacterRecognitionBundleMetadata, ObjectCharacterRecognitionDetectorFilesMetadata, ObjectCharacterRecognitionDetectorInferenceFilesMetadata, ObjectCharacterRecognitionDetectorMetadata, ObjectCharacterRecognitionMetadataFile, ObjectCharacterRecognitionModule, Detector, Recognizer (+4 more)
+
+### Community 38 - "Navigation Screens"
+Cohesion: 0.08
+Nodes (24): About, ApplicationLogs, NavKey, LanguageAttributions, LanguageDetails, LanguageSettings, ObjectCharacterRecognitionAttributions, ObjectCharacterRecognitionDetails (+16 more)
+
+### Community 39 - "Speech Download & Database"
+Cohesion: 0.13
+Nodes (9): SpeechRecognitionDatabaseModel, SpeechRecognitionDatabaseRepository, SpeechRecognitionBundleMetadata, SpeechRecognitionFilesMetadata, SpeechRecognitionInferenceFilesMetadata, SpeechRecognitionMetadata, SpeechRecognitionModel, SpeechRecognitionModule (+1 more)
+
+### Community 41 - "OCR External Model Repos"
+Cohesion: 0.19
+Nodes (8): ExternalObjectCharacterRecognitionModelsFileRepository, Flow, Flow, Flow, ExternalObjectCharacterRecognitionModelDefinition, ExternalObjectCharacterRecognitionModels, ExternalObjectCharacterRecognitionModelWithState, ObjectCharacterRecognitionDetectorWithFiles
+
+### Community 42 - "StyleTTS2 Tokenizer & ESpeak"
 Cohesion: 0.13
 Nodes (6): ESpeakNG, AutoCloseable, ByteArray, Flow, MutableStateFlow, SynthReadyCallback
 
-### Community 21 - "PaddleOCR Tokenizer"
-Cohesion: 0.13
+### Community 43 - "PaddleOCR Recognize ONNX"
+Cohesion: 0.15
 Nodes (8): Buffer, ByteBuffer, OnnxTensor, OnnxTensorLike, OrtSession, TextRegionMetrics, PaddleObjectCharacterRecognitionRecognizeInput, PaddleObjectCharacterRecognitionRecognizeOutput
 
-### Community 22 - "Scaffold Navigation"
-Cohesion: 0.17
-Nodes (19): NavKey, ScaffoldComponent, ScaffoldRowScopeComponent, ViewModel, ScaffoldActionsComponent, ScaffoldBottomBarComponent, ScaffoldComponentMetadata, ScaffoldComponents (+11 more)
-
-### Community 23 - "Navigation Screens"
-Cohesion: 0.09
-Nodes (22): About, ApplicationLogs, NavKey, LanguageAttributions, LanguageDetails, LanguageSettings, ObjectCharacterRecognitionAttributions, ObjectCharacterRecognitionDetails (+14 more)
-
-### Community 24 - "TextTranslation ViewModel"
-Cohesion: 0.13
-Nodes (7): Context, Flow, ViewModel, TextTranslationViewModel, Modifier, TranslationTextField(), TranslationTextFieldMinimalPreview()
-
-### Community 25 - "SQLDelight Database Container"
-Cohesion: 0.13
-Nodes (6): DatabaseContainer, Migration, Migration3, Context, Migration4, Migration6
-
-### Community 26 - "Download Client"
-Cohesion: 0.12
-Nodes (9): DownloadClient, DownloadListener, URI, HttpDownloadClient, Callback, DownloadListener, URI, Call (+1 more)
-
-### Community 27 - "Language Model Queries"
-Cohesion: 0.13
-Nodes (12): LongArray, LongArray, AutoDetectLanguage, fromId(), fromIsoCode(), fromIsoCodes(), fromLocale(), Context (+4 more)
-
-### Community 28 - "OCR Recognition Repository"
-Cohesion: 0.16
-Nodes (4): ObjectCharacterRecognitionRepositoryDatabaseRepository, ObjectCharacterRecognitionRecognizerWithFiles, ObjectCharacterRecognitionDetectorDatabaseModel, ObjectCharacterRecognitionRecognizerDatabaseModel
-
-### Community 29 - "Tensor Utils"
+### Community 44 - "Text Translation ViewModel"
 Cohesion: 0.15
-Nodes (17): Buffer, TensorUtils, closeTensor(), closeTensorBuffer(), createFloatTensor(), createIntTensor(), createLongTensor(), determineShape() (+9 more)
+Nodes (8): Context, Flow, ViewModel, TextTranslationViewModel, DictationButtonContent(), FloatingTextTranslationInputBar(), PaddingValues, TextTranslation()
 
-### Community 30 - "Navigation ViewModel"
-Cohesion: 0.16
-Nodes (7): NavKey, ViewModel, NavigationViewModel, PaddingValues, VoiceAttributions(), VoiceAttributionsPreview(), NavBackStack
+### Community 45 - "Settings UI Components"
+Cohesion: 0.18
+Nodes (15): Color, Composable, Dp, ListItemColors, Modifier, PaddingValues, SettingsButtonItem(), SettingsButtonItemContent() (+7 more)
 
-### Community 31 - "Language Badge UI"
+### Community 46 - "OCR Repository Memory"
+Cohesion: 0.13
+Nodes (7): Flow, ObjectCharacterRecognitionRepositoryMemoryRepository, ObjectCharacterRecognitionArchitecture, PaddleOCR, ObjectCharacterRecognitionDetectorInferenceFiles, ObjectCharacterRecognitionRecognizerInferenceFiles, ObjectCharacterRecognitionRecognizerTokenizerFiles
+
+### Community 47 - "HTTP Download Client"
 Cohesion: 0.14
-Nodes (16): Color, Dp, Modifier, LanguageBadge(), LanguageBadgeColors, LanguageBadgeDefaults, LanguageBadgePreview(), LanguageDeletionConfirmationDialog() (+8 more)
+Nodes (9): Call, Response, DownloadClient, DownloadListener, URI, HttpDownloadClient, Callback, DownloadListener (+1 more)
 
-### Community 32 - "Language Detect JNI"
+### Community 48 - "TTS Synthesis State"
+Cohesion: 0.21
+Nodes (17): SpanStyle, Idle, Preparing, Synthesizing, TextToSpeechSynthesisState, TextToSpeechButton(), Modifier, MinimalTextTranslation() (+9 more)
+
+### Community 49 - "Voice Download Worker"
+Cohesion: 0.11
+Nodes (10): DownloadVoiceWorker, VoiceBundleMetadata, VoiceInferenceFilesMetadata, VoiceMetadataFile, VoiceModel, VoiceModelArchitecture, Kokoro, StyleTTS2 (+2 more)
+
+### Community 50 - "Speech Recognition ViewModel"
+Cohesion: 0.14
+Nodes (10): CoroutineScope, Flow, StateFlow, ViewModel, LoadRequest, SpeechRecognitionViewModel, StartResult, MicrophoneUnavailable (+2 more)
+
+### Community 51 - "Settings & Download UI"
+Cohesion: 0.20
+Nodes (16): DownloadButton(), Modifier, LanguageDownloadButtonPreview(), LanguageDeletionConfirmationDialog(), LanguageDeletionConfirmationDialogPreview(), Details(), ImageVector, PaddingValues (+8 more)
+
+### Community 52 - "CLD2 Language Detection Native"
 Cohesion: 0.15
-Nodes (18): jlong, JNIEnv, JNIEXPORT, jobject, jstring, DetectionResult, confidence, isReliable (+10 more)
+Nodes (18): CLDHints, jlong, JNIEnv, JNIEXPORT, jobject, jstring, DetectionResult, confidence (+10 more)
 
-### Community 33 - "Generic Transliterator"
+### Community 53 - "Speech Repo & Model Tests"
+Cohesion: 0.16
+Nodes (7): Flow, SpeechRecognitionMemoryRepository, Flow, SpeechRecognitionArchitecture, Whisper, SpeechRecognitionInferenceFiles, SpeechRecognitionWithFiles
+
+### Community 54 - "OCR Repository & Download"
 Cohesion: 0.13
+Nodes (5): DownloadObjectCharacterRecognitionWorker, Flow, ObjectCharacterRecognitionRepository, ObjectCharacterRecognitionDetectorModel, ObjectCharacterRecognitionRecognizerModel
+
+### Community 55 - "Transliteration"
+Cohesion: 0.15
 Nodes (6): GenericTransliterator, JapaneseTransliterator, Transliteration, TransliterationAdapter, Token, Transliterator
 
-### Community 34 - "Download Button UI"
-Cohesion: 0.15
-Nodes (16): DownloadButton(), Modifier, LanguageDownloadButtonPreview(), Dp, ListItemColors, Modifier, SettingsHeaderItem(), SettingsHeaderItemPreview() (+8 more)
+### Community 56 - "Database Container & Migrations"
+Cohesion: 0.19
+Nodes (6): DatabaseContainer, Migration, Migration3, Context, Migration4, Migration6
 
-### Community 35 - "GDPR Compliance Skill"
-Cohesion: 0.15
-Nodes (19): GDPR Implementation Patterns Reference, BreachNotificationHandler Class, GDPR Compliance Checklist, Consent Data Model Schema, ConsentManager Class, DataMinimization Class, DataRetentionPolicy Class, DSARHandler Class (+11 more)
+### Community 57 - "Application Logs UI"
+Cohesion: 0.21
+Nodes (16): ScaffoldCompactBarBackNavigationIcon(), ScaffoldCompactBarTitle(), ApplicationLogs(), FileSaverCallback, ApplicationLogsPreview(), FileSaverCallback, PaddingValues, Uri (+8 more)
 
-### Community 36 - "PaddleOCR Detector"
-Cohesion: 0.16
+### Community 58 - "OCR Repository Database"
+Cohesion: 0.19
+Nodes (4): ObjectCharacterRecognitionDetectorDatabaseModel, ObjectCharacterRecognitionRecognizerDatabaseModel, ObjectCharacterRecognitionRepositoryDatabaseRepository, ObjectCharacterRecognitionRecognizerWithFiles
+
+### Community 59 - "PaddleOCR Detect ONNX"
+Cohesion: 0.19
 Nodes (7): Buffer, ByteBuffer, OnnxTensor, OnnxTensorLike, OrtSession, PaddleObjectCharacterRecognitionDetectInput, PaddleObjectCharacterRecognitionDetectOutput
 
-### Community 37 - "Android Models & API Skill"
-Cohesion: 0.20
-Nodes (18): Models & API Service Reference, ApiService Retrofit Interface, Auth Interceptor Pattern, Item Data Class, NetworkModule DI Provider, PreferencesManager, User Data Class, MVVM ViewModels Reference (+10 more)
+### Community 60 - "Theme & Color Scheme"
+Cohesion: 0.25
+Nodes (17): ColorScheme, FiniteAnimationSpec, animateColorScheme(), AnimatedBackgroundColors, AnimatedColors, animatedPrimaryColors(), AnimatedSurfaceColors, defaultColorTransitionSpec() (+9 more)
 
-### Community 38 - "Bergamot Tiny Inference"
-Cohesion: 0.15
-Nodes (8): BergamotTinyInference, create(), AutoCloseable, LeanmtModel, ncreate(), ndestroy(), LeanmtModelConfig, LeanmtPackage
-
-### Community 39 - "Data Database Repository"
-Cohesion: 0.17
-Nodes (7): DataDatabaseRepository, DataRepository, Flow, DataModel, DataType, TTS, DataDatabaseModel
-
-### Community 40 - "Language Preference DataStore"
-Cohesion: 0.18
-Nodes (3): Flow, LanguagePreferenceDataStoreRepository, LanguageOptionPair
-
-### Community 41 - "Scaffold Compact Bar UI"
-Cohesion: 0.16
-Nodes (14): ScaffoldCompactBarBackNavigationIcon(), ScaffoldCompactBarTitle(), ApplicationLogs(), FileSaverCallback, ApplicationLogsPreview(), FileSaverCallback, PaddingValues, Uri (+6 more)
-
-### Community 42 - "Theme Animation"
-Cohesion: 0.23
-Nodes (17): animateColorScheme(), AnimatedBackgroundColors, AnimatedColors, animatedPrimaryColors(), AnimatedSurfaceColors, defaultColorTransitionSpec(), isLAppearanceLight(), Color (+9 more)
-
-### Community 43 - "OCR ViewModel"
-Cohesion: 0.17
-Nodes (11): app, StateFlow, ViewModel, ObjectCharacterRecognitionViewModel, PaddingValues, ObjectCharacterRecognitionAttributions(), ObjectCharacterRecognitionAttributionsPreview(), PaddingValues (+3 more)
-
-### Community 44 - "espeak-ng JNI Bridge"
+### Community 62 - "ESpeakNG Native"
 Cohesion: 0.26
-Nodes (16): jclass, JNIEnv, JNIEXPORT, jobject, jstring, getJniEnv(), Java_app_versta_translate_bridge_speech_ESpeakNG_cancel(), Java_app_versta_translate_bridge_speech_ESpeakNG_construct() (+8 more)
+Nodes (16): espeak_EVENT, JavaVM, jclass, JNIEnv, JNIEXPORT, jobject, jstring, getJniEnv() (+8 more)
 
-### Community 45 - "External OCR Model Metadata"
+### Community 66 - "Download Manager"
+Cohesion: 0.18
+Nodes (4): DownloadManager, Context, T, WorkRequest
+
+### Community 67 - "Whisper Speech Kotlin"
 Cohesion: 0.17
-Nodes (5): ExternalObjectCharacterRecognitionModelsFileRepository, Flow, Flow, ObjectCharacterRecognitionRepository, ObjectCharacterRecognitionDetectorWithFiles
+Nodes (8): mutex, MicrophoneCaptureException, AutoCloseable, CoroutineScope, Job, WhisperSegmentCallback, WhisperSpeechRecognition, WhisperSegmentCallback
 
-### Community 49 - "Plan Reviewer Skill"
-Cohesion: 0.14
-Nodes (16): Plan Document Reviewer Prompt Template, Plan Review Calibration, Plan Review Categories (Completeness/Spec/Tasks/Buildability), Plan Document Reviewer Subagent, Writing Plans Skill, Bite-Sized Task Granularity, Executing-Plans Skill, Execution Handoff (+8 more)
+### Community 68 - "Language Detection & Logging"
+Cohesion: 0.16
+Nodes (7): SimpleDateFormat, AutoCloseable, LanguageDetect, LanguageDetectResult, FileLoggingTree, LocaleUtils, Timber
 
-### Community 50 - "Compressed File Extractor"
-Cohesion: 0.24
+### Community 69 - "Archive Extraction"
+Cohesion: 0.26
 Nodes (5): CompressedFileExtractor, ExtractionProgressListener, Uri, Uri, TarballExtractor
 
-### Community 51 - "Language Preference Memory"
-Cohesion: 0.17
-Nodes (3): Flow, LanguagePreferenceMemoryRepository, LanguageOption
-
-### Community 52 - "OCR Analyzer"
-Cohesion: 0.14
-Nodes (7): ImageProxy, ObjectCharacterRecognitionAnalyzer, OcrPostProcessor, OcrPostProcessorContext, OcrPostProcessorPipeline, TextStyleAnalysisPostProcessor, ImageAnalysis
-
-### Community 53 - "Paragraph Grouping Postprocessor"
-Cohesion: 0.26
-Nodes (3): Color, ParagraphGroupingPostProcessor, ObjectCharacterRecogniserResult
-
-### Community 54 - "Voice Database Repository"
-Cohesion: 0.22
+### Community 70 - "Voice Database Repository"
+Cohesion: 0.23
 Nodes (4): VoiceDatabaseRepository, VoiceModelMetadata, VoiceDatabaseModel, VoiceModelDatabaseModel
 
-### Community 55 - "Code Review Skill"
-Cohesion: 0.14
-Nodes (15): Code Review and Quality Skill, Architecture Review Axis, Change Sizing Guidelines, Correctness Review Axis, Dead Code Hygiene, Dependency Discipline, Five-Axis Review, Honesty in Review (+7 more)
+### Community 71 - "OCR ViewModel & Tasks"
+Cohesion: 0.17
+Nodes (5): ExternalObjectCharacterRecognitionDownloadTask, Flow, StateFlow, ViewModel, ObjectCharacterRecognitionViewModel
 
-### Community 56 - "Compose Component Reference"
-Cohesion: 0.14
-Nodes (15): Compose Component Library Reference, AsyncState Sealed Class, DateTimePickerExample, DeleteConfirmationDialog, ExpandableCard AnimatedVisibility, Sticky Header GroupedList, ItemList LazyColumn, LoginForm (+7 more)
+### Community 72 - "Whisper Native JNI Handles"
+Cohesion: 0.39
+Nodes (15): jfloatArray, jintArray, jlong, JNIEnv, JNIEXPORT, jobject, findRecognizer(), Java_app_versta_translate_bridge_whisper_WhisperModel_destroy() (+7 more)
 
-### Community 57 - "PaddleOCR Bridge"
-Cohesion: 0.18
-Nodes (8): AutoCloseable, Buffer, ByteBuffer, IntArray, LongArray, PaddleOCR, TextRegionMetrics, ObjectCharacterRecogniserColors
-
-### Community 58 - "Mobile Design Reference"
-Cohesion: 0.18
-Nodes (14): Mobile Design Core Concepts Reference, AppTypography (Details), Component Examples Section, Compose Layout System, FeatureCard Composable, Material Design 3 Principles, Material 3 Theming Section, Navigation Patterns (+6 more)
-
-### Community 59 - "Audio Player"
-Cohesion: 0.14
-Nodes (6): AudioPlayer, ByteArray, FloatArray, AudioTrackPlayer, ByteArray, FloatArray
-
-### Community 60 - "External Data & TTS Tokenizer"
+### Community 73 - "OCR Text Analyzer Kotlin"
 Cohesion: 0.21
-Nodes (7): ExternalDataRepository, TextToSpeechTokenizer, TranslationInference, ApplicationModule, ApplicationModuleInterface, OrtEnvironment, OpenJTalk
+Nodes (8): AutoCloseable, Buffer, ByteBuffer, ImageProxy, IntArray, OcrTextAnalyzer, OcrTextMetrics, ObjectCharacterRecogniserColors
 
-### Community 61 - "File Saver"
-Cohesion: 0.15
+### Community 74 - "Bubble Activity"
+Cohesion: 0.22
+Nodes (8): BubbleActivity, Activity, Bundle, ComponentActivity, Intent, Easing, Spacing, TranslateTheme()
+
+### Community 75 - "Microphone Capture"
+Cohesion: 0.20
+Nodes (6): AudioRecord, CaptureHandle, CoroutineScope, CoroutineScope, Job, MicrophoneCapture
+
+### Community 76 - "Whisper VAD Probe"
+Cohesion: 0.22
+Nodes (12): deque, advance_front(), vector, Java_app_versta_translate_bridge_whisper_WhisperRecognizer_flush(), probe_and_update(), probe_speech(), ProbeUpdate, pause_mid_ms (+4 more)
+
+### Community 77 - "Custom Theme & Nav"
+Cohesion: 0.24
+Nodes (10): NavEntryDecorator, CustomThemeViewModel, ViewModel, CustomTheme, Obsidian, CustomThemeScene, NavKey, ObsidianThemeMetadata (+2 more)
+
+### Community 78 - "Whisper Recognizer Kotlin"
+Cohesion: 0.18
+Nodes (5): RuntimeException, AutoCloseable, FloatArray, WhisperSegmentCallback, WhisperRecognizer
+
+### Community 80 - "File Saver"
+Cohesion: 0.19
 Nodes (8): FileSaver, FileSaverCallback, FileSaverCallback, Uri, ActivityResultLauncher, ComponentActivity, FileSaverCallback, LogFileSaver
 
-### Community 62 - "Language Model Loading"
+### Community 81 - "PaddleOCR Kotlin Bridge"
 Cohesion: 0.22
-Nodes (5): LanguageModel, LanguageModelConfiguration, LanguageModelFiles, load(), PivotPairModelFiles
+Nodes (7): AutoCloseable, Buffer, ByteBuffer, IntArray, LongArray, PaddleOCR, TextRegionMetrics
 
-### Community 63 - "OCR Detector Repository"
-Cohesion: 0.15
-Nodes (3): Flow, ObjectCharacterRecognitionRepositoryMemoryRepository, ObjectCharacterRecognitionDetectorModel
-
-### Community 64 - "OCR Text Analyzer Bridge"
-Cohesion: 0.19
-Nodes (7): AutoCloseable, Buffer, ByteBuffer, ImageProxy, IntArray, OcrTextAnalyzer, OcrTextMetrics
-
-### Community 65 - "Language Pair Utils"
-Cohesion: 0.19
-Nodes (3): LanguagePair, LanguageBundleMetadata, Flow
-
-### Community 66 - "Voice Model Metadata"
-Cohesion: 0.15
-Nodes (8): VoiceBundleMetadata, VoiceInferenceFilesMetadata, VoiceMetadataFile, VoiceModelArchitecture, Kokoro, StyleTTS2, VoiceModelFilesMetadata, VoiceTokenizerFilesMetadata
-
-### Community 67 - "Custom Theme ViewModel"
-Cohesion: 0.19
-Nodes (11): CustomThemeViewModel, ViewModel, CustomTheme, Obsidian, CustomThemeScene, NavKey, obsidian(), ObsidianThemeMetadata (+3 more)
-
-### Community 68 - "License ViewModel"
-Cohesion: 0.21
-Nodes (9): DialogState, Closed, Confirm, Open, StateFlow, ViewModel, LicenseViewModel, TrialLicenseConfirmationDialog() (+1 more)
-
-### Community 69 - "Logging ViewModel"
-Cohesion: 0.20
+### Community 82 - "Logging ViewModel"
+Cohesion: 0.25
 Nodes (6): Context, StateFlow, Uri, ViewModel, LoggingViewModel, FileObserver
 
-### Community 70 - "Settings Button Item"
-Cohesion: 0.22
-Nodes (12): Composable, Dp, ListItemColors, Modifier, PaddingValues, SettingsButtonItem(), SettingsButtonItemContent(), SettingsButtonItemPreview() (+4 more)
-
-### Community 73 - "TTS Synthesis State"
-Cohesion: 0.22
-Nodes (10): Idle, Preparing, Synthesizing, TextToSpeechSynthesisState, TextToSpeechButton(), Modifier, MinimalTextTranslation(), MinimalTextTranslationOutput() (+2 more)
-
-### Community 74 - "Button Card UI"
-Cohesion: 0.24
-Nodes (8): ButtonCard(), ButtonCardColors, ButtonCardDefaults, ButtonCardPreview(), Color, ImageVector, Modifier, ButtonColors
-
-### Community 75 - "TextField UI"
-Cohesion: 0.23
-Nodes (9): Color, Composable, Modifier, Shape, TextField(), TextFieldDefaults, TextFieldPreview(), TextFieldColors (+1 more)
-
-### Community 76 - "Android Navigation Reference"
-Cohesion: 0.26
-Nodes (12): Android Navigation Reference, AnimatedNavigation Composable, AppNavigation Composable, BottomNavDestination Enum, DeepLinkNavigation Composable, MainActivity Deep Link Handling, ModalDrawerNavigation Composable, NavigationEvent Sealed Class (+4 more)
-
-### Community 77 - "Material 3 Theming Reference"
-Cohesion: 0.27
-Nodes (12): Material 3 Theming Reference, Adaptive Layout Window Size Classes, AppShapes Shape System, AppTheme Composable, Custom Font Loading, DarkColorScheme, ExtendedColors CompositionLocal, FoldableAwareLayout (+4 more)
-
-### Community 78 - "File Picker"
-Cohesion: 0.21
-Nodes (6): FilePicker, FilePickerCallback, Uri, ActivityResultLauncher, ComponentActivity, ModelFilePicker
-
-### Community 79 - "External Data Memory Repository"
-Cohesion: 0.24
-Nodes (4): ExternalDataMemoryRepository, ExternalDataDefinitions, Flow, ExternalDataDefinition
-
-### Community 80 - "Language Model Metadata Database"
-Cohesion: 0.17
-Nodes (6): LanguageBundleData, LanguageMetadata, LanguageModelArchitecture, MarianMTModel, LanguageModelConfigurationMetadata, LanguageModelFilesMetadata
-
-### Community 81 - "Data Metadata"
+### Community 83 - "Data Download Worker & Metadata"
 Cohesion: 0.21
 Nodes (6): DataBundleMetadata, DataMetadata, DataMetadataInterface, TextToSpeechDataFilesMetadata, TextToSpeechDataMetadata, TextToSpeechDataMetadataFile
 
-### Community 82 - "Divider UI"
-Cohesion: 0.26
-Nodes (9): Divider(), Dp, ListDivider(), About(), AboutPreview(), PaddingValues, PaddingValues, Troubleshooting() (+1 more)
+### Community 85 - "Speech Recognition Mock Inference"
+Cohesion: 0.19
+Nodes (5): CoroutineScope, Flow, SpeechRecognitionMockInference, IntArray, SpeechRecognitionSegment
 
-### Community 83 - "Navigation Drawer"
-Cohesion: 0.26
-Nodes (9): Modifier, ModalDrawerItem(), NavigationDrawer(), NavigationDrawerRailItem(), NavigationItem, Router(), Dp, Modifier (+1 more)
+### Community 86 - "Main Activity"
+Cohesion: 0.27
+Nodes (7): Bundle, ComponentActivity, Intent, MainActivity, Modifier, TrialLicenseDrawer(), setEdgeToEdgeConfig()
 
-### Community 84 - "Scaffold Compact Bar"
-Cohesion: 0.26
-Nodes (9): Color, Modifier, PaddingValues, ScaffoldCompactBar(), ScaffoldCompactBarDefaults, ScaffoldCompactBarEmptyActions(), ScaffoldCompactBarMenuNavigationIcon(), ScaffoldCompactBarSettingsActions() (+1 more)
-
-### Community 85 - "Clean Code Skill"
-Cohesion: 0.18
-Nodes (11): Clean Code Skill, Boy Scout Rule, Don't Repeat Yourself (DRY), Small Function Rules, Guard Clauses Pattern, Keep It Simple (KISS), Revealing Intent Naming Rules, Self-Check Before Completing (+3 more)
-
-### Community 86 - "TDD Skill"
+### Community 87 - "Swipe & Color UI"
 Cohesion: 0.22
-Nodes (11): Test-Driven Development Skill, Arrange-Act-Assert Pattern, Beyonce Rule, Browser Testing with DevTools MCP, DAMP Over DRY in Tests, Discover the Stack First, Prove-It Pattern (Bug Reproduction), RED-GREEN-REFACTOR Cycle (+3 more)
+Nodes (6): DeleteBackground(), Modifier, SwipeDelete(), ButtonDefaults, Color, SwipeToDismissBoxState
 
-### Community 87 - "Bubble Notification"
-Cohesion: 0.25
+### Community 88 - "File Picker"
+Cohesion: 0.26
+Nodes (6): FilePicker, FilePickerCallback, Uri, ActivityResultLauncher, ComponentActivity, ModelFilePicker
+
+### Community 89 - "OCR Camera Analyzer"
+Cohesion: 0.22
+Nodes (6): ImageAnalysis, ImageProxy, ObjectCharacterRecognitionAnalyzer, FontWeight, BOLD, REGULAR
+
+### Community 91 - "Whisper Initial Prompts Tests"
+Cohesion: 0.18
+Nodes (5): CoroutineScope, IntArray, WhisperSegmentCallback, SpeechRecognitionInitialPrompts, TestCoroutineScheduler
+
+### Community 93 - "Notifications"
+Cohesion: 0.29
 Nodes (4): Context, TranslateBubbleNotification, Context, TranslateNotification
 
-### Community 88 - "Data With Files"
-Cohesion: 0.31
-Nodes (6): Flow, DataFilesInterface, DataWithFiles, load(), size(), TextToSpeechDataFiles
+### Community 94 - "Settings Headers & Speech UI"
+Cohesion: 0.35
+Nodes (9): Dp, ListItemColors, Modifier, SettingsHeaderItem(), SettingsHeaderItemPreview(), PaddingValues, PreviewSpeechRecognitionSettings(), SpeechRecognitionModels() (+1 more)
 
-### Community 89 - "Language Repository"
+### Community 96 - "License Repository"
 Cohesion: 0.24
-Nodes (3): Flow, LanguageRepository, LanguageModelPair
-
-### Community 91 - "OpenJTalk Bridge"
-Cohesion: 0.22
-Nodes (4): AutoCloseable, Flow, MutableStateFlow, OpenJTalk
-
-### Community 92 - "Bubble Activity"
-Cohesion: 0.25
-Nodes (5): BubbleActivity, Activity, Bundle, ComponentActivity, Intent
-
-### Community 93 - "Main Activity"
-Cohesion: 0.25
-Nodes (5): Bundle, ComponentActivity, Intent, MainActivity, setEdgeToEdgeConfig()
-
-### Community 94 - "External Data File Repository"
-Cohesion: 0.29
-Nodes (3): ExternalDataFileRepository, ExternalDataDefinitions, Flow
-
-### Community 95 - "License DataStore Repository"
-Cohesion: 0.20
 Nodes (4): Flow, LicenseDataStoreRepository, Flow, LicenseRepository
 
-### Community 96 - "Voice Repository"
-Cohesion: 0.24
-Nodes (4): Flow, Flow, VoiceRepository, VoiceWithModelFiles
-
-### Community 97 - "OCR Detector With Files"
-Cohesion: 0.29
-Nodes (4): load(), ObjectCharacterRecognitionDetectorInferenceFiles, ObjectCharacterRecognitionRecognizerInferenceFiles, ObjectCharacterRecognitionRecognizerTokenizerFiles
-
-### Community 98 - "File Walk Utils"
-Cohesion: 0.36
-Nodes (6): BasicFileAttributes, FileVisitResult, SimpleFileVisitor, size(), SimpleFileVisitor, SimpleFileVisitor
-
-### Community 99 - "Main Application Setup"
-Cohesion: 0.27
-Nodes (4): MainApplication, FileLoggingTree, Application, Timber
-
-### Community 100 - "Color Extensions"
-Cohesion: 0.62
-Nodes (9): complementary(), darken(), hslToColor(), Color, FloatArray, lighten(), lightness(), rgbToHsl() (+1 more)
-
-### Community 101 - "License Memory Repository"
+### Community 98 - "Compose Design Concepts"
 Cohesion: 0.25
-Nodes (5): Flow, LicenseMemoryRepository, Modifier, TrialLicenseCard(), TrialLicenseCardPreview()
+Nodes (9): Jetpack Compose, /DESIGN.md (Gradient Mesh Spec), Material 3 Expressive, MeshGradientBackground, Navigation3 ListDetailSceneStrategy, ObsidianTheme Color Scheme, Router.kt, TranslateTheme (+1 more)
 
-### Community 102 - "Voice Model Files"
+### Community 99 - "Bottom Sheet Scaffold"
+Cohesion: 0.47
+Nodes (8): BottomSheetScaffoldState, Color, Composable, Dp, Modifier, Shape, ScaffoldModalBottomSheet(), Scrim()
+
+### Community 100 - "Whisper Native Model Handle"
 Cohesion: 0.31
-Nodes (4): load(), size(), VoiceModelInferenceFiles, VoiceModelTokenizerFiles
+Nodes (7): findModel(), WhisperModelHandle, ctx, n_threads, vctx, whisper_context, whisper_vad_context
 
-### Community 103 - "Leanmt Service"
-Cohesion: 0.33
-Nodes (6): create(), AutoCloseable, LeanmtService, ncreate(), ndestroy(), ntranslate()
+### Community 101 - "Camera Permission UI"
+Cohesion: 0.42
+Nodes (8): PermissionState, CameraPermissionDenied(), CameraTranslation(), CameraViewFinder(), LifecycleOwner, Modifier, PaddingValues, ZoomSelector()
 
-### Community 104 - "Language Selection Drawer"
-Cohesion: 0.50
-Nodes (8): Context, Modifier, LanguageSelectionDrawer(), LanguageSelectionDrawerPreview(), LanguageSelectionListItem(), LanguageSelectionNoItems(), LanguageSelectionSourceLanguage(), LanguageSelectionTargetLanguage()
-
-### Community 105 - "OCR Deletion Dialog"
-Cohesion: 0.36
-Nodes (7): OcrDeletionConfirmationDialog(), Details(), PaddingValues, Languages(), ObjectCharacterRecognitionDetails(), ObjectCharacterRecognitionDetailsPreview(), OcrDetailsData()
-
-### Community 106 - "Modal Bottom Sheet"
-Cohesion: 0.31
-Nodes (8): Color, Composable, Dp, Modifier, Shape, ScaffoldModalBottomSheet(), Scrim(), BottomSheetScaffoldState
-
-### Community 107 - "Jetpack Compose UI Reference"
-Cohesion: 0.50
-Nodes (8): Jetpack Compose UI Reference, collectAsState Pattern, DetailsScreen Composable, HomeScreen Composable, ItemCard Composable, MainScreen Composable, NavHost Navigation Pattern, ProfileScreen Composable
-
-### Community 108 - "Code Simplification Skill"
+### Community 102 - "OCR Tokenizer & Vocabulary"
 Cohesion: 0.25
-Nodes (8): Code Simplification Skill, Chesterton's Fence Principle, Clarity Over Cleverness Principle, Claude Code Simplifier Plugin, Maintain Balance Principle, Preserve Behavior Exactly Principle, Rule of 500, Scope to What Changed
+Nodes (3): LongArray, PaddleObjectCharacterRecognitionTokenizer, Vocabulary
 
-### Community 109 - "Trial License Drawer"
-Cohesion: 0.32
-Nodes (6): AnnotatedString, Modifier, TrialLicenseDrawer(), TrialLicenseDrawerPreview(), annotateSentence(), SpanStyle
+### Community 103 - "Speech Recognition Inference Port"
+Cohesion: 0.28
+Nodes (3): CoroutineScope, Flow, SpeechRecognitionInference
 
-### Community 111 - "Translate Bubble Shortcut"
-Cohesion: 0.25
-Nodes (5): ComponentActivity, Context, TranslateBubbleShortcut, ShortcutInfo, ShortcutManager
+### Community 105 - "Language Pair Badge UI"
+Cohesion: 0.44
+Nodes (7): Color, ImageVector, Modifier, LanguagePairBadge(), LanguagePairBadgeColors, LanguagePairBadgeDefaults, LanguagePairBadgePreview()
 
-### Community 112 - "External Data Definitions"
-Cohesion: 0.25
-Nodes (3): ExternalDataDefinitions, Flow, ExternalData
+### Community 106 - "Translate Bubble Shortcut"
+Cohesion: 0.39
+Nodes (5): ShortcutInfo, ShortcutManager, ComponentActivity, Context, TranslateBubbleShortcut
 
-### Community 113 - "TTS Inference"
+### Community 107 - "External Voice File Repos"
+Cohesion: 0.43
+Nodes (3): ExternalVoiceModelsFileRepository, ExternalVoiceModelDefinitions, Flow
+
+### Community 108 - "TextToSpeech Inference Port"
 Cohesion: 0.25
 Nodes (3): FloatArray, LongArray, TextToSpeechInference
 
-### Community 114 - "TTS Mock Inference"
-Cohesion: 0.25
-Nodes (3): FloatArray, LongArray, TextToSpeechMockInference
+### Community 109 - "Whisper Native JNI Create"
+Cohesion: 0.43
+Nodes (7): jboolean, jfloat, jint, jstring, Java_app_versta_translate_bridge_whisper_WhisperModel_create(), Java_app_versta_translate_bridge_whisper_WhisperRecognizer_create(), jstr()
 
-### Community 115 - "Language Selector"
-Cohesion: 0.39
-Nodes (7): Context, CornerBasedShape, Modifier, PaddingValues, LanguageSelector(), LanguageSelectorButton(), LanguageSelectorPreview()
-
-### Community 116 - "Minimal Language Selector"
-Cohesion: 0.39
-Nodes (7): Context, CornerBasedShape, Modifier, PaddingValues, MinimalLanguageSelector(), MinimalLanguageSelectorButton(), MinimalLanguageSelectorPreview()
-
-### Community 117 - "Slider Predefined Values"
-Cohesion: 0.32
-Nodes (6): Modifier, T, SliderPredefinedValues(), PaddingValues, TranslationSettings(), TranslationSettingsPreview()
-
-### Community 118 - "Language Details Screen"
-Cohesion: 0.46
-Nodes (7): Details(), ImageVector, PaddingValues, LanguageDetails(), LanguageDetailsData(), LanguageDetailsPreview(), Metadata()
-
-### Community 119 - "Legacy TextTranslation UI"
-Cohesion: 0.54
-Nodes (7): Modifier, TextTranslationInputButtonRow(), TextTranslationInputField(), TextTranslationLegacy(), TextTranslationLegacyPreview(), TextTranslationOutput(), TextTranslationOutputButtonRow()
-
-### Community 120 - "Button Color Defaults"
-Cohesion: 0.36
-Nodes (3): ButtonDefaults, FilledIconButtonDefaults, Color
-
-### Community 121 - "C++ Coding Standards Skill"
+### Community 110 - "Audio Player"
 Cohesion: 0.29
-Nodes (7): C++ Coding Standards Skill, Class Naming PascalCase, C++ File Naming Rules, Header Guards / Pragma Once, Namespace Naming Rules, Smart Pointer Rules, C++ Variable Naming Conventions
+Nodes (3): AudioPlayer, ByteArray, FloatArray
 
-### Community 122 - "Language Detect Bridge"
-Cohesion: 0.33
-Nodes (3): AutoCloseable, LanguageDetect, LanguageDetectResult
+### Community 111 - "AudioTrack Player"
+Cohesion: 0.29
+Nodes (3): AudioTrackPlayer, ByteArray, FloatArray
 
-### Community 124 - "File Visitor Utils"
-Cohesion: 0.38
-Nodes (5): BasicFileAttributes, FileVisitResult, SimpleFileVisitor, size(), SimpleFileVisitor
+### Community 112 - "Speech Context Store"
+Cohesion: 0.43
+Nodes (3): Entry, IntArray, SpeechContextStore
 
-### Community 127 - "Verification Skill"
-Cohesion: 0.40
-Nodes (6): Verify the Verification Step, Verification Before Completion Skill, Evidence Before Claims Principle, The Gate Function, The Iron Law, Rationalization Prevention
+### Community 113 - "File System Utilities"
+Cohesion: 0.60
+Nodes (3): BasicFileAttributes, FileVisitResult, SimpleFileVisitor
 
-### Community 128 - "Vocabulary JNI"
+### Community 114 - "Vocabulary Native"
 Cohesion: 0.33
 Nodes (5): JNIEnv, JNIEXPORT, jobject, jstring, Java_app_versta_translate_bridge_tokenize_Vocabulary_load()
 
-### Community 130 - "File Walk Utils"
-Cohesion: 0.40
-Nodes (4): BasicFileAttributes, FileVisitResult, SimpleFileVisitor, SimpleFileVisitor
+### Community 115 - "Whisper VAD Trailing Probe"
+Cohesion: 0.33
+Nodes (6): TrailingProbe, first_speech_start_ms, last_pause_mid_ms, last_speech_end_ms, last_voiced_end_ms, valid
 
-### Community 131 - "File Walk Utils"
-Cohesion: 0.40
-Nodes (4): BasicFileAttributes, FileVisitResult, SimpleFileVisitor, SimpleFileVisitor
-
-### Community 132 - "Privacy Policy Screen"
-Cohesion: 0.67
-Nodes (5): PaddingValues, PrivacyPolicy(), PrivacyPolicyParagraph, PrivacyPolicyPreview(), PrivacyPolicyTextParagraph()
-
-### Community 133 - "Tensor Utils JNI"
+### Community 118 - "Tensor Utils Native"
 Cohesion: 0.40
 Nodes (4): JNIEnv, JNIEXPORT, jobject, Java_app_versta_translate_bridge_inference_TensorUtils_closeBuffer()
 
-### Community 134 - "Notification Activity"
-Cohesion: 0.40
+### Community 119 - "Translate Notification Activity"
+Cohesion: 0.60
 Nodes (3): Activity, Bundle, TranslateNotificationActivity
 
-### Community 136 - "Font Weight"
-Cohesion: 0.50
-Nodes (4): FontWeight, BOLD, REGULAR, fromInt()
-
-### Community 137 - "TTS Settings Screen"
-Cohesion: 0.80
-Nodes (4): PaddingValues, TextToSpeechDataDownloadProgress(), TextToSpeechSettings(), TextToSpeechSettingsPreview()
-
-### Community 138 - "Theme Animations & Spacing"
-Cohesion: 0.40
-Nodes (3): Easing, Spacing, TranslateTheme()
-
-### Community 139 - "ViewModel Factory Utils"
-Cohesion: 0.50
+### Community 121 - "ViewModel Extensions"
+Cohesion: 0.60
 Nodes (3): T, viewModelFactory(), ViewModelProvider
 
-### Community 140 - "Gradle Wrapper Script"
-Cohesion: 0.60
-Nodes (3): gradlew script, die(), warn()
+### Community 122 - "Writing Direction"
+Cohesion: 0.50
+Nodes (3): WritingDirection, LTR, RTL
+
+### Community 123 - "Versta Logo"
+Cohesion: 0.83
+Nodes (3): Dp, Modifier, VerstaLogo()
 
 ## Ambiguous Edges - Review These
-- `whisper.cpp` → `Top-level CMakeLists`  [AMBIGUOUS]
-  app/native/jni/CMakeLists.txt · relation: conceptually_related_to
+- `jstr JNI String Helper` → `language_detect.cc JNI Binding`  [AMBIGUOUS]
+  native/AGENTS.md · relation: conceptually_related_to
+- `tensor_utils.cc JNI Binding` → `vocabulary.cc JNI Binding`  [AMBIGUOUS]
+  native/jni/src/CMakeLists.txt · relation: shares_data_with
 
 ## Knowledge Gaps
-- **169 isolated node(s):** `language`, `isReliable`, `confidence`, `hints`, `languages` (+164 more)
+- **207 isolated node(s):** `language`, `isReliable`, `confidence`, `hints`, `languages` (+202 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **18 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **30 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **What is the exact relationship between `whisper.cpp` and `Top-level CMakeLists`?**
+- **What is the exact relationship between `jstr JNI String Helper` and `language_detect.cc JNI Binding`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `ApplicationModuleInterface` connect `External Data & TTS Tokenizer` to `Voice Model File Repository`, `PaddleOCR Tokenizer`, `Camera Translation Flow`, `TTS Preference DataStore`, `OCR Inference`, `TextToSpeech ViewModel`, `Translation ViewModel State`, `External OCR Model Repository`, `Language ViewModel`, `External Language Model Repository`, `ESpeak NG Bridge`, `Scaffold Navigation`, `TextTranslation ViewModel`, `SQLDelight Database Container`, `Navigation ViewModel`, `Data Database Repository`, `OCR ViewModel`, `External OCR Model Metadata`, `Translation Preference Repository`, `Compressed File Extractor`, `Custom Theme ViewModel`, `Logging ViewModel`, `Language Preference Repository`, `Language Repository`, `License DataStore Repository`, `Voice Repository`, `Leanmt Service`, `File Hash Validator`, `TTS Inference`?**
-  _High betweenness centrality (0.125) - this node is a cross-community bridge._
-- **Why does `ApplicationModule` connect `External Data & TTS Tokenizer` to `Voice Model File Repository`, `PaddleOCR Tokenizer`, `Camera Translation Flow`, `TTS Preference DataStore`, `OCR Inference`, `TextToSpeech ViewModel`, `Translation ViewModel State`, `External OCR Model Repository`, `Language ViewModel`, `External Language Model Repository`, `ESpeak NG Bridge`, `Scaffold Navigation`, `TextTranslation ViewModel`, `Navigation ViewModel`, `Data Database Repository`, `OCR ViewModel`, `External OCR Model Metadata`, `Translation Preference Repository`, `Compressed File Extractor`, `Custom Theme ViewModel`, `Logging ViewModel`, `Language Preference Repository`, `Language Repository`, `License DataStore Repository`, `Voice Repository`, `Main Application Setup`, `Leanmt Service`, `File Hash Validator`, `TTS Inference`?**
-  _High betweenness centrality (0.121) - this node is a cross-community bridge._
-- **Why does `ObjectCharacterRecognitionInference` connect `OCR Inference` to `External Data & TTS Tokenizer`?**
-  _High betweenness centrality (0.066) - this node is a cross-community bridge._
-- **Are the 4 inferred relationships involving `LanguageViewModel` (e.g. with `ErrorAlertDialogPreview()` and `ModelLoadingProgressDialogPreview()`) actually correct?**
-  _`LanguageViewModel` has 4 INFERRED edges - model-reasoned connections that need verification._
+- **What is the exact relationship between `tensor_utils.cc JNI Binding` and `vocabulary.cc JNI Binding`?**
+  _Edge tagged AMBIGUOUS (relation: shares_data_with) - confidence is low._
+- **Why does `string` connect `LeanMT Native JNI` to `JNI Primitive Types`, `Whisper Native Engine`, `Whisper VAD Probe`, `Whisper Native JNI Create`?**
+  _High betweenness centrality (0.123) - this node is a cross-community bridge._
+- **Why does `ApplicationModule` connect `Data Repos & Hash Validation` to `Language Memory Repos & ViewModel`, `StyleTTS2 Inference`, `Scaffold Navigation Components`, `Language Preference DataStore`, `Data Repos & Files`, `Language Repository Port`, `Camera Translation`, `Translation Inference Loading`, `OCR Inference Bridge`, `Language Database Repository`, `External Voice Model Repos`, `External Language Model Catalog`, `TTS Voice Loading`, `App Navigation`, `TTS ViewModel`, `Translation ViewModel`, `OCR Post-Processing Pipeline`, `TTS Preference DataStore`, `Speech Recognition External Repos`, `Voice Models UI`, `Data Database Repository`, `Speech Download & Database`, `OCR External Model Repos`, `StyleTTS2 Tokenizer & ESpeak`, `Text Translation ViewModel`, `Speech Recognition ViewModel`, `OCR Repository & Download`, `Database Container & Migrations`, `OCR Repository Database`, `Translation Preference DataStore`, `Translation Preference Port`, `Whisper Speech Kotlin`, `Archive Extraction`, `Voice Database Repository`, `OCR ViewModel & Tasks`, `Custom Theme & Nav`, `Logging ViewModel`, `Language Preference Port`, `License Repository`, `StyleTTS2 Tokenizer`, `OCR Tokenizer & Vocabulary`, `Speech Recognition Inference Port`, `LeanMT Kotlin Bridge`, `External Voice File Repos`, `TextToSpeech Inference Port`, `AudioTrack Player`?**
+  _High betweenness centrality (0.107) - this node is a cross-community bridge._
+- **Why does `Recognizer` connect `Whisper Native Engine` to `Whisper Speech Kotlin`, `Whisper Native Model Handle`, `LeanMT Native JNI`, `Whisper Native JNI Handles`, `Whisper VAD Probe`?**
+  _High betweenness centrality (0.106) - this node is a cross-community bridge._
 - **What connects `language`, `isReliable`, `confidence` to the rest of the system?**
-  _169 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Paddle OCR JNI Bridge` be split into smaller, more focused modules?**
+  _207 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `JNI Primitive Types` be split into smaller, more focused modules?**
   _Cohesion score 0.06107594936708861 - nodes in this community are weakly interconnected._

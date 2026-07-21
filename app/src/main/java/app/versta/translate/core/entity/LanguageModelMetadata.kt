@@ -7,6 +7,7 @@ import kotlin.io.path.exists
 
 enum class LanguageModelArchitecture(val value: String) {
     MarianMTModel("MarianMTModel"),
+    BergamotTinyModel("BergamotTinyModel"),
 }
 
 @Serializable

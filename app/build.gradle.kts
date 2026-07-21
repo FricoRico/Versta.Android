@@ -57,6 +57,7 @@ android {
                 targets("app_versta_translate_bridge")
                 arguments += "-DUSE_MBROLA=OFF"
                 arguments += "-DUSE_ASYNC=OFF"
+                arguments += "-DCMAKE_BUILD_TYPE=Release"
             }
         }
     }
@@ -123,37 +124,22 @@ android {
             dimension = "abi"
             externalNativeBuild {
                 cmake {
-                    arguments += "-DLEANMT_ARM64_TUNE=ON"
-                    arguments += "-DANDROID_ARM_NEON=ON"
-                    arguments += "-DUSE_NEON=ON"
+                    // Architecture-specific SIMD/optimisation flags are set in
+                    // third_party/CMakeLists.txt, where ANDROID_ABI is reliable.
+                    // Gradle flavour arguments are subject to a shared-mutable-
+                    // list bug in AGP 9.0.1 that leaks them between flavours.
                     cppFlags += "-O3"
                 }
             }
         }
         create("armeabi-v7a") {
             dimension = "abi"
-            externalNativeBuild {
-                cmake {
-                    arguments += "-DANDROID_ARM_NEON=ON"
-                    arguments += "-DUSE_NEON=ON"
-                }
-            }
         }
         create("x86") {
             dimension = "abi"
-            externalNativeBuild {
-                cmake {
-                    arguments += "-DUSE_SSE2=ON"
-                }
-            }
         }
         create("x86_64") {
             dimension = "abi"
-            externalNativeBuild {
-                cmake {
-                    arguments += "-DUSE_SSE2=ON"
-                }
-            }
         }
     }
 //
@@ -181,6 +167,14 @@ tasks.apply {
             URI("https://models.versta.app/translation/models.json").toURL().openStream()
                 .use { input ->
                     layout.projectDirectory.file("src/main/res/raw/versta_translation_models.json").asFile.outputStream()
+                        .use { output ->
+                            input.copyTo(output)
+                        }
+                }
+
+            URI("https://models.versta.app/speech-recognition/models.json").toURL().openStream()
+                .use { input ->
+                    layout.projectDirectory.file("src/main/res/raw/versta_speech_recognition_models.json").asFile.outputStream()
                         .use { output ->
                             input.copyTo(output)
                         }
@@ -224,6 +218,7 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
     debugImplementation(libs.androidx.ui.tooling)
 
     implementation(libs.about.libraries.core)

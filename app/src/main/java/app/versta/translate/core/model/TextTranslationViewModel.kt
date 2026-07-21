@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.versta.translate.adapter.outbound.TransliterationAdapter

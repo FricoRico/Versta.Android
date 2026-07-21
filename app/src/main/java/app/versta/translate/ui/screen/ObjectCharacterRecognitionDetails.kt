@@ -42,7 +42,7 @@ import app.versta.translate.core.model.ObjectCharacterRecognitionViewModel
 import app.versta.translate.core.model.ScaffoldViewModel
 import app.versta.translate.ui.component.LanguageBadge
 import app.versta.translate.ui.component.ListDivider
-import app.versta.translate.ui.component.OcrDeletionConfirmationDialog
+import app.versta.translate.ui.component.ModelDeletionConfirmationDialog
 import app.versta.translate.ui.component.ScaffoldCompactBarBackNavigationIcon
 import app.versta.translate.ui.component.ScaffoldCompactBarTitle
 import app.versta.translate.ui.component.ScaffoldComponentProvider
@@ -122,8 +122,10 @@ fun ObjectCharacterRecognitionDetails(
             )
         }
 
-        OcrDeletionConfirmationDialog(
+        ModelDeletionConfirmationDialog(
             model = ocrToBeDeleted,
+            titleRes = R.string.delete_ocr_model_title,
+            descriptionRes = R.string.delete_ocr_model_description,
             onConfirmation = { id ->
                 objectCharacterRecognitionViewModel.deleteOcrModel(id)
                 navigationViewModel.navigate(Screens.ObjectCharacterRecognitionSettings, Screens.ObjectCharacterRecognitionDetails(id))

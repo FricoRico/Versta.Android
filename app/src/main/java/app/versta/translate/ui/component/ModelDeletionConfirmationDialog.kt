@@ -1,5 +1,6 @@
 package app.versta.translate.ui.component
 
+import androidx.annotation.StringRes
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -9,8 +10,10 @@ import androidx.compose.ui.res.stringResource
 import app.versta.translate.R
 
 @Composable
-fun OcrDeletionConfirmationDialog(
+fun ModelDeletionConfirmationDialog(
     model: String?,
+    @StringRes titleRes: Int,
+    @StringRes descriptionRes: Int,
     onConfirmation: (String) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
@@ -20,13 +23,13 @@ fun OcrDeletionConfirmationDialog(
         icon = {},
         title = {
             Text(
-                text = stringResource(R.string.delete_ocr_model_title),
+                text = stringResource(titleRes),
                 style = MaterialTheme.typography.headlineSmall
             )
         },
         text = {
             Text(
-                text = stringResource(R.string.delete_ocr_model_description, model),
+                text = stringResource(descriptionRes, model),
                 style = MaterialTheme.typography.bodyMedium
             )
         },
@@ -53,4 +56,3 @@ fun OcrDeletionConfirmationDialog(
         }
     )
 }
-

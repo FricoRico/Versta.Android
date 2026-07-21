@@ -1,0 +1,7 @@
+CREATE TABLE SpeechRecognitionModel (
+    id TEXT NOT NULL PRIMARY KEY,
+    baseModel TEXT NOT NULL,
+    architectures TEXT NOT NULL,
+    path TEXT NOT NULL,
+    version TEXT NOT NULL
+);

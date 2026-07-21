@@ -78,7 +78,7 @@ fun Settings(
                         )
                     },
                     index = 0,
-                    groupSize = 3
+                    groupSize = 4
                 )
             }
 
@@ -99,7 +99,7 @@ fun Settings(
                         )
                     },
                     index = 1,
-                    groupSize = 3
+                    groupSize = 4
                 )
             }
 
@@ -120,7 +120,28 @@ fun Settings(
                         )
                     },
                     index = 2,
-                    groupSize = 3
+                    groupSize = 4
+                )
+            }
+
+            item {
+                SettingsButtonItem(
+                    headlineContent = stringResource(R.string.settings_speech_recognition_title),
+                    supportingContent = stringResource(R.string.settings_speech_recognition_description),
+                    onClick = {
+                        navigationViewModel.navigate(
+                            Screens.SpeechRecognitionSettings,
+                            Screens.Settings
+                        )
+                    },
+                    leadingContent = {
+                        Icon(
+                            ImageVector.vectorResource(R.drawable.rounded_graphic_eq_24),
+                            contentDescription = null,
+                        )
+                    },
+                    index = 3,
+                    groupSize = 4
                 )
             }
 

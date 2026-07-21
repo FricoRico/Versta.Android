@@ -56,8 +56,6 @@ import timber.log.Timber
 import kotlin.math.max
 import kotlin.math.min
 
-internal const val TAG = "LanguageDetails"
-
 @Composable
 fun LanguageDetails(
     id: String,

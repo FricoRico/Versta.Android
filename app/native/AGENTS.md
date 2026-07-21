@@ -36,6 +36,7 @@ This file describes conventions for the C++/JNI bridge library
 ## C++ style & build
 
 - C++17 (`CMAKE_CXX_STANDARD 17`). Use `//` or `/* */` comments for non-obvious design decisions; keep them with the component's design notes at the top of the file.
+- Prefer single-word names for locals and parameters when the word is unambiguous in context (`tokens` not `token_ids`). Multi-word names are fine where a single word would be ambiguous or where the name is part of the public JNI surface.
 - Release build only: `-O3 -DNDEBUG`. For `arm64-v8a` add `-march=armv8.2-a+dotprod+fp16`.
 - Keep the 16 KB ELF page-size link flag (`-Wl,-z,max-page-size=16384`).
 - Log through the shared `Log.h` helper; never `printf` into production.

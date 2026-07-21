@@ -42,7 +42,7 @@ import app.versta.translate.core.model.ScaffoldViewModel
 import app.versta.translate.ui.component.DownloadButton
 import app.versta.translate.ui.component.LanguageBadge
 import app.versta.translate.ui.component.ListDivider
-import app.versta.translate.ui.component.OcrDeletionConfirmationDialog
+import app.versta.translate.ui.component.ModelDeletionConfirmationDialog
 import app.versta.translate.ui.component.ScaffoldCompactBarBackNavigationIcon
 import app.versta.translate.ui.component.ScaffoldCompactBarEmptyActions
 import app.versta.translate.ui.component.ScaffoldCompactBarTitle
@@ -200,8 +200,10 @@ fun ObjectCharacterRecognitionSettings(
             )
         }
 
-        OcrDeletionConfirmationDialog(
+        ModelDeletionConfirmationDialog(
             model = ocrToBeDeleted,
+            titleRes = R.string.delete_ocr_model_title,
+            descriptionRes = R.string.delete_ocr_model_description,
             onConfirmation = {
                 objectCharacterRecognitionViewModel.deleteOcrModel(it)
                 ocrToBeDeleted = null
@@ -235,7 +237,7 @@ private fun LazyListScope.OcrModels(
         count = models.size,
         key = { models[it].definition.id }
     ) { it ->
-        val modelWithState = remember { models[it] }
+        val modelWithState = remember(models[it]) { models[it] }
         val model = modelWithState.definition
         val task = downloadTasks.firstOrNull { it.model == model }
         val languages = model.languages.map { Language.fromIsoCode(it) }

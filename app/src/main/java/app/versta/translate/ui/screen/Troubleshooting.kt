@@ -41,10 +41,11 @@ fun Troubleshooting(
     val context = LocalContext.current
     val layoutDirection = LocalLayoutDirection.current
 
+    val licenseResetMessage = stringResource(R.string.license_reset)
+
     fun onResetLicense() {
         licenseViewModel.resetLicense()
-        Toast.makeText(context, context.getString(R.string.license_reset), Toast.LENGTH_SHORT)
-            .show()
+        Toast.makeText(context, licenseResetMessage, Toast.LENGTH_SHORT).show()
     }
 
     val onReportIssue = Intent(

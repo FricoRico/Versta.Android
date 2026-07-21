@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 import java.net.URI
 import java.util.UUID
 
-const val LANGUAGE_RATING_THRESHOLD = 70
+const val LANGUAGE_RATING_THRESHOLD = 100
 
 @Serializable
 data class ExternalLanguageModelDefinition(
@@ -77,6 +77,10 @@ data class ExternalLanguageMetadata(
     val score: Double,
     val architectures: List<LanguageModelArchitecture>,
 )
+
+fun List<ExternalLanguagePairDefinition>.supportedLanguageIsoCodes(): Set<String> {
+    return flatMap { listOf(it.pair.source.isoCode, it.pair.target.isoCode) }.toSet()
+}
 
 data class ExternalLanguagePairDefinition(
     val pair: LanguagePair,

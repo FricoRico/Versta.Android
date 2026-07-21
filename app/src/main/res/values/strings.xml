@@ -168,7 +168,7 @@
     <string name="no">No</string>
     <string name="language_details_version_label">Version</string>
     <string name="language_details_rating_label">Rating</string>
-    <string name="language_details_blue_score_label">BLEU score</string>
+    <string name="language_details_blue_score_label">COMET score</string>
     <string name="language_details_base_model_label">Base model</string>
     <string name="language_details_architecture_label">Architecture</string>
     <string name="settings_voices_title">Voices</string>
@@ -182,6 +182,14 @@
     <string name="language_suggestion_title">Download %1$s</string>
     <string name="language_suggestion_call_to_action">Do you want to download it now?</string>
     <string name="settings_ocr_title">OCR Models</string>
+    <string name="settings_speech_recognition_title">Speech Recognition</string>
+    <string name="settings_speech_recognition_description">Manage speech-to-text models</string>
+    <string name="speech_recognition_models_title">Speech recognition models</string>
+    <string name="delete_speech_recognition_model_title">Delete speech recognition model</string>
+    <string name="delete_speech_recognition_model_description">Are you sure you want to delete %1$s?</string>
+    <string name="speech_recognition_no_model_message">Download a speech recognition model to use dictation.</string>
+    <string name="speech_recognition_microphone_unavailable_message">Could not access the microphone. Close other apps using it and try again.</string>
+    <string name="speech_recognition_rtf">RTF %1$.1f</string>
     <string name="ocr_models_title">OCR models</string>
     <string name="ocr_details_supported_languages_label">Supported languages</string>
     <string name="delete_ocr_model_title">Delete OCR model</string>

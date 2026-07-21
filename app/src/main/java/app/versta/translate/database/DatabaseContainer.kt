@@ -13,6 +13,7 @@ import timber.log.Timber
 import java.app.versta.translate.database.sqldelight.VoiceModel
 import java.app.versta.translate.database.sqldelight.ObjectCharacterRecognitionDetectorModel
 import java.app.versta.translate.database.sqldelight.ObjectCharacterRecognitionRecognizerModel
+import java.app.versta.translate.database.sqldelight.SpeechRecognitionModel
 
 interface Migration {
     fun migrate(database: DatabaseContainer)
@@ -40,6 +41,9 @@ class DatabaseContainer(
         ObjectCharacterRecognitionRecognizerModelAdapter = ObjectCharacterRecognitionRecognizerModel.Adapter(
             architecturesAdapter = ListOfStringsAdapter,
         ),
+        SpeechRecognitionModelAdapter = SpeechRecognitionModel.Adapter(
+            architecturesAdapter = ListOfStringsAdapter,
+        ),
     )
 
     private val _migrations = listOf(
@@ -54,6 +58,7 @@ class DatabaseContainer(
     val voices = _database.voiceQueries
     val voiceModels = _database.voiceModelQueries
     val objectCharacterRecognitionModels = _database.objectCharacterRecognitionModelQueries
+    val speechRecognitionModels = _database.speechRecognitionModelQueries
 
     fun transaction(body: TransactionWithoutReturn.() -> Unit) = _database.transaction { body() }
     fun <T> transactionForResult(body: TransactionWithReturn<T>.() -> T) =

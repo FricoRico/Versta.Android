@@ -76,6 +76,7 @@ open class MainActivity : ComponentActivity() {
                         textToSpeechViewModel = MainApplication.module.textToSpeechViewModel,
                         voiceViewModel = MainApplication.module.voiceViewModel,
                         objectCharacterRecognitionViewModel = MainApplication.module.objectCharacterRecognitionViewModel,
+                        speechRecognitionViewModel = MainApplication.module.speechRecognitionViewModel,
                         loggingViewModel = MainApplication.module.loggingViewModel
                     )
 

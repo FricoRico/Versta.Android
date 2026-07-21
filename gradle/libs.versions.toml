@@ -32,6 +32,7 @@ timber = "5.0.1"
 okhttp = "5.3.2"
 lifecycleViewmodelKtx = "2.10.0"
 uiText = "1.10.3"
+kotlinxCoroutinesTest = "1.10.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -74,6 +75,7 @@ atilika-kuromoji-ipadic = { group = "com.atilika.kuromoji", name = "kuromoji-ipa
 jakewharton-timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 jetbrains-bio-npy = { group = "org.jetbrains.bio", name = "npy", version.ref = "jetbrainsBioNpy" }
 kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
 
 squareup-okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 sqldelight-android = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }

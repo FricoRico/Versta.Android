@@ -50,6 +50,12 @@ sealed class Screens : NavKey {
     data object ObjectCharacterRecognitionAttributions : Screens()
 
     @Serializable
+    data object SpeechRecognitionSettings : Screens()
+
+    @Serializable
+    data class SpeechRecognitionDetails(val id: String) : Screens()
+
+    @Serializable
     data object About : Screens()
 
     @Serializable

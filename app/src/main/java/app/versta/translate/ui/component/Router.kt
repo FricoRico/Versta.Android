@@ -32,6 +32,7 @@ import app.versta.translate.core.model.LoggingViewModel
 import app.versta.translate.core.model.NavigationViewModel
 import app.versta.translate.core.model.ObjectCharacterRecognitionViewModel
 import app.versta.translate.core.model.ScaffoldViewModel
+import app.versta.translate.core.model.SpeechRecognitionViewModel
 import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
@@ -54,6 +55,8 @@ import app.versta.translate.ui.screen.CameraTranslation
 import app.versta.translate.ui.screen.ObjectCharacterRecognitionAttributions
 import app.versta.translate.ui.screen.ObjectCharacterRecognitionDetails
 import app.versta.translate.ui.screen.ObjectCharacterRecognitionSettings
+import app.versta.translate.ui.screen.SpeechRecognitionDetails
+import app.versta.translate.ui.screen.SpeechRecognitionSettings
 import app.versta.translate.ui.screen.VoiceAttributions
 import app.versta.translate.ui.screen.VoiceDetails
 import app.versta.translate.ui.screen.VoiceSettings
@@ -74,6 +77,7 @@ fun Router(
     textToSpeechViewModel: TextToSpeechViewModel,
     voiceViewModel: VoiceViewModel,
     objectCharacterRecognitionViewModel: ObjectCharacterRecognitionViewModel,
+    speechRecognitionViewModel: SpeechRecognitionViewModel,
     loggingViewModel: LoggingViewModel
 ) {
     val windowAdaptiveInfo = currentWindowAdaptiveInfo()
@@ -152,7 +156,8 @@ fun Router(
                                 scaffoldViewModel = scaffoldViewModel,
                                 navigationViewModel = navigationViewModel,
                                 textToSpeechViewModel = textToSpeechViewModel,
-                                textTranslationViewModel = textTranslationViewModel
+                                textTranslationViewModel = textTranslationViewModel,
+                                speechRecognitionViewModel = speechRecognitionViewModel,
                             )
                         }
                         entry<Screens.Vision>(
@@ -308,6 +313,31 @@ fun Router(
                                 scaffoldViewModel = scaffoldViewModel,
                                 navigationViewModel = navigationViewModel,
                                 objectCharacterRecognitionViewModel = objectCharacterRecognitionViewModel
+                            )
+                        }
+                        entry<Screens.SpeechRecognitionSettings>(
+                            metadata = ListDetailSceneStrategy.detailPane(
+                                sceneKey = settingsKey
+                            )
+                        ) {
+                            SpeechRecognitionSettings(
+                                innerPadding = innerPadding,
+                                scaffoldViewModel = scaffoldViewModel,
+                                navigationViewModel = navigationViewModel,
+                                speechRecognitionViewModel = speechRecognitionViewModel
+                            )
+                        }
+                        entry<Screens.SpeechRecognitionDetails>(
+                            metadata = ListDetailSceneStrategy.extraPane(
+                                sceneKey = settingsKey
+                            )
+                        ) {
+                            SpeechRecognitionDetails(
+                                id = it.id,
+                                innerPadding = innerPadding,
+                                scaffoldViewModel = scaffoldViewModel,
+                                navigationViewModel = navigationViewModel,
+                                speechRecognitionViewModel = speechRecognitionViewModel
                             )
                         }
                         entry<Screens.ObjectCharacterRecognitionAttributions>(

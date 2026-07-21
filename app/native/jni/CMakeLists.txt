@@ -21,6 +21,14 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         ${OpenCV_INCLUDE_DIRS}
 )
 
+target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
+    -O3 -DNDEBUG)
+
+if(ANDROID_ABI MATCHES "arm64|aarch64")
+    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
+        -march=armv8.2-a+dotprod+fp16)
+endif()
+
 target_link_options(${CMAKE_PROJECT_NAME} PRIVATE "-Wl,-z,max-page-size=16384")
 
 target_link_libraries(
@@ -33,5 +41,6 @@ target_link_libraries(
         espeak-ng
         openjtalk
         leanmt
+        whisper
         ${OpenCV_LIBS}
 )

@@ -20,9 +20,16 @@ import app.versta.translate.adapter.outbound.ExternalDataFileRepository
 import app.versta.translate.adapter.outbound.ExternalDataRepository
 import app.versta.translate.adapter.outbound.ExternalObjectCharacterRecognitionModelsFileRepository
 import app.versta.translate.adapter.outbound.ExternalObjectCharacterRecognitionModelsRepository
+import app.versta.translate.adapter.outbound.ExternalSpeechRecognitionModelsFileRepository
+import app.versta.translate.adapter.outbound.ExternalSpeechRecognitionModelsRepository
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsFileRepository
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsRepository
+import app.versta.translate.adapter.outbound.SpeechRecognitionDatabaseRepository
+import app.versta.translate.adapter.outbound.SpeechRecognitionInference
+import app.versta.translate.adapter.outbound.SpeechRecognitionMemoryRepository
+import app.versta.translate.adapter.outbound.SpeechRecognitionRepository
 import app.versta.translate.adapter.outbound.StyleTextToSpeechInference
+import app.versta.translate.adapter.outbound.WhisperSpeechRecognition
 import app.versta.translate.adapter.outbound.StyleTextToSpeech2Tokenizer
 import app.versta.translate.adapter.outbound.LanguageDatabaseRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceDataStoreRepository
@@ -61,6 +68,7 @@ import app.versta.translate.core.model.ScaffoldActionsComponent
 import app.versta.translate.core.model.ScaffoldNavigationIconComponent
 import app.versta.translate.core.model.ScaffoldTitleComponent
 import app.versta.translate.core.model.ScaffoldViewModel
+import app.versta.translate.core.model.SpeechRecognitionViewModel
 import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
@@ -95,6 +103,9 @@ interface ApplicationModuleInterface {
     val externalObjectCharacterRecognitionModelsRepository: ExternalObjectCharacterRecognitionModelsRepository
     val objectCharacterRecognizerRepository: ObjectCharacterRecognitionRepository
 
+    val externalSpeechRecognitionModelsRepository: ExternalSpeechRecognitionModelsRepository
+    val speechRecognitionRepository: SpeechRecognitionRepository
+
     val cameraTranslationViewModel: CameraTranslationViewModel
     val navigationViewModel: NavigationViewModel
     val scaffoldViewModel: ScaffoldViewModel
@@ -119,6 +130,9 @@ interface ApplicationModuleInterface {
     val textToSpeechInference: TextToSpeechInference
     val objectCharacterRecognitionTokenizer: PaddleObjectCharacterRecognitionTokenizer
     val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference
+
+    val speechRecognitionInference: SpeechRecognitionInference
+    val speechRecognitionViewModel: SpeechRecognitionViewModel
 }
 
 class ApplicationModule(private val context: Context) : ApplicationModuleInterface {
@@ -170,6 +184,14 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
 
     override val objectCharacterRecognizerRepository: ObjectCharacterRecognitionRepository by lazy {
         ObjectCharacterRecognitionRepositoryDatabaseRepository(database)
+    }
+
+    override val externalSpeechRecognitionModelsRepository: ExternalSpeechRecognitionModelsRepository by lazy {
+        ExternalSpeechRecognitionModelsFileRepository(context.resources.openRawResource(R.raw.versta_speech_recognition_models))
+    }
+
+    override val speechRecognitionRepository: SpeechRecognitionRepository by lazy {
+        SpeechRecognitionDatabaseRepository(database)
     }
 
     override val navigationViewModel: NavigationViewModel by lazy {
@@ -302,6 +324,16 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
         )
     }
 
+    override val speechRecognitionViewModel: SpeechRecognitionViewModel by lazy {
+        SpeechRecognitionViewModel(
+            context = context,
+            speechRecognitionRepository = speechRecognitionRepository,
+            externalSpeechRecognitionModelsRepository = externalSpeechRecognitionModelsRepository,
+            speechRecognitionInference = speechRecognitionInference,
+            languageViewModel = languageViewModel,
+        )
+    }
+
     override val ortEnvironment: OrtEnvironment by lazy {
         OrtEnvironment.getEnvironment(
             OrtLoggingLevel.ORT_LOGGING_LEVEL_FATAL,
@@ -353,6 +385,10 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
 
     override val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference by lazy {
         PaddleObjectCharacterRecognition(ortEnvironment)
+    }
+
+    override val speechRecognitionInference: SpeechRecognitionInference by lazy {
+        WhisperSpeechRecognition()
     }
 }
 

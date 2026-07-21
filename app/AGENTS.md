@@ -35,6 +35,16 @@ in the same file when they are implementation details).
 - Logging tag: `companion object { private val TAG = ClassName::class.java.simpleName }`; log via `Timber.tag(TAG)`.
 - Sealed class state: singular, meaningful names (`LoadingProgress.Idle/InProgress/Completed/Error`), never `Loading`/`Loaded`.
 
+## Graphify
+
+This project has a graphify knowledge graph at graphify-out/.
+
+Rules:
+- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
+- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)
+
+
 ## Kotlin style
 
 - Prefer `val`; only use `var` for `MutableStateFlow` backing fields or genuinely mutable state.
@@ -44,6 +54,7 @@ in the same file when they are implementation details).
 - Use null-safety idioms (`?.`, `?:`); avoid `!!`.
 - Early returns to keep nesting shallow.
 - KDoc on public interfaces, methods, and classes. Keep it concise; cover `@param` and `@return` only where they add information. Do not add comments that restate the code.
+- Prefer single-word names for locals and parameters when the word is unambiguous in context (`tokens` not `tokenIds`, `path` not `filePath`). Multi-word names are fine where a single word would be ambiguous or where the name is part of a public API, a data class property, or maps to a DB column/JSON key.
 - 4-space indentation; Kotlin official style (`kotlin.code.style=official`).
 
 ## Logging

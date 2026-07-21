@@ -1,14 +1,10 @@
 package app.versta.translate.core.entity
 
+import app.versta.translate.utils.directorySize
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.io.IOException
-import java.nio.file.FileVisitResult
-import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.SimpleFileVisitor
-import java.nio.file.attribute.BasicFileAttributes
 import java.util.Locale
 import kotlin.io.path.exists
 
@@ -52,7 +48,7 @@ data class LanguageModel(
                 baseModel = metadata.baseModel,
                 version = metadata.version,
                 score = metadata.score ?: 0.0,
-                size = size(path.parent),
+                size = path.parent.directorySize(),
                 files = LanguageModelFiles(
                     model = path.resolve(metadata.files.model),
                     vocabulary = path.resolve(metadata.files.vocabulary),
@@ -75,27 +71,6 @@ data class LanguageModel(
             }
 
             return files
-        }
-
-        private fun size(path: Path): Long {
-            var folderSize: Long = 0
-
-            Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
-                override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-                    folderSize += Files.size(file)
-                    return FileVisitResult.CONTINUE
-                }
-
-                override fun postVisitDirectory(dir: Path, exc: IOException?): FileVisitResult {
-                    if (exc != null) {
-                        throw exc
-                    }
-
-                    return FileVisitResult.CONTINUE
-                }
-            })
-
-            return folderSize
         }
     }
 }

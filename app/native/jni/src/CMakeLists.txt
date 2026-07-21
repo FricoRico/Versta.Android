@@ -7,5 +7,6 @@ set(SRC_FILES
         ${SRC_DIR}/language_detect.cc
         ${SRC_DIR}/vocabulary.cc
         ${SRC_DIR}/leanmt.cc
+        ${SRC_DIR}/whisper.cc
         PARENT_SCOPE
 )

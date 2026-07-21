@@ -13,4 +13,5 @@ local.properties
 *.keystore
 keystore.properties
 
-graphify-out/cache/
+graphify-out
+!./graphify-out
