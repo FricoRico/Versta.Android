@@ -4,19 +4,19 @@
 Welcome to Versta, your go-to offline translation app designed with privacy and convenience in mind. This project is open source and aims to provide a secure and user-friendly translation experience for travelers and language learners alike.
 
 ## Features
-Versta currently offers the following initial features, but many more are planned for future releases:
+Versta is offline-first: after the required model files are downloaded, everything runs entirely on-device. It currently offers the following features, with more planned for future releases:
 
 - Secure Offline Translations: Translate text without an internet connection, ensuring your data stays private.
 - Support for 27+ Languages: Communicate effectively in multiple languages with our extensive language support.
 - Context Menu Translation: Translate text using the context menu and view translations in chat bubbles for seamless multitasking.
+- Voice Translation: Speak and get translations in real time using your device's microphone.
+- Image Translation: Translate text in real time by pointing your camera at it.
+- Text-to-Speech: Listen to translations in the target language to improve pronunciation.
 - License-Based: Contribute to the app's development by purchasing a license, helping us add new features and improve existing ones.
 
 ## Roadmap
-We have an exciting roadmap planned for Versta, including the following features:
+Voice translation, image translation, and text-to-speech from our original roadmap are now implemented. Remaining planned features include:
 
-- Voice Translation: Translate spoken language in real-time using your device's microphone.
-- Image Translation: Translate text in real-time by using your device's camera.
-- Text-to-Speech: Listen to translations in the target language to improve pronunciation.
 - Conversation Mode: Translate conversations between two languages for seamless communication.
 
 ## Why Source Available ?
@@ -37,11 +37,16 @@ Versta is licensed under the Source First license. This license ensures that:
 For more details, please refer to the [LICENSE.md](LICENSE.md) file and visit [Source First](https://sourcefirst.com/) for more information about the licensing principles.
 
 ## Language Models
-Our application uses OpusMT models for translation (more language frameworks to be added in the future). These models are open-source and can be found on the [OpusMT GitHub page](https://github.com/Helsinki-NLP/Opus-MT). The models that we use in the app are optimized for mobile devices and use [ONNX runtime](https://onnxruntime.ai/) for inference. This means that they are lightweight and efficient, providing fast and accurate translations without requiring an internet connection. 
+Versta runs its models entirely on-device through native C++ inference (JNI) and ONNX Runtime, so translations are fast and accurate without an internet connection. The current stack includes:
 
-In order for the models to be compatible, our conversion tools can be used to export the models to the required format. More information on our [Versta.Models](https://github.com/FricoRico/Versta.Models) Github page.
+- Translation: LeanMT (Firefox MT) models.
+- Speech recognition: Whisper.cpp.
+- Optical character recognition: PaddleOCR.
+- Text-to-speech: espeak-ng and open-jtalk phonemization with StyleTTS2 synthesis.
+
+These open-source models are optimized for mobile devices, keeping them lightweight and efficient. In order for the models to be compatible, our conversion tools can be used to export the models to the required format. More information on our [Versta.Models](https://github.com/FricoRico/Versta.Models) GitHub page.
 
 ## Feedback
-Your feedback is crucial to the development of Versta. If you encounter any issues or have suggestions for improvement, please open an issue on our [GitHub issue](https://github.com/FricoRico/Versta.Models/issues) page.
+Your feedback is crucial to the development of Versta. If you encounter any issues or have suggestions for improvement, please open an issue on our [GitHub issue](https://github.com/FricoRico/Versta.Android/issues) page.
 
 Thank you for choosing Versta! Together, we can break down language barriers and enhance communication for everyone.
