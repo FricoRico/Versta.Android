@@ -3,7 +3,7 @@ package app.versta.translate.core.entity
 /**
  * Per-language decoder priming text passed to whisper as `initial_prompt`
  * (used only as a fallback when there is no carried context to prime with —
- * see [app.versta.translate.bridge.whisper.WhisperRecognizer.setCarriedContext]).
+ * see [app.versta.translate.bridge.whisper.Whisper.setCarriedContext]).
  * Each entry models the punctuation and formatting conventions we want
  * reflected in transcripts (sentence capitalization, times, currency, a
  * possessive apostrophe, a contraction, a question mark) without reading

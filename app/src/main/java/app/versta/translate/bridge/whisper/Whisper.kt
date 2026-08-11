@@ -67,7 +67,7 @@ import timber.log.Timber
  *                           to cut at a detected pause near the limit rather
  *                           than mid-word.
  */
-class WhisperRecognizer(
+class Whisper(
     model: WhisperModel,
     callback: WhisperSegmentCallback,
     vadEnabled: Boolean = true,
@@ -77,7 +77,7 @@ class WhisperRecognizer(
     noSpeechThreshold: Float = 0.6f,
     endpointSilenceMs: Int = 600,
     maxUtteranceMs: Int = 15_000,
-) : AutoCloseable, WhisperRecognizerHandle {
+) : AutoCloseable, SpeechRecognitionEngine {
     @Volatile
     private var handle: Long
 
@@ -226,7 +226,7 @@ class WhisperRecognizer(
     private external fun getMetrics(handle: Long): SpeechRecognitionMetrics?
 
     companion object {
-        private val TAG: String = WhisperRecognizer::class.java.simpleName
+        private val TAG: String = Whisper::class.java.simpleName
 
         init {
             System.loadLibrary("app_versta_translate_bridge")
@@ -243,12 +243,12 @@ class WhisperRecognizer(
  *
  * @param text transcribed text for the utterance
  * @param startMs utterance start time in milliseconds, relative to when
- *   [WhisperRecognizer.feed] started receiving audio for this session
+ *   [Whisper.feed] started receiving audio for this session
  * @param endMs utterance end time in milliseconds
  * @param contextTokenIds this utterance's decoded token ids, when its decode
  *   passed the native quality gate — suitable for persisting (e.g. in a
  *   [app.versta.translate.adapter.outbound.SpeechContextStore]) and feeding
- *   back via [WhisperRecognizer.setCarriedContext] to resume context in a
+ *   back via [Whisper.setCarriedContext] to resume context in a
  *   later session. Empty when the decode did not pass the gate; callers
  *   should treat that as "no update" rather than "clear the existing
  *   context".

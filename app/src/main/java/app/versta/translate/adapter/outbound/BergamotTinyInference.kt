@@ -1,12 +1,10 @@
 package app.versta.translate.adapter.outbound
 
-import app.versta.translate.bridge.leanmt.LeanmtModel
+import app.versta.translate.bridge.leanmt.TranslationEngine
 import app.versta.translate.bridge.leanmt.LeanmtModelConfig
 import app.versta.translate.bridge.leanmt.LeanmtPackage
-import app.versta.translate.bridge.leanmt.LeanmtService
 import app.versta.translate.core.entity.LanguageModelConfiguration
 import app.versta.translate.core.entity.LanguageModelFiles
-import timber.log.Timber
 
 /**
  * Translation inference backed by the leanmt C++ library, accessed through the
@@ -18,15 +16,11 @@ import timber.log.Timber
  * chaining two [translate] calls.
  */
 class BergamotTinyInference(
-    private val service: LeanmtService,
+    private val engine: TranslationEngine,
 ) : TranslationInference {
-    private var _model: LeanmtModel? = null
     private var _loadedKey: String? = null
 
     override fun translate(text: String, maxBeamWidth: Int, maxSequenceLength: Int): String {
-        val model = _model
-            ?: throw IllegalStateException("Translation model is not loaded")
-
         if (text.isBlank()) {
             return ""
         }
@@ -39,13 +33,11 @@ class BergamotTinyInference(
             return ""
         }
 
-        val targets = service.translate(
-            model,
+        return engine.translate(
             paragraphs.toTypedArray(),
             maxBeamWidth.toLong(),
             maxSequenceLength.toLong(),
-        )
-        return targets.joinToString("\n")
+        ).joinToString("\n")
     }
 
     override fun cancel() {
@@ -57,9 +49,6 @@ class BergamotTinyInference(
         if (key == _loadedKey) {
             return
         }
-
-        _model?.close()
-        _model = null
 
         val pkg = LeanmtPackage(
             files.model.toString(),
@@ -75,27 +64,12 @@ class BergamotTinyInference(
             config.numHeads
         )
 
-        _model = LeanmtModel.create(modelConfig, pkg)
+        engine.loadModel(pkg, modelConfig)
         _loadedKey = key
     }
 
     override fun close() {
-        try {
-            _model?.close()
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e)
-        }
-        try {
-            service.close()
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e)
-        } finally {
-            _model = null
-            _loadedKey = null
-        }
-    }
-
-    companion object {
-        private val TAG: String = BergamotTinyInference::class.java.simpleName
+        _loadedKey = null
+        engine.close()
     }
 }

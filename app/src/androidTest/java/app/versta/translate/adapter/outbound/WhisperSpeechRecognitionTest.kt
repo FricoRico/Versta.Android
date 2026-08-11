@@ -1,6 +1,6 @@
 package app.versta.translate.adapter.outbound
 
-import app.versta.translate.bridge.whisper.WhisperRecognizerHandle
+import app.versta.translate.bridge.whisper.SpeechRecognitionEngine
 import app.versta.translate.bridge.whisper.WhisperSegmentCallback
 import app.versta.translate.core.entity.SpeechRecognitionInferenceFiles
 import app.versta.translate.core.entity.SpeechRecognitionMetrics
@@ -25,12 +25,12 @@ import java.nio.file.Path
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class WhisperSpeechRecognitionTest {
 
-    private class FakeModel : AutoCloseable {
+    private class MockModel : AutoCloseable {
         var closeCalls = 0
         override fun close() { closeCalls++ }
     }
 
-    private class FakeRecognizer : WhisperRecognizerHandle {
+    private class MockSpeechRecognitionEngine : SpeechRecognitionEngine {
         var feedCalls = 0
         var processResult: Long = 0L
         var processCalls = 0
@@ -54,7 +54,7 @@ class WhisperSpeechRecognitionTest {
         }
     }
 
-    private class FakeCapture(val feed: WhisperRecognizerHandle) : CaptureHandle {
+    private class MockAudioCapture(val feed: SpeechRecognitionEngine) : AudioCapture {
         var startCalls = 0
         var stopCalls = 0
         var startError: IllegalStateException? = null
@@ -68,16 +68,16 @@ class WhisperSpeechRecognitionTest {
 
     private fun buildInference(
         scheduler: TestCoroutineScheduler,
-        modelHook: (FakeModel) -> Unit = {},
-        recognizerHook: (FakeRecognizer) -> Unit = {},
-        captureHook: (FakeCapture) -> Unit = {},
+        modelHook: (MockModel) -> Unit = {},
+        recognizerHook: (MockSpeechRecognitionEngine) -> Unit = {},
+        captureHook: (MockAudioCapture) -> Unit = {},
     ): WhisperSpeechRecognition {
         return WhisperSpeechRecognition(
-            modelFactory = { _, _, _ -> FakeModel().also(modelHook) },
+            modelFactory = { _, _, _ -> MockModel().also(modelHook) },
             recognizerFactory = { _, callback, _ ->
-                FakeRecognizer().also { it.callback = callback }.also(recognizerHook)
+                MockSpeechRecognitionEngine().also { it.callback = callback }.also(recognizerHook)
             },
-            captureFactory = { FakeCapture(it).also(captureHook) },
+            captureFactory = { MockAudioCapture(it).also(captureHook) },
             processDispatcher = StandardTestDispatcher(scheduler),
         )
     }
@@ -187,9 +187,9 @@ class WhisperSpeechRecognitionTest {
 
     @Test
     fun load_createsModelRecognizerAndCapture() = runTest {
-        val models = mutableListOf<FakeModel>()
-        val recognizers = mutableListOf<FakeRecognizer>()
-        val captures = mutableListOf<FakeCapture>()
+        val models = mutableListOf<MockModel>()
+        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
+        val captures = mutableListOf<MockAudioCapture>()
         val inference = buildInference(
             testScheduler,
             { models.add(it) },
@@ -209,8 +209,8 @@ class WhisperSpeechRecognitionTest {
 
     @Test
     fun load_sameModelAndLanguage_reusesEverything() = runTest {
-        val models = mutableListOf<FakeModel>()
-        val recognizers = mutableListOf<FakeRecognizer>()
+        val models = mutableListOf<MockModel>()
+        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
         val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
         inference.setSourceLanguage("en")
 
@@ -224,8 +224,8 @@ class WhisperSpeechRecognitionTest {
 
     @Test
     fun load_languageChange_recreatesRecognizerKeepsModel() = runTest {
-        val models = mutableListOf<FakeModel>()
-        val recognizers = mutableListOf<FakeRecognizer>()
+        val models = mutableListOf<MockModel>()
+        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
         val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
         inference.setSourceLanguage("en")
         inference.load(files())
@@ -241,8 +241,8 @@ class WhisperSpeechRecognitionTest {
 
     @Test
     fun load_modelChange_tearsDownAndReloads() = runTest {
-        val models = mutableListOf<FakeModel>()
-        val recognizers = mutableListOf<FakeRecognizer>()
+        val models = mutableListOf<MockModel>()
+        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
         val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
         inference.setSourceLanguage("en")
         inference.load(files("model.bin"))
@@ -270,8 +270,8 @@ class WhisperSpeechRecognitionTest {
 
     @Test
     fun start_whileListening_isIgnored() = runTest {
-        val models = mutableListOf<FakeModel>()
-        val recognizers = mutableListOf<FakeRecognizer>()
+        val models = mutableListOf<MockModel>()
+        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
         val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
         inference.setSourceLanguage("en")
         inference.load(files())
@@ -301,7 +301,7 @@ class WhisperSpeechRecognitionTest {
 
     @Test
     fun start_whenMicUnavailable_throwsCaptureExceptionAndStaysIdle() = runTest {
-        val captures = mutableListOf<FakeCapture>()
+        val captures = mutableListOf<MockAudioCapture>()
         val inference = buildInference(testScheduler, captureHook = {
             it.startError = IllegalStateException("Microphone not available")
             captures.add(it)
@@ -322,8 +322,8 @@ class WhisperSpeechRecognitionTest {
 
     @Test
     fun stop_drainsBufferedAudio() = runTest {
-        val models = mutableListOf<FakeModel>()
-        val recognizers = mutableListOf<FakeRecognizer>()
+        val models = mutableListOf<MockModel>()
+        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
         val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
         inference.setSourceLanguage("en")
         inference.load(files())
@@ -346,7 +346,7 @@ class WhisperSpeechRecognitionTest {
 
     @Test
     fun stop_whenNotListening_isNoOp() = runTest {
-        val captures = mutableListOf<FakeCapture>()
+        val captures = mutableListOf<MockAudioCapture>()
         val inference = buildInference(testScheduler, captureHook = { captures.add(it) })
 
         inference.stop()
@@ -356,8 +356,8 @@ class WhisperSpeechRecognitionTest {
 
     @Test
     fun segmentCallback_filtersDegenerateAndTrims() = runTest {
-        val models = mutableListOf<FakeModel>()
-        val recognizers = mutableListOf<FakeRecognizer>()
+        val models = mutableListOf<MockModel>()
+        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
         val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
         inference.setSourceLanguage("en")
         inference.load(files())
@@ -379,8 +379,8 @@ class WhisperSpeechRecognitionTest {
 
     @Test
     fun segmentCallback_carriesContextAcrossSessions() = runTest {
-        val models = mutableListOf<FakeModel>()
-        val recognizers = mutableListOf<FakeRecognizer>()
+        val models = mutableListOf<MockModel>()
+        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
         val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
         inference.setSourceLanguage("en")
         inference.load(files())
@@ -398,8 +398,8 @@ class WhisperSpeechRecognitionTest {
 
     @Test
     fun rtf_reflectsRecognizerMetrics() = runTest {
-        val models = mutableListOf<FakeModel>()
-        val recognizers = mutableListOf<FakeRecognizer>()
+        val models = mutableListOf<MockModel>()
+        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
         val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
         inference.setSourceLanguage("en")
         inference.load(files())
@@ -416,9 +416,9 @@ class WhisperSpeechRecognitionTest {
 
     @Test
     fun close_clearsContextAndClosesResources() = runTest {
-        val models = mutableListOf<FakeModel>()
-        val recognizers = mutableListOf<FakeRecognizer>()
-        val captures = mutableListOf<FakeCapture>()
+        val models = mutableListOf<MockModel>()
+        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
+        val captures = mutableListOf<MockAudioCapture>()
         val inference = buildInference(
             testScheduler,
             { models.add(it) },

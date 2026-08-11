@@ -559,7 +559,7 @@ static void advance_front(Recognizer *rec, size_t n) {
 
 
 JNIEXPORT jlong JNICALL
-Java_app_versta_translate_bridge_whisper_WhisperRecognizer_create(
+Java_app_versta_translate_bridge_whisper_Whisper_create(
         JNIEnv *env,
         jobject,
         jlong modelHandle,
@@ -608,7 +608,7 @@ Java_app_versta_translate_bridge_whisper_WhisperRecognizer_create(
 }
 
 
-JNIEXPORT void JNICALL Java_app_versta_translate_bridge_whisper_WhisperRecognizer_destroy(
+JNIEXPORT void JNICALL Java_app_versta_translate_bridge_whisper_Whisper_destroy(
         JNIEnv *env,
         jobject,
         jlong handle
@@ -634,7 +634,7 @@ JNIEXPORT void JNICALL Java_app_versta_translate_bridge_whisper_WhisperRecognize
 }
 
 
-JNIEXPORT void JNICALL Java_app_versta_translate_bridge_whisper_WhisperRecognizer_setCallback(
+JNIEXPORT void JNICALL Java_app_versta_translate_bridge_whisper_Whisper_setCallback(
         JNIEnv *env,
         jobject,
         jlong handle,
@@ -666,7 +666,7 @@ JNIEXPORT void JNICALL Java_app_versta_translate_bridge_whisper_WhisperRecognize
 }
 
 
-JNIEXPORT void JNICALL Java_app_versta_translate_bridge_whisper_WhisperRecognizer_feed(
+JNIEXPORT void JNICALL Java_app_versta_translate_bridge_whisper_Whisper_feed(
         JNIEnv *env,
         jobject,
         jlong handle,
@@ -709,7 +709,7 @@ JNIEXPORT void JNICALL Java_app_versta_translate_bridge_whisper_WhisperRecognize
 
 
 JNIEXPORT void JNICALL
-Java_app_versta_translate_bridge_whisper_WhisperRecognizer_setCarriedContext(
+Java_app_versta_translate_bridge_whisper_Whisper_setCarriedContext(
         JNIEnv *env,
         jobject,
         jlong handle,
@@ -742,7 +742,7 @@ Java_app_versta_translate_bridge_whisper_WhisperRecognizer_setCarriedContext(
 }
 
 
-JNIEXPORT void JNICALL Java_app_versta_translate_bridge_whisper_WhisperRecognizer_reset(
+JNIEXPORT void JNICALL Java_app_versta_translate_bridge_whisper_Whisper_reset(
         JNIEnv *env,
         jobject,
         jlong handle
@@ -1311,7 +1311,7 @@ static void transcribe_utterance(Recognizer *rec, JNIEnv *env,
 // utterance is decoded exactly once and its audio is simply dropped from
 // `pending` afterwards.
 JNIEXPORT jlong JNICALL
-Java_app_versta_translate_bridge_whisper_WhisperRecognizer_process(
+Java_app_versta_translate_bridge_whisper_Whisper_process(
         JNIEnv *env,
         jobject,
         jlong handle
@@ -1477,7 +1477,7 @@ Java_app_versta_translate_bridge_whisper_WhisperRecognizer_process(
 // (process() fell behind, or the app was backgrounded) is still fully
 // drained instead of silently truncated to whisper's ~30s context limit.
 JNIEXPORT jlong JNICALL
-Java_app_versta_translate_bridge_whisper_WhisperRecognizer_flush(
+Java_app_versta_translate_bridge_whisper_Whisper_flush(
         JNIEnv *env,
         jobject,
         jlong handle
@@ -1602,7 +1602,7 @@ Java_app_versta_translate_bridge_whisper_WhisperRecognizer_flush(
 // struct so the Kotlin side can log it or later surface it in the UI.
 // Acquires the same mutex as process()/flush() to get a consistent view.
 JNIEXPORT jobject JNICALL
-Java_app_versta_translate_bridge_whisper_WhisperRecognizer_getMetrics(
+Java_app_versta_translate_bridge_whisper_Whisper_getMetrics(
         JNIEnv *env,
         jobject,
         jlong handle

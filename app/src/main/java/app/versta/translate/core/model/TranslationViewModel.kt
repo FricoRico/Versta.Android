@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import app.versta.translate.adapter.outbound.BergamotTinyInference
 import app.versta.translate.adapter.outbound.TranslationInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
-import app.versta.translate.bridge.leanmt.LeanmtService
+import app.versta.translate.bridge.leanmt.Leanmt
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.PivotPairModelFiles
@@ -91,9 +91,9 @@ class TranslationViewModel(
                 outputModel.close()
 
                 intermediateModel =
-                    BergamotTinyInference(LeanmtService.create(getCacheSize().toLong()))
+                    BergamotTinyInference(Leanmt(getCacheSize().toLong()))
                 outputModel =
-                    BergamotTinyInference(LeanmtService.create(getCacheSize().toLong()))
+                    BergamotTinyInference(Leanmt(getCacheSize().toLong()))
             }
 
             if (files != null && pair != null) {

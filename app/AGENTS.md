@@ -30,6 +30,7 @@ in the same file when they are implementation details).
   - `*MemoryRepository` — in-memory mock for previews/tests.
   - `*MockInference`, `*MockTokenizer`, `AudioMockPlayer` — mock ports for previews/tests.
   - `*Inference`, `*Tokenizer`, `*PostProcessor`, `*Transliterator`, `*Player`, `*Capture`, `*Saver`, `*Extractor`, `*Validator` — real implementations of the corresponding port.
+- Driver faking seams are capability-named interfaces (`TranslationEngine`, `SpeechRecognitionEngine`, `AudioCapture`) declared beside their implementation; they exist so drivers can be tested against fakes that never load native libraries.
 - Defaults for a port are `internal const val DEFAULT_*` declared in the port's file (`TranslationPreferenceRepository.kt`).
 - Entity-to-database mapping is done by private `mapXToY` functions inside the repository implementation.
 - Logging tag: `companion object { private val TAG = ClassName::class.java.simpleName }`; log via `Timber.tag(TAG)`.
@@ -81,7 +82,7 @@ Rules:
 
 - Native C++ via JNI (`bridge/`) for: translation (LeanMT), speech recognition (whisper.cpp), language detection (cld2), TTS phonemization (espeak-ng, open-jtalk), and OCR (PaddleOCR). See `/app/native/AGENTS.md`.
 - ONNX Runtime (`OrtEnvironment`, `OrtSession`) only for StyleTTS2 synthesis and OCR inference fallbacks.
-- Bridge classes own a native handle: private `external fun`s, guards against `handle == 0L`, `AutoCloseable`, and `System.loadLibrary("app_versta_translate_bridge")` in the companion. See `bridge/whisper/WhisperRecognizer.kt` for the canonical shape.
+- Bridge classes own a native handle: private `external fun`s, guards against `handle == 0L`, `AutoCloseable`, and `System.loadLibrary("app_versta_translate_bridge")` in the companion. See `bridge/whisper/Whisper.kt` for the canonical shape.
 - Blocking native calls run on a background dispatcher (`Dispatchers.Default`/`Dispatchers.IO`) from the calling coroutine; never call the native bridge on the main thread.
 - Ports wrap bridge classes so the rest of the app depends on the port, not the JNI wrapper.
 

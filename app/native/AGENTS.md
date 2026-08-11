@@ -13,7 +13,7 @@ This file describes conventions for the C++/JNI bridge library
 
 ## JNI binding shape
 
-- Native methods are declared on Kotlin bridge classes as instance `private external fun`s (never `@JvmStatic` companion statics); the class wraps them with public guarded methods. See `bridge/whisper/WhisperRecognizer.kt` for the canonical Kotlin shape.
+- Native methods are declared on Kotlin bridge classes as instance `private external fun`s (never `@JvmStatic` companion statics); the class wraps them with public guarded methods. See `bridge/whisper/Whisper.kt` for the canonical Kotlin shape.
 - The JNI symbol for a method is `Java_app_versta_translate_bridge_<package>_<Class>_<method>`. Keep the JNI name in sync with the Kotlin class (`bridge.whisper.WhisperModel` → `Java_app_versta_translate_bridge_whisper_WhisperModel_create`).
 - JNI entry points are declared inside `extern "C" { }` blocks. Export with `JNIEXPORT` / `JNICALL`, first two parameters always `JNIEnv *env, jobject` (or `jclass` for statics).
 - Convert strings with the local `jstr(JNIEnv*, jstring)` helper; release all `GetStringUTFChars`/`GetStringUTFRegion` buffers and local references before returning.

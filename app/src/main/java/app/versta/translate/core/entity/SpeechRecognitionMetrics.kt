@@ -4,7 +4,7 @@ package app.versta.translate.core.entity
  * Per-session metrics snapshot returned from the native whisper.cpp layer.
  *
  * Session counters are cumulative since the last
- * [app.versta.translate.bridge.whisper.WhisperRecognizer.reset] and are used
+ * [app.versta.translate.bridge.whisper.Whisper.reset] and are used
  * to derive [rtf] as `processedAudioSec * 1000 / commitComputeMs`.
  * [passCount] counts whisper_full calls (one per transcribed utterance);
  * [vadSkipCount] counts process() calls where the VAD segmenter found no

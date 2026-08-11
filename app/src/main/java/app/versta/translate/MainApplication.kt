@@ -26,7 +26,6 @@ import app.versta.translate.adapter.outbound.ExternalVoiceModelsFileRepository
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsRepository
 import app.versta.translate.adapter.outbound.SpeechRecognitionDatabaseRepository
 import app.versta.translate.adapter.outbound.SpeechRecognitionInference
-import app.versta.translate.adapter.outbound.SpeechRecognitionMemoryRepository
 import app.versta.translate.adapter.outbound.SpeechRecognitionRepository
 import app.versta.translate.adapter.outbound.StyleTextToSpeechInference
 import app.versta.translate.adapter.outbound.WhisperSpeechRecognition
@@ -55,7 +54,7 @@ import app.versta.translate.adapter.outbound.TextToSpeechTokenizer
 import app.versta.translate.adapter.outbound.TranslationInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
-import app.versta.translate.bridge.leanmt.LeanmtService
+import app.versta.translate.bridge.leanmt.Leanmt
 import app.versta.translate.bridge.speech.ESpeakNG
 import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.model.CameraTranslationViewModel
@@ -123,7 +122,7 @@ interface ApplicationModuleInterface {
     val validator: FileHashValidator
     val eSpeakNG: ESpeakNG
     val openJTalk: OpenJTalk
-    val translationService: LeanmtService
+    val translationService: Leanmt
     val intermediateTranslationInference: TranslationInference
     val outputTranslationInference: TranslationInference
     val textToSpeechTokenizer: TextToSpeechTokenizer
@@ -359,8 +358,8 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
         OpenJTalk()
     }
 
-    override val translationService: LeanmtService by lazy {
-        LeanmtService.create(DEFAULT_CACHE_SIZE.toLong())
+    override val translationService: Leanmt by lazy {
+        Leanmt(DEFAULT_CACHE_SIZE.toLong())
     }
 
     override val intermediateTranslationInference: TranslationInference by lazy {

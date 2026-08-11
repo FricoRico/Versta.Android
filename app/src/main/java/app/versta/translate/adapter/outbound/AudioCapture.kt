@@ -8,7 +8,7 @@ import kotlinx.coroutines.CoroutineScope
  * [WhisperSpeechRecognition] can drive a test double that never touches
  * [android.media.AudioRecord].
  */
-interface CaptureHandle {
+interface AudioCapture {
     fun start(scope: CoroutineScope)
 
     fun stop()

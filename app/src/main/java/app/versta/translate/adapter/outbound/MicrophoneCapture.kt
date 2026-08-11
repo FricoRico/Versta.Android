@@ -5,7 +5,7 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import androidx.annotation.RequiresPermission
-import app.versta.translate.bridge.whisper.WhisperRecognizerHandle
+import app.versta.translate.bridge.whisper.SpeechRecognitionEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -15,18 +15,18 @@ import kotlin.math.min
 
 /**
  * Continuous microphone capture at 16 kHz mono, feeding float PCM chunks to a
- * [WhisperRecognizerHandle].
+ * [SpeechRecognitionEngine].
  *
  * Audio is read on a dedicated coroutine and pushed via
- * [WhisperRecognizerHandle.feed]; the recognizer's own
- * [app.versta.translate.bridge.whisper.WhisperRecognizer.process] should be
+ * [SpeechRecognitionEngine.feed]; the recognizer's own
+ * [app.versta.translate.bridge.whisper.Whisper.process] should be
  * driven separately (e.g. on a timer) so capture and inference stay decoupled
  * and the microphone thread never blocks on model execution.
  */
 class MicrophoneCapture(
-    private val recognizer: WhisperRecognizerHandle,
+    private val recognizer: SpeechRecognitionEngine,
     private val sampleRate: Int = WHISPER_SAMPLE_RATE,
-) : CaptureHandle {
+) : AudioCapture {
     @Volatile
     private var _record: AudioRecord? = null
 

@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap
  * context instead of starting cold every session.
  *
  * This lives in Kotlin rather than the native
- * [app.versta.translate.bridge.whisper.WhisperRecognizer] because a language
+ * [app.versta.translate.bridge.whisper.Whisper] because a language
  * swap tears the recognizer down and rebuilds it — native state dies at
  * exactly the turn boundary this store exists to bridge. Keying by language
  * also guarantees a carry can never leak across languages (priming one
@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap
  * [app.versta.translate.bridge.whisper.WhisperSegmentCallback.onSegment];
  * [get] is read once per session start (right after loading the recognizer
  * for that language) and passed to
- * [app.versta.translate.bridge.whisper.WhisperRecognizer.setCarriedContext].
+ * [app.versta.translate.bridge.whisper.Whisper.setCarriedContext].
  * Within a session, the native side chains context from utterance to
  * utterance on its own — this store only needs to bridge across session
  * boundaries.

@@ -1,8 +1,8 @@
 package app.versta.translate.adapter.outbound
 
 import app.versta.translate.bridge.whisper.WhisperModel
-import app.versta.translate.bridge.whisper.WhisperRecognizer
-import app.versta.translate.bridge.whisper.WhisperRecognizerHandle
+import app.versta.translate.bridge.whisper.Whisper
+import app.versta.translate.bridge.whisper.SpeechRecognitionEngine
 import app.versta.translate.bridge.whisper.WhisperSegmentCallback
 import app.versta.translate.core.entity.SpeechRecognitionInferenceFiles
 import app.versta.translate.core.entity.SpeechRecognitionSegment
@@ -12,7 +12,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,7 +33,7 @@ import timber.log.Timber
  * utterance) and transcribes it with a single whisper_full call. There is no
  * live partial/provisional text — [segments] only ever receives finished
  * utterances. Context is chained between utterances via whisper's own
- * decoder conditioning (see [WhisperRecognizer] and [SpeechContextStore]).
+ * decoder conditioning (see [Whisper] and [SpeechContextStore]).
  *
  * [stop] cuts the microphone but keeps transcribing audio that is already
  * buffered — [finalizing] stays true until the last segment lands. [close] is
@@ -47,7 +46,7 @@ import timber.log.Timber
  *                             real [WhisperModel].
  * @param recognizerFactory    creates the utterance-batch recognizer for a
  *                             loaded model. Swappable for tests; the default
- *                             builds a real [WhisperRecognizer].
+ *                             builds a real [Whisper].
  * @param captureFactory       creates the microphone capture feeding the
  *                             recognizer. Swappable for tests; the default
  *                             builds a real [MicrophoneCapture].
@@ -63,10 +62,10 @@ class WhisperSpeechRecognition(
         model: AutoCloseable,
         callback: WhisperSegmentCallback,
         language: String?,
-    ) -> WhisperRecognizerHandle = { model, callback, language ->
-        WhisperRecognizer(model as WhisperModel, callback, language = language)
+    ) -> SpeechRecognitionEngine = { model, callback, language ->
+        Whisper(model as WhisperModel, callback, language = language)
     },
-    private val captureFactory: (recognizer: WhisperRecognizerHandle) -> CaptureHandle = { MicrophoneCapture(it) },
+    private val captureFactory: (recognizer: SpeechRecognitionEngine) -> AudioCapture = { MicrophoneCapture(it) },
     private val processDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : SpeechRecognitionInference, AutoCloseable {
     private var sourceLanguageIsoCode: String? = null
@@ -76,8 +75,8 @@ class WhisperSpeechRecognition(
     }
 
     private var _model: AutoCloseable? = null
-    private var _recognizer: WhisperRecognizerHandle? = null
-    private var _capture: CaptureHandle? = null
+    private var _recognizer: SpeechRecognitionEngine? = null
+    private var _capture: AudioCapture? = null
     // Cached identity of the currently loaded native model+language pair, so
     // repeated start toggles within a screen visit skip the 75-811 MB mmap +
     // KleidiAI repack. Language alone changing (e.g. swapping source/target
