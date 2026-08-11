@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,7 +62,7 @@ fun NavigationDrawer(
         return Row {
             NavigationRail(
                 modifier = Modifier.then(modifier),
-                containerColor = MaterialTheme.colorScheme.background,
+                containerColor = Color.Transparent,
                 header = {
                     VerstaLogo(
                         modifier = Modifier.padding(

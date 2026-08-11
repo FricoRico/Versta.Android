@@ -60,17 +60,20 @@ Manual, constructor-based. No Hilt/Koin.
 
 ## Build & verification
 
-- Gradle Kotlin DSL. Dependencies and versions come from `gradle/libs.versions.toml`.
-- AGP 9.0.1, Kotlin 2.3.10, JDK 17 target, compile/target SDK 36, min SDK 28.
+- Gradle Kotlin DSL (wrapper 9.5.0). Dependencies and versions come from `gradle/libs.versions.toml`. `androidx.compose.ui` `ui`/`ui-graphics` are pinned to `1.12.0-rc01` ahead of the BOM (for `MeshGradientPainter`); drop the pin once a BOM ships 1.12+.
+- AGP 9.3.1, Kotlin 2.3.10, JDK 17 target, compile/target SDK 36, min SDK 28. The `check*AarMetadata` tasks are disabled because the Compose 1.12.0-rc01 AARs declare compileSdk 37 while the SDK channel tops out at 36; re-enable when compileSdk moves to 37.
 - Native code is built via CMake (`app/native/jni/CMakeLists.txt`, C++17, NDK 28.1). See `/app/native/AGENTS.md`.
 - ABI product flavors: `arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`.
-- Useful commands:
-  - `./gradlew :app:compileDebugKotlin` — fast Kotlin compile check.
-  - `./gradlew :app:assembleDebug` — full debug build including the native library.
-  - `./gradlew :app:lintDebug` — Android lint.
-  - `./gradlew :app:connectedDebugAndroidTest` — tests (device/emulator required; tests live in `app/src/androidTest`).
-- The `getRemoteData` Gradle task fetches the model-metadata JSON files into `app/src/main/res/raw/` and runs as a `preBuild` dependency. It needs network access.
+- Useful commands (ABI-flavor scoped — replace `<Flavor>` with `X86`, `X86_64`, `Arm64-v8a`, or `Armeabi-v7a`):
+  - `./gradlew :app:compile<Flavor>DebugKotlin` — fast Kotlin compile check.
+  - `./gradlew :app:assemble<Flavor>Debug` — full debug build including the native library.
+  - `./gradlew :app:lint<Flavor>Debug` — Android lint.
+  - `./gradlew :app:connected<Flavor>DebugAndroidTest` — tests (device/emulator required; tests live in `app/src/androidTest`).
 - `keystore.properties` (gitignored) provides signing credentials; `keystore.properties.example` documents the keys. Never commit secrets.
+- Local toolchain paths on this machine (not on PATH in sandboxed shells): JDK `~/.local/lib/jdk17`, adb `~/Android/Sdk/platform-tools`, graphify `~/.local/bin/graphify`.
+- The `getRemoteData` Gradle task fetches the model-metadata JSON files into `app/src/main/res/raw/` and runs as a `preBuild` dependency. It needs network access.
+- Emulator loop for visual checks: AVD `Medium_Phone_API_36.1` (x86_64), launched windowed — `-no-window` segfaults during virtual-scene init on this host. Steps: `assembleX86_64Debug` → `adb install -r` → `am force-stop` → `am start -n app.versta.translate/.MainActivity`. Theme flip without UI: `adb shell cmd uimode night yes|no`.
+- The emulator's `/data` (5.8G) trips the package manager's ~10% low-storage threshold quickly; if installs fail with `INSTALL_FAILED_INSUFFICIENT_STORAGE`, free space or cold-boot first.
 
 ## Documentation
 

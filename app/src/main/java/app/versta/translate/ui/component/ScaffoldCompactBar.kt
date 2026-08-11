@@ -115,10 +115,11 @@ fun ScaffoldCompactBar(
 
     return Scaffold(
         modifier = Modifier.then(modifier),
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 modifier = Modifier.background(
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.background.copy(alpha = 0.72f),
                 ),
                 windowInsets = TopAppBarDefaults.windowInsets.only(
                     WindowInsetsSides.Top + WindowInsetsSides.Bottom + WindowInsetsSides.End

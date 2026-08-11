@@ -94,6 +94,7 @@ Rules:
 - Use `Modifier`, `PaddingValues`, and `WindowInsets` for layout; prefer `MaterialTheme.spacing.*` over hard-coded `.dp` values.
 - Strings via `stringResource(R.string.…)`; icons via `ImageVector.vectorResource(R.drawable.…)`. Never hard-code user-visible strings.
 - Mark experimental APIs with `@OptIn(...)` at the composable or function scope, not at file scope.
+- The app-wide mesh gradient (`ui/component/MeshGradientBackground.kt`, Compose `MeshGradientPainter`) is specced in `/DESIGN.md` under *Gradient mesh in the Android app* — consult it before touching the backdrop's placement or colors.
 
 ## Testing
 

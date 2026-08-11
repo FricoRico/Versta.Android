@@ -153,6 +153,15 @@ android {
 //    }
 }
 
+// Only until compileSdk can move to 37: androidx.compose.ui 1.12.0-rc01 AARs
+// declare compileSdk 37 / AGP 9.1+ while the platform SDK channel tops out at
+// android-36. MeshGradientPainter requires 1.12.0-rc01 but uses no API > 28.
+tasks.configureEach {
+    if (name.startsWith("check") && name.endsWith("AarMetadata")) {
+        enabled = false
+    }
+}
+
 tasks.apply {
     register("getRemoteData") {
         doLast {

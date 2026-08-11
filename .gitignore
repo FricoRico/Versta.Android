@@ -12,6 +12,7 @@ release
 local.properties
 *.keystore
 keystore.properties
+.env
 
 graphify-out
 !./graphify-out

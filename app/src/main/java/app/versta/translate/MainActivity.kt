@@ -6,11 +6,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import app.versta.translate.adapter.inbound.ModelFilePicker
 import app.versta.translate.adapter.inbound.TranslateBubbleNotification
@@ -20,6 +24,7 @@ import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.ui.component.ErrorAlertDialog
 import app.versta.translate.ui.component.LanguageSelectionDrawer
 import app.versta.translate.ui.component.LanguageSuggestionDrawer
+import app.versta.translate.ui.component.MeshGradientBackground
 import app.versta.translate.ui.component.ModelLoadingProgressDialog
 import app.versta.translate.ui.component.Router
 import app.versta.translate.ui.component.TrialLicenseConfirmationDialog
@@ -60,47 +65,54 @@ open class MainActivity : ComponentActivity() {
             TranslateTheme(
                 customThemeViewModel = MainApplication.module.customThemeViewModel
             ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.background,
-                    contentColor = MaterialTheme.colorScheme.onBackground,
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    propagateMinConstraints = true,
                 ) {
-                    Router(
-                        scaffoldViewModel = MainApplication.module.scaffoldViewModel,
-                        customThemeViewModel = MainApplication.module.customThemeViewModel,
-                        navigationViewModel = MainApplication.module.navigationViewModel,
-                        cameraTranslationViewModel = MainApplication.module.cameraTranslationViewModel,
-                        languageViewModel = MainApplication.module.languageViewModel,
-                        licenseViewModel = _licenseViewModel,
-                        translationViewModel = MainApplication.module.translationViewModel,
-                        textTranslationViewModel = MainApplication.module.textTranslationViewModel,
-                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel,
-                        voiceViewModel = MainApplication.module.voiceViewModel,
-                        objectCharacterRecognitionViewModel = MainApplication.module.objectCharacterRecognitionViewModel,
-                        speechRecognitionViewModel = MainApplication.module.speechRecognitionViewModel,
-                        loggingViewModel = MainApplication.module.loggingViewModel
-                    )
+                    MeshGradientBackground(modifier = Modifier.matchParentSize())
 
-                    ModelLoadingProgressDialog(
-                        translationViewModel = MainApplication.module.translationViewModel,
-                        textTranslationViewModel = MainApplication.module.textTranslationViewModel,
-                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
-                    )
+                    Surface(
+                        color = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.onBackground,
+                    ) {
+                        Router(
+                            scaffoldViewModel = MainApplication.module.scaffoldViewModel,
+                            customThemeViewModel = MainApplication.module.customThemeViewModel,
+                            navigationViewModel = MainApplication.module.navigationViewModel,
+                            cameraTranslationViewModel = MainApplication.module.cameraTranslationViewModel,
+                            languageViewModel = MainApplication.module.languageViewModel,
+                            licenseViewModel = _licenseViewModel,
+                            translationViewModel = MainApplication.module.translationViewModel,
+                            textTranslationViewModel = MainApplication.module.textTranslationViewModel,
+                            textToSpeechViewModel = MainApplication.module.textToSpeechViewModel,
+                            voiceViewModel = MainApplication.module.voiceViewModel,
+                            objectCharacterRecognitionViewModel = MainApplication.module.objectCharacterRecognitionViewModel,
+                            speechRecognitionViewModel = MainApplication.module.speechRecognitionViewModel,
+                            loggingViewModel = MainApplication.module.loggingViewModel
+                        )
 
-                    ErrorAlertDialog(
-                        translationViewModel = MainApplication.module.translationViewModel,
-                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
-                    )
+                        ModelLoadingProgressDialog(
+                            translationViewModel = MainApplication.module.translationViewModel,
+                            textTranslationViewModel = MainApplication.module.textTranslationViewModel,
+                            textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
+                        )
 
-                    TrialLicenseDrawer(
-                        licenseViewModel = _licenseViewModel
-                    )
-                    TrialLicenseConfirmationDialog(
-                        licenseViewModel = _licenseViewModel
-                    )
+                        ErrorAlertDialog(
+                            translationViewModel = MainApplication.module.translationViewModel,
+                            textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
+                        )
 
-                    LanguageSelectionDrawer(languageViewModel = MainApplication.module.languageViewModel)
+                        TrialLicenseDrawer(
+                            licenseViewModel = _licenseViewModel
+                        )
+                        TrialLicenseConfirmationDialog(
+                            licenseViewModel = _licenseViewModel
+                        )
 
-                    LanguageSuggestionDrawer(languageViewModel = MainApplication.module.languageViewModel)
+                        LanguageSelectionDrawer(languageViewModel = MainApplication.module.languageViewModel)
+
+                        LanguageSuggestionDrawer(languageViewModel = MainApplication.module.languageViewModel)
+                    }
                 }
             }
         }
