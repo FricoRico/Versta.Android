@@ -52,6 +52,7 @@ import app.versta.translate.ui.screen.ThirdParty
 import app.versta.translate.ui.screen.TranslationSettings
 import app.versta.translate.ui.screen.Troubleshooting
 import app.versta.translate.ui.screen.CameraTranslation
+import app.versta.translate.ui.screen.Conversation
 import app.versta.translate.ui.screen.ObjectCharacterRecognitionAttributions
 import app.versta.translate.ui.screen.ObjectCharacterRecognitionDetails
 import app.versta.translate.ui.screen.ObjectCharacterRecognitionSettings
@@ -92,6 +93,7 @@ fun Router(
     )
 
     val textTranslationKey = remember { "TextTranslation" }
+    val conversationKey = remember { "Conversation" }
     val settingsKey = remember { "Settings" }
 
     return NavigationDrawer(
@@ -114,7 +116,7 @@ fun Router(
             ),
             NavigationItem(
                 label = "Converse",
-                route = Screens.TextTranslationLegacy,
+                route = Screens.Conversation,
                 parent = Screens.TextTranslation,
                 icon = ImageVector.vectorResource(R.drawable.rounded_graphic_eq_24),
                 selectedIcon = ImageVector.vectorResource(R.drawable.rounded_graphic_eq_24)
@@ -157,6 +159,18 @@ fun Router(
                                 navigationViewModel = navigationViewModel,
                                 textToSpeechViewModel = textToSpeechViewModel,
                                 textTranslationViewModel = textTranslationViewModel,
+                            )
+                        }
+                        entry<Screens.Conversation>(
+                            metadata = ListDetailSceneStrategy.listPane(
+                                sceneKey = conversationKey,
+                            )
+                        ) {
+                            Conversation(
+                                innerPadding = innerPadding,
+                                scaffoldViewModel = scaffoldViewModel,
+                                navigationViewModel = navigationViewModel,
+                                languageViewModel = languageViewModel,
                                 speechRecognitionViewModel = speechRecognitionViewModel,
                             )
                         }

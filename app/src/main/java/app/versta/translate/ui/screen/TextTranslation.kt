@@ -2,7 +2,6 @@ package app.versta.translate.ui.screen
 
 import android.Manifest
 import android.os.Build
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.fadeIn
@@ -13,7 +12,6 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -36,9 +34,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingToolbarDefaults
@@ -48,14 +44,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,7 +59,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -77,9 +69,6 @@ import app.versta.translate.adapter.outbound.ExternalDataMemoryRepository
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.adapter.outbound.SpeechRecognitionMemoryRepository
-import app.versta.translate.adapter.outbound.ExternalSpeechRecognitionModelsMemoryRepository
-import app.versta.translate.adapter.outbound.SpeechRecognitionMockInference
 import app.versta.translate.adapter.outbound.TextToSpeechMockInference
 import app.versta.translate.adapter.outbound.TextToSpeechMockTokenizer
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryRepository
@@ -88,14 +77,9 @@ import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryReposito
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.bridge.speech.ESpeakNG
 import app.versta.translate.bridge.speech.OpenJTalk
-import app.versta.translate.core.entity.ExternalSpeechRecognitionModels
 import app.versta.translate.core.model.LanguageViewModel
-import app.versta.translate.core.model.LoadingProgress
 import app.versta.translate.core.model.NavigationViewModel
-import app.versta.translate.core.model.ReadyState
 import app.versta.translate.core.model.ScaffoldViewModel
-import app.versta.translate.core.model.SpeechRecognitionViewModel
-import app.versta.translate.core.model.StartResult
 import app.versta.translate.core.model.TextToSpeechViewModel
 import app.versta.translate.core.model.TextTranslationViewModel
 import app.versta.translate.core.model.TranslationViewModel
@@ -120,14 +104,12 @@ fun TextTranslation(
     scaffoldViewModel: ScaffoldViewModel,
     navigationViewModel: NavigationViewModel,
     textToSpeechViewModel: TextToSpeechViewModel,
-    textTranslationViewModel: TextTranslationViewModel,
-    speechRecognitionViewModel: SpeechRecognitionViewModel,
+    textTranslationViewModel: TextTranslationViewModel
 ) {
     val layoutDirection = LocalLayoutDirection.current
     val lazyListState = rememberLazyListState()
 
     val input by textTranslationViewModel.input.collectAsStateWithLifecycle("")
-    val segments by speechRecognitionViewModel.segments.collectAsStateWithLifecycle(emptyList())
 
     var floatingInputVisible by rememberSaveable { mutableStateOf(true) }
 
@@ -157,8 +139,7 @@ fun TextTranslation(
             FloatingTextTranslationInputBar(
                 visible = floatingInputVisible,
                 navigationViewModel = navigationViewModel,
-                textTranslationViewModel = textTranslationViewModel,
-                speechRecognitionViewModel = speechRecognitionViewModel,
+                textTranslationViewModel = textTranslationViewModel
             )
         }
     ) {
@@ -184,128 +165,21 @@ fun TextTranslation(
             state = lazyListState,
             reverseLayout = true,
         ) {
-            // Every segment is a finished utterance in the utterance-batch
-            // design — there is no provisional/partial tail to render
-            // separately. Reversed because the LazyColumn itself is
-            // reverseLayout: item 0 is pinned to the bottom, so the newest
-            // segment needs to be first for it to land there.
-            items(segments.reversed(), key = { it.startMs }) { segment ->
-                Text(
-                    text = segment.text,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontStyle = FontStyle.Normal,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = MaterialTheme.spacing.extraSmall)
-                )
-            }
+
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalPermissionsApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun FloatingTextTranslationInputBar(
     visible: Boolean,
     navigationViewModel: NavigationViewModel,
-    textTranslationViewModel: TextTranslationViewModel,
-    speechRecognitionViewModel: SpeechRecognitionViewModel,
+    textTranslationViewModel: TextTranslationViewModel
 ) {
-    val TAG = "FloatingTextTranslationInputBar"
     val value by textTranslationViewModel.input.collectAsStateWithLifecycle()
 
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-
     var focussed by remember { mutableStateOf(false) }
-    // Driven by the recognizer rather than mirrored locally: stop() cuts the
-    // mic immediately but keeps transcribing buffered audio, so `listening`
-    // and `finalizing` are genuinely distinct states the button must show.
-    val listening by speechRecognitionViewModel.listening.collectAsStateWithLifecycle(false)
-    val finalizing by speechRecognitionViewModel.finalizing.collectAsStateWithLifecycle(false)
-    // Running real-time factor of the commit path — shown while dictation is
-    // active as a live keep-up indicator.
-    val rtf by speechRecognitionViewModel.rtf.collectAsStateWithLifecycle(null)
-
-    val recordAudioPermissionState = rememberPermissionState(
-        Manifest.permission.RECORD_AUDIO
-    )
-
-    val installedModels by speechRecognitionViewModel.speechRecognitionModelsByState.collectAsStateWithLifecycle(
-        ExternalSpeechRecognitionModels()
-    )
-    // The model is loaded eagerly and reactively by SpeechRecognitionViewModel
-    // (mirroring how translation models load) rather than on the first
-    // dictation tap, so the common case is already Ready by the time the
-    // button is pressed.
-    val speechRecognitionReadyState by speechRecognitionViewModel.speechRecognitionReadyState.collectAsStateWithLifecycle(
-        ReadyState.NotReady
-    )
-    val loadingProgress by speechRecognitionViewModel.loadingProgress.collectAsStateWithLifecycle(
-        LoadingProgress.Idle
-    )
-    // Set when the user taps dictate before the eager load has finished (e.g.
-    // right after opening the app) — queues the start instead of dropping the
-    // tap; the LaunchedEffect below resumes it as soon as it becomes ready.
-    var pendingStart by remember { mutableStateOf(false) }
-
-    // Starts dictation, recovering rather than crashing if the inference
-    // turns out not to be loaded despite the ready state saying otherwise.
-    fun startDictation(): StartResult {
-        return speechRecognitionViewModel.start(scope)
-    }
-
-    val microphoneUnavailableMessage = stringResource(
-        R.string.speech_recognition_microphone_unavailable_message
-    )
-
-    fun toastMicrophoneUnavailable() {
-        Toast.makeText(
-            context,
-            microphoneUnavailableMessage,
-            Toast.LENGTH_SHORT
-        ).show()
-    }
-
-    LaunchedEffect(speechRecognitionReadyState, pendingStart) {
-        if (pendingStart && speechRecognitionReadyState is ReadyState.Ready) {
-            when (startDictation()) {
-                StartResult.Started -> {
-                    pendingStart = false
-                    Timber.tag(TAG).d("Dictation started (queued)")
-                }
-                StartResult.MicrophoneUnavailable -> {
-                    pendingStart = false
-                    toastMicrophoneUnavailable()
-                }
-                StartResult.NotLoaded -> {
-                    // `pendingStart` stays set: invalidate() re-runs the
-                    // loader, and this effect fires again once it reports Ready.
-                }
-            }
-        }
-    }
-
-    val noModelMessage = stringResource(R.string.speech_recognition_no_model_message)
-
-    LaunchedEffect(loadingProgress) {
-        if (loadingProgress is LoadingProgress.Error) {
-            pendingStart = false
-            Toast.makeText(context, noModelMessage, Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    DisposableEffect(speechRecognitionViewModel) {
-        onDispose {
-            // Only cut the microphone. The native model is owned by
-            // SpeechRecognitionViewModel, which loads it eagerly and holds it
-            // for the app's lifetime — this screen is a borrower, not the
-            // owner; calling close() here would unload a model the ViewModel
-            // still believes is loaded.
-            speechRecognitionViewModel.stop()
-        }
-    }
 
     fun setFocus(state: Boolean) {
         focussed = state
@@ -321,55 +195,6 @@ fun FloatingTextTranslationInputBar(
 
     fun onNavigateVision() {
         navigationViewModel.navigate(Screens.Vision)
-    }
-
-    fun onToggleDictation() {
-        if (listening) {
-            // Cuts the mic; buffered audio keeps transcribing until
-            // `finalizing` clears. `listening` flips via the flow.
-            speechRecognitionViewModel.stop()
-            Timber.tag(TAG).d("Dictation stopped, finalizing")
-            return
-        }
-        // Ignore taps while queued already, or while the last session is
-        // still committing its buffered audio.
-        if (pendingStart || finalizing) {
-            return
-        }
-
-        Timber.tag(TAG).d("Dictation toggle: permission=%s", recordAudioPermissionState.status)
-        if (recordAudioPermissionState.status != PermissionStatus.Granted) {
-            recordAudioPermissionState.launchPermissionRequest()
-            return
-        }
-
-        if (installedModels.installed.isEmpty()) {
-            Timber.tag(TAG).w("Dictation: no installed speech recognition model")
-            navigationViewModel.navigate(
-                Screens.SpeechRecognitionSettings,
-                Screens.TextTranslation
-            )
-            return
-        }
-
-        if (speechRecognitionReadyState !is ReadyState.Ready) {
-            // Model is installed but the eager reactive load has not finished
-            // yet — queue the start instead of starting from a screen where
-            // the model was never loaded.
-            Timber.tag(TAG).d("Dictation: queued, waiting for model to finish loading")
-            pendingStart = true
-            return
-        }
-
-        when (startDictation()) {
-            StartResult.Started -> Timber.tag(TAG).d("Dictation started")
-            StartResult.MicrophoneUnavailable -> toastMicrophoneUnavailable()
-            StartResult.NotLoaded -> {
-                // Queue it: invalidate() has kicked off a reload and the
-                // LaunchedEffect above resumes once it lands.
-                pendingStart = true
-            }
-        }
     }
 
     Box(
@@ -458,45 +283,6 @@ fun FloatingTextTranslationInputBar(
                         }
                     )
 
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall)
-                    ) {
-                        FilledIconButton(
-                            modifier = Modifier
-                                .padding(vertical = MaterialTheme.spacing.extraSmall)
-                                .size(MaterialTheme.spacing.extraLargeIncreased),
-                            enabled = !pendingStart && !finalizing,
-                            onClick = {
-                                onToggleDictation()
-                            },
-                            colors = FilledIconButtonDefaults.surfaceIconButtonColors(
-                                containerColor = if (listening) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainer,
-                                contentColor = if (listening) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer,
-                                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(
-                                    0.4f
-                                )
-                            )
-                        ) {
-                            // pendingStart also shows the spinner: the tap was
-                            // accepted and is queued behind the eager load,
-                            // not silently dropped.
-                            DictationButtonContent(finalizing = finalizing || pendingStart)
-                        }
-                        val currentRtf = rtf
-                        if (listening && currentRtf != null) {
-                            Text(
-                                text = stringResource(R.string.speech_recognition_rtf, currentRtf),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(
-                                    alpha = 0.7f
-                                ),
-                                maxLines = 1
-                            )
-                        }
-                    }
-
                     FilledIconButton(
                         modifier = Modifier
                             .padding(vertical = MaterialTheme.spacing.extraSmall)
@@ -524,43 +310,6 @@ fun FloatingTextTranslationInputBar(
     }
 }
 
-/**
- * Content of the dictation button. Split out of the toolbar row so the
- * unscoped [AnimatedVisibility] overload resolves — inside the row, the
- * `RowScope` extension wins and does not apply here.
- *
- * `finalizing` means the microphone is already off but buffered audio is
- * still being transcribed; without a distinct state the final segments that
- * land after the tap read as a bug.
- */
-@Composable
-private fun DictationButtonContent(finalizing: Boolean) {
-    Box {
-        AnimatedVisibility(
-            visible = !finalizing,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
-            Icon(
-                imageVector = ImageVector.vectorResource(R.drawable.rounded_mic_24),
-                contentDescription = stringResource(R.string.speech_recognition_models_title)
-            )
-        }
-
-        AnimatedVisibility(
-            visible = finalizing,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                strokeWidth = MaterialTheme.spacing.hairline,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
-}
-
 @Composable
 @Preview(showBackground = true)
 private fun TextTranslationPreview() {
@@ -574,7 +323,6 @@ private fun TextTranslationPreview() {
     val navigationViewModel = NavigationViewModel(Screens.TextTranslation)
 
     val translationMockInference = TranslationMockInference()
-    val speechRecognitionInference = SpeechRecognitionMockInference()
 
     TextTranslation(
         innerPadding = PaddingValues(),
@@ -603,13 +351,6 @@ private fun TextTranslationPreview() {
             textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
             languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
             externalDataRepository = ExternalDataMemoryRepository(),
-        ),
-        speechRecognitionViewModel = SpeechRecognitionViewModel(
-            context = LocalContext.current,
-            speechRecognitionRepository = SpeechRecognitionMemoryRepository(),
-            externalSpeechRecognitionModelsRepository = ExternalSpeechRecognitionModelsMemoryRepository(),
-            speechRecognitionInference = speechRecognitionInference,
-            languageViewModel = languageViewModel,
         ),
     )
 }

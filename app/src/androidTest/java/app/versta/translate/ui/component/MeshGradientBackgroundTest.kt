@@ -32,10 +32,11 @@ class MeshGradientBackgroundTest {
 
     @Test
     fun meshGradientColors_darkBase_returnsMutedGlowColors() {
-        val colors = meshGradientColors(Color(0xFF0F1419))
+        val base = Color(0xFF0F1419)
+        val colors = meshGradientColors(base)
 
         assertTrue(colors.all { it.lightness() < 0.6f })
-        assertTrue(colors.all { it.alpha < 1f && it.alpha > 0f })
+        assertTrue(colors.all { it.distanceTo(base) > 0f })
     }
 
     @Test
@@ -51,11 +52,13 @@ class MeshGradientBackgroundTest {
         val base = Color(0xFFF8F9FF)
         val vertices = meshVertexColors(base, meshGradientColors(base))
 
-        for (row in 0 until vertices.lastIndex - 1) {
+        for (row in 0 until vertices.lastIndex - 2) {
             for (column in vertices[row].indices) {
                 assertEquals(base, vertices[row][column])
             }
         }
+        assertEquals(base, vertices[vertices.lastIndex - 2][1])
+        assertEquals(base, vertices[vertices.lastIndex - 2][2])
         assertEquals(base, vertices[vertices.lastIndex - 1][1])
         assertEquals(base, vertices[vertices.lastIndex - 1][2])
     }
@@ -69,11 +72,14 @@ class MeshGradientBackgroundTest {
         val corner = vertices[bottom][0].distanceTo(base)
         val midEdge = vertices[bottom][1].distanceTo(base)
         val wing = vertices[bottom - 1][0].distanceTo(base)
+        val horizon = vertices[bottom - 2][0].distanceTo(base)
 
         assertTrue(corner > midEdge)
         assertTrue(corner > wing)
+        assertTrue(wing > horizon)
         assertTrue(midEdge > 0f)
         assertTrue(wing > 0f)
+        assertTrue(horizon > 0f)
     }
 
     @Test
@@ -88,13 +94,13 @@ class MeshGradientBackgroundTest {
     }
 
     @Test
-    fun meshVertexColors_darkBase_tierAlphasDecay() {
+    fun meshVertexColors_darkBase_chromaDecaysAcrossTiers() {
         val base = Color(0xFF0F1419)
         val vertices = meshVertexColors(base, meshGradientColors(base))
         val bottom = vertices.lastIndex
 
-        assertTrue(vertices[bottom][0].alpha > vertices[bottom - 1][0].alpha)
-        assertTrue(vertices[bottom][0].alpha > vertices[bottom][1].alpha)
+        assertTrue(vertices[bottom][0].distanceTo(base) > vertices[bottom - 1][0].distanceTo(base))
+        assertTrue(vertices[bottom][0].distanceTo(base) > vertices[bottom][1].distanceTo(base))
     }
 
     private fun Color.distanceTo(other: Color): Float =

@@ -2,6 +2,7 @@ package app.versta.translate.adapter.outbound
 
 import app.versta.translate.core.entity.SpeechRecognitionInferenceFiles
 import app.versta.translate.core.entity.SpeechRecognitionSegment
+import app.versta.translate.utils.SPECTRUM_BAND_COUNT
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,8 @@ class SpeechRecognitionMockInference : SpeechRecognitionInference {
     override val rtf: Flow<Float?> = MutableStateFlow(null)
     override val listening: Flow<Boolean> = MutableStateFlow(false).asStateFlow()
     override val finalizing: Flow<Boolean> = MutableStateFlow(false).asStateFlow()
+    override val spectrum: Flow<FloatArray> =
+        MutableStateFlow(FloatArray(SPECTRUM_BAND_COUNT)).asStateFlow()
 
     override fun close() {
         return

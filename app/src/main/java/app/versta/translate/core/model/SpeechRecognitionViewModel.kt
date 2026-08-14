@@ -81,6 +81,7 @@ class SpeechRecognitionViewModel(
     val listening: Flow<Boolean> = speechRecognitionInference.listening
     val finalizing: Flow<Boolean> = speechRecognitionInference.finalizing
     val rtf: Flow<Float?> = speechRecognitionInference.rtf
+    val spectrum: Flow<FloatArray> = speechRecognitionInference.spectrum
 
     /**
      * Starts a dictation session. Recovers rather than throwing if the

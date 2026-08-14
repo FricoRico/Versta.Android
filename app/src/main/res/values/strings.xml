@@ -196,4 +196,14 @@
     <string name="delete_ocr_model_description">Are you sure you want to delete %1$s?</string>
     <string name="about_ocr_models_title">OCR Models</string>
     <string name="about_ocr_models_description">View all the OCR models used by the app</string>
+    <string name="conversation_title">Conversation</string>
+    <string name="conversation_tap_to_speak">Tap to speak</string>
+    <string name="conversation_listening">Listening</string>
+    <string name="conversation_processing">Processing</string>
+    <string name="conversation_microphone_permission_rationale">Voice input needs microphone access to transcribe your speech on-device. Nothing leaves your device.</string>
+    <string name="conversation_grant_permission">Grant microphone permission</string>
+    <string name="conversation_manage_speech_models">Manage speech models</string>
+    <string name="conversation_no_model_message">Download a speech recognition model to start listening.</string>
+    <string name="conversation_start_listening">Start listening</string>
+    <string name="conversation_stop_listening">Stop listening</string>
 </resources>

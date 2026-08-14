@@ -6,15 +6,20 @@ import app.versta.translate.bridge.whisper.SpeechRecognitionEngine
 import app.versta.translate.bridge.whisper.WhisperSegmentCallback
 import app.versta.translate.core.entity.SpeechRecognitionInferenceFiles
 import app.versta.translate.core.entity.SpeechRecognitionSegment
+import app.versta.translate.utils.SPECTRUM_BAND_COUNT
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -103,6 +108,17 @@ class WhisperSpeechRecognition(
     private val _finalizing = MutableStateFlow(false)
     override val finalizing = _finalizing.asStateFlow()
 
+    // Spectrum is a cold view over the CURRENT capture's spectrum: no internal
+    // forwarding job, so nothing leaks when the session scope dies and a stop
+    // (capture.spectrum := silence) surfaces without extra bookkeeping.
+    // Between sessions (no capture yet, or after teardown) it reads as silence.
+    private val _captureFlow = MutableStateFlow<AudioCapture?>(null)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val spectrum: Flow<FloatArray> = _captureFlow.flatMapLatest {
+        it?.spectrum ?: flowOf(SILENT_SPECTRUM)
+    }
+
     // Set by stop() to keep the process loop alive after the microphone is
     // cut, so audio already buffered is still committed instead of discarded.
     // Cleared by close() (hard teardown) and by the loop's finally block.
@@ -173,6 +189,7 @@ class WhisperSpeechRecognition(
 
         _recognizer = recognizer
         _capture = captureFactory(recognizer)
+        _captureFlow.value = _capture
         _loadedLanguage = sourceLanguageIsoCode
         Timber.tag(TAG).d("load: ready")
     }
@@ -364,6 +381,7 @@ class WhisperSpeechRecognition(
         _processJob = null
         _recognizer = null
         _capture = null
+        _captureFlow.value = null
         _loadedLanguage = null
         if (closeModel) {
             _model = null
@@ -383,6 +401,8 @@ class WhisperSpeechRecognition(
     companion object {
         private const val TAG = "WhisperSpeechRecognition"
         private const val RECOGNITION_POLL_MS = 200L
+
+        private val SILENT_SPECTRUM = FloatArray(SPECTRUM_BAND_COUNT)
 
         // Upper bound on post-stop draining. Hitting this means the device
         // cannot keep up; flush what is left rather than hold the UI in a

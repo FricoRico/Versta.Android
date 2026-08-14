@@ -26,6 +26,9 @@ sealed class Screens : NavKey {
     data object TextTranslationLegacy : Screens()
 
     @Serializable
+    data object Conversation : Screens()
+
+    @Serializable
     data object TranslationSettings : Screens()
 
     @Serializable

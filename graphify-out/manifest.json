@@ -70,8 +70,8 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/app/versta/translate/adapter/outbound/BergamotTinyInferenceTest.kt": {
-    "mtime": 1786465608.684568,
-    "ast_hash": "f38471cfef2b50e3ce81811a94eba327",
+    "mtime": 1786466547.7863524,
+    "ast_hash": "cb39447d70d2cf0592f6a34c34d31d0e",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/app/versta/translate/adapter/outbound/ExternalSpeechRecognitionModelsFileRepositoryTest.kt": {
@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/app/versta/translate/adapter/outbound/WhisperSpeechRecognitionTest.kt": {
-    "mtime": 1786465627.2624989,
-    "ast_hash": "00952ea5dcf34f3e7aee8d405b1d1a91",
+    "mtime": 1786522801.9581978,
+    "ast_hash": "ffd5e367f51bb2a9e1df0a137c10a5aa",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/app/versta/translate/bridge/leanmt/LeanmtTest.kt": {
@@ -120,8 +120,8 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/app/versta/translate/ui/component/MeshGradientBackgroundTest.kt": {
-    "mtime": 1786455247.5329058,
-    "ast_hash": "543ddd1045bea08f4d1102a2a8eb110d",
+    "mtime": 1786688884.1290493,
+    "ast_hash": "6a813895236d20aedc86385f655e82a4",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/BubbleActivity.kt": {
@@ -230,8 +230,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/AudioCapture.kt": {
-    "mtime": 1786465627.2394989,
-    "ast_hash": "e9135d34938a30bc7385d4316e930263",
+    "mtime": 1786522615.674234,
+    "ast_hash": "6b0103febe412b4dd5b06f1a290493a1",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/AudioMockPlayer.kt": {
@@ -410,8 +410,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/MicrophoneCapture.kt": {
-    "mtime": 1786465627.2624989,
-    "ast_hash": "868a45e872820432a1fc09b35b881e13",
+    "mtime": 1786533843.8396964,
+    "ast_hash": "dfd9c14bfd784930385cc0539b355b4d",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/MosesPunctuationNormalizer.kt": {
@@ -485,8 +485,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/SpeechRecognitionInference.kt": {
-    "mtime": 1786455247.5329058,
-    "ast_hash": "ec997c74e5ae2504246a988f67a9f3e1",
+    "mtime": 1786522671.911223,
+    "ast_hash": "0103d8947b6efd7a50251c262898e464",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/SpeechRecognitionMemoryRepository.kt": {
@@ -495,8 +495,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/SpeechRecognitionMockInference.kt": {
-    "mtime": 1786455247.5329058,
-    "ast_hash": "dde8d5970dbb3e460bf9b939ca77025d",
+    "mtime": 1786522714.305215,
+    "ast_hash": "721ea645b6bf11df6f12a66fd4e04c96",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/SpeechRecognitionRepository.kt": {
@@ -600,8 +600,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/WhisperSpeechRecognition.kt": {
-    "mtime": 1786465627.2624989,
-    "ast_hash": "99ce4d442a688d32ef25f976c154a9cb",
+    "mtime": 1786522697.9352179,
+    "ast_hash": "75e1f7f837188b92b0b4264fc4b4c9f7",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/bridge/inference/OcrTextAnalyzer.kt": {
@@ -855,8 +855,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/model/SpeechRecognitionViewModel.kt": {
-    "mtime": 1786455247.5343626,
-    "ast_hash": "6bf19a32483039206e9fecfe551328af",
+    "mtime": 1786522721.7052133,
+    "ast_hash": "9b88424c26c3b1f2f99e83cef97b759b",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/model/TextToSpeechViewModel.kt": {
@@ -955,8 +955,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/component/MeshGradientBackground.kt": {
-    "mtime": 1786455247.5343626,
-    "ast_hash": "49bb0733b74f64133de021db7d85707c",
+    "mtime": 1786688875.8850505,
+    "ast_hash": "f7eedbbf36284bfd0f52463b6b4b31cd",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/component/MinimalLanguageSelector.kt": {
@@ -980,8 +980,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/component/Router.kt": {
-    "mtime": 1786455247.5343626,
-    "ast_hash": "fd5f62dd339956e4620216d7d129a3da",
+    "mtime": 1786471113.524893,
+    "ast_hash": "dd0d26ddff7303ef9f7ed5316809d9fa",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/component/ScaffoldCompactBar.kt": {
@@ -1115,8 +1115,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/screen/Screens.kt": {
-    "mtime": 1786455247.5353625,
-    "ast_hash": "c60c8f397848163670828ea613d6dca8",
+    "mtime": 1786470902.1101127,
+    "ast_hash": "0a98f6da9e0f859315bfe84f33c5cf7c",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/screen/Settings.kt": {
@@ -1140,8 +1140,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/screen/TextTranslation.kt": {
-    "mtime": 1786455247.5353625,
-    "ast_hash": "c589224f895cd4d0d4eeb515cbc08843",
+    "mtime": 1786470544.4334586,
+    "ast_hash": "b935645dfdc867c32534e741703bd32b",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/screen/TextTranslationLegacy.kt": {
@@ -1567,6 +1567,31 @@
   "app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp": {
     "mtime": 1773136971.937288,
     "ast_hash": "91c87c1e48f689950216f56af336fe2d",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/app/versta/translate/utils/AudioExtensionsTest.kt": {
+    "mtime": 1786553164.3440762,
+    "ast_hash": "38a23a774d6874521d39133917b45f32",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/ui/component/GradientMicButton.kt": {
+    "mtime": 1786472628.7587185,
+    "ast_hash": "ab18d3b3a75490f92f74779c40daed28",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/ui/component/VoiceWaveform.kt": {
+    "mtime": 1786565262.427333,
+    "ast_hash": "c7109db0e7d463d5519b7347641d43e2",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/ui/screen/Conversation.kt": {
+    "mtime": 1786522939.963171,
+    "ast_hash": "de8ae3575d0af076d696fa35d41aab74",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/utils/AudioExtensions.kt": {
+    "mtime": 1786563534.00349,
+    "ast_hash": "e1f125aac8488ae94e3f6069a15f5b38",
     "semantic_hash": ""
   }
 }

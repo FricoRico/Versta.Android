@@ -67,5 +67,13 @@ interface SpeechRecognitionInference {
      */
     val finalizing: Flow<Boolean>
 
+    /**
+     * Latest microphone input spectrum, folded into log-spaced vocal-range
+     * bands (values normalized to [0, 1], dBFS-mapped), emitted once per
+     * captured buffer while [listening]. Silent (all zeros) when idle or
+     * stopped. Drives voice-activity UI such as the spectrum waveform.
+     */
+    val spectrum: Flow<FloatArray>
+
     fun close()
 }

@@ -4,10 +4,15 @@ import app.versta.translate.bridge.whisper.SpeechRecognitionEngine
 import app.versta.translate.bridge.whisper.WhisperSegmentCallback
 import app.versta.translate.core.entity.SpeechRecognitionInferenceFiles
 import app.versta.translate.core.entity.SpeechRecognitionMetrics
+import app.versta.translate.utils.SPECTRUM_BAND_COUNT
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -55,6 +60,7 @@ class WhisperSpeechRecognitionTest {
     }
 
     private class MockAudioCapture(val feed: SpeechRecognitionEngine) : AudioCapture {
+        override val spectrum = MutableStateFlow(FloatArray(SPECTRUM_BAND_COUNT))
         var startCalls = 0
         var stopCalls = 0
         var startError: IllegalStateException? = null
@@ -62,7 +68,10 @@ class WhisperSpeechRecognitionTest {
             startCalls++
             startError?.let { throw it }
         }
-        override fun stop() { stopCalls++ }
+        override fun stop() {
+            stopCalls++
+            spectrum.value = FloatArray(SPECTRUM_BAND_COUNT)
+        }
         override suspend fun join() {}
     }
 
@@ -411,6 +420,58 @@ class WhisperSpeechRecognitionTest {
         advanceTimeBy(200)
 
         assertEquals(1.5f, inference.rtf.value)
+        inference.close()
+    }
+
+    @Test
+    fun spectrum_beforeLoad_isSilent() = runTest {
+        val inference = buildInference(testScheduler)
+
+        assertTrue(inference.spectrum.first().all { it == 0f })
+        inference.close()
+    }
+
+    // The spectrum tests run against a live session whose process loop polls
+    // forever on the test scheduler, so idle-based waits would hang:
+    // runCurrent() flushes the flow dispatches at the current virtual time.
+    @Test
+    fun spectrum_whenSessionRunning_reflectsCaptureSpectrum() = runTest {
+        val captures = mutableListOf<MockAudioCapture>()
+        val inference = buildInference(testScheduler, captureHook = { captures.add(it) })
+        inference.setSourceLanguage("en")
+        inference.load(files())
+        val observed = mutableListOf<FloatArray>()
+        backgroundScope.launch { inference.spectrum.collect { observed.add(it) } }
+        runCurrent()
+        inference.start(this)
+        runCurrent()
+
+        captures[0].spectrum.value = FloatArray(SPECTRUM_BAND_COUNT) { 0.6f }
+        runCurrent()
+
+        assertTrue(observed.last().all { it == 0.6f })
+        inference.close()
+    }
+
+    @Test
+    fun spectrum_afterStop_isSilent() = runTest {
+        val captures = mutableListOf<MockAudioCapture>()
+        val inference = buildInference(testScheduler, captureHook = { captures.add(it) })
+        inference.setSourceLanguage("en")
+        inference.load(files())
+        val observed = mutableListOf<FloatArray>()
+        backgroundScope.launch { inference.spectrum.collect { observed.add(it) } }
+        runCurrent()
+        inference.start(this)
+        runCurrent()
+        captures[0].spectrum.value = FloatArray(SPECTRUM_BAND_COUNT) { 0.9f }
+        runCurrent()
+        assertTrue(observed.last().all { it == 0.9f })
+
+        inference.stop()
+        runCurrent()
+
+        assertTrue(observed.last().all { it == 0f })
         inference.close()
     }
 

@@ -6,9 +6,15 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import androidx.annotation.RequiresPermission
 import app.versta.translate.bridge.whisper.SpeechRecognitionEngine
+import app.versta.translate.utils.SPECTRUM_BAND_COUNT
+import app.versta.translate.utils.fftMagnitudes
+import app.versta.translate.utils.spectrumBands
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.min
@@ -33,6 +39,9 @@ class MicrophoneCapture(
     @Volatile
     private var _running = false
     private var _job: Job? = null
+
+    private val _spectrum = MutableStateFlow(FloatArray(SPECTRUM_BAND_COUNT))
+    override val spectrum: StateFlow<FloatArray> = _spectrum.asStateFlow()
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     override fun start(scope: CoroutineScope) {
@@ -71,10 +80,14 @@ class MicrophoneCapture(
         }
         _record = record
         _running = true
+        _spectrum.value = FloatArray(SPECTRUM_BAND_COUNT)
 
         _job = scope.launch(Dispatchers.IO) {
-            val shorts = ShortArray(bufferSize / 2)
-            val floats = FloatArray(bufferSize / 2)
+            // Small read chunks on a big internal buffer: the spectrum for the
+            // waveform updates every 64 ms instead of waiting for the whole
+            // buffer (250+ ms), which is what made the visualization lag.
+            val shorts = ShortArray(READ_CHUNK_SAMPLES)
+            val floats = FloatArray(READ_CHUNK_SAMPLES)
             while (isActive && _running) {
                 val read = record.read(shorts, 0, shorts.size)
                 if (read <= 0) {
@@ -82,6 +95,10 @@ class MicrophoneCapture(
                 }
                 for (i in 0 until read) {
                     floats[i] = shorts[i] / 32768.0f
+                }
+                val fftSize = Integer.highestOneBit(read)
+                if (fftSize >= MIN_FFT_SIZE) {
+                    _spectrum.value = floats.fftMagnitudes(fftSize).spectrumBands(sampleRate = sampleRate)
                 }
                 recognizer.feed(floats, read)
             }
@@ -96,6 +113,7 @@ class MicrophoneCapture(
         _record?.stop()
         _record?.release()
         _record = null
+        _spectrum.value = FloatArray(SPECTRUM_BAND_COUNT)
     }
 
     /**
@@ -109,5 +127,14 @@ class MicrophoneCapture(
 
     companion object {
         const val WHISPER_SAMPLE_RATE = 16000
+
+        // Smallest FFT worth visualizing: 256 samples at 16 kHz = 16 ms of
+        // audio and ~63 Hz per bin, enough to resolve the vocal range.
+        private const val MIN_FFT_SIZE = 256
+
+        // Spectrum update cadence: 1024 samples at 16 kHz = one FFT every 64 ms,
+        // ~16 spectrum frames per second. The AudioRecord buffer stays 4x the
+        // platform minimum so bursts of UI-jank cannot drop audio.
+        private const val READ_CHUNK_SAMPLES = 1024
     }
 }
