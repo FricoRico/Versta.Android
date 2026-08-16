@@ -24,7 +24,6 @@ import app.versta.translate.core.model.LicenseViewModel
 import app.versta.translate.ui.component.ErrorAlertDialog
 import app.versta.translate.ui.component.LanguageSelectionDrawer
 import app.versta.translate.ui.component.LanguageSuggestionDrawer
-import app.versta.translate.ui.component.MeshGradientBackground
 import app.versta.translate.ui.component.ModelLoadingProgressDialog
 import app.versta.translate.ui.component.Router
 import app.versta.translate.ui.component.TrialLicenseConfirmationDialog
@@ -69,8 +68,6 @@ open class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     propagateMinConstraints = true,
                 ) {
-                    MeshGradientBackground(modifier = Modifier.matchParentSize())
-
                     Surface(
                         color = Color.Transparent,
                         contentColor = MaterialTheme.colorScheme.onBackground,
