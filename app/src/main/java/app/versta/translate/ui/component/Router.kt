@@ -180,7 +180,6 @@ fun Router(
                             CameraTranslation(
                                 innerPadding = innerPadding,
                                 scaffoldViewModel = scaffoldViewModel,
-                                navigationViewModel = navigationViewModel,
                                 cameraTranslationViewModel = cameraTranslationViewModel
                             )
                         }

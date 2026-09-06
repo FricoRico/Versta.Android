@@ -2,10 +2,8 @@ package app.versta.translate.adapter.outbound
 
 import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModelDefinition
 import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModels
-import app.versta.translate.core.entity.ObjectCharacterRecognitionDetectorModel
-import app.versta.translate.core.entity.ObjectCharacterRecognitionDetectorWithFiles
-import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerModel
-import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerWithFiles
+import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModelWithState
+import app.versta.translate.core.entity.ObjectCharacterRecognitionModuleWithFiles
 import kotlinx.coroutines.flow.Flow
 
 interface ExternalObjectCharacterRecognitionModelsRepository {
@@ -26,8 +24,7 @@ interface ExternalObjectCharacterRecognitionModelsRepository {
      * OCR models. These definitions are filtered by the state of the imported OCR models.
      */
     fun getDefinitionsByState(
-        importedDetectors: Flow<List<ObjectCharacterRecognitionDetectorWithFiles>>,
-        importedRecognizers: Flow<List<ObjectCharacterRecognitionRecognizerWithFiles>>
+        importedModules: Flow<List<ObjectCharacterRecognitionModuleWithFiles>>
     ): Flow<ExternalObjectCharacterRecognitionModels>
 }
 

@@ -46,7 +46,7 @@ fun LanguageBadge(
 ) {
     val context = LocalContext.current
     val flagDrawable =
-        remember { language.getFlagDrawable(context) }
+        remember { language.getFlagDrawable(context).takeIf { it != 0 } ?: R.drawable.rounded_translate_24 }
 
     return Box(
         modifier = Modifier

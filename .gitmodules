@@ -17,3 +17,6 @@
 [submodule "app/native/jni/third_party/whisper.cpp"]
 	path = app/native/jni/third_party/whisper.cpp
 	url = https://github.com/ggml-org/whisper.cpp.git
+[submodule "app/native/jni/third_party/MNN"]
+	path = app/native/jni/third_party/mnn
+	url = https://github.com/alibaba/MNN.git

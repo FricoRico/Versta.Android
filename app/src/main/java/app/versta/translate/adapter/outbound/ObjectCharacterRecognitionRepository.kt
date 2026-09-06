@@ -1,64 +1,37 @@
 package app.versta.translate.adapter.outbound
 
 import app.versta.translate.core.entity.Language
-import app.versta.translate.core.entity.ObjectCharacterRecognitionDetectorModel
-import app.versta.translate.core.entity.ObjectCharacterRecognitionDetectorWithFiles
-import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerModel
-import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerWithFiles
+import app.versta.translate.core.entity.ObjectCharacterRecognitionBundleWithFiles
+import app.versta.translate.core.entity.ObjectCharacterRecognitionModuleModel
+import app.versta.translate.core.entity.ObjectCharacterRecognitionModuleWithFiles
 import kotlinx.coroutines.flow.Flow
 
 interface ObjectCharacterRecognitionRepository {
     /**
-     * Gets the object character recognition detector available in the repository.
+     * Gets the OCR module by its [id] (`bundleId:directory`).
      */
-    fun getObjectCharacterRecognitionDetector(id: String): ObjectCharacterRecognitionDetectorWithFiles?
+    fun getModule(id: String): ObjectCharacterRecognitionModuleWithFiles?
 
     /**
-     * Gets the object character recognition detectors available in the repository.
+     * Gets all installed OCR modules.
      */
-    fun getObjectCharacterRecognitionDetectors(): Flow<List<ObjectCharacterRecognitionDetectorWithFiles>>
+    fun getModules(): Flow<List<ObjectCharacterRecognitionModuleWithFiles>>
 
     /**
-     * Gets the object character recognition detector available in the repository by language.
-     * @param language The language to filter the object character recognition detectors.
+     * Gets the first complete installed bundle (detector + at least one recognizer).
      */
-    fun getObjectCharacterRecognitionDetectorByLanguage(language: Language): ObjectCharacterRecognitionDetectorWithFiles?
+    fun getCompleteBundle(): ObjectCharacterRecognitionBundleWithFiles?
+
+    fun getRecognizerForLanguage(language: Language): ObjectCharacterRecognitionModuleWithFiles?
 
     /**
-     * Inserts or updates the object character recognition detector in the repository.
+     * Inserts or updates an OCR module.
      * @param metadata The metadata to insert or update.
      */
-    fun upsertObjectCharacterRecognitionDetector(metadata: ObjectCharacterRecognitionDetectorModel)
+    fun upsertModule(metadata: ObjectCharacterRecognitionModuleModel)
 
     /**
-     * Deletes the object character recognition recognizer in the repository.
+     * Deletes all modules of a bundle and their files.
      */
-    fun deleteObjectCharacterRecognitionDetector(id: String)
-
-    /**
-     * Gets the object character recognition recognizer available in the repository.
-     */
-    fun getObjectCharacterRecognitionRecognizer(id: String): ObjectCharacterRecognitionRecognizerWithFiles?
-
-    /**
-     * Gets the object character recognition recognizers available in the repository.
-     */
-    fun getObjectCharacterRecognitionRecognizers(): Flow<List<ObjectCharacterRecognitionRecognizerWithFiles>>
-
-    /**
-     * Gets the object character recognition recognizer available in the repository by language.
-     * @param language The language to filter the object character recognition recognizers.
-     */
-    fun getObjectCharacterRecognizerByLanguage(language: Language): ObjectCharacterRecognitionRecognizerWithFiles?
-
-    /**
-     * Inserts or updates the object character recognition recognizer in the repository.
-     * @param metadata The metadata to insert or update.
-     */
-    fun upsertObjectCharacterRecognitionRecognizer(metadata: ObjectCharacterRecognitionRecognizerModel)
-
-    /**
-     * Deletes the object character recognition recognizer in the repository.
-     */
-    fun deleteObjectCharacterRecognitionRecognizer(id: String)
+    fun deleteBundle(id: String)
 }

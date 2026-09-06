@@ -1,17 +1,14 @@
 package app.versta.translate.ui.screen
 
 import android.Manifest
-import android.R.attr.lineHeight
 import android.graphics.Matrix
 import android.graphics.RectF
-import android.graphics.Typeface
 import android.os.Build
-import android.text.StaticLayout
 import android.text.TextPaint
-import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.SurfaceRequest
-import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
-import androidx.camera.viewfinder.core.ImplementationMode
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import app.versta.translate.ui.component.VerstaGlSurfaceView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -29,6 +26,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -48,6 +47,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,9 +57,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -71,12 +72,19 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
+import app.versta.translate.core.entity.CameraTranslationBlockLine
 import app.versta.translate.core.entity.FontWeight
-import app.versta.translate.core.model.NavigationViewModel
 import app.versta.translate.core.model.CameraTranslationViewModel
 import app.versta.translate.core.model.ScaffoldViewModel
+import app.versta.translate.core.entity.OcrBlockLayout
+import app.versta.translate.core.entity.OcrBlockLayoutCache
+import app.versta.translate.core.entity.OcrBlockRender
+import app.versta.translate.core.entity.OCR_TEXT_HORIZONTAL_INSET
+import app.versta.translate.core.entity.OcrLineQuad
+import app.versta.translate.core.entity.lineQuadOf
+import app.versta.translate.utils.mapPoints
+import app.versta.translate.utils.mapToArray
 import app.versta.translate.ui.component.ScaffoldComponentProvider
 import app.versta.translate.ui.theme.spacing
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -92,7 +100,7 @@ import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.ln
 
-private val SNAP_THRESHOLD = 0.2f
+
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -100,7 +108,6 @@ fun CameraTranslation(
     innerPadding: PaddingValues,
     scaffoldViewModel: ScaffoldViewModel,
     cameraTranslationViewModel: CameraTranslationViewModel,
-    navigationViewModel: NavigationViewModel, // Unused, but kept for future use
 ) {
     val cameraPermissionState = rememberPermissionState(
         Manifest.permission.CAMERA
@@ -111,7 +118,8 @@ fun CameraTranslation(
 
     val torchEnabled by cameraTranslationViewModel.torchEnabled.collectAsStateWithLifecycle()
     val translating by cameraTranslationViewModel.translating.collectAsStateWithLifecycle()
-    val viewFinderMode by cameraTranslationViewModel.viewFinderReady.collectAsStateWithLifecycle()
+    val stillBusy by cameraTranslationViewModel.stillBusy.collectAsStateWithLifecycle()
+    val viewfinderMode by cameraTranslationViewModel.viewfinderMode.collectAsStateWithLifecycle()
 
     var ready by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -126,12 +134,11 @@ fun CameraTranslation(
     }
 
     fun toggleCameraAnalysis() {
-        Timber.i("Pressed translating button!")
         if (translating) {
             return
         }
 
-        if (viewFinderMode) {
+        if (viewfinderMode) {
             scope.launch {
                 cameraTranslationViewModel.capture(
                     context.applicationContext,
@@ -189,7 +196,6 @@ fun CameraTranslation(
                                 .padding(MaterialTheme.spacing.small),
                             horizontalArrangement = Arrangement.End
                         ) {
-//                            ZoomSelector(previewViewModel = previewViewModel)
                             FilledIconButton(
                                 onClick = {
                                     toggleTorch()
@@ -200,7 +206,7 @@ fun CameraTranslation(
                                         ImageVector.vectorResource(R.drawable.baseline_lightbulb_24)
                                     else
                                         ImageVector.vectorResource(R.drawable.baseline_lightbulb_outline_24),
-                                    contentDescription = "Torch",
+                                    contentDescription = stringResource(R.string.vision_torch),
                                 )
                             }
                         }
@@ -209,8 +215,51 @@ fun CameraTranslation(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = MaterialTheme.spacing.large),
-                        horizontalArrangement = Arrangement.Center
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Button(
+                            enabled = !translating && !stillBusy,
+                            modifier = Modifier
+                                .size(MaterialTheme.spacing.extraExtraLarge),
+                            shape = MaterialTheme.shapes.extraExtraLarge,
+                            border = BorderStroke(
+                                width = MaterialTheme.spacing.extraSmall,
+                                color = MaterialTheme.colorScheme.surfaceContainerHighest
+                            ),
+                            onClick = {
+                                scope.launch {
+                                    cameraTranslationViewModel.takeStill(context.applicationContext)
+                                }
+                            }
+                        ) {
+                            Box {
+                                this@Button.AnimatedVisibility(
+                                    visible = stillBusy,
+                                    enter = fadeIn(),
+                                    exit = fadeOut()
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.requiredSize(MaterialTheme.spacing.extraLarge)
+                                    )
+                                }
+
+                                this@Button.AnimatedVisibility(
+                                    visible = !stillBusy,
+                                    enter = fadeIn(),
+                                    exit = fadeOut()
+                                ) {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(R.drawable.rounded_photo_camera_24),
+                                        contentDescription = stringResource(R.string.vision_capture),
+                                        modifier = Modifier.requiredSize(MaterialTheme.spacing.extraLarge)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
+
                         Button(
                             enabled = !translating,
                             modifier = Modifier
@@ -236,25 +285,25 @@ fun CameraTranslation(
                                 }
 
                                 this@Button.AnimatedVisibility(
-                                    visible = !translating && viewFinderMode,
+                                    visible = !translating && viewfinderMode,
                                     enter = fadeIn(),
                                     exit = fadeOut()
                                 ) {
                                     Icon(
                                         imageVector = ImageVector.vectorResource(R.drawable.rounded_translate_24),
-                                        contentDescription = "Translate",
+                                        contentDescription = stringResource(R.string.vision_translate),
                                         modifier = Modifier.requiredSize(MaterialTheme.spacing.extraLarge)
                                     )
                                 }
 
                                 this@Button.AnimatedVisibility(
-                                    visible = !translating && !viewFinderMode,
+                                    visible = !translating && !viewfinderMode,
                                     enter = fadeIn(),
                                     exit = fadeOut()
                                 ) {
                                     Icon(
                                         imageVector = ImageVector.vectorResource(R.drawable.round_replay_24),
-                                        contentDescription = "Restart",
+                                        contentDescription = stringResource(R.string.vision_restart),
                                         modifier = Modifier.requiredSize(MaterialTheme.spacing.extraLarge)
                                     )
                                 }
@@ -282,177 +331,16 @@ fun CameraPermissionDenied(state: PermissionState) {
         Box(
             modifier = Modifier.fillMaxSize(),
         ) {
-            Text(text = "Without camera permission the vision feature is not available. Please grant the permission in the app settings.")
+            Text(text = stringResource(R.string.vision_permission_rationale))
         }
     }
 
     Box(
         modifier = Modifier.fillMaxSize(),
     ) {
-        Text(text = "Without camera permission the vision feature is not available.")
+        Text(text = stringResource(R.string.vision_permission_denied))
         Button(onClick = { state.launchPermissionRequest() }) {
-            Text(text = "Request permission")
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ZoomSelector(
-    modifier: Modifier = Modifier,
-    cameraTranslationViewModel: CameraTranslationViewModel,
-) {
-    val min by cameraTranslationViewModel.minZoomRatio.collectAsState()
-    val max by cameraTranslationViewModel.maxZoomRatio.collectAsState()
-    val current by cameraTranslationViewModel.currentZoomRatio.collectAsState()
-    val presets by cameraTranslationViewModel.zoomPresets.collectAsState()
-    var sliderPos by remember { mutableStateOf(cameraTranslationViewModel.ratioToSliderPosition(current)) }
-    // presetPositions previously unused; removed to avoid warnings
-    val layoutDirection = LocalLayoutDirection.current
-
-    // Sync slider position with external changes
-    LaunchedEffect(current, min, max) {
-        sliderPos = cameraTranslationViewModel.ratioToSliderPosition(current)
-    }
-
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(text = String.format(Locale.US, "%.2fx", current))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            // Moving track and stripes
-            val horizontalPadding = 24.dp
-            var trackWidthPx by remember { mutableStateOf(0f) }
-
-            Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = horizontalPadding)
-                    .onSizeChanged { trackWidthPx = it.width.toFloat() }
-            ) {
-                val trackWidth = size.width
-                val trackHeight = size.height
-                val centerX = size.width / 2
-                // Reverse the sliding direction
-                val trackOffset = (0.5f - sliderPos) * trackWidth
-
-                // Draw vertical stripes for presets and intermediate stripes
-                presets.forEachIndexed { index, preset ->
-                    val presetPos = cameraTranslationViewModel.ratioToSliderPosition(preset)
-                    val xPos = centerX + (presetPos - 0.5f) * trackWidth + trackOffset
-
-                    // Draw red stripe for the preset
-                    drawLine(
-                        color = Color.Red,
-                        start = Offset(xPos, 0f),
-                        end = Offset(xPos, trackHeight),
-                        strokeWidth = 2f
-                    )
-
-                    // Draw 4 blue stripes between this preset and the next
-                    if (index < presets.size - 1) {
-                        val nextPreset = presets[index + 1]
-                        val lnCurrent = ln(preset)
-                        val lnNext = ln(nextPreset)
-                        val delta = (lnNext - lnCurrent) / 5f // 5 gaps for 4 stripes
-
-                        repeat(4) { i ->
-                            val lnStripe = lnCurrent + (i + 1) * delta
-                            val stripeRatio = exp(lnStripe)
-                            val stripePos = cameraTranslationViewModel.ratioToSliderPosition(stripeRatio)
-                            val stripeX = centerX + (stripePos - 0.5f) * trackWidth + trackOffset
-                            drawLine(
-                                color = Color.Blue,
-                                start = Offset(stripeX, 0f),
-                                end = Offset(stripeX, trackHeight),
-                                strokeWidth = 1f
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Fixed thumb in the center
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
-                    .align(Alignment.Center)
-            )
-
-            // Invisible touch overlay that handles taps and horizontal drags
-            // Matches the same horizontal padding as the Canvas so positions line up
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = horizontalPadding)
-                    .pointerInput(presets, trackWidthPx, layoutDirection) {
-                        if (trackWidthPx <= 0f) return@pointerInput
-
-                        detectTapGestures { offset ->
-                            if (trackWidthPx <= 0f) return@detectTapGestures
-                            val raw = (offset.x / trackWidthPx).coerceIn(0f, 1f)
-                            // For LTR: left->right should map 0->1 (raw). For RTL: mirror it.
-                            val pos = if (layoutDirection == LayoutDirection.Ltr) raw else 1f - raw
-                            sliderPos = pos
-                            val ratio = cameraTranslationViewModel.sliderPositionToRatio(pos)
-                            cameraTranslationViewModel.setZoomRatio(ratio)
-
-                            // Snap if close to a preset
-                            val snap = cameraTranslationViewModel.nearestPresetForPosition(sliderPos)
-                            if (snap != null) {
-                                val (presetRatio, presetPos) = snap
-                                val distance = abs(presetPos - sliderPos)
-                                if (distance <= SNAP_THRESHOLD) {
-                                    sliderPos = presetPos
-                                    cameraTranslationViewModel.setZoomRatio(presetRatio)
-                                }
-                            }
-                        }
-                    }
-                    .pointerInput(presets, trackWidthPx, layoutDirection) {
-                        if (trackWidthPx <= 0f) return@pointerInput
-
-                        detectHorizontalDragGestures(
-                            onDragStart = { /* start */ },
-                            onDragEnd = {
-                                // Snap to nearest preset on release
-                                val snap = cameraTranslationViewModel.nearestPresetForPosition(sliderPos)
-                                if (snap != null) {
-                                    val (presetRatio, presetPos) = snap
-                                    val distance = abs(presetPos - sliderPos)
-                                    if (distance <= SNAP_THRESHOLD) {
-                                        sliderPos = presetPos
-                                        cameraTranslationViewModel.setZoomRatio(presetRatio)
-                                    }
-                                }
-                            },
-                            onDragCancel = { /* cancelled */ },
-                            onHorizontalDrag = { change, dragAmount ->
-                                if (trackWidthPx <= 0f) return@detectHorizontalDragGestures
-                                // consume the change so other gestures don't also handle it
-                                try {
-                                    change.consume()
-                                } catch (_: Exception) {
-                                    // consume may not be needed; ignore safely
-                                }
-
-                                val deltaPosRaw = dragAmount / trackWidthPx
-                                // For LTR dragging right should increase sliderPos, so use deltaPosRaw directly.
-                                // For RTL, flip sign.
-                                val deltaPos =
-                                    if (layoutDirection == LayoutDirection.Ltr) deltaPosRaw else -deltaPosRaw
-                                sliderPos = (sliderPos + deltaPos).coerceIn(0f, 1f)
-                                val ratio = cameraTranslationViewModel.sliderPositionToRatio(sliderPos)
-                                cameraTranslationViewModel.setZoomRatio(ratio)
-                            }
-                        )
-                    }
-            )
+            Text(text = stringResource(R.string.vision_permission_request))
         }
     }
 }
@@ -463,8 +351,10 @@ fun CameraViewFinder(
     cameraTranslationViewModel: CameraTranslationViewModel,
     lifecycleOwner: LifecycleOwner,
 ) {
-    val currentSurfaceRequest: SurfaceRequest? by cameraTranslationViewModel.surfaceRequests.collectAsState()
-    val results by cameraTranslationViewModel.detectedBoxes.collectAsState()
+    val currentSurfaceRequest: SurfaceRequest? by cameraTranslationViewModel.surfaceRequests.collectAsStateWithLifecycle()
+    val sensorRotationQuadrant by cameraTranslationViewModel.sensorRotationQuadrant.collectAsStateWithLifecycle()
+    val liveTrackingActive by cameraTranslationViewModel.liveTrackingActive.collectAsStateWithLifecycle()
+    val layoutCache = remember { OcrBlockLayoutCache() }
 
     val context = LocalContext.current
     LaunchedEffect(lifecycleOwner) {
@@ -476,12 +366,25 @@ fun CameraViewFinder(
         shape = MaterialTheme.shapes.extraLarge
     ) {
         currentSurfaceRequest?.let { surfaceRequest ->
-            val coordinateTransformer = remember { MutableCoordinateTransformer() }
-
             Box {
-                CameraXViewfinder(
-                    surfaceRequest = surfaceRequest,
-                    implementationMode = ImplementationMode.EXTERNAL,
+                // GL viewfinder: the camera frame is consumed and presented
+                // by our own GL thread — the pass the tracker (and later the
+                // overlay composite) renders in.
+                var viewFinder by remember { mutableStateOf<VerstaGlSurfaceView?>(null) }
+                AndroidView(
+                    factory = { ctx ->
+                        VerstaGlSurfaceView(ctx.applicationContext)
+                    },
+                    update = { view ->
+                        viewFinder = view
+                        view.sensorRotationQuadrant = sensorRotationQuadrant
+                        view.liveFrameSink = if (liveTrackingActive) {
+                            cameraTranslationViewModel::onLiveGlFrame
+                        } else {
+                            null
+                        }
+                        view.setSurfaceRequest(surfaceRequest, ContextCompat.getMainExecutor(context))
+                    },
                     modifier = Modifier
                         .fillMaxSize()
                         .pointerInput(Unit) {
@@ -493,24 +396,30 @@ fun CameraViewFinder(
                             }
                         }
                         .pointerInput(Unit) {
-                            detectTapGestures {
-                                with(coordinateTransformer) {
-                                    val surfaceCoords = it.transform()
-                                    cameraTranslationViewModel.focusOnPoint(
-                                        surfaceRequest.resolution,
-                                        surfaceCoords.x,
-                                        surfaceCoords.y,
-                                    )
+                            detectTapGestures { tap ->
+                                viewFinder?.let { view ->
+                                    cameraTranslationViewModel.focusOnPoint(view, tap.x, tap.y)
                                 }
                             }
                         },
-                    coordinateTransformer = coordinateTransformer,
                 )
 
                 Canvas(
                     modifier = Modifier.fillMaxSize(),
                     onDraw = {
-                        val inferenceRect = RectF(0f, 0f, 960f, 960f)
+                        // Live tracking composites the overlay in the GL pass
+                        // (warped by the tracker homography each frame); this
+                        // Canvas only presents the stills capture's result.
+                        if (liveTrackingActive) return@Canvas
+                        // Snapshot reads inside onDraw: pose publishes from the
+                        // GL viewfinder thread invalidate this draw directly,
+                        // with no recomposition round trip per camera frame.
+                        val results = cameraTranslationViewModel.detectedBoxes
+                        val frameWidth = cameraTranslationViewModel.frameWidth
+                        val frameHeight = cameraTranslationViewModel.frameHeight
+                        val blockTranslations = cameraTranslationViewModel.blockTranslations
+                        if (frameWidth <= 0 || frameHeight <= 0) return@Canvas
+                        val inferenceRect = RectF(0f, 0f, frameWidth.toFloat(), frameHeight.toFloat())
                         val scaleX = size.width / inferenceRect.width()
                         val scaleY = size.height / inferenceRect.height()
                         val scale = maxOf(scaleX, scaleY)
@@ -523,72 +432,87 @@ fun CameraViewFinder(
                             postTranslate(dx, dy)
                         }
 
-                        results.forEach { result ->
-                            val points = result.points
-                            val text = result.translated
-                            val colors = result.colors
-                            val fontSize = result.fontSize
-                            val lineHeight = result.lineHeight
-
-                            val mappedPoints = points.map { point ->
-                                val mapped = floatArrayOf(point.x, point.y)
-                                outputToScreenMatrix.mapPoints(mapped)
-                                Offset(mapped[0], mapped[1])
+                        // Per-block screen quads with reading geometry. Column
+                        // snapping happens once natively in canonical space
+                        // (snapBlockTightRects), so these quads keep the
+                        // homography's projective skew — that's what puts the
+                        // page's perspective on both text and strips.
+                        val blockQuads = results.mapNotNull { block ->
+                            val quads = block.lines.mapNotNull { line ->
+                                lineQuadOf(outputToScreenMatrix.mapPoints(line.points.asList()))
+                                    ?.let { line to it }
                             }
+                            if (quads.isEmpty()) null else block to quads
+                        }
 
-                            val path = Path().apply {
-                                moveTo(mappedPoints.first().x, mappedPoints.first().y)
-                                mappedPoints.drop(1).forEach { p ->
-                                    lineTo(p.x, p.y)
-                                }
-                                close()
-                            }
-
-                            val backgroundColor = colors.background
-                            val foregroundColor = colors.foreground
-
-                            drawPath(
-                                path = path,
-                                color = backgroundColor
+                        // One layout per block, wrap sticky across tracker ticks.
+                        data class Draw(
+                            val quads: List<Pair<CameraTranslationBlockLine, OcrLineQuad>>,
+                            val paint: TextPaint,
+                            val layout: OcrBlockLayout.Result?,
+                        )
+                        val draws = blockQuads.map { (block, quads) ->
+                            val paint = OcrBlockRender.blockTextPaint(
+                                bold = quads.any { it.first.fontWeight == FontWeight.BOLD }
                             )
-
-                            val minX = mappedPoints.minOf { it.x }
-                            val maxX = mappedPoints.maxOf { it.x }
-                            val minY = mappedPoints.minOf { it.y }
-
-                            val availableWidth = maxX - minX
-
-                            val textPaint = TextPaint().apply {
-                                isAntiAlias = true
-                                color = foregroundColor.toArgb()
-
-                                textSize = fontSize * scale
-
-                                typeface = if (result.fontWeight == FontWeight.BOLD) {
-                                    Typeface.create(
-                                        Typeface.DEFAULT,
-                                        Typeface.BOLD
-                                    )
-                                } else {
-                                    Typeface.DEFAULT
-                                }
-                            }
-
-                            val layout = StaticLayout.Builder.obtain(
-                                text,
-                                0,
-                                text.length,
-                                textPaint,
-                                availableWidth.toInt()
-                            ).build()
-
-                            drawContext.canvas.nativeCanvas.save()
-                            drawContext.canvas.nativeCanvas.translate(
-                                minX,
-                                minY
+                            // Translations land one publish late on a miss
+                            // (geometry first, text follows asynchronously).
+                            val trimmed = (blockTranslations[block.source] ?: "").trim()
+                            // Lazily shape-once: a layout-cache hit never
+                            // measures at all.
+                            val measurer = lazy { OcrBlockRender.measureAtReference(paint, trimmed) }
+                            val quadGeometries = quads.map { it.second }
+                            val layout = if (trimmed.isEmpty()) null else layoutCache.layout(
+                                text = trimmed,
+                                lineWidths = OcrBlockRender.blockLineWidths(quadGeometries),
+                                startSize = OcrBlockRender.blockStartSize(quadGeometries),
+                                measure = { from, until, size -> measurer.value.measure(from, until, size) },
                             )
-                            layout.draw(drawContext.canvas.nativeCanvas)
-                            drawContext.canvas.nativeCanvas.restore()
+                            Draw(quads, paint, layout)
+                        }
+
+                        // Per-frame warp scratch: strip patches AND text draw
+                        // through quad-corner matrices, re-posed every frame.
+                        val stripPaint = OcrBlockRender.stripPaint()
+
+                        // Two passes across ALL blocks: every erased
+                        // background on the bottom layer, every glyph on
+                        // top — strip pads overlap neighbouring blocks, so
+                        // interleaving them per block would clip the text.
+                        draws.forEach { draw ->
+                            draw.quads.forEach { (line, _) ->
+                                val strip = line.strip ?: return@forEach
+                                val dst = outputToScreenMatrix.mapToArray(strip.points)
+                                drawContext.canvas.nativeCanvas.drawBitmap(
+                                    strip.bitmap, OcrBlockRender.stripMatrix(strip.bitmap, dst), stripPaint
+                                )
+                            }
+                        }
+
+                        draws.forEach { draw ->
+                            val quads = draw.quads
+                            val layout = draw.layout ?: return@forEach
+                            // Per-block fitted size only — no cross-block
+                            // unification (the reference shares one size per
+                            // block and lets neighbouring blocks differ).
+                            draw.paint.textSize = layout.textSize
+                            // Projective text: the local band rect maps onto
+                            // the tracked quad corners, so glyphs carry the
+                            // page's perspective exactly like the strips do.
+                            quads.forEachIndexed { index, (line, quad) ->
+                                val segment = layout.segments.getOrElse(index) { "" }
+                                if (segment.isEmpty()) return@forEachIndexed
+
+                                draw.paint.color = line.colors.foreground.toArgb()
+                                drawContext.canvas.nativeCanvas.save()
+                                drawContext.canvas.nativeCanvas.concat(OcrBlockRender.textMatrix(quad))
+                                drawContext.canvas.nativeCanvas.drawText(
+                                    segment, OCR_TEXT_HORIZONTAL_INSET,
+                                    OcrBlockRender.centeredBaselineY(draw.paint, quad.bandHeight),
+                                    draw.paint
+                                )
+                                drawContext.canvas.nativeCanvas.restore()
+                            }
                         }
                     }
                 )
@@ -596,3 +520,4 @@ fun CameraViewFinder(
         }
     }
 }
+

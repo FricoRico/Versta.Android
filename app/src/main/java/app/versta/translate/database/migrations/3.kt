@@ -1,21 +1,16 @@
 package app.versta.translate.database.migrations
 
-import app.cash.sqldelight.db.AfterVersion
 import app.versta.translate.core.entity.VoiceWithModelFiles
-import app.versta.translate.database.Database
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.database.Migration
 import okio.Path.Companion.toPath
 import java.app.versta.translate.database.sqldelight.Voice
 
 object Migration3 : Migration {
+    override val afterVersion = 3
+
     override fun migrate(database: DatabaseContainer) {
-        Database.Schema.migrate(
-            driver = database.driver,
-            oldVersion = 3,
-            newVersion = 4,
-            AfterVersion(3) {
-                database.voiceModels.getAll().executeAsList().forEach { data ->
+        database.voiceModels.getAll().executeAsList().forEach { data ->
                     val path = data.path.toPath().toNioPath()
 
                     val model = VoiceWithModelFiles.load(data.id, path)
@@ -58,7 +53,5 @@ object Migration3 : Migration {
                         }
                     }
                 }
-            }
-        )
     }
 }

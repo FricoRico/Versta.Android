@@ -24,12 +24,10 @@ class ObjectCharacterRecognitionViewModel(
 
     val ocrModels = externalObjectCharacterRecognitionModelsRepository.getDefinitions().distinctUntilChanged()
 
-    private val importedDetectors = objectCharacterRecognitionRepository.getObjectCharacterRecognitionDetectors().distinctUntilChanged()
-    private val importedRecognizers = objectCharacterRecognitionRepository.getObjectCharacterRecognitionRecognizers().distinctUntilChanged()
+    private val importedModules = objectCharacterRecognitionRepository.getModules().distinctUntilChanged()
 
     val ocrModelsByState = externalObjectCharacterRecognitionModelsRepository.getDefinitionsByState(
-        importedDetectors,
-        importedRecognizers
+        importedModules
     ).distinctUntilChanged()
 
     private val downloadManager = DownloadManager<ExternalObjectCharacterRecognitionDownloadTask>(
@@ -67,12 +65,11 @@ class ObjectCharacterRecognitionViewModel(
     }
 
     /**
-     * Deletes the OCR model with the given ID.
+     * Deletes the OCR bundle with the given ID.
      */
     fun deleteOcrModel(id: String) {
         viewModelScope.launch {
-            objectCharacterRecognitionRepository.deleteObjectCharacterRecognitionDetector(id)
-            objectCharacterRecognitionRepository.deleteObjectCharacterRecognitionRecognizer(id)
+            objectCharacterRecognitionRepository.deleteBundle(id)
         }
     }
 
