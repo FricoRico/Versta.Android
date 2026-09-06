@@ -20,7 +20,7 @@ camera/OCR, speech, and text-to-speech entirely on-device.
 
 - `app/` — the single Android application module (Kotlin + Compose). See `/app/AGENTS.md`.
 - `app/native/` — C++/JNI bridge library `app_versta_translate_bridge`. See `/app/native/AGENTS.md`.
-- `app/native/jni/third_party/` — vendored native libraries kept as git submodules (leanmt, whisper.cpp, espeak-ng, open-jtalk, cld2, opencv-mobile, onnxruntime, ocr-clipper, neon-sse). Never edit vendored code in place.
+- `app/native/jni/third_party/` — vendored native libraries kept as git submodules (leanmt, whisper.cpp, espeak-ng, open-jtalk, cld2, opencv-mobile, onnxruntime, MNN, neon-sse). Never edit vendored code in place.
 - `gradle/libs.versions.toml` — single source of truth for dependency versions (version catalog).
 - The sibling repo `Versta.Models` (separate project) contains the Python tooling that exports/quantizes the model bundles consumed by this app. It is out of scope here.
 
