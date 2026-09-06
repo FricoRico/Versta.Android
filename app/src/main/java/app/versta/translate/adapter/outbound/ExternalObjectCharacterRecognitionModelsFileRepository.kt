@@ -3,10 +3,7 @@ package app.versta.translate.adapter.outbound
 import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModelDefinition
 import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModels
 import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModelWithState
-import app.versta.translate.core.entity.ObjectCharacterRecognitionDetectorModel
-import app.versta.translate.core.entity.ObjectCharacterRecognitionDetectorWithFiles
-import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerModel
-import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerWithFiles
+import app.versta.translate.core.entity.ObjectCharacterRecognitionModuleWithFiles
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -47,58 +44,35 @@ class ExternalObjectCharacterRecognitionModelsFileRepository(private val stream:
      * OCR models. These definitions are filtered by the state of the imported OCR models.
      */
     override fun getDefinitionsByState(
-        importedDetectors: Flow<List<ObjectCharacterRecognitionDetectorWithFiles>>,
-        importedRecognizers: Flow<List<ObjectCharacterRecognitionRecognizerWithFiles>>
+        importedModules: Flow<List<ObjectCharacterRecognitionModuleWithFiles>>
     ): Flow<ExternalObjectCharacterRecognitionModels> {
-        return _downloadableModels.combine(importedDetectors) { models, detectors ->
-            models to detectors
-        }.combine(importedRecognizers) { (models, detectors), recognizers ->
+        return _downloadableModels.combine(importedModules) { models, modules ->
+            val installedVersions = modules.groupBy({ it.bundleId }, { it.version })
+
             ExternalObjectCharacterRecognitionModels(
                 installed = models.mapNotNull { model ->
-                    val detector = detectors.find { it.id == model.id }
-                    val recognizer = recognizers.find { it.id == model.id }
-
-                    if (detector != null && recognizer != null &&
-                        detector.version == model.version &&
-                        recognizer.version == model.version) {
-                        ExternalObjectCharacterRecognitionModelWithState(
-                            definition = model,
-                            extracted = calculateExtractedSize(detector, recognizer)
-                        )
+                    val versions = installedVersions[model.id]
+                    if (versions != null && versions.all { it == model.version }) {
+                        ExternalObjectCharacterRecognitionModelWithState(definition = model)
                     } else {
                         null
                     }
                 },
                 updates = models.mapNotNull { model ->
-                    val detector = detectors.find { it.id == model.id }
-                    val recognizer = recognizers.find { it.id == model.id }
-
-                    if (detector != null && recognizer != null &&
-                        (detector.version < model.version || recognizer.version < model.version)) {
-                        ExternalObjectCharacterRecognitionModelWithState(
-                            definition = model,
-                            extracted = calculateExtractedSize(detector, recognizer)
-                        )
+                    val versions = installedVersions[model.id]
+                    if (versions != null && versions.any { it < model.version }) {
+                        ExternalObjectCharacterRecognitionModelWithState(definition = model)
                     } else {
                         null
                     }
                 },
                 available = models.filter { model ->
-                    detectors.none { it.id == model.id } || recognizers.none { it.id == model.id }
+                    installedVersions[model.id] == null
                 }.map { model ->
                     ExternalObjectCharacterRecognitionModelWithState(definition = model)
                 }
             )
         }
-    }
-
-    private fun calculateExtractedSize(
-        detector: ObjectCharacterRecognitionDetectorWithFiles,
-        recognizer: ObjectCharacterRecognitionRecognizerWithFiles
-    ): Long {
-        // Calculate the size of extracted files (this is a simplified version)
-        // In reality, you would traverse the directories and sum up file sizes
-        return 0L // Placeholder
     }
 
     init {

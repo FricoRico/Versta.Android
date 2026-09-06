@@ -8,14 +8,17 @@ import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import app.versta.translate.database.migrations.Migration3
 import app.versta.translate.database.migrations.Migration4
 import app.versta.translate.database.migrations.Migration6
+import app.versta.translate.database.migrations.Migration8
 import kotlinx.serialization.json.Json
 import timber.log.Timber
+import app.cash.sqldelight.db.AfterVersion
 import java.app.versta.translate.database.sqldelight.VoiceModel
-import java.app.versta.translate.database.sqldelight.ObjectCharacterRecognitionDetectorModel
-import java.app.versta.translate.database.sqldelight.ObjectCharacterRecognitionRecognizerModel
+import java.app.versta.translate.database.sqldelight.OcrModuleModel
 import java.app.versta.translate.database.sqldelight.SpeechRecognitionModel
 
 interface Migration {
+    /** Schema version this migration's hook applies after (see `AfterVersion`). */
+    val afterVersion: Int
     fun migrate(database: DatabaseContainer)
 }
 
@@ -35,11 +38,8 @@ class DatabaseContainer(
         VoiceModelAdapter = VoiceModel.Adapter(
             architecturesAdapter = ListOfStringsAdapter,
         ),
-        ObjectCharacterRecognitionDetectorModelAdapter = ObjectCharacterRecognitionDetectorModel.Adapter(
-            architecturesAdapter = ListOfStringsAdapter,
-        ),
-        ObjectCharacterRecognitionRecognizerModelAdapter = ObjectCharacterRecognitionRecognizerModel.Adapter(
-            architecturesAdapter = ListOfStringsAdapter,
+        OcrModuleModelAdapter = OcrModuleModel.Adapter(
+            languagesAdapter = ListOfStringsAdapter,
         ),
         SpeechRecognitionModelAdapter = SpeechRecognitionModel.Adapter(
             architecturesAdapter = ListOfStringsAdapter,
@@ -49,7 +49,8 @@ class DatabaseContainer(
     private val _migrations = listOf(
         Migration3,
         Migration4,
-        Migration6
+        Migration6,
+        Migration8
     )
 
     val data = _database.dataQueries
@@ -57,7 +58,7 @@ class DatabaseContainer(
     val languageModels = _database.languageModelQueries
     val voices = _database.voiceQueries
     val voiceModels = _database.voiceModelQueries
-    val objectCharacterRecognitionModels = _database.objectCharacterRecognitionModelQueries
+    val ocrModules = _database.ocrModuleModelQueries
     val speechRecognitionModels = _database.speechRecognitionModelQueries
 
     fun transaction(body: TransactionWithoutReturn.() -> Unit) = _database.transaction { body() }
@@ -65,12 +66,36 @@ class DatabaseContainer(
         _database.transactionWithResult { body() }
 
     private fun runMigrations() {
-        _migrations.forEach { migration ->
-            try {
-                migration.migrate(this)
-            } catch (e: Exception) {
-                Timber.tag(TAG).e(e, "Migration failed: ${migration::class.java.simpleName}")
+        // Single migration run from the on-disk version to latest; re-running
+        // per-object migrations unconditionally used to re-execute every .sqm
+        // (logged CREATE TABLE collisions and resurrected dropped tables).
+        val currentVersion: Long = driver.executeQuery(
+            null,
+            "PRAGMA user_version",
+            { cursor -> app.cash.sqldelight.db.QueryResult.Value(
+                if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L)
+            },
+            0
+        ).value
+
+        if (currentVersion >= Database.Schema.version) {
+            return
+        }
+
+        Timber.tag(TAG).i("Migrating database from $currentVersion to ${Database.Schema.version}")
+
+        try {
+            val hooks = _migrations.map { m ->
+                AfterVersion(m.afterVersion.toLong()) { m.migrate(this@DatabaseContainer) }
             }
+            Database.Schema.migrate(
+                driver = driver,
+                oldVersion = currentVersion,
+                newVersion = Database.Schema.version,
+                *hooks.toTypedArray()
+            )
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Database migration failed")
         }
     }
 

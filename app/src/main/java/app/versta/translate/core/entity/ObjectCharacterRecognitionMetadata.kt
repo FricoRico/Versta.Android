@@ -1,55 +1,9 @@
 package app.versta.translate.core.entity
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.nio.file.Path
-import kotlin.io.path.exists
 
 enum class ObjectCharacterRecognitionArchitecture(val value: String) {
     PaddleOCR("PaddleOCR")
-}
-
-@Serializable
-enum class ObjectCharacterRecognitionModule {
-    @SerialName("detector")
-    Detector,
-
-    @SerialName("recognizer")
-    Recognizer
-}
-
-@Serializable
-class ObjectCharacterRecognitionDetectorMetadata(
-    val id: String = "",
-    val version: String = "",
-    @SerialName("base_model") val baseModel: String = "",
-    val languages: List<String>,
-    val architectures: List<ObjectCharacterRecognitionArchitecture> = emptyList(),
-    val files: ObjectCharacterRecognitionDetectorFilesMetadata,
-    var root: Path? = null,
-) {
-    fun isValid() =
-        baseModel.isNotBlank() && architectures.isNotEmpty() && (root != null && files.isValid(root!!)) && root?.isAbsolute == true
-
-    fun setRootPath(path: Path): ObjectCharacterRecognitionDetectorMetadata {
-        root = path
-
-        return this
-    }
-}
-
-@Serializable
-data class ObjectCharacterRecognitionDetectorFilesMetadata(
-    val inference: ObjectCharacterRecognitionDetectorInferenceFilesMetadata,
-) {
-    fun isValid(path: Path) = inference.isValid(path)
-}
-
-@Serializable
-data class ObjectCharacterRecognitionDetectorInferenceFilesMetadata(
-    val model: String,
-) {
-    fun isValid(path: Path) = path.resolve(model).exists()
 }
 
 @Serializable
@@ -58,49 +12,6 @@ data class ObjectCharacterRecognitionMetadataFile(
     val languages: List<String>,
     val module: ObjectCharacterRecognitionModule,
 )
-
-@Serializable
-class ObjectCharacterRecognitionRecognizerMetadata(
-    val id: String = "",
-    val version: String = "",
-    @SerialName("base_model") val baseModel: String = "",
-    val languages: List<String>,
-    val architectures: List<ObjectCharacterRecognitionArchitecture> = emptyList(),
-    val files: ObjectCharacterRecognitionRecognitionRecognizerFilesMetadata,
-    var root: Path? = null,
-) {
-    fun isValid() =
-        baseModel.isNotBlank() && architectures.isNotEmpty() && (root != null && files.isValid(root!!)) && root?.isAbsolute == true
-
-    fun setRootPath(path: Path): ObjectCharacterRecognitionRecognizerMetadata {
-        root = path
-
-        return this
-    }
-}
-
-@Serializable
-data class ObjectCharacterRecognitionRecognitionRecognizerFilesMetadata(
-    val inference: ObjectCharacterRecognitionRecognizerInferenceFilesMetadata,
-    val tokenizer: ObjectCharacterRecognitionRecognizerTokenizerFilesMetadata,
-) {
-    fun isValid(path: Path) =
-        inference.isValid(path) && tokenizer.isValid(path)
-}
-
-@Serializable
-data class ObjectCharacterRecognitionRecognizerInferenceFilesMetadata(
-    val model: String,
-) {
-    fun isValid(path: Path) = path.resolve(model).exists()
-}
-
-@Serializable
-data class ObjectCharacterRecognitionRecognizerTokenizerFilesMetadata(
-    val vocabulary: String,
-) {
-    fun isValid(path: Path) = path.resolve(vocabulary).exists()
-}
 
 @Serializable
 class ObjectCharacterRecognitionBundleMetadata(
@@ -115,20 +26,18 @@ class ObjectCharacterRecognitionBundleMetadata(
         modules.isNotEmpty()
 }
 
+/**
+ * One installed OCR module directory as recorded in the database: the bundle
+ * manifest provides identity, the module manifest provides the files.
+ */
 @Serializable
-data class ObjectCharacterRecognitionDetectorModel(
+data class ObjectCharacterRecognitionModuleModel(
     val bundle: ObjectCharacterRecognitionBundleMetadata,
-    val model: ObjectCharacterRecognitionDetectorMetadata
+    val model: ObjectCharacterRecognitionModuleMetadata,
+    val directory: String,
+    @kotlinx.serialization.Transient
+    var root: java.nio.file.Path? = null,
 ) {
     val id: String
-        get() = bundle.id
-}
-
-@Serializable
-data class ObjectCharacterRecognitionRecognizerModel(
-    val bundle: ObjectCharacterRecognitionBundleMetadata,
-    val model: ObjectCharacterRecognitionRecognizerMetadata
-) {
-    val id: String
-        get() = bundle.id
+        get() = "${bundle.id}:$directory"
 }

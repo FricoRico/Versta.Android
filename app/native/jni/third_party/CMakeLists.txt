@@ -1,5 +1,4 @@
 include(cld2.cmake)
-include(ocr-clipper.cmake)
 
 # Architecture-specific SIMD selection — done here in CMake (where
 # ANDROID_ABI is reliable) instead of Gradle product-flavour arguments,
@@ -37,6 +36,28 @@ add_subdirectory(espeak-ng espeak-ng)
 add_subdirectory(neon-sse neon-sse)
 add_subdirectory(open-jtalk/src open-jtalk)
 add_subdirectory(onnxruntime onnxruntime)
+
+# MNN (official Alibaba inference engine) powers the OCR pipeline. Static build:
+# the bridge is a single shared library and there is no reason to ship a second
+# .so. Converter/tools/train stay off — models are converted offline in
+# Versta.Models and this device-side copy only runs inference. Protobuf is only
+# needed by the offline converters, not to load .mnn flatbuffers.
+set(MNN_BUILD_SHARED_LIBS    OFF CACHE BOOL "" FORCE)
+set(MNN_SEP_BUILD            OFF CACHE BOOL "" FORCE)
+set(MNN_BUILD_TOOLS          OFF CACHE BOOL "" FORCE)
+set(MNN_BUILD_CONVERTER      OFF CACHE BOOL "" FORCE)
+set(MNN_BUILD_PROTOBUFFER    OFF CACHE BOOL "" FORCE)
+set(MNN_BUILD_TRAIN          OFF CACHE BOOL "" FORCE)
+set(MNN_BUILD_DEMO           OFF CACHE BOOL "" FORCE)
+set(MNN_EVALUATION           OFF CACHE BOOL "" FORCE)
+set(MNN_BUILD_QUANTOOLS      OFF CACHE BOOL "" FORCE)
+set(MNN_SUPPORT_DEPRECATED_OP OFF CACHE BOOL "" FORCE)
+set(MNN_JNI                  OFF CACHE BOOL "" FORCE)
+# 32-bit x86: MNN's SSE path emits 64-bit AVX objects that fail the elf_i386 link.
+if(ANDROID_ABI STREQUAL "x86")
+    set(MNN_USE_SSE          OFF CACHE BOOL "" FORCE)
+endif()
+add_subdirectory(mnn mnn)
 
 add_subdirectory(leanmt leanmt)
 

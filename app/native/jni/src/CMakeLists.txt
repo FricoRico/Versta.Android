@@ -2,8 +2,17 @@ set(SRC_FILES
         ${SRC_DIR}/tensor_utils.cc
         ${SRC_DIR}/espeak_ng.cc
         ${SRC_DIR}/open_jtalk.cc
-        ${SRC_DIR}/paddle_ocr.cc
-        ${SRC_DIR}/ocr_text_analyzer.cc
+        ${SRC_DIR}/ocr/anchor.cc
+        ${SRC_DIR}/ocr/blocks.cc
+        ${SRC_DIR}/ocr/detect.cc
+        ${SRC_DIR}/ocr/dewarp.cc
+        ${SRC_DIR}/ocr/homography.cc
+        ${SRC_DIR}/ocr/recognize.cc
+        ${SRC_DIR}/ocr/glyphmatte.cc
+        ${SRC_DIR}/ocr/erase.cc
+        ${SRC_DIR}/ocr/track.cc
+        ${SRC_DIR}/ocr/engine.cc
+        ${SRC_DIR}/ocr/renderer.cc
         ${SRC_DIR}/language_detect.cc
         ${SRC_DIR}/vocabulary.cc
         ${SRC_DIR}/leanmt.cc
