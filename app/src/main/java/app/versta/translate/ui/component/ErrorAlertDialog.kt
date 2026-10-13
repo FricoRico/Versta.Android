@@ -171,6 +171,7 @@ fun ErrorAlertDialogPreview() {
             TranslationViewModel(
                 intermediateModel = translationMockInference,
                 outputModel = translationMockInference,
+                createInference = { TranslationMockInference() },
                 translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
                 languageViewModel =
                     LanguageViewModel(

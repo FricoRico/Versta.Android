@@ -348,6 +348,7 @@ fun MinimalTextTranslationPreview() {
                     TranslationViewModel(
                         intermediateModel = translationMockInference,
                         outputModel = translationMockInference,
+                        createInference = { TranslationMockInference() },
                         translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
                         languageViewModel = languageViewModel,
                     ),
@@ -356,6 +357,7 @@ fun MinimalTextTranslationPreview() {
             TranslationViewModel(
                 intermediateModel = translationMockInference,
                 outputModel = translationMockInference,
+                createInference = { TranslationMockInference() },
                 translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
                 languageViewModel = languageViewModel,
             ),

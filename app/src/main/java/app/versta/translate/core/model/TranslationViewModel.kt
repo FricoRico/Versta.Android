@@ -2,10 +2,8 @@ package app.versta.translate.core.model
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.versta.translate.adapter.outbound.BergamotTinyInference
 import app.versta.translate.adapter.outbound.TranslationInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
-import app.versta.translate.bridge.leanmt.Leanmt
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.PivotPairModelFiles
@@ -23,8 +21,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 
 // TODO: Move to generic entity class
@@ -48,12 +44,20 @@ sealed class ReadyState {
 
 @OptIn(FlowPreview::class)
 class TranslationViewModel(
-    private var intermediateModel: TranslationInference,
-    private var outputModel: TranslationInference,
+    intermediateModel: TranslationInference,
+    outputModel: TranslationInference,
+    createInference: (cacheSize: Long) -> TranslationInference,
     private val translationPreferenceRepository: TranslationPreferenceRepository,
     private val languageViewModel: LanguageViewModel,
 ) : ViewModel(),
     TranslationRunner {
+    private val orchestrator =
+        TranslationOrchestrator(
+            intermediateModel = intermediateModel,
+            outputModel = outputModel,
+            translationPreferenceRepository = translationPreferenceRepository,
+            createInference = createInference,
+        )
     val cacheSize = translationPreferenceRepository.getCacheSize().distinctUntilChanged()
     val cacheEnabled = translationPreferenceRepository.getCacheEnabled().distinctUntilChanged()
     val beamSize = translationPreferenceRepository.getNumberOfBeams().distinctUntilChanged()
@@ -75,28 +79,18 @@ class TranslationViewModel(
     private val _translationError = MutableStateFlow<Throwable?>(null)
     val translationError: StateFlow<Throwable?> = _translationError.asStateFlow()
 
-    private val _loadMutex = Mutex()
-
     /**
-     * Recreates the underlying leanmt inference engines with the effective cache
-     * size. leanmt fixes the cache size at service construction, so a disabled
-     * cache is applied as size 0 while the user's chosen [getCacheSize] is
-     * preserved. The currently-selected model is reloaded into the new engines.
+     * Recreates the inference engines with the effective cache size and
+     * reloads the currently-selected model into them. leanmt fixes the cache
+     * size at engine construction, so recreation is required to apply changes
+     * while the user's chosen [cacheSize] is preserved.
      */
     private fun reloadModel() {
         viewModelScope.launch {
             val files = _languageModels.first()
             val pair = _languages.first()?.toLanguagePair()
 
-            _loadMutex.withLock {
-                intermediateModel.close()
-                outputModel.close()
-
-                intermediateModel =
-                    BergamotTinyInference(Leanmt(getCacheSize().toLong()))
-                outputModel =
-                    BergamotTinyInference(Leanmt(getCacheSize().toLong()))
-            }
+            orchestrator.recreateEngines()
 
             if (files != null && pair != null) {
                 load(files, pair)
@@ -124,11 +118,6 @@ class TranslationViewModel(
             translationPreferenceRepository.setCacheEnabled(enabled)
             reloadModel()
         }
-
-    /**
-     * Gets the actual cache size if cache is enabled.
-     */
-    private suspend fun getCacheSize(): Int = if (cacheEnabled.first()) cacheSize.first() else -2
 
     /**
      * Sets the number of beams.
@@ -168,47 +157,18 @@ class TranslationViewModel(
         input: String,
         languages: LanguagePair,
     ): String {
-        try {
-            val sanitized = sanitize(input)
+        _translationInProgress.value = true
 
-            _translationInProgress.value = true
+        return try {
+            val result = orchestrator.translate(input, _languageModels.first())
+            _translationInProgress.value = false
 
-            try {
-                val intermediate = _loadMutex.withLock { intermediateModel }
-                val output = _loadMutex.withLock { outputModel }
-
-                var text = sanitized
-
-                if (_languageModels.first()?.intermediary != null) {
-                    text =
-                        intermediate.translate(
-                            text = text,
-                            maxBeamWidth = beamSize.first(),
-                            maxSequenceLength = maxSequenceLength.first(),
-                        )
-                }
-
-                val result =
-                    output.translate(
-                        text = text,
-                        maxBeamWidth = beamSize.first(),
-                        maxSequenceLength = maxSequenceLength.first(),
-                    )
-                _translationInProgress.value = false
-
-                return result
-            } catch (e: Exception) {
-                _translationInProgress.value = false
-                setTranslationError(e)
-                Timber.tag(TAG).e(e)
-
-                return ""
-            }
+            result
         } catch (e: Exception) {
             setTranslationError(e)
             Timber.tag(TAG).e(e)
 
-            return ""
+            ""
         }
     }
 
@@ -216,19 +176,7 @@ class TranslationViewModel(
      * Cancels the current translation.
      */
     fun cancelTranslation() {
-        outputModel.cancel()
-        intermediateModel.cancel()
         _translationInProgress.value = false
-    }
-
-    /**
-     * Sanitizes the input string by removing any undefined characters.
-     */
-    private fun sanitize(input: String): String {
-        val filteredString = input.filter { it.isDefined() }
-        val utf8Bytes = filteredString.toByteArray(Charsets.UTF_8)
-
-        return String(utf8Bytes, Charsets.UTF_8)
     }
 
     /**
@@ -242,27 +190,17 @@ class TranslationViewModel(
 
         viewModelScope
             .async(Dispatchers.IO) {
-                _loadMutex.withLock {
-                    _languageReadyState.value = ReadyState.NotReady
-                    _loadingProgress.value = LoadingProgress.InProgress
+                _languageReadyState.value = ReadyState.NotReady
+                _loadingProgress.value = LoadingProgress.InProgress
 
-                    try {
-                        if (files?.intermediary != null) {
-                            intermediateModel.load(files.intermediary.files, files.intermediary.config)
-                        } else {
-                            intermediateModel.close()
-                        }
+                try {
+                    orchestrator.load(files)
 
-                        if (files?.output != null) {
-                            outputModel.load(files.output.files, files.output.config)
-                        }
-
-                        _languageReadyState.value = ReadyState.Ready
-                        _loadingProgress.value = LoadingProgress.Completed
-                    } catch (e: Exception) {
-                        Timber.tag(TAG).e(e)
-                        _loadingProgress.value = LoadingProgress.Error(e)
-                    }
+                    _languageReadyState.value = ReadyState.Ready
+                    _loadingProgress.value = LoadingProgress.Completed
+                } catch (e: Exception) {
+                    Timber.tag(TAG).e(e)
+                    _loadingProgress.value = LoadingProgress.Error(e)
                 }
             }.await()
     }
@@ -272,12 +210,9 @@ class TranslationViewModel(
      */
     private fun unload() {
         viewModelScope.launch(Dispatchers.IO) {
-            _loadMutex.withLock {
-                intermediateModel.close()
-                outputModel.close()
+            orchestrator.unload()
 
-                _languageReadyState.value = ReadyState.NotReady
-            }
+            _languageReadyState.value = ReadyState.NotReady
         }
     }
 
