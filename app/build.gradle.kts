@@ -118,9 +118,6 @@ android {
         compose = true
         buildConfig = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
-    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -218,72 +215,43 @@ tasks.configureEach {
 }
 
 tasks.apply {
+    // The metadata JSONs are gitignored build inputs (app/src/main/res/.gitignore),
+    // so every checkout fetches them once. Declared inputs/outputs make the task
+    // up-to-date-checkable, and onlyIf skips it whenever the outputs exist — after
+    // the first successful fetch, builds are incremental and work fully offline.
     register("getRemoteData") {
+        description = "Fetch model metadata JSON into res/raw (first build per checkout)."
+
+        val metadata =
+            mapOf(
+                "versta_data.json" to "https://models.versta.app/data/data.json",
+                "versta_translation_models.json" to "https://models.versta.app/translation/models.json",
+                "versta_speech_recognition_models.json" to "https://models.versta.app/speech-recognition/models.json",
+                "versta_text_to_speech_models.json" to "https://models.versta.app/text-to-speech/models.json",
+                "versta_object_character_recognition_models.json" to "https://models.versta.app/object-character-recognition/models.json",
+            )
+        val metadataFiles = metadata.keys.map { layout.projectDirectory.file("src/main/res/raw/$it").asFile }
+
+        metadata.forEach { (file, url) -> inputs.property("url.$file", url) }
+        outputs.files(metadataFiles)
+        onlyIf { metadataFiles.any { !it.exists() } }
+
         doLast {
-            URI("https://models.versta.app/data/data.json")
-                .toURL()
-                .openStream()
-                .use { input ->
-                    layout.projectDirectory
-                        .file("src/main/res/raw/versta_data.json")
-                        .asFile
-                        .outputStream()
-                        .use { output ->
-                            input.copyTo(output)
-                        }
-                }
-
-            URI("https://models.versta.app/translation/models.json")
-                .toURL()
-                .openStream()
-                .use { input ->
-                    layout.projectDirectory
-                        .file("src/main/res/raw/versta_translation_models.json")
-                        .asFile
-                        .outputStream()
-                        .use { output ->
-                            input.copyTo(output)
-                        }
-                }
-
-            URI("https://models.versta.app/speech-recognition/models.json")
-                .toURL()
-                .openStream()
-                .use { input ->
-                    layout.projectDirectory
-                        .file("src/main/res/raw/versta_speech_recognition_models.json")
-                        .asFile
-                        .outputStream()
-                        .use { output ->
-                            input.copyTo(output)
-                        }
-                }
-
-            URI("https://models.versta.app/text-to-speech/models.json")
-                .toURL()
-                .openStream()
-                .use { input ->
-                    layout.projectDirectory
-                        .file("src/main/res/raw/versta_text_to_speech_models.json")
-                        .asFile
-                        .outputStream()
-                        .use { output ->
-                            input.copyTo(output)
-                        }
-                }
-
-            URI("https://models.versta.app/object-character-recognition/models.json")
-                .toURL()
-                .openStream()
-                .use { input ->
-                    layout.projectDirectory
-                        .file("src/main/res/raw/versta_object_character_recognition_models.json")
-                        .asFile
-                        .outputStream()
-                        .use { output ->
-                            input.copyTo(output)
-                        }
-                }
+            metadata.forEach { (file, url) ->
+                URI(url)
+                    .toURL()
+                    .openStream()
+                    .use { input ->
+                        layout.projectDirectory
+                            .file("src/main/res/raw/$file")
+                            .asFile
+                            .also { it.parentFile?.mkdirs() }
+                            .outputStream()
+                            .use { output ->
+                                input.copyTo(output)
+                            }
+                    }
+            }
         }
     }
 
