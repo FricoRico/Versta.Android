@@ -34,8 +34,13 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
 
       # AGP needs SDK location even for pure Kotlin checks.
+      # setup-android v3 defaults to installing the legacy `tools` package,
+      # which Google has removed from the SDK repository manifests; skip it
+      # (packages: "") and install exactly what we need in the next step.
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: ""
 
       - name: Install platform and build-tools
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
@@ -75,6 +80,8 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: ""
 
       - name: Install platform and build-tools
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
@@ -117,6 +124,8 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: ""
 
       - name: Install NDK, CMake, platform and build-tools
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
