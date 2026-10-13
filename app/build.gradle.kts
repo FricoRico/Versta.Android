@@ -188,6 +188,13 @@ ktlint {
     }
 }
 
+// The plugin's incremental check tasks treat deleted files as up-to-date and
+// keep reporting stale violations (known plugin limitation). A gate must never
+// be red on ghosts, so always re-run; a full check takes only a few seconds.
+tasks.matching { it.name.startsWith("runKtlint") }.configureEach {
+    outputs.upToDateWhen { false }
+}
+
 detekt {
     buildUponDefaultConfig = true
     config.setFrom(rootProject.file("detekt.yml"))
