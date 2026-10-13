@@ -142,8 +142,15 @@ android {
     flavorDimensions += "abi"
 
     productFlavors {
+        // Scope every flavour to its own ABI. Without per-flavour abiFilters,
+        // AGP cannot tell that the flavour names are ABIs and builds the CMake
+        // target for all four ABIs into every variant (~4x native compile work
+        // per assemble and all four .so sets packaged in every APK).
         create("arm64-v8a") {
             dimension = "abi"
+            ndk {
+                abiFilters += "arm64-v8a"
+            }
             externalNativeBuild {
                 cmake {
                     // Architecture-specific SIMD/optimisation flags are set in
@@ -156,12 +163,21 @@ android {
         }
         create("armeabi-v7a") {
             dimension = "abi"
+            ndk {
+                abiFilters += "armeabi-v7a"
+            }
         }
         create("x86") {
             dimension = "abi"
+            ndk {
+                abiFilters += "x86"
+            }
         }
         create("x86_64") {
             dimension = "abi"
+            ndk {
+                abiFilters += "x86_64"
+            }
         }
     }
 //

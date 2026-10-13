@@ -96,8 +96,10 @@ jobs:
           if-no-files-found: ignore
 
   # Proves the full toolchain (Kotlin + CMake native build) compiles.
-  # Heavy (~20+ min cold): the native inference bridge is built from the
-  # git submodules. Kept as a gate so broken native builds never reach develop.
+  # Heavy (~20+ min cold): the native inference bridge is built from the git
+  # submodules. The per-flavour abiFilters in app/build.gradle.kts scope this
+  # to one architecture; without it every assemble builds all four ABIs.
+  # Kept as a gate so broken native builds never reach develop.
   assemble:
     name: assemble
     runs-on: ubuntu-latest
