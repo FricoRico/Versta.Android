@@ -173,20 +173,13 @@ class TranslationViewModel(
     }
 
     /**
-     * Cancels the current translation.
-     */
-    fun cancelTranslation() {
-        _translationInProgress.value = false
-    }
-
-    /**
      * Loads the model from the given files.
      */
     suspend fun load(
         files: PivotPairModelFiles?,
         languages: LanguagePair,
     ) {
-        cancelTranslation()
+        _translationInProgress.value = false
 
         viewModelScope
             .async(Dispatchers.IO) {
