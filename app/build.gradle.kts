@@ -236,6 +236,15 @@ tasks.configureEach {
 tasks.apply {
     register("getRemoteData") {
         doLast {
+            // src/main/res/raw holds only generated, gitignored JSON, so a
+            // clean checkout has no raw/ directory. Create it before writing;
+            // without this every CI build fails at preBuild with
+            // FileNotFoundException.
+            layout.projectDirectory
+                .dir("src/main/res/raw")
+                .asFile
+                .mkdirs()
+
             URI("https://models.versta.app/data/data.json")
                 .toURL()
                 .openStream()
