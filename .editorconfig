@@ -1,0 +1,30 @@
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = off
+
+[*.{kt,kts}]
+ktlint_code_style = ktlint_official
+# Compose functions are PascalCase; let @Composable/@Preview functions keep that.
+ktlint_function_naming_ignore_when_annotated_with = Composable
+# Match the project's existing trailing-comma style.
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+# The codebase uses `_foo` privates with delegated accessors (e.g. `by viewModels`,
+# `_state` + `state` in ViewModels); the rule mis-detects those pairs.
+ktlint_standard_backing-property-naming = disabled
+
+# UI layer: PascalCase is the Compose convention for emitters, including
+# LazyListScope extension emitters (e.g. `fun LazyListScope.ListDivider(...)`).
+[app/src/main/java/app/versta/translate/ui/**.kt]
+ktlint_standard_function-naming = disabled
+
+# Database migrations are deliberately named after their schema version
+# (1.kt, 3.kt, ...), matching SQLDelight's numbered-migration convention.
+[app/src/main/java/app/versta/translate/database/migrations/**.kt]
+ktlint_standard_filename = disabled

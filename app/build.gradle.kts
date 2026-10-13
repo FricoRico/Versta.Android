@@ -3,9 +3,16 @@ import java.io.FileInputStream
 import java.net.URI
 import java.util.Properties
 
-val keystoreProperties = Properties().apply {
-    load(FileInputStream(rootProject.file("keystore.properties")))
-}
+// keystore.properties is gitignored (developer-local signing secrets). Absent
+// the file, release signing is skipped so CI and external contributors can
+// still run every Gradle task; debug builds sign with the debug keystore.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties =
+    Properties().apply {
+        if (keystorePropertiesFile.exists()) {
+            keystorePropertiesFile.inputStream().use { load(it) }
+        }
+    }
 
 plugins {
     alias(libs.plugins.about.libraries)
@@ -14,6 +21,8 @@ plugins {
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.gradle.crypto.checksum)
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.detekt)
 }
 
 sqldelight {
@@ -63,11 +72,13 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            storeFile = rootProject.file("versta.keystore")
-            storePassword = keystoreProperties["storePassword"].toString()
-            keyAlias = "versta"
-            keyPassword = keystoreProperties["keyPassword"].toString()
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = rootProject.file("versta.keystore")
+                storePassword = keystoreProperties["storePassword"].toString()
+                keyAlias = "versta"
+                keyPassword = keystoreProperties["keyPassword"].toString()
+            }
         }
     }
 
@@ -75,9 +86,11 @@ android {
         release {
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
-            signingConfig = signingConfigs.getByName("release")
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
@@ -91,6 +104,15 @@ android {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
+    }
+    lint {
+        lintConfig = rootProject.file("lint.xml")
+        // Pre-existing findings are pinned in the baseline; new findings fail
+        // the build. Regenerate deliberately: `./gradlew :app:updateLintBaseline`.
+        baseline = rootProject.file("lint-baseline.xml")
+        abortOnError = true
+        warningsAsErrors = false
+        checkReleaseBuilds = false
     }
     buildFeatures {
         compose = true
@@ -153,6 +175,32 @@ android {
 //    }
 }
 
+ktlint {
+    // Pinned deliberately; bump via libs.versions.toml after reading the
+    // ktlint release notes, since new rules can fail existing code.
+    version.set(libs.versions.ktlint.get())
+    android.set(true)
+    outputToConsole.set(true)
+    filter {
+        // Vendored submodules and Gradle build output are never linted.
+        exclude("**/build/**")
+        exclude("app/native/**")
+    }
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.file("detekt.yml"))
+    // Pre-existing findings live in detekt-baseline.xml so CI only fails on
+    // new debt. Regenerate deliberately with `./gradlew :app:detektBaseline`.
+    baseline = rootProject.file("detekt-baseline.xml")
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    jvmTarget = "17"
+    autoCorrect = false
+}
+
 // Only until compileSdk can move to 37: androidx.compose.ui 1.12.0-rc01 AARs
 // declare compileSdk 37 / AGP 9.1+ while the platform SDK channel tops out at
 // android-36. MeshGradientPainter requires 1.12.0-rc01 but uses no API > 28.
@@ -165,41 +213,66 @@ tasks.configureEach {
 tasks.apply {
     register("getRemoteData") {
         doLast {
-            URI("https://models.versta.app/data/data.json").toURL().openStream()
+            URI("https://models.versta.app/data/data.json")
+                .toURL()
+                .openStream()
                 .use { input ->
-                    layout.projectDirectory.file("src/main/res/raw/versta_data.json").asFile.outputStream()
+                    layout.projectDirectory
+                        .file("src/main/res/raw/versta_data.json")
+                        .asFile
+                        .outputStream()
                         .use { output ->
                             input.copyTo(output)
                         }
                 }
 
-            URI("https://models.versta.app/translation/models.json").toURL().openStream()
+            URI("https://models.versta.app/translation/models.json")
+                .toURL()
+                .openStream()
                 .use { input ->
-                    layout.projectDirectory.file("src/main/res/raw/versta_translation_models.json").asFile.outputStream()
+                    layout.projectDirectory
+                        .file("src/main/res/raw/versta_translation_models.json")
+                        .asFile
+                        .outputStream()
                         .use { output ->
                             input.copyTo(output)
                         }
                 }
 
-            URI("https://models.versta.app/speech-recognition/models.json").toURL().openStream()
+            URI("https://models.versta.app/speech-recognition/models.json")
+                .toURL()
+                .openStream()
                 .use { input ->
-                    layout.projectDirectory.file("src/main/res/raw/versta_speech_recognition_models.json").asFile.outputStream()
+                    layout.projectDirectory
+                        .file("src/main/res/raw/versta_speech_recognition_models.json")
+                        .asFile
+                        .outputStream()
                         .use { output ->
                             input.copyTo(output)
                         }
                 }
 
-            URI("https://models.versta.app/text-to-speech/models.json").toURL().openStream()
+            URI("https://models.versta.app/text-to-speech/models.json")
+                .toURL()
+                .openStream()
                 .use { input ->
-                    layout.projectDirectory.file("src/main/res/raw/versta_text_to_speech_models.json").asFile.outputStream()
+                    layout.projectDirectory
+                        .file("src/main/res/raw/versta_text_to_speech_models.json")
+                        .asFile
+                        .outputStream()
                         .use { output ->
                             input.copyTo(output)
                         }
                 }
 
-            URI("https://models.versta.app/object-character-recognition/models.json").toURL().openStream()
+            URI("https://models.versta.app/object-character-recognition/models.json")
+                .toURL()
+                .openStream()
                 .use { input ->
-                    layout.projectDirectory.file("src/main/res/raw/versta_object_character_recognition_models.json").asFile.outputStream()
+                    layout.projectDirectory
+                        .file("src/main/res/raw/versta_object_character_recognition_models.json")
+                        .asFile
+                        .outputStream()
                         .use { output ->
                             input.copyTo(output)
                         }
