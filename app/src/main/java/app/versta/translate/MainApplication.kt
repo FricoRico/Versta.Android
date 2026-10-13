@@ -284,6 +284,7 @@ class ApplicationModule(
         TranslationViewModel(
             intermediateModel = intermediateTranslationInference,
             outputModel = outputTranslationInference,
+            createInference = { cacheSize -> BergamotTinyInference(Leanmt(cacheSize)) },
             translationPreferenceRepository = translatorPreferenceRepository,
             languageViewModel = languageViewModel,
         )
