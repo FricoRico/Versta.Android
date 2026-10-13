@@ -32,12 +32,12 @@ import app.versta.translate.adapter.outbound.ExternalDataMemoryRepository
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.adapter.outbound.TextToSpeechMockInference
 import app.versta.translate.adapter.outbound.TextToSpeechMockTokenizer
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
+import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.bridge.speech.ESpeakNG
 import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.model.LanguageViewModel
@@ -50,7 +50,7 @@ import app.versta.translate.ui.theme.spacing
 fun ErrorAlertDialog(
     modifier: Modifier = Modifier,
     translationViewModel: TranslationViewModel,
-    textToSpeechViewModel: TextToSpeechViewModel
+    textToSpeechViewModel: TextToSpeechViewModel,
 ) {
     val translationError by translationViewModel.translationError.collectAsStateWithLifecycle()
     val textToSpeechError by textToSpeechViewModel.textToSpeechError.collectAsStateWithLifecycle()
@@ -65,28 +65,30 @@ fun ErrorAlertDialog(
     }
 
     Dialog(
-        onDismissRequest = { onDismissRequest() }
+        onDismissRequest = { onDismissRequest() },
     ) {
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(modifier),
-            shape = MaterialTheme.shapes.extraLarge
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .then(modifier),
+            shape = MaterialTheme.shapes.extraLarge,
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(MaterialTheme.spacing.large),
-                verticalArrangement = Arrangement.spacedBy(
-                    MaterialTheme.spacing.medium,
-                    Alignment.CenterVertically
-                ),
+                verticalArrangement =
+                    Arrangement.spacedBy(
+                        MaterialTheme.spacing.medium,
+                        Alignment.CenterVertically,
+                    ),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 item {
                     Icon(
                         ImageVector.vectorResource(R.drawable.round_error_24),
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error
+                        tint = MaterialTheme.colorScheme.error,
                     )
                 }
 
@@ -98,9 +100,10 @@ fun ErrorAlertDialog(
                 item {
                     Button(
                         onClick = { onDismissRequest() },
-                        colors = ButtonDefaults.transparentButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary
-                        ),
+                        colors =
+                            ButtonDefaults.transparentButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary,
+                            ),
                     ) {
                         Text(text = stringResource(R.string.dismiss))
                     }
@@ -114,7 +117,7 @@ fun LazyListScope.TranslationError(error: Throwable?) {
     item {
         Text(
             text = stringResource(R.string.translation_error_title),
-            style = MaterialTheme.typography.headlineSmall
+            style = MaterialTheme.typography.headlineSmall,
         )
     }
 
@@ -140,7 +143,7 @@ fun LazyListScope.TextToSpeechError(error: Throwable?) {
     item {
         Text(
             text = stringResource(R.string.text_to_speech_error_title),
-            style = MaterialTheme.typography.headlineSmall
+            style = MaterialTheme.typography.headlineSmall,
         )
     }
 
@@ -168,31 +171,34 @@ fun ErrorAlertDialogPreview() {
     val translationMockInference = TranslationMockInference()
 
     ErrorAlertDialog(
-        translationViewModel = TranslationViewModel(
-            intermediateModel = translationMockInference,
-            outputModel = translationMockInference,
-            translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
-            languageViewModel = LanguageViewModel(
+        translationViewModel =
+            TranslationViewModel(
+                intermediateModel = translationMockInference,
+                outputModel = translationMockInference,
+                translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+                languageViewModel =
+                    LanguageViewModel(
+                        context = LocalContext.current,
+                        languageRepository = LanguageMemoryRepository(),
+                        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+                        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+                    ),
+            ).apply {
+                setTranslationError(Error("Error message"))
+            },
+        textToSpeechViewModel =
+            TextToSpeechViewModel(
                 context = LocalContext.current,
-                languageRepository = LanguageMemoryRepository(),
+                espeakNG = ESpeakNG(),
+                openJTalk = OpenJTalk(),
+                tokenizer = TextToSpeechMockTokenizer(),
+                model = TextToSpeechMockInference(),
+                audioPlayer = AudioMockPlayer(),
+                dataRepository = DataMemoryRepository(),
+                voiceRepository = VoiceMemoryRepository(),
+                textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
                 languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-                externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-            )
-        ).apply {
-            setTranslationError(Error("Error message"))
-        },
-        textToSpeechViewModel = TextToSpeechViewModel(
-            context = LocalContext.current,
-            espeakNG = ESpeakNG(),
-            openJTalk = OpenJTalk(),
-            tokenizer = TextToSpeechMockTokenizer(),
-            model = TextToSpeechMockInference(),
-            audioPlayer = AudioMockPlayer(),
-            dataRepository = DataMemoryRepository(),
-            voiceRepository = VoiceMemoryRepository(),
-            textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalDataRepository = ExternalDataMemoryRepository()
-        )
+                externalDataRepository = ExternalDataMemoryRepository(),
+            ),
     )
 }

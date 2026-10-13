@@ -31,7 +31,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 enum class LanguageType {
-    Source, Target
+    Source,
+    Target,
 }
 
 class LanguageViewModel(
@@ -59,11 +60,12 @@ class LanguageViewModel(
     private val _autoDetectInput = MutableStateFlow("")
     val autoDetectLanguage = MutableStateFlow<Language?>(null)
 
-    private val downloadManager = DownloadManager<ExternalLanguageDownloadTask>(
-        context = context,
-        statusIntentAction = DOWNLOAD_LANGUAGE_STATUS_INTENT,
-        workerClass = DownloadLanguageWorker::class.java
-    )
+    private val downloadManager =
+        DownloadManager<ExternalLanguageDownloadTask>(
+            context = context,
+            statusIntentAction = DOWNLOAD_LANGUAGE_STATUS_INTENT,
+            workerClass = DownloadLanguageWorker::class.java,
+        )
 
     val downloadTasks: StateFlow<List<ExternalLanguageDownloadTask>> =
         downloadManager.downloadTasks.asStateFlow()
@@ -76,7 +78,8 @@ class LanguageViewModel(
 
     val languageModels = externalLanguageModelsRepository.getDefinitions().distinctUntilChanged()
     val languageModelsByState =
-        externalLanguageModelsRepository.getDefinitionsByState(_importedLanguages)
+        externalLanguageModelsRepository
+            .getDefinitionsByState(_importedLanguages)
             .distinctUntilChanged()
 
     val languageOptions = languagePreferenceRepository.getLanguagePair().distinctUntilChanged()
@@ -94,14 +97,14 @@ class LanguageViewModel(
 
                     return@combine LanguagePair(
                         source = detected,
-                        target = target
+                        target = target,
                     )
                 }
 
                 is Language -> {
                     return@combine LanguagePair(
                         source = source,
-                        target = target
+                        target = target,
                     )
                 }
 
@@ -110,57 +113,65 @@ class LanguageViewModel(
                 }
             }
         }.distinctUntilChanged()
-    val languageModelFiles = combine(languagePair, pivotTranslationEnabled) { pair, pivot ->
-        if (pair == null) {
-            return@combine null
-        }
+    val languageModelFiles =
+        combine(languagePair, pivotTranslationEnabled) { pair, pivot ->
+            if (pair == null) {
+                return@combine null
+            }
 
-        languageRepository.getLanguageModel(pair, pivot)
-    }.distinctUntilChanged()
+            languageRepository.getLanguageModel(pair, pivot)
+        }.distinctUntilChanged()
 
-    val sourceLanguages = combine(importedLanguagePairs, targetLanguage) { pairs, target ->
-        pairs.asSequence()
-            .map { it.source }
-            .distinctBy { it.isoCode }.plus(
-                AutoDetectLanguage()
-            )
-            .sortedBy { language -> if (language is AutoDetectLanguage) 0 else 1 }.toList()
-    }.distinctUntilChanged()
+    val sourceLanguages =
+        combine(importedLanguagePairs, targetLanguage) { pairs, target ->
+            pairs
+                .asSequence()
+                .map { it.source }
+                .distinctBy { it.isoCode }
+                .plus(
+                    AutoDetectLanguage(),
+                ).sortedBy { language -> if (language is AutoDetectLanguage) 0 else 1 }
+                .toList()
+        }.distinctUntilChanged()
 
-    val targetLanguages = combine(importedLanguagePairs, sourceLanguage) { pairs, source ->
-        if (pivotTranslationEnabled.first()) {
-            return@combine pairs.filter { it.target != source }
-                .map { it.target }.distinctBy { it.isoCode }
-        }
+    val targetLanguages =
+        combine(importedLanguagePairs, sourceLanguage) { pairs, source ->
+            if (pivotTranslationEnabled.first()) {
+                return@combine pairs
+                    .filter { it.target != source }
+                    .map { it.target }
+                    .distinctBy { it.isoCode }
+            }
 
-        if (source is Language) {
-            return@combine languageRepository.getTargetLanguagesBySource(source)
-        }
+            if (source is Language) {
+                return@combine languageRepository.getTargetLanguagesBySource(source)
+            }
 
-        pairs.map { it.target }
-    }.distinctUntilChanged()
+            pairs.map { it.target }
+        }.distinctUntilChanged()
 
-    val canSwapLanguages = combine(
-        sourceLanguage, targetLanguage, importedLanguagePairs
-    ) { source, target, pairs ->
-        if (source == null || target == null) {
-            return@combine false
-        }
+    val canSwapLanguages =
+        combine(
+            sourceLanguage,
+            targetLanguage,
+            importedLanguagePairs,
+        ) { source, target, pairs ->
+            if (source == null || target == null) {
+                return@combine false
+            }
 
-        if (pivotTranslationEnabled.first()) {
-            return@combine pairs.any { it.source == target } && pairs.any { it.target == source }
-        }
+            if (pivotTranslationEnabled.first()) {
+                return@combine pairs.any { it.source == target } && pairs.any { it.target == source }
+            }
 
-        pairs.any { it.source == target && it.target == source }
-    }.distinctUntilChanged()
+            pairs.any { it.source == target && it.target == source }
+        }.distinctUntilChanged()
 
     /**
      * Returns a flow of [ExternalLanguagePairDefinition] that contains the definitions of the
      * external language model for the given [LanguagePair].
      */
-    fun getLanguageDefinition(pair: LanguagePair): Flow<ExternalLanguagePairDefinition> {
-        return externalLanguageModelsRepository.getDefinition(pair).distinctUntilChanged()
-    }
+    fun getLanguageDefinition(pair: LanguagePair): Flow<ExternalLanguagePairDefinition> = externalLanguageModelsRepository.getDefinition(pair).distinctUntilChanged()
 
     /**
      * Sets the language selection drawer state.
@@ -174,15 +185,13 @@ class LanguageViewModel(
      */
     fun setLanguageSuggestionState(
         enabled: Boolean,
-        onComplete: ((ExternalLanguagePairDefinition) -> Unit)? = null
+        onComplete: ((ExternalLanguagePairDefinition) -> Unit)? = null,
     ) {
         _languageSuggestionState.value = enabled
         _languageSuggestionOnCompleteCallback.value = onComplete
     }
 
-    suspend fun modelAvailable(): Boolean {
-        return languageModelFiles.first() != null
-    }
+    suspend fun modelAvailable(): Boolean = languageModelFiles.first() != null
 
     /**
      * Sets the source language.
@@ -194,7 +203,6 @@ class LanguageViewModel(
             val currentCanSwapLanguages = canSwapLanguages.first()
 
             languagePreferenceRepository.setSourceLanguage(language)
-
 
             // If there is a target language available for the current source language, set it instead
             // of clearing the target language.
@@ -218,34 +226,34 @@ class LanguageViewModel(
     /**
      * Sets the target language.
      */
-    fun setTargetLanguage(language: Language): Job {
-        return viewModelScope.launch {
+    fun setTargetLanguage(language: Language): Job =
+        viewModelScope.launch {
             languagePreferenceRepository.setTargetLanguage(language)
         }
-    }
 
     /**
      * Swaps the source and target languages.
      */
-    fun swapLanguages(): Job {
-        return viewModelScope.launch {
+    fun swapLanguages(): Job =
+        viewModelScope.launch {
             languagePreferenceRepository.swapLanguages()
         }
-    }
 
     /**
      * Clears the target language.
      */
-    private fun clearTargetLanguage(): Job {
-        return viewModelScope.launch {
+    private fun clearTargetLanguage(): Job =
+        viewModelScope.launch {
             languagePreferenceRepository.clearTargetLanguage()
         }
-    }
 
     /**
      * Clears the language selection if the language pair is the same as the current one.
      */
-    fun removeLanguageModel(pair: LanguagePair, bidirectional: Boolean) {
+    fun removeLanguageModel(
+        pair: LanguagePair,
+        bidirectional: Boolean,
+    ) {
         viewModelScope.launch {
             languageRepository.deleteLanguageModel(pair, bidirectional)
             languagePreferenceRepository.clearLanguageSelectionForPair(pair)
@@ -269,13 +277,14 @@ class LanguageViewModel(
      */
     fun queueDownload(
         model: ExternalLanguagePairDefinition,
-        onComplete: (ExternalLanguagePairDefinition) -> Unit = {}
+        onComplete: (ExternalLanguagePairDefinition) -> Unit = {},
     ) {
-        val task = ExternalLanguageDownloadTask(
-            model = model,
-            status = DownloadStatus.Queued,
-            onComplete = onComplete
-        )
+        val task =
+            ExternalLanguageDownloadTask(
+                model = model,
+                status = DownloadStatus.Queued,
+                onComplete = onComplete,
+            )
         downloadManager.queueDownload(task)
     }
 
@@ -297,8 +306,11 @@ class LanguageViewModel(
         }
 
         viewModelScope.launch {
-            if (sourceLanguages.first()
-                    .any { it.isoCode == result.language } || languageModels.first()
+            if (sourceLanguages
+                    .first()
+                    .any { it.isoCode == result.language } ||
+                languageModels
+                    .first()
                     .any { it.pair.source.isoCode == result.language }
             ) {
                 setAutoDetectLanguage(result.language)

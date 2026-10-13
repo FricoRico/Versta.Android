@@ -20,27 +20,27 @@ class ParagraphGroupingPostProcessor(
     private val verticalThresholdFactor: Float = 1.5f,
     private val horizontalEps: Float = 30f,
     private val colorTolerance: Float = 0.25f,
-    private val fontSizeTolerance: Float = 0.10f
+    private val fontSizeTolerance: Float = 0.10f,
 ) : OcrPostProcessor {
-
     override fun process(context: OcrPostProcessorContext): OcrPostProcessorContext {
         val results = context.results
 
         if (results.isEmpty()) return context
         if (results.size == 1) {
             return context.copy(
-                results = results.map { result ->
-                    ObjectCharacterRecogniserResult(
-                        points = result.points,
-                        score = result.score,
-                        tokens = result.tokens,
-                        text = result.text,
-                        colors = result.colors,
-                        lines = result.lines,
-                        fontSize = result.fontSize,
-                        fontWeight = result.fontWeight
-                    )
-                }
+                results =
+                    results.map { result ->
+                        ObjectCharacterRecogniserResult(
+                            points = result.points,
+                            score = result.score,
+                            tokens = result.tokens,
+                            text = result.text,
+                            colors = result.colors,
+                            lines = result.lines,
+                            fontSize = result.fontSize,
+                            fontWeight = result.fontWeight,
+                        )
+                    },
             )
         }
 
@@ -54,10 +54,11 @@ class ParagraphGroupingPostProcessor(
 
     private fun groupIntoParagraphs(results: List<ObjectCharacterRecogniserResult>): List<ObjectCharacterRecogniserResult> {
         // Step 1: Sort by Y-coordinate (top to bottom)
-        val sortedResults = results.sortedBy { result ->
-            // Use top-left Y coordinate for sorting
-            result.points.minOfOrNull { it.y } ?: 0f
-        }
+        val sortedResults =
+            results.sortedBy { result ->
+                // Use top-left Y coordinate for sorting
+                result.points.minOfOrNull { it.y } ?: 0f
+            }
 
         // Step 2: Group by vertical proximity (agglomerative-style clustering)
         val verticalGroups = groupByVerticalProximity(sortedResults)
@@ -71,7 +72,6 @@ class ParagraphGroupingPostProcessor(
 
         // Step 4: Merge each paragraph group into a single result
         val merged = paragraphs.map { group -> mergeParagraph(group) }
-
 
         return merged
     }
@@ -116,9 +116,10 @@ class ParagraphGroupingPostProcessor(
         if (results.size == 1) return listOf(results)
 
         // Sort by X-coordinate (left to right)
-        val sortedByX = results.sortedBy { result ->
-            result.points.minOfOrNull { it.x } ?: 0f
-        }
+        val sortedByX =
+            results.sortedBy { result ->
+                result.points.minOfOrNull { it.x } ?: 0f
+            }
 
         // Use DBSCAN-style clustering
         val visited = BooleanArray(sortedByX.size)
@@ -142,7 +143,8 @@ class ParagraphGroupingPostProcessor(
 
                     val neighbor = sortedByX[j]
                     if (areHorizontallyClose(current, neighbor, horizontalEps) &&
-                        areStylesSimilar(current, neighbor)) {
+                        areStylesSimilar(current, neighbor)
+                    ) {
                         visited[j] = true
                         queue.add(j)
                     }
@@ -157,20 +159,25 @@ class ParagraphGroupingPostProcessor(
         return clusters
     }
 
-    private fun areHorizontallyClose(a: ObjectCharacterRecogniserResult, b: ObjectCharacterRecogniserResult, eps: Float): Boolean {
+    private fun areHorizontallyClose(
+        a: ObjectCharacterRecogniserResult,
+        b: ObjectCharacterRecogniserResult,
+        eps: Float,
+    ): Boolean {
         val aMinX = a.points.minOfOrNull { it.x } ?: 0f
         val aMaxX = a.points.maxOfOrNull { it.x } ?: 0f
         val bMinX = b.points.minOfOrNull { it.x } ?: 0f
         val bMaxX = b.points.maxOfOrNull { it.x } ?: 0f
 
         // Check for overlap or proximity
-        val horizontalGap = if (aMaxX < bMinX) {
-            bMinX - aMaxX
-        } else if (bMaxX < aMinX) {
-            aMinX - bMaxX
-        } else {
-            0f // They overlap
-        }
+        val horizontalGap =
+            if (aMaxX < bMinX) {
+                bMinX - aMaxX
+            } else if (bMaxX < aMinX) {
+                aMinX - bMaxX
+            } else {
+                0f // They overlap
+            }
 
         return horizontalGap <= eps
     }
@@ -189,17 +196,19 @@ class ParagraphGroupingPostProcessor(
                 colors = single.colors,
                 lines = listOf(single.text),
                 fontSize = single.fontSize,
-                fontWeight = single.fontWeight
+                fontWeight = single.fontWeight,
             )
         }
 
         // Sort group by reading order: top-to-bottom, then left-to-right
         // This ensures text flows naturally regardless of clustering order
-        val sortedGroup = group.sortedWith(compareBy(
-            { result -> result.points.minOfOrNull { it.y } ?: 0f },  // Primary: Y position (top to bottom)
-            { result -> result.points.minOfOrNull { it.x } ?: 0f }   // Secondary: X position (left to right)
-        ))
-
+        val sortedGroup =
+            group.sortedWith(
+                compareBy(
+                    { result -> result.points.minOfOrNull { it.y } ?: 0f }, // Primary: Y position (top to bottom)
+                    { result -> result.points.minOfOrNull { it.x } ?: 0f }, // Secondary: X position (left to right)
+                ),
+            )
 
         // Compute combined bounding polygon (min/max corners)
         val allPoints = sortedGroup.flatMap { it.points.toList() }
@@ -209,17 +218,17 @@ class ParagraphGroupingPostProcessor(
         val maxY = allPoints.maxOfOrNull { it.y } ?: 0f
 
         // Create a combined bounding box (4 corners: top-left, top-right, bottom-right, bottom-left)
-        val combinedPoints = arrayOf(
-            PointF(minX, minY),
-            PointF(maxX, minY),
-            PointF(maxX, maxY),
-            PointF(minX, maxY)
-        )
+        val combinedPoints =
+            arrayOf(
+                PointF(minX, minY),
+                PointF(maxX, minY),
+                PointF(maxX, maxY),
+                PointF(minX, maxY),
+            )
 
         // Concatenate text with newlines, preserving reading order
         val lines = sortedGroup.map { it.text }
         val combinedText = lines.joinToString("\n")
-
 
         // Average the scores
         val avgScore = sortedGroup.map { it.score }.average().toFloat()
@@ -244,7 +253,7 @@ class ParagraphGroupingPostProcessor(
             colors = colors,
             lines = lines,
             fontSize = avgFontSize,
-            fontWeight = fontWeight
+            fontWeight = fontWeight,
         )
     }
 
@@ -254,7 +263,10 @@ class ParagraphGroupingPostProcessor(
         return maxY - minY
     }
 
-    private fun areColorsSimilar(a: ObjectCharacterRecogniserColors, b: ObjectCharacterRecogniserColors): Boolean {
+    private fun areColorsSimilar(
+        a: ObjectCharacterRecogniserColors,
+        b: ObjectCharacterRecogniserColors,
+    ): Boolean {
         val bgDistance = colorDistance(a.background, b.background)
         val fgDistance = colorDistance(a.foreground, b.foreground)
 
@@ -262,7 +274,10 @@ class ParagraphGroupingPostProcessor(
         return bgDistance <= colorTolerance && fgDistance <= colorTolerance
     }
 
-    private fun areFontSizesSimilar(a: Float, b: Float): Boolean {
+    private fun areFontSizesSimilar(
+        a: Float,
+        b: Float,
+    ): Boolean {
         if (a == 0f || b == 0f) return true // Uninitialized font sizes always match
 
         val maxSize = kotlin.math.max(a, b)
@@ -272,7 +287,10 @@ class ParagraphGroupingPostProcessor(
         return sizeDifference <= fontSizeTolerance
     }
 
-    private fun areStylesSimilar(a: ObjectCharacterRecogniserResult, b: ObjectCharacterRecogniserResult): Boolean {
+    private fun areStylesSimilar(
+        a: ObjectCharacterRecogniserResult,
+        b: ObjectCharacterRecogniserResult,
+    ): Boolean {
         // Check color similarity
         if (!areColorsSimilar(a.colors, b.colors)) {
             return false
@@ -291,7 +309,10 @@ class ParagraphGroupingPostProcessor(
         return true
     }
 
-    private fun colorDistance(a: Color, b: Color): Float {
+    private fun colorDistance(
+        a: Color,
+        b: Color,
+    ): Float {
         val aArgb = a.toArgb()
         val bArgb = b.toArgb()
 
@@ -304,11 +325,12 @@ class ParagraphGroupingPostProcessor(
         val bB = (bArgb and 0xFF) / 255f
 
         // Euclidean distance in RGB space (normalized)
-        val distance = sqrt(
-            (aR - bR) * (aR - bR) +
-            (aG - bG) * (aG - bG) +
-            (aB - bB) * (aB - bB)
-        ) / sqrt(3f) // Normalize to [0, 1]
+        val distance =
+            sqrt(
+                (aR - bR) * (aR - bR) +
+                    (aG - bG) * (aG - bG) +
+                    (aB - bB) * (aB - bB),
+            ) / sqrt(3f) // Normalize to [0, 1]
 
         return distance
     }
@@ -317,4 +339,3 @@ class ParagraphGroupingPostProcessor(
         private val TAG: String = ParagraphGroupingPostProcessor::class.java.simpleName
     }
 }
-

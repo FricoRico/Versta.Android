@@ -25,20 +25,23 @@ data class ExternalLanguageModelDefinition(
     private val checksum: String,
 ) {
     fun bundleUri() = URI(bundle)
+
     fun checksumUri() = URI(checksum)
 
-    fun pair() = LanguagePair.fromIsoCodes(
-        sourceLanguage,
-        targetLanguage
-    )
+    fun pair() =
+        LanguagePair.fromIsoCodes(
+            sourceLanguage,
+            targetLanguage,
+        )
 
-    fun isValid() = baseModel.isNotBlank()
-            && sourceLanguage.isNotBlank()
-            && targetLanguage.isNotBlank()
-            && bundle.isNotBlank()
-            && checksum.isNotBlank()
-            && size > 0
-            && version.isNotBlank()
+    fun isValid() =
+        baseModel.isNotBlank() &&
+            sourceLanguage.isNotBlank() &&
+            targetLanguage.isNotBlank() &&
+            bundle.isNotBlank() &&
+            checksum.isNotBlank() &&
+            size > 0 &&
+            version.isNotBlank()
 }
 
 typealias ExternalLanguageModelDefinitions = List<ExternalLanguageModelDefinition>
@@ -46,9 +49,10 @@ typealias ExternalLanguageModelDefinitions = List<ExternalLanguageModelDefinitio
 fun ExternalLanguageModelDefinitions.isValid(): Boolean {
     if (this.isEmpty()) return true
 
-    val bidirectional = this.all {
-        it.bidirectional
-    }
+    val bidirectional =
+        this.all {
+            it.bidirectional
+        }
 
     if (bidirectional) {
         if (this.size != 2) return false
@@ -57,12 +61,12 @@ fun ExternalLanguageModelDefinitions.isValid(): Boolean {
         val b = this[1]
 
         return a.sourceLanguage == b.targetLanguage &&
-                a.targetLanguage == b.sourceLanguage &&
-                a.bidirectional == b.bidirectional &&
-                a.size == b.size &&
-                a.version == b.version &&
-                a.bundleUri() == b.bundleUri() &&
-                a.checksumUri() == b.checksumUri()
+            a.targetLanguage == b.sourceLanguage &&
+            a.bidirectional == b.bidirectional &&
+            a.size == b.size &&
+            a.version == b.version &&
+            a.bundleUri() == b.bundleUri() &&
+            a.checksumUri() == b.checksumUri()
     }
 
     return this.all {
@@ -78,9 +82,7 @@ data class ExternalLanguageMetadata(
     val architectures: List<LanguageModelArchitecture>,
 )
 
-fun List<ExternalLanguagePairDefinition>.supportedLanguageIsoCodes(): Set<String> {
-    return flatMap { listOf(it.pair.source.isoCode, it.pair.target.isoCode) }.toSet()
-}
+fun List<ExternalLanguagePairDefinition>.supportedLanguageIsoCodes(): Set<String> = flatMap { listOf(it.pair.source.isoCode, it.pair.target.isoCode) }.toSet()
 
 data class ExternalLanguagePairDefinition(
     val pair: LanguagePair,
@@ -96,7 +98,7 @@ data class ExternalLanguagePairDefinition(
 data class ExternalLanguageModels(
     val installed: List<ExternalLanguagePairDefinition> = emptyList(),
     val updates: List<ExternalLanguagePairDefinition> = emptyList(),
-    val available: List<ExternalLanguagePairDefinition> = emptyList()
+    val available: List<ExternalLanguagePairDefinition> = emptyList(),
 )
 
 data class ExternalLanguageDownloadTask(
@@ -105,23 +107,17 @@ data class ExternalLanguageDownloadTask(
     override val status: DownloadStatus,
     val onComplete: (ExternalLanguagePairDefinition) -> Unit = {},
 ) : DownloadTask {
+    override fun copyWithStatus(status: DownloadStatus): DownloadTask = copy(status = status)
 
-    override fun copyWithStatus(status: DownloadStatus): DownloadTask {
-        return copy(status = status)
-    }
-
-    override fun getWorkData(): Map<String, Any> {
-        return mapOf(
+    override fun getWorkData(): Map<String, Any> =
+        mapOf(
             "taskId" to id.toString(),
             "name" to "${model.pair.source.name} - ${model.pair.target.name}",
             "uri" to model.bundleUri.toString(),
-            "checksum" to model.checksumUri.toString()
+            "checksum" to model.checksumUri.toString(),
         )
-    }
 
-    override fun getName(): String {
-        return "${model.pair.source.name} - ${model.pair.target.name}"
-    }
+    override fun getName(): String = "${model.pair.source.name} - ${model.pair.target.name}"
 
     override fun onComplete() {
         onComplete(model)

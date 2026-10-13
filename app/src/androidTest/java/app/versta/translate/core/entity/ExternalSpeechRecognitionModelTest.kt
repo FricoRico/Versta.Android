@@ -7,7 +7,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ExternalSpeechRecognitionModelTest {
-
     private fun definition(
         id: String = "whisper-base-en",
         name: String = "Whisper Base (English)",
@@ -18,8 +17,8 @@ class ExternalSpeechRecognitionModelTest {
         version: String = "v1.0.0",
         bundle: String = "https://mock.versta.app/bundle.tar.gz",
         checksum: String = "https://mock.versta.app/bundle.tar.gz.sha256",
-    ): ExternalSpeechRecognitionModelDefinition {
-        return ExternalSpeechRecognitionModelDefinition(
+    ): ExternalSpeechRecognitionModelDefinition =
+        ExternalSpeechRecognitionModelDefinition(
             id = id,
             name = name,
             baseModel = baseModel,
@@ -30,7 +29,6 @@ class ExternalSpeechRecognitionModelTest {
             bundle = bundle,
             checksum = checksum,
         )
-    }
 
     @Test
     fun definition_validFields_isValid() {
@@ -100,17 +98,18 @@ class ExternalSpeechRecognitionModelTest {
 
         assertEquals(
             "https://mock.versta.app/whisper-base-en.tar.gz.sha256",
-            model.checksumUri().toString()
+            model.checksumUri().toString(),
         )
     }
 
     @Test
     fun downloadTask_getWorkData_containsTaskIdentity() {
         val model = definition()
-        val task = ExternalSpeechRecognitionDownloadTask(
-            model = model,
-            status = DownloadStatus.Queued,
-        )
+        val task =
+            ExternalSpeechRecognitionDownloadTask(
+                model = model,
+                status = DownloadStatus.Queued,
+            )
 
         val data = task.getWorkData()
 
@@ -143,11 +142,12 @@ class ExternalSpeechRecognitionModelTest {
     fun downloadTask_onComplete_invokesCallback() {
         val model = definition()
         var completed: ExternalSpeechRecognitionModelDefinition? = null
-        val task = ExternalSpeechRecognitionDownloadTask(
-            model = model,
-            status = DownloadStatus.Queued,
-            onComplete = { completed = it },
-        )
+        val task =
+            ExternalSpeechRecognitionDownloadTask(
+                model = model,
+                status = DownloadStatus.Queued,
+                onComplete = { completed = it },
+            )
 
         task.onComplete()
 
@@ -161,4 +161,3 @@ class ExternalSpeechRecognitionModelTest {
         task.onComplete()
     }
 }
-

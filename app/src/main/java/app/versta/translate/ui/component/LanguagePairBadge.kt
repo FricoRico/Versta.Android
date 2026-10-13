@@ -22,7 +22,9 @@ import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.ui.theme.spacing
 
 class LanguagePairBadgeColors(
-    val borderColor: Color, val badgeColor: Color, val badgeContentColor: Color
+    val borderColor: Color,
+    val badgeColor: Color,
+    val badgeContentColor: Color,
 )
 
 object LanguagePairBadgeDefaults {
@@ -32,10 +34,13 @@ object LanguagePairBadgeDefaults {
     fun colors(
         borderColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
         badgeColor: Color = MaterialTheme.colorScheme.surface,
-        badgeContentColor: Color = MaterialTheme.colorScheme.onSurface
-    ): LanguagePairBadgeColors = LanguagePairBadgeColors(
-        borderColor = borderColor, badgeColor = badgeColor, badgeContentColor = badgeContentColor
-    )
+        badgeContentColor: Color = MaterialTheme.colorScheme.onSurface,
+    ): LanguagePairBadgeColors =
+        LanguagePairBadgeColors(
+            borderColor = borderColor,
+            badgeColor = badgeColor,
+            badgeContentColor = badgeContentColor,
+        )
 }
 
 @Composable
@@ -44,58 +49,59 @@ fun LanguagePairBadge(
     pair: LanguagePair,
     bidirectional: Boolean,
     colors: LanguagePairBadgeColors = LanguagePairBadgeDefaults.colors(),
-    icon: ImageVector? = null
-) {
-    return Box(
-        modifier = Modifier
+    icon: ImageVector? = null,
+) = Box(
+    modifier =
+        Modifier
             .heightIn(max = MaterialTheme.spacing.extraLarge * 2)
             .width(width = MaterialTheme.spacing.extraLarge + MaterialTheme.spacing.extraSmall * 2)
             .then(modifier),
+) {
+    Box(
+        modifier = Modifier.align(Alignment.Center),
     ) {
         Box(
-            modifier = Modifier.align(Alignment.Center)
+            modifier = Modifier.offset(x = MaterialTheme.spacing.extraSmall),
         ) {
-            Box(
-                modifier = Modifier.offset(x = MaterialTheme.spacing.extraSmall)
-            ) {
-                LanguageBadge(
-                    language = pair.target,
-                    colors = LanguageBadgeDefaults.colors(
-                        borderColor = colors.borderColor
-                    )
-                )
-            }
-
-            Box(
-                modifier = Modifier.offset(x = -MaterialTheme.spacing.extraSmall)
-            ) {
-                LanguageBadge(
-                    language = pair.source,
-                    colors = LanguageBadgeDefaults.colors(
-                        borderColor = colors.borderColor
-                    )
-                )
-            }
-
+            LanguageBadge(
+                language = pair.target,
+                colors =
+                    LanguageBadgeDefaults.colors(
+                        borderColor = colors.borderColor,
+                    ),
+            )
         }
 
         Box(
-            modifier = Modifier
+            modifier = Modifier.offset(x = -MaterialTheme.spacing.extraSmall),
+        ) {
+            LanguageBadge(
+                language = pair.source,
+                colors =
+                    LanguageBadgeDefaults.colors(
+                        borderColor = colors.borderColor,
+                    ),
+            )
+        }
+    }
+
+    Box(
+        modifier =
+            Modifier
                 .align(Alignment.Center)
                 .offset(y = MaterialTheme.spacing.medium)
                 .requiredSize(MaterialTheme.spacing.large)
                 .background(
-                    color = colors.badgeColor, shape = MaterialTheme.shapes.extraLarge
-                )
-                .padding(MaterialTheme.spacing.extraSmall)
-        ) {
-            Icon(
-                icon
-                    ?: if (bidirectional) ImageVector.vectorResource(R.drawable.rounded_sync_alt_24) else ImageVector.vectorResource(R.drawable.rounded_arrow_forward_24),
-                contentDescription = null,
-                tint = colors.badgeContentColor,
-            )
-        }
+                    color = colors.badgeColor,
+                    shape = MaterialTheme.shapes.extraLarge,
+                ).padding(MaterialTheme.spacing.extraSmall),
+    ) {
+        Icon(
+            icon
+                ?: if (bidirectional) ImageVector.vectorResource(R.drawable.rounded_sync_alt_24) else ImageVector.vectorResource(R.drawable.rounded_arrow_forward_24),
+            contentDescription = null,
+            tint = colors.badgeContentColor,
+        )
     }
 }
 
@@ -103,6 +109,7 @@ fun LanguagePairBadge(
 @Preview(showBackground = true)
 fun LanguagePairBadgePreview() {
     LanguagePairBadge(
-        pair = LanguagePair.fromIsoCodes("en", "nl"), bidirectional = false
+        pair = LanguagePair.fromIsoCodes("en", "nl"),
+        bidirectional = false,
     )
 }

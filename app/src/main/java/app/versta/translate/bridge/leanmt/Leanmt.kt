@@ -7,7 +7,9 @@ import timber.log.Timber
  * [LeanmtModel]. The service caches translation state sized by [cacheSize];
  * [loadModel] may be called again to swap pairs while keeping the cache.
  */
-class Leanmt(cacheSize: Long) : TranslationEngine {
+class Leanmt(
+    cacheSize: Long,
+) : TranslationEngine {
     @Volatile
     private var handle: Long
 
@@ -22,7 +24,10 @@ class Leanmt(cacheSize: Long) : TranslationEngine {
         }
     }
 
-    override fun loadModel(pkg: LeanmtPackage, config: LeanmtModelConfig) {
+    override fun loadModel(
+        pkg: LeanmtPackage,
+        config: LeanmtModelConfig,
+    ) {
         if (handle == 0L) {
             throw RuntimeException("Service is not initialized")
         }
@@ -40,8 +45,9 @@ class Leanmt(cacheSize: Long) : TranslationEngine {
             throw RuntimeException("Service is not initialized")
         }
 
-        val current = model
-            ?: throw IllegalStateException("Translation model is not loaded")
+        val current =
+            model
+                ?: throw IllegalStateException("Translation model is not loaded")
 
         return translate(handle, current.getHandle(), texts, maxBeamWidth, maxSequenceLength)
             ?: throw RuntimeException("Translation failed")

@@ -5,17 +5,19 @@ import android.content.Intent
 import androidx.work.WorkerParameters
 import app.versta.translate.MainApplication
 import app.versta.translate.core.entity.DownloadStatus
-import app.versta.translate.core.entity.VoiceModelMetadata
 import app.versta.translate.core.entity.VoiceBundleMetadata
 import app.versta.translate.core.entity.VoiceModel
+import app.versta.translate.core.entity.VoiceModelMetadata
 import timber.log.Timber
 import java.io.File
 import java.util.UUID
 
 const val DOWNLOAD_VOICE_STATUS_INTENT = "DOWNLOAD_VOICE_STATUS_UPDATE"
 
-class DownloadVoiceWorker(context: Context, parameters: WorkerParameters) :
-    DownloadWorker(context, parameters) {
+class DownloadVoiceWorker(
+    context: Context,
+    parameters: WorkerParameters,
+) : DownloadWorker(context, parameters) {
     override val downloadStatusIntent = Intent(DOWNLOAD_VOICE_STATUS_INTENT)
 
     private val _extractionDirectory = context.filesDir
@@ -26,14 +28,18 @@ class DownloadVoiceWorker(context: Context, parameters: WorkerParameters) :
     /**
      * Extracts the downloaded language model.
      */
-    override fun extractDownload(taskId: UUID, file: File) {
+    override fun extractDownload(
+        taskId: UUID,
+        file: File,
+    ) {
         var output: File? = null
 
         try {
-            output = _voiceExtractor.extract(
-                file = file,
-                outputDir = _extractionDirectory,
-            )
+            output =
+                _voiceExtractor.extract(
+                    file = file,
+                    outputDir = _extractionDirectory,
+                )
 
             if (!file.delete()) {
                 Timber.tag(TAG).e("Deleting file ${file.absolutePath}")
@@ -67,9 +73,10 @@ class DownloadVoiceWorker(context: Context, parameters: WorkerParameters) :
         val voiceMetadataFile =
             File(output.resolve(voiceBundleMetadata.metadata.directory), "metadata.json")
         val voiceMetadata =
-            _serializer.decodeFromString<VoiceModelMetadata>(voiceMetadataFile.readText())
+            _serializer
+                .decodeFromString<VoiceModelMetadata>(voiceMetadataFile.readText())
                 .setRootPath(
-                    path = output.resolve(voiceBundleMetadata.metadata.directory).toPath()
+                    path = output.resolve(voiceBundleMetadata.metadata.directory).toPath(),
                 )
 
         if (!voiceMetadata.isValid()) {
@@ -78,7 +85,7 @@ class DownloadVoiceWorker(context: Context, parameters: WorkerParameters) :
 
         return VoiceModel(
             bundle = voiceBundleMetadata,
-            model = voiceMetadata
+            model = voiceMetadata,
         )
     }
 

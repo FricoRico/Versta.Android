@@ -19,11 +19,12 @@ class PaddleObjectCharacterRecognitionRecognizeInput(
     private val paddleOCR: PaddleOCR,
     private val maxBatchSize: Int,
     val cropHeight: Int = 48,
-    val maxCropSize: Int = 640
+    val maxCropSize: Int = 640,
 ) {
-    val buffer: ByteBuffer = ByteBuffer
-        .allocateDirect(maxBatchSize * 3 * cropHeight * maxCropSize * OnnxJavaType.FLOAT.size)
-        .order(ByteOrder.nativeOrder())
+    val buffer: ByteBuffer =
+        ByteBuffer
+            .allocateDirect(maxBatchSize * 3 * cropHeight * maxCropSize * OnnxJavaType.FLOAT.size)
+            .order(ByteOrder.nativeOrder())
 
     private val floatByteSize = OnnxJavaType.FLOAT.size
     private val perSampleInputBytes = 3 * cropHeight * maxCropSize * floatByteSize
@@ -35,7 +36,7 @@ class PaddleObjectCharacterRecognitionRecognizeInput(
         detectResultBuffer: ByteBuffer,
         originWidth: Int,
         originHeight: Int,
-        originRotation: Int
+        originRotation: Int,
     ): Pair<Boolean, List<TextRegionMetrics>> {
         buffer.clear()
         return paddleOCR.preprocessTextRegions(
@@ -44,34 +45,44 @@ class PaddleObjectCharacterRecognitionRecognizeInput(
             output = buffer,
             originWidth = originWidth,
             originHeight = originHeight,
-            originRotation = originRotation
+            originRotation = originRotation,
         )
     }
 
-    fun get(batchIndex: Int, batchSize: Int): Map<String, OnnxTensorLike> {
+    fun get(
+        batchIndex: Int,
+        batchSize: Int,
+    ): Map<String, OnnxTensorLike> {
         val inputOffsetBytes = batchIndex * perSampleInputBytes
 
-        val inputSlice = buffer.duplicate().order(ByteOrder.nativeOrder()).apply {
-            position(inputOffsetBytes)
-            limit(inputOffsetBytes + batchSize * perSampleInputBytes)
-        }.slice().order(ByteOrder.nativeOrder())
+        val inputSlice =
+            buffer
+                .duplicate()
+                .order(ByteOrder.nativeOrder())
+                .apply {
+                    position(inputOffsetBytes)
+                    limit(inputOffsetBytes + batchSize * perSampleInputBytes)
+                }.slice()
+                .order(ByteOrder.nativeOrder())
 
         val batchInputShape = longArrayOf(batchSize.toLong(), 3, cropHeight.toLong(), maxCropSize.toLong())
 
         val tensorKey = batchIndex * 1000 + batchSize
         if (!batchTensors.containsKey(tensorKey)) {
-            batchTensors[tensorKey] = OnnxTensor.createTensor(
-                ortEnvironment,
-                inputSlice,
-                batchInputShape,
-                OnnxJavaType.FLOAT
-            )
+            batchTensors[tensorKey] =
+                OnnxTensor.createTensor(
+                    ortEnvironment,
+                    inputSlice,
+                    batchInputShape,
+                    OnnxJavaType.FLOAT,
+                )
         }
 
         return mapOf("x" to batchTensors[tensorKey]!!)
     }
 
     fun clear() = buffer.clear()
+
     fun rewind() = buffer.rewind()
 
     fun destroy() {
@@ -87,7 +98,7 @@ class PaddleObjectCharacterRecognitionRecognizeOutput(
     private val paddleOCR: PaddleOCR,
     session: OrtSession,
     private val maxCandidates: Int,
-    private val maxCropSize: Int = 640
+    private val maxCropSize: Int = 640,
 ) {
     private val floatByteSize = OnnxJavaType.FLOAT.size
     private val intByteSize = OnnxJavaType.INT32.size
@@ -105,9 +116,10 @@ class PaddleObjectCharacterRecognitionRecognizeOutput(
     private val _outputBuffer: ByteBuffer = allocateOutputBuffer(maxCandidates, maxCropSize, vocabSize)
     val outputBuffer: ByteBuffer get() = _outputBuffer
 
-    private val tokenBuffer: ByteBuffer = ByteBuffer
-        .allocateDirect(maxCandidates * (2 * intByteSize + 1024 * intByteSize))
-        .order(ByteOrder.nativeOrder())
+    private val tokenBuffer: ByteBuffer =
+        ByteBuffer
+            .allocateDirect(maxCandidates * (2 * intByteSize + 1024 * intByteSize))
+            .order(ByteOrder.nativeOrder())
 
     private var batchOutputTensors = mutableMapOf<Int, OnnxTensor>()
 
@@ -117,43 +129,62 @@ class PaddleObjectCharacterRecognitionRecognizeOutput(
     val isEmpty: Boolean get() = _results.isEmpty()
 
     operator fun get(index: Int): ObjectCharacterRecogniserResult = _results[index]
+
     fun forEach(action: (ObjectCharacterRecogniserResult) -> Unit) = _results.forEach(action)
 
-    private fun allocateOutputBuffer(candidates: Int, cropSize: Int, vocab: Int): ByteBuffer {
-        return ByteBuffer
+    private fun allocateOutputBuffer(
+        candidates: Int,
+        cropSize: Int,
+        vocab: Int,
+    ): ByteBuffer =
+        ByteBuffer
             .allocateDirect(candidates * (cropSize / 8) * vocab * floatByteSize)
             .order(ByteOrder.nativeOrder())
-    }
 
-    private fun getBatchOutputTensor(batchIndex: Int, batchSize: Int): OnnxTensor {
+    private fun getBatchOutputTensor(
+        batchIndex: Int,
+        batchSize: Int,
+    ): OnnxTensor {
         val perSampleOutputBytes = (maxCropSize / 8) * vocabSize * floatByteSize
         val outputOffsetBytes = batchIndex * perSampleOutputBytes
 
-        val outputSlice = _outputBuffer.duplicate().order(ByteOrder.nativeOrder()).apply {
-            position(outputOffsetBytes)
-            limit(outputOffsetBytes + batchSize * perSampleOutputBytes)
-        }.slice().order(ByteOrder.nativeOrder())
+        val outputSlice =
+            _outputBuffer
+                .duplicate()
+                .order(ByteOrder.nativeOrder())
+                .apply {
+                    position(outputOffsetBytes)
+                    limit(outputOffsetBytes + batchSize * perSampleOutputBytes)
+                }.slice()
+                .order(ByteOrder.nativeOrder())
 
-        val batchOutputShape = longArrayOf(
-            batchSize.toLong(),
-            maxCropSize.toLong() / 8,
-            vocabSize.toLong()
-        )
+        val batchOutputShape =
+            longArrayOf(
+                batchSize.toLong(),
+                maxCropSize.toLong() / 8,
+                vocabSize.toLong(),
+            )
 
         val tensorKey = batchIndex * 1000 + batchSize
         if (!batchOutputTensors.containsKey(tensorKey)) {
-            batchOutputTensors[tensorKey] = OnnxTensor.createTensor(
-                ortEnvironment,
-                outputSlice,
-                batchOutputShape,
-                OnnxJavaType.FLOAT
-            )
+            batchOutputTensors[tensorKey] =
+                OnnxTensor.createTensor(
+                    ortEnvironment,
+                    outputSlice,
+                    batchOutputShape,
+                    OnnxJavaType.FLOAT,
+                )
         }
 
         return batchOutputTensors[tensorKey]!!
     }
 
-    fun run(session: OrtSession, inputs: Map<String, OnnxTensorLike>, batchIndex: Int, batchSize: Int) {
+    fun run(
+        session: OrtSession,
+        inputs: Map<String, OnnxTensorLike>,
+        batchIndex: Int,
+        batchSize: Int,
+    ) {
         _outputBuffer.clear()
 
         val outputTensor = getBatchOutputTensor(batchIndex, batchSize)
@@ -163,20 +194,29 @@ class PaddleObjectCharacterRecognitionRecognizeOutput(
         session.run(inputs, outputs)
     }
 
-    fun parse(batchIndex: Int, batchSize: Int): List<ObjectCharacterRecogniserResult> {
+    fun parse(
+        batchIndex: Int,
+        batchSize: Int,
+    ): List<ObjectCharacterRecogniserResult> {
         val perSampleOutputBytes = (maxCropSize / 8) * vocabSize * floatByteSize
         val outputOffsetBytes = batchIndex * perSampleOutputBytes
 
-        val outputSlice = _outputBuffer.duplicate().order(ByteOrder.nativeOrder()).apply {
-            position(outputOffsetBytes)
-            limit(outputOffsetBytes + batchSize * perSampleOutputBytes)
-        }.slice().order(ByteOrder.nativeOrder())
+        val outputSlice =
+            _outputBuffer
+                .duplicate()
+                .order(ByteOrder.nativeOrder())
+                .apply {
+                    position(outputOffsetBytes)
+                    limit(outputOffsetBytes + batchSize * perSampleOutputBytes)
+                }.slice()
+                .order(ByteOrder.nativeOrder())
 
-        val batchOutputShape = longArrayOf(
-            batchSize.toLong(),
-            maxCropSize.toLong() / 8,
-            vocabSize.toLong()
-        )
+        val batchOutputShape =
+            longArrayOf(
+                batchSize.toLong(),
+                maxCropSize.toLong() / 8,
+                vocabSize.toLong(),
+            )
 
         val scoreCountCapacity = batchSize * intByteSize
         val tokenCountCapacity = batchSize * intByteSize
@@ -184,17 +224,19 @@ class PaddleObjectCharacterRecognitionRecognizeOutput(
         val requiredTokenBufferSize = scoreCountCapacity + tokenCountCapacity + tokenCapacity
 
         if (tokenBuffer.capacity() < requiredTokenBufferSize) {
-            Timber.tag(TAG)
+            Timber
+                .tag(TAG)
                 .w("Token buffer too small, resizing from ${tokenBuffer.capacity()} to $requiredTokenBufferSize")
         }
         tokenBuffer.clear()
         tokenBuffer.limit(requiredTokenBufferSize)
 
-        _results = paddleOCR.postProcessRecognize(
-            outputBuffer = outputSlice,
-            outputShape = batchOutputShape,
-            tokenBuffer = tokenBuffer
-        )
+        _results =
+            paddleOCR.postProcessRecognize(
+                outputBuffer = outputSlice,
+                outputShape = batchOutputShape,
+                tokenBuffer = tokenBuffer,
+            )
 
         return _results
     }

@@ -49,22 +49,25 @@ fun LanguageBadge(
         remember { language.getFlagDrawable(context) }
 
     return Box(
-        modifier = Modifier
-            .background(
-                color = colors.borderColor,
-                shape = MaterialTheme.shapes.extraLarge
-            )
-            .padding(borderSize)
-            .then(modifier)
+        modifier =
+            Modifier
+                .background(
+                    color = colors.borderColor,
+                    shape = MaterialTheme.shapes.extraLarge,
+                ).padding(borderSize)
+                .then(modifier),
     ) {
         Image(
             painter = painterResource(flagDrawable),
-            contentDescription = stringResource(
-                R.string.flag, language.name
-            ),
-            modifier = Modifier
-                .requiredSize(size)
-                .clip(MaterialTheme.shapes.extraLarge)
+            contentDescription =
+                stringResource(
+                    R.string.flag,
+                    language.name,
+                ),
+            modifier =
+                Modifier
+                    .requiredSize(size)
+                    .clip(MaterialTheme.shapes.extraLarge),
         )
     }
 }

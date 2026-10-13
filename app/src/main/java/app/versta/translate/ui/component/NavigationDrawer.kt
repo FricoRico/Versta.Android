@@ -54,7 +54,10 @@ fun NavigationDrawer(
     val scope = rememberCoroutineScope()
     val state by navigationViewModel.navigationDrawerState.collectAsStateWithLifecycle()
 
-    fun onClickItem(screen: Screens, parent: Screens?) {
+    fun onClickItem(
+        screen: Screens,
+        parent: Screens?,
+    ) {
         navigationViewModel.clearAndNavigate(screen, parent)
     }
 
@@ -65,46 +68,50 @@ fun NavigationDrawer(
                 containerColor = Color.Transparent,
                 header = {
                     VerstaLogo(
-                        modifier = Modifier.padding(
-                            top = MaterialTheme.spacing.small,
-                            bottom = MaterialTheme.spacing.extraLarge,
-                        ),
-                        size = MaterialTheme.spacing.extraLarge
+                        modifier =
+                            Modifier.padding(
+                                top = MaterialTheme.spacing.small,
+                                bottom = MaterialTheme.spacing.extraLarge,
+                            ),
+                        size = MaterialTheme.spacing.extraLarge,
                     )
                 },
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(
-                            bottom = WindowInsets.navigationBars.asPaddingValues()
-                                .calculateBottomPadding()
-                        ),
-                    verticalArrangement = Arrangement.SpaceBetween
+                    modifier =
+                        Modifier
+                            .fillMaxHeight()
+                            .padding(
+                                bottom =
+                                    WindowInsets.navigationBars
+                                        .asPaddingValues()
+                                        .calculateBottomPadding(),
+                            ),
+                    verticalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
                     ) {
                         navigationItems.forEachIndexed { index, item ->
                             NavigationDrawerRailItem(
                                 railExpanded = false,
                                 navigationViewModel = navigationViewModel,
                                 item = item,
-                                onClick = { route, parent -> onClickItem(route, parent) }
+                                onClick = { route, parent -> onClickItem(route, parent) },
                             )
                         }
                     }
 
                     if (windowAdaptiveInfo.isExpanded() && footerNavigationItems != null) {
                         Column(
-                            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+                            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
                         ) {
                             footerNavigationItems.forEachIndexed { index, item ->
                                 NavigationDrawerRailItem(
                                     railExpanded = false,
                                     navigationViewModel = navigationViewModel,
                                     item = item,
-                                    onClick = { route, parent -> onClickItem(route, parent) }
+                                    onClick = { route, parent -> onClickItem(route, parent) },
                                 )
                             }
                         }
@@ -120,21 +127,24 @@ fun NavigationDrawer(
         drawerState = state,
         drawerContent = {
             ModalDrawerSheet(
-                modifier = Modifier.widthIn(
-                    max = 320.dp
-                ),
+                modifier =
+                    Modifier.widthIn(
+                        max = 320.dp,
+                    ),
             ) {
                 Column(
-                    modifier = Modifier.padding(
-                        horizontal = MaterialTheme.spacing.medium
-                    ),
+                    modifier =
+                        Modifier.padding(
+                            horizontal = MaterialTheme.spacing.medium,
+                        ),
                 ) {
                     VerstaLogo(
-                        modifier = Modifier.padding(
+                        modifier =
+                            Modifier.padding(
                                 top = MaterialTheme.spacing.small,
                                 bottom = MaterialTheme.spacing.extraLarge,
-                                start = MaterialTheme.spacing.medium
-                            )
+                                start = MaterialTheme.spacing.medium,
+                            ),
                     )
 
                     navigationItems.forEachIndexed { index, item ->
@@ -146,12 +156,12 @@ fun NavigationDrawer(
                                     onClickItem(route, parent)
                                     navigationViewModel.setDrawerState(false)
                                 }
-                            }
+                            },
                         )
                     }
                 }
             }
-        }
+        },
     ) {
         content()
     }

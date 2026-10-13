@@ -64,27 +64,31 @@ fun TrialLicenseConfirmationDialog(
     ) {
         Card(
             shape = MaterialTheme.shapes.extraLarge,
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier =
+                Modifier
+                    .fillMaxWidth(),
         ) {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(MaterialTheme.spacing.large)
-                    .padding(bottom = MaterialTheme.spacing.medium),
-                verticalArrangement = Arrangement.spacedBy(
-                    MaterialTheme.spacing.medium,
-                    Alignment.CenterVertically
-                )
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(MaterialTheme.spacing.large)
+                        .padding(bottom = MaterialTheme.spacing.medium),
+                verticalArrangement =
+                    Arrangement.spacedBy(
+                        MaterialTheme.spacing.medium,
+                        Alignment.CenterVertically,
+                    ),
             ) {
                 item {
                     Text(
                         text = stringResource(R.string.license_confirmation_title),
                         style = MaterialTheme.typography.titleLarge,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = MaterialTheme.spacing.small)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = MaterialTheme.spacing.small),
                     )
                 }
 
@@ -93,10 +97,13 @@ fun TrialLicenseConfirmationDialog(
                 }
 
                 item {
-                    Text(text = stringResource(
-                        R.string.license_confirmation_contribution_perks,
-                        stringResource(R.string.app_name)
-                    ))
+                    Text(
+                        text =
+                            stringResource(
+                                R.string.license_confirmation_contribution_perks,
+                                stringResource(R.string.app_name),
+                            ),
+                    )
                 }
 
                 item {
@@ -111,10 +118,11 @@ fun TrialLicenseConfirmationDialog(
 @Preview(showBackground = true)
 fun TrialLicenseConfirmationDialogPreview() {
     TrialLicenseConfirmationDialog(
-        licenseViewModel = LicenseViewModel(
-            licenseRepository = LicenseMemoryRepository()
-        ).apply {
-            setLicenseDialogState(DialogState.Confirm)
-        },
+        licenseViewModel =
+            LicenseViewModel(
+                licenseRepository = LicenseMemoryRepository(),
+            ).apply {
+                setLicenseDialogState(DialogState.Confirm)
+            },
     )
 }

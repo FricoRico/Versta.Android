@@ -6,9 +6,11 @@ import org.junit.Test
 import java.net.URI
 
 class ExternalLanguageModelTest {
-
-    private fun definition(source: String, target: String): ExternalLanguagePairDefinition {
-        return ExternalLanguagePairDefinition(
+    private fun definition(
+        source: String,
+        target: String,
+    ): ExternalLanguagePairDefinition =
+        ExternalLanguagePairDefinition(
             pair = LanguagePair.fromIsoCodes(source, target),
             bidirectional = false,
             metadata = emptyList(),
@@ -17,7 +19,6 @@ class ExternalLanguageModelTest {
             bundleUri = URI("https://example.com/bundle"),
             checksumUri = URI("https://example.com/checksum"),
         )
-    }
 
     @Test
     fun emptyCatalog_returnsEmptySet() {
@@ -28,10 +29,11 @@ class ExternalLanguageModelTest {
 
     @Test
     fun catalog_unionsSourceAndTargetLanguages() {
-        val catalog = listOf(
-            definition("en", "fr"),
-            definition("de", "es"),
-        )
+        val catalog =
+            listOf(
+                definition("en", "fr"),
+                definition("de", "es"),
+            )
 
         val result = catalog.supportedLanguageIsoCodes()
 
@@ -40,10 +42,11 @@ class ExternalLanguageModelTest {
 
     @Test
     fun catalog_deduplicatesLanguagesAcrossPairs() {
-        val catalog = listOf(
-            definition("en", "fr"),
-            definition("fr", "en"),
-        )
+        val catalog =
+            listOf(
+                definition("en", "fr"),
+                definition("fr", "en"),
+            )
 
         val result = catalog.supportedLanguageIsoCodes()
 

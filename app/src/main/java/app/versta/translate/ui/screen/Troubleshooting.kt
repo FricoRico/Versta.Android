@@ -36,7 +36,7 @@ fun Troubleshooting(
     innerPadding: PaddingValues,
     scaffoldViewModel: ScaffoldViewModel,
     navigationViewModel: NavigationViewModel,
-    licenseViewModel: LicenseViewModel
+    licenseViewModel: LicenseViewModel,
 ) {
     val context = LocalContext.current
     val layoutDirection = LocalLayoutDirection.current
@@ -48,10 +48,11 @@ fun Troubleshooting(
         Toast.makeText(context, licenseResetMessage, Toast.LENGTH_SHORT).show()
     }
 
-    val onReportIssue = Intent(
-        Intent.ACTION_VIEW,
-        stringResource(R.string.github_issues_url, stringResource(R.string.github_url)).toUri()
-    )
+    val onReportIssue =
+        Intent(
+            Intent.ACTION_VIEW,
+            stringResource(R.string.github_issues_url, stringResource(R.string.github_url)).toUri(),
+        )
 
     ScaffoldComponentProvider(
         scaffoldViewModel = scaffoldViewModel,
@@ -66,17 +67,19 @@ fun Troubleshooting(
             ScaffoldCompactBarEmptyActions()
         },
         actionsContentKey = "ScaffoldCompactBarEmptyActions",
-        wrapContent = true
+        wrapContent = true,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            )
+            modifier =
+                Modifier
+                    .fillMaxSize(),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
         ) {
             item {
                 SettingsButtonItem(
@@ -85,7 +88,7 @@ fun Troubleshooting(
                     onClick = {
                         navigationViewModel.navigate(
                             Screens.ApplicationLogs,
-                            Screens.Troubleshooting
+                            Screens.Troubleshooting,
                         )
                     },
                     leadingContent = {
@@ -95,7 +98,7 @@ fun Troubleshooting(
                         )
                     },
                     index = 0,
-                    groupSize = 2
+                    groupSize = 2,
                 )
             }
 
@@ -113,7 +116,7 @@ fun Troubleshooting(
                         )
                     },
                     index = 1,
-                    groupSize = 2
+                    groupSize = 2,
                 )
             }
 
@@ -133,7 +136,7 @@ fun Troubleshooting(
                         )
                     },
                     index = 0,
-                    groupSize = 1
+                    groupSize = 1,
                 )
             }
         }
@@ -146,12 +149,14 @@ fun TroubleshootingPreview() {
     val navigationViewModel = NavigationViewModel(Screens.TextTranslation)
     Troubleshooting(
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
-        licenseViewModel = LicenseViewModel(
-            LicenseMemoryRepository()
-        )
+        licenseViewModel =
+            LicenseViewModel(
+                LicenseMemoryRepository(),
+            ),
     )
 }

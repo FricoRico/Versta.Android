@@ -7,7 +7,7 @@ import timber.log.Timber
 import java.nio.file.Path
 import kotlin.io.path.pathString
 
-class OpenJTalk() : AutoCloseable {
+class OpenJTalk : AutoCloseable {
     private var _handle: MutableStateFlow<Long?> = MutableStateFlow(null)
 
     fun load(data: Path) {
@@ -18,13 +18,9 @@ class OpenJTalk() : AutoCloseable {
         _handle.value = construct(data.pathString)
     }
 
-    fun isReady(): Boolean {
-        return _handle.value != null
-    }
+    fun isReady(): Boolean = _handle.value != null
 
-    fun isReadyStateFlow(): Flow<Boolean> {
-        return _handle.map { it != null }
-    }
+    fun isReadyStateFlow(): Flow<Boolean> = _handle.map { it != null }
 
     override fun close() {
         if (_handle.value == null) {
@@ -45,7 +41,12 @@ class OpenJTalk() : AutoCloseable {
     }
 
     private external fun construct(path: String): Long
-    private external fun phonemize(handle: Long, text: String): String
+
+    private external fun phonemize(
+        handle: Long,
+        text: String,
+    ): String
+
     private external fun close(handle: Long): Boolean
 
     companion object {

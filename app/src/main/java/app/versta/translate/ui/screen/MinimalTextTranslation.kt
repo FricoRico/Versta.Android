@@ -76,22 +76,22 @@ fun MinimalTextTranslation(
 
     val translated by textTranslationViewModel.translated.collectAsStateWithLifecycle("")
     val translatedTransliteration by textTranslationViewModel.translatedTransliteration.collectAsStateWithLifecycle(
-        ""
+        "",
     )
 
     val translationInProgress by translationViewModel.translationInProgress.collectAsStateWithLifecycle(
-        false
+        false,
     )
 
     val textToSpeechSynthesisState by textToSpeechViewModel.speechProgressState.collectAsStateWithLifecycle(
-        TextToSpeechSynthesisState.Idle
+        TextToSpeechSynthesisState.Idle,
     )
 
     val textToSpeechAvailable by textToSpeechViewModel.textToSpeechReady.collectAsStateWithLifecycle(
-        false
+        false,
     )
     val textToSpeechVoiceAvailable by textToSpeechViewModel.voiceAvailable.collectAsStateWithLifecycle(
-        false
+        false,
     )
 
     val targetLanguage by languageViewModel.targetLanguage.collectAsStateWithLifecycle(null)
@@ -103,7 +103,7 @@ fun MinimalTextTranslation(
         textToSpeechScope.launch {
             textToSpeechViewModel.synthesize(
                 text = translated,
-                language = targetLanguage!!
+                language = targetLanguage!!,
             )
         }
     }
@@ -138,13 +138,13 @@ fun MinimalTextTranslation(
     }
 
     Column(
-        modifier = Modifier
-            .padding(
-                vertical = MaterialTheme.spacing.large,
-                horizontal = MaterialTheme.spacing.medium
-            )
-            .fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.large)
+        modifier =
+            Modifier
+                .padding(
+                    vertical = MaterialTheme.spacing.large,
+                    horizontal = MaterialTheme.spacing.medium,
+                ).fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.large),
     ) {
         MinimalLanguageSelector(
             languageViewModel = languageViewModel,
@@ -154,9 +154,10 @@ fun MinimalTextTranslation(
             intermediate = intermediate,
             translation = translated,
             transliteration = translatedTransliteration,
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = MaterialTheme.spacing.medium),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .padding(horizontal = MaterialTheme.spacing.medium),
         )
 
         MinimalTextTranslationOutputButtonRow(
@@ -188,7 +189,7 @@ fun MinimalTextTranslationOutput(
     intermediate: String,
     translation: String,
     transliteration: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var displayedText by remember { mutableStateOf(intermediate) }
 
@@ -196,39 +197,42 @@ fun MinimalTextTranslationOutput(
     val intermediateStyle = SpanStyle(color = MaterialTheme.colorScheme.surfaceContainerHighest)
 
     LaunchedEffect(translation, intermediate) {
-        val placeholder = intermediate
-            .reversed()
-            .take(max(0, intermediate.length - translation.length))
-            .reversed()
+        val placeholder =
+            intermediate
+                .reversed()
+                .take(max(0, intermediate.length - translation.length))
+                .reversed()
 
         displayedText = translation + placeholder
     }
 
-    val annotatedString = buildAnnotatedString {
-        displayedText.forEachIndexed { index, char ->
-            if (index <= translation.length - 1) {
-                withStyle(translatedStyle) {
-                    append(char)
+    val annotatedString =
+        buildAnnotatedString {
+            displayedText.forEachIndexed { index, char ->
+                if (index <= translation.length - 1) {
+                    withStyle(translatedStyle) {
+                        append(char)
+                    }
+
+                    return@forEachIndexed
                 }
 
-                return@forEachIndexed
-            }
-
-            withStyle(intermediateStyle) {
-                append(char)
+                withStyle(intermediateStyle) {
+                    append(char)
+                }
             }
         }
-    }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(modifier),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.large)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .then(modifier),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.large),
     ) {
         item {
             Text(
-                text = annotatedString
+                text = annotatedString,
             )
         }
 
@@ -237,7 +241,7 @@ fun MinimalTextTranslationOutput(
                 Text(
                     text = transliteration,
                     color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
                 )
             }
         }
@@ -255,12 +259,13 @@ fun MinimalTextTranslationOutputButtonRow(
     onCancel: () -> Unit,
     onCopy: () -> Unit,
     onShare: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(modifier),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .then(modifier),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(
@@ -278,12 +283,14 @@ fun MinimalTextTranslationOutputButtonRow(
             AnimatedVisibility(
                 visible = translationInProgress,
                 enter = fadeIn(),
-                exit = fadeOut(
-                    animationSpec = tween(
-                        durationMillis = DefaultDurationMillis * 2,
-                        delayMillis = DefaultDurationMillis
-                    )
-                ),
+                exit =
+                    fadeOut(
+                        animationSpec =
+                            tween(
+                                durationMillis = DefaultDurationMillis * 2,
+                                delayMillis = DefaultDurationMillis,
+                            ),
+                    ),
             ) {
                 FilledIconButton(
                     onClick = onCancel,
@@ -291,7 +298,7 @@ fun MinimalTextTranslationOutputButtonRow(
                 ) {
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.rounded_stop_24),
-                        contentDescription = stringResource(R.string.cancel)
+                        contentDescription = stringResource(R.string.cancel),
                     )
                 }
             }
@@ -306,7 +313,7 @@ fun MinimalTextTranslationOutputButtonRow(
             ) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.rounded_content_copy_24),
-                    contentDescription = stringResource(R.string.copy)
+                    contentDescription = stringResource(R.string.copy),
                 )
             }
 
@@ -316,7 +323,7 @@ fun MinimalTextTranslationOutputButtonRow(
             ) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.rounded_ios_share_24),
-                    contentDescription = stringResource(R.string.share)
+                    contentDescription = stringResource(R.string.share),
                 )
             }
         }
@@ -326,44 +333,49 @@ fun MinimalTextTranslationOutputButtonRow(
 @Composable
 @Preview(showBackground = true)
 fun MinimalTextTranslationPreview() {
-    val languageViewModel = LanguageViewModel(
-        context = LocalContext.current,
-        languageRepository = LanguageMemoryRepository(),
-        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-    )
+    val languageViewModel =
+        LanguageViewModel(
+            context = LocalContext.current,
+            languageRepository = LanguageMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+        )
 
     val translationMockInference = TranslationMockInference()
 
     MinimalTextTranslation(
         languageViewModel = languageViewModel,
-        textTranslationViewModel = TextTranslationViewModel(
-            languageViewModel = languageViewModel,
-            translationViewModel = TranslationViewModel(
+        textTranslationViewModel =
+            TextTranslationViewModel(
+                languageViewModel = languageViewModel,
+                translationViewModel =
+                    TranslationViewModel(
+                        intermediateModel = translationMockInference,
+                        outputModel = translationMockInference,
+                        translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+                        languageViewModel = languageViewModel,
+                    ),
+            ),
+        translationViewModel =
+            TranslationViewModel(
                 intermediateModel = translationMockInference,
                 outputModel = translationMockInference,
                 translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
-                languageViewModel = languageViewModel
-            )
-        ),
-        translationViewModel = TranslationViewModel(
-            intermediateModel = translationMockInference,
-            outputModel = translationMockInference,
-            translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
-            languageViewModel = languageViewModel
-        ),
-        textToSpeechViewModel = TextToSpeechViewModel(
-            context = LocalContext.current,
-            espeakNG = ESpeakNG(),
-            openJTalk = OpenJTalk(),
-            tokenizer = TextToSpeechMockTokenizer(),
-            model = TextToSpeechMockInference(),
-            audioPlayer = AudioMockPlayer(),
-            dataRepository = DataMemoryRepository(),
-            voiceRepository = VoiceMemoryRepository(),
-            textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalDataRepository = ExternalDataMemoryRepository(),
-        )
+                languageViewModel = languageViewModel,
+            ),
+        textToSpeechViewModel =
+            TextToSpeechViewModel(
+                context = LocalContext.current,
+                espeakNG = ESpeakNG(),
+                openJTalk = OpenJTalk(),
+                tokenizer = TextToSpeechMockTokenizer(),
+                model = TextToSpeechMockInference(),
+                audioPlayer = AudioMockPlayer(),
+                dataRepository = DataMemoryRepository(),
+                voiceRepository = VoiceMemoryRepository(),
+                textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
+                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+                externalDataRepository = ExternalDataMemoryRepository(),
+            ),
     )
 }

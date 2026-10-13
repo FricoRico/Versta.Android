@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 @OptIn(FlowPreview::class)
 class TextTranslationViewModel(
     private val translationViewModel: TranslationViewModel,
-    private val languageViewModel: LanguageViewModel
+    private val languageViewModel: LanguageViewModel,
 ) : ViewModel() {
     private val _loadingProgress = MutableStateFlow<LoadingProgress>(LoadingProgress.Idle)
     val loadingProgress: Flow<LoadingProgress> = _loadingProgress.asStateFlow().sample(10)
@@ -186,10 +186,11 @@ class TextTranslationViewModel(
      */
     fun shareTranslatedText(context: Context) {
         viewModelScope.launch {
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, translated.first())
-            }
+            val shareIntent =
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, translated.first())
+                }
 
             val chooser = Intent.createChooser(shareIntent, "Share this translation")
             context.startActivity(chooser, null)

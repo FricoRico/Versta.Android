@@ -8,16 +8,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class TranslationPreferenceDataStoreRepository(
-    private val dataStore: DataStore<Preferences>
+    private val dataStore: DataStore<Preferences>,
 ) : TranslationPreferenceRepository {
     /**
      * Gets the cache size.
      */
-    override fun getCacheSize(): Flow<Int> {
-        return dataStore.data.map { preferences ->
+    override fun getCacheSize(): Flow<Int> =
+        dataStore.data.map { preferences ->
             preferences[CACHE_SIZE_KEY]?.toInt() ?: DEFAULT_CACHE_SIZE
         }
-    }
 
     /**
      * Sets the cache size.
@@ -32,11 +31,10 @@ class TranslationPreferenceDataStoreRepository(
     /**
      * Gets the cache enabled status.
      */
-    override fun getCacheEnabled(): Flow<Boolean> {
-        return dataStore.data.map { preferences ->
+    override fun getCacheEnabled(): Flow<Boolean> =
+        dataStore.data.map { preferences ->
             preferences[CACHE_ENABLED_KEY]?.toBoolean() ?: DEFAULT_CACHE_ENABLED
         }
-    }
 
     /**
      * Sets the cache enabled status.
@@ -51,11 +49,10 @@ class TranslationPreferenceDataStoreRepository(
     /**
      * Gets the number of beams.
      */
-    override fun getNumberOfBeams(): Flow<Int> {
-        return dataStore.data.map { preferences ->
+    override fun getNumberOfBeams(): Flow<Int> =
+        dataStore.data.map { preferences ->
             preferences[NUMBER_OF_BEAMS_KEY]?.toInt() ?: DEFAULT_NUMBER_OF_BEAMS
         }
-    }
 
     /**
      * Sets the number of beams.
@@ -70,11 +67,10 @@ class TranslationPreferenceDataStoreRepository(
     /**
      * Gets the thread count.
      */
-    override fun getThreadCount(): Flow<Int> {
-        return dataStore.data.map { preferences ->
+    override fun getThreadCount(): Flow<Int> =
+        dataStore.data.map { preferences ->
             preferences[THREAD_COUNT_KEY]?.toInt() ?: (Runtime.getRuntime().availableProcessors() / 2)
         }
-    }
 
     /**
      * Sets the thread count.
@@ -89,11 +85,10 @@ class TranslationPreferenceDataStoreRepository(
     /**
      * Gets the maximum sequence length.
      */
-    override fun getMaxSequenceLength(): Flow<Int> {
-        return dataStore.data.map { preferences ->
+    override fun getMaxSequenceLength(): Flow<Int> =
+        dataStore.data.map { preferences ->
             preferences[MAX_SEQUENCE_LENGTH_KEY]?.toInt() ?: DEFAULT_MAX_SEQUENCE_LENGTH
         }
-    }
 
     /**
      * Sets the maximum sequence length.
@@ -108,11 +103,10 @@ class TranslationPreferenceDataStoreRepository(
     /**
      * Gets the minimum probability.
      */
-    override fun getMinProbability(): Flow<Float> {
-        return dataStore.data.map { preferences ->
+    override fun getMinProbability(): Flow<Float> =
+        dataStore.data.map { preferences ->
             preferences[MIN_PROBABILITY_KEY]?.toFloat() ?: DEFAULT_MIN_PROBABILITY
         }
-    }
 
     /**
      * Sets the minimum probability.
@@ -127,11 +121,10 @@ class TranslationPreferenceDataStoreRepository(
     /**
      * Gets the penalty for repeating tokens.
      */
-    override fun getRepetitionPenalty(): Flow<Float> {
-        return dataStore.data.map { preferences ->
+    override fun getRepetitionPenalty(): Flow<Float> =
+        dataStore.data.map { preferences ->
             preferences[REPETITION_PENALTY_KEY]?.toFloat() ?: DEFAULT_REPETITION_PENALTY
         }
-    }
 
     /**
      * Sets the penalty for repeating tokens.

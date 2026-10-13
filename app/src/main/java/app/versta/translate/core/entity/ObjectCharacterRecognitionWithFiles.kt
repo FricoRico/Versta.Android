@@ -23,7 +23,10 @@ data class ObjectCharacterRecognitionDetectorWithFiles(
     companion object {
         private val serializer = Json { ignoreUnknownKeys = true }
 
-        fun load(id: String, path: Path): ObjectCharacterRecognitionDetectorWithFiles {
+        fun load(
+            id: String,
+            path: Path,
+        ): ObjectCharacterRecognitionDetectorWithFiles {
             val metadataFile = File(path.toFile(), "metadata.json")
             if (!metadataFile.exists()) {
                 throw IllegalArgumentException("Object character recognizer model metadata file not found: ${metadataFile.absolutePath}")
@@ -32,18 +35,20 @@ data class ObjectCharacterRecognitionDetectorWithFiles(
             val metadata =
                 serializer.decodeFromString<ObjectCharacterRecognitionDetectorMetadata>(metadataFile.readText())
 
-            val files = ObjectCharacterRecognitionDetectorWithFiles(
-                id = id,
-                path = path,
-                baseModel = metadata.baseModel,
-                architectures = metadata.architectures,
-                languages = metadata.languages,
-                version = metadata.version,
-                size = path.parent.directorySize(),
-                inference = ObjectCharacterRecognitionDetectorInferenceFiles(
-                    model = path.resolve(metadata.files.inference.model)
-                ),
-            )
+            val files =
+                ObjectCharacterRecognitionDetectorWithFiles(
+                    id = id,
+                    path = path,
+                    baseModel = metadata.baseModel,
+                    architectures = metadata.architectures,
+                    languages = metadata.languages,
+                    version = metadata.version,
+                    size = path.parent.directorySize(),
+                    inference =
+                        ObjectCharacterRecognitionDetectorInferenceFiles(
+                            model = path.resolve(metadata.files.inference.model),
+                        ),
+                )
 
             if (!files.isValid()) {
                 throw IllegalArgumentException("Object character recognizer model files are not complete and valid: $files")
@@ -78,7 +83,10 @@ data class ObjectCharacterRecognitionRecognizerWithFiles(
     companion object {
         private val serializer = Json { ignoreUnknownKeys = true }
 
-        fun load(id: String, path: Path): ObjectCharacterRecognitionRecognizerWithFiles {
+        fun load(
+            id: String,
+            path: Path,
+        ): ObjectCharacterRecognitionRecognizerWithFiles {
             val metadataFile = File(path.toFile(), "metadata.json")
             if (!metadataFile.exists()) {
                 throw IllegalArgumentException("Object character recognizer model metadata file not found: ${metadataFile.absolutePath}")
@@ -87,21 +95,24 @@ data class ObjectCharacterRecognitionRecognizerWithFiles(
             val metadata =
                 serializer.decodeFromString<ObjectCharacterRecognitionRecognizerMetadata>(metadataFile.readText())
 
-            val files = ObjectCharacterRecognitionRecognizerWithFiles(
-                id = id,
-                path = path,
-                baseModel = metadata.baseModel,
-                architectures = metadata.architectures,
-                languages = metadata.languages,
-                version = metadata.version,
-                size = path.parent.directorySize(),
-                inference = ObjectCharacterRecognitionRecognizerInferenceFiles(
-                    model = path.resolve(metadata.files.inference.model)
-                ),
-                tokenizer = ObjectCharacterRecognitionRecognizerTokenizerFiles(
-                    vocabulary = path.resolve(metadata.files.tokenizer.vocabulary)
-                ),
-            )
+            val files =
+                ObjectCharacterRecognitionRecognizerWithFiles(
+                    id = id,
+                    path = path,
+                    baseModel = metadata.baseModel,
+                    architectures = metadata.architectures,
+                    languages = metadata.languages,
+                    version = metadata.version,
+                    size = path.parent.directorySize(),
+                    inference =
+                        ObjectCharacterRecognitionRecognizerInferenceFiles(
+                            model = path.resolve(metadata.files.inference.model),
+                        ),
+                    tokenizer =
+                        ObjectCharacterRecognitionRecognizerTokenizerFiles(
+                            vocabulary = path.resolve(metadata.files.tokenizer.vocabulary),
+                        ),
+                )
 
             if (!files.isValid()) {
                 throw IllegalArgumentException("Object character recognizer model files are not complete and valid: $files")

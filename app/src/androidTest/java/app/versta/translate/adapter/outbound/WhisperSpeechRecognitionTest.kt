@@ -12,10 +12,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import org.junit.Assert.assertArrayEquals
@@ -29,10 +29,12 @@ import java.nio.file.Path
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class WhisperSpeechRecognitionTest {
-
     private class MockModel : AutoCloseable {
         var closeCalls = 0
-        override fun close() { closeCalls++ }
+
+        override fun close() {
+            closeCalls++
+        }
     }
 
     private class MockSpeechRecognitionEngine : SpeechRecognitionEngine {
@@ -46,32 +48,62 @@ class WhisperSpeechRecognitionTest {
         var metricsResult: SpeechRecognitionMetrics? = null
         var callback: WhisperSegmentCallback? = null
 
-        override fun feed(pcm: FloatArray) { feedCalls++ }
-        override fun process(): Long { processCalls++; return processResult }
-        override fun flush(): Long { flushCalls++; return 0L }
-        override fun reset() { resetCalls++ }
-        override fun setCarriedContext(tokens: IntArray) { lastCarriedContext = tokens }
-        override fun metrics() = metricsResult
-        override fun close() { closeCalls++ }
+        override fun feed(pcm: FloatArray) {
+            feedCalls++
+        }
 
-        fun emit(text: String, startMs: Long, endMs: Long, tokens: IntArray = intArrayOf(1, 2)) {
+        override fun process(): Long {
+            processCalls++
+            return processResult
+        }
+
+        override fun flush(): Long {
+            flushCalls++
+            return 0L
+        }
+
+        override fun reset() {
+            resetCalls++
+        }
+
+        override fun setCarriedContext(tokens: IntArray) {
+            lastCarriedContext = tokens
+        }
+
+        override fun metrics() = metricsResult
+
+        override fun close() {
+            closeCalls++
+        }
+
+        fun emit(
+            text: String,
+            startMs: Long,
+            endMs: Long,
+            tokens: IntArray = intArrayOf(1, 2),
+        ) {
             callback?.onSegment(text, startMs, endMs, tokens)
         }
     }
 
-    private class MockAudioCapture(val feed: SpeechRecognitionEngine) : AudioCapture {
+    private class MockAudioCapture(
+        val feed: SpeechRecognitionEngine,
+    ) : AudioCapture {
         override val spectrum = MutableStateFlow(FloatArray(SPECTRUM_BAND_COUNT))
         var startCalls = 0
         var stopCalls = 0
         var startError: IllegalStateException? = null
+
         override fun start(scope: CoroutineScope) {
             startCalls++
             startError?.let { throw it }
         }
+
         override fun stop() {
             stopCalls++
             spectrum.value = FloatArray(SPECTRUM_BAND_COUNT)
         }
+
         override suspend fun join() {}
     }
 
@@ -80,8 +112,8 @@ class WhisperSpeechRecognitionTest {
         modelHook: (MockModel) -> Unit = {},
         recognizerHook: (MockSpeechRecognitionEngine) -> Unit = {},
         captureHook: (MockAudioCapture) -> Unit = {},
-    ): WhisperSpeechRecognition {
-        return WhisperSpeechRecognition(
+    ): WhisperSpeechRecognition =
+        WhisperSpeechRecognition(
             modelFactory = { _, _, _ -> MockModel().also(modelHook) },
             recognizerFactory = { _, callback, _ ->
                 MockSpeechRecognitionEngine().also { it.callback = callback }.also(recognizerHook)
@@ -89,14 +121,11 @@ class WhisperSpeechRecognitionTest {
             captureFactory = { MockAudioCapture(it).also(captureHook) },
             processDispatcher = StandardTestDispatcher(scheduler),
         )
-    }
 
-    private fun files(model: String = "model.bin"): SpeechRecognitionInferenceFiles {
-        return SpeechRecognitionInferenceFiles(Path.of(model), Path.of("vad.bin"))
-    }
+    private fun files(model: String = "model.bin"): SpeechRecognitionInferenceFiles = SpeechRecognitionInferenceFiles(Path.of(model), Path.of("vad.bin"))
 
-    private fun metrics(rtf: Double): SpeechRecognitionMetrics {
-        return SpeechRecognitionMetrics(
+    private fun metrics(rtf: Double): SpeechRecognitionMetrics =
+        SpeechRecognitionMetrics(
             passCount = 1,
             abortCount = 0,
             vadSkipCount = 0,
@@ -118,7 +147,6 @@ class WhisperSpeechRecognitionTest {
             lastPassNDecode = 1,
             lastPassNBatchd = 1,
         )
-    }
 
     private suspend fun waitForCondition(
         timeoutMs: Long = 5_000,
@@ -195,312 +223,332 @@ class WhisperSpeechRecognitionTest {
     }
 
     @Test
-    fun load_createsModelRecognizerAndCapture() = runTest {
-        val models = mutableListOf<MockModel>()
-        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
-        val captures = mutableListOf<MockAudioCapture>()
-        val inference = buildInference(
-            testScheduler,
-            { models.add(it) },
-            { recognizers.add(it) },
-            { captures.add(it) },
-        )
-        inference.setSourceLanguage("en")
+    fun load_createsModelRecognizerAndCapture() =
+        runTest {
+            val models = mutableListOf<MockModel>()
+            val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
+            val captures = mutableListOf<MockAudioCapture>()
+            val inference =
+                buildInference(
+                    testScheduler,
+                    { models.add(it) },
+                    { recognizers.add(it) },
+                    { captures.add(it) },
+                )
+            inference.setSourceLanguage("en")
 
-        inference.load(files())
+            inference.load(files())
 
-        assertEquals(1, models.size)
-        assertEquals(1, recognizers.size)
-        assertEquals(1, captures.size)
-        assertSame(recognizers[0], captures[0].feed)
-        inference.close()
-    }
-
-    @Test
-    fun load_sameModelAndLanguage_reusesEverything() = runTest {
-        val models = mutableListOf<MockModel>()
-        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
-        val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
-        inference.setSourceLanguage("en")
-
-        inference.load(files())
-        inference.load(files())
-
-        assertEquals(1, models.size)
-        assertEquals(1, recognizers.size)
-        inference.close()
-    }
-
-    @Test
-    fun load_languageChange_recreatesRecognizerKeepsModel() = runTest {
-        val models = mutableListOf<MockModel>()
-        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
-        val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
-        inference.setSourceLanguage("en")
-        inference.load(files())
-
-        inference.setSourceLanguage("nl")
-        inference.load(files())
-
-        assertEquals(1, models.size)
-        assertEquals(2, recognizers.size)
-        waitForCondition { recognizers[0].closeCalls == 1 }
-        inference.close()
-    }
-
-    @Test
-    fun load_modelChange_tearsDownAndReloads() = runTest {
-        val models = mutableListOf<MockModel>()
-        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
-        val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
-        inference.setSourceLanguage("en")
-        inference.load(files("model.bin"))
-
-        inference.load(files("model-2.bin"))
-
-        assertEquals(2, models.size)
-        assertEquals(2, recognizers.size)
-        waitForCondition { models[0].closeCalls == 1 }
-        assertEquals(0, models[1].closeCalls)
-        inference.close()
-    }
-
-    @Test
-    fun start_notLoaded_throws() = runTest {
-        val inference = buildInference(testScheduler)
-
-        try {
-            inference.start(this)
-            fail("Expected IllegalStateException")
-        } catch (e: IllegalStateException) {
-            assertEquals("Speech recognition is not loaded", e.message)
-        }
-    }
-
-    @Test
-    fun start_whileListening_isIgnored() = runTest {
-        val models = mutableListOf<MockModel>()
-        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
-        val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
-        inference.setSourceLanguage("en")
-        inference.load(files())
-        inference.start(this)
-        recognizers[0].emit("hello", 0, 100)
-
-        inference.start(this)
-
-        assertEquals(listOf("hello"), inference.segments.value.map { it.text })
-        inference.close()
-    }
-
-    @Test
-    fun start_whileDraining_isIgnored() = runTest {
-        val inference = buildInference(testScheduler)
-        inference.setSourceLanguage("en")
-        inference.load(files())
-        inference.start(this)
-        inference.stop()
-
-        inference.start(this)
-
-        assertFalse(inference.listening.value)
-        assertTrue(inference.finalizing.value)
-        inference.close()
-    }
-
-    @Test
-    fun start_whenMicUnavailable_throwsCaptureExceptionAndStaysIdle() = runTest {
-        val captures = mutableListOf<MockAudioCapture>()
-        val inference = buildInference(testScheduler, captureHook = {
-            it.startError = IllegalStateException("Microphone not available")
-            captures.add(it)
-        })
-        inference.setSourceLanguage("en")
-        inference.load(files())
-
-        try {
-            inference.start(this)
-            fail("Expected MicrophoneCaptureException")
-        } catch (_: MicrophoneCaptureException) {
+            assertEquals(1, models.size)
+            assertEquals(1, recognizers.size)
+            assertEquals(1, captures.size)
+            assertSame(recognizers[0], captures[0].feed)
+            inference.close()
         }
 
-        assertFalse(inference.listening.value)
-        assertTrue(inference.segments.value.isEmpty())
-        inference.close()
-    }
+    @Test
+    fun load_sameModelAndLanguage_reusesEverything() =
+        runTest {
+            val models = mutableListOf<MockModel>()
+            val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
+            val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
+            inference.setSourceLanguage("en")
+
+            inference.load(files())
+            inference.load(files())
+
+            assertEquals(1, models.size)
+            assertEquals(1, recognizers.size)
+            inference.close()
+        }
 
     @Test
-    fun stop_drainsBufferedAudio() = runTest {
-        val models = mutableListOf<MockModel>()
-        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
-        val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
-        inference.setSourceLanguage("en")
-        inference.load(files())
-        recognizers[0].processResult = 0L
-        inference.start(this)
+    fun load_languageChange_recreatesRecognizerKeepsModel() =
+        runTest {
+            val models = mutableListOf<MockModel>()
+            val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
+            val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
+            inference.setSourceLanguage("en")
+            inference.load(files())
 
-        inference.stop()
+            inference.setSourceLanguage("nl")
+            inference.load(files())
 
-        assertFalse(inference.listening.value)
-        assertTrue(inference.finalizing.value)
-
-        advanceUntilIdle()
-
-        assertEquals(1, recognizers[0].flushCalls)
-        assertEquals(1, recognizers[0].resetCalls)
-        assertFalse(inference.listening.value)
-        assertFalse(inference.finalizing.value)
-        inference.close()
-    }
+            assertEquals(1, models.size)
+            assertEquals(2, recognizers.size)
+            waitForCondition { recognizers[0].closeCalls == 1 }
+            inference.close()
+        }
 
     @Test
-    fun stop_whenNotListening_isNoOp() = runTest {
-        val captures = mutableListOf<MockAudioCapture>()
-        val inference = buildInference(testScheduler, captureHook = { captures.add(it) })
+    fun load_modelChange_tearsDownAndReloads() =
+        runTest {
+            val models = mutableListOf<MockModel>()
+            val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
+            val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
+            inference.setSourceLanguage("en")
+            inference.load(files("model.bin"))
 
-        inference.stop()
+            inference.load(files("model-2.bin"))
 
-        assertEquals(0, captures.size)
-    }
-
-    @Test
-    fun segmentCallback_filtersDegenerateAndTrims() = runTest {
-        val models = mutableListOf<MockModel>()
-        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
-        val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
-        inference.setSourceLanguage("en")
-        inference.load(files())
-        inference.start(this)
-        val recognizer = recognizers[0]
-
-        recognizer.emit("  Hello world  ", 0, 100)
-        recognizer.emit("...", 200, 300)
-        recognizer.emit("'s", 400, 500)
-        recognizer.emit("   ", 600, 700)
-        recognizer.emit("北京欢迎你", 800, 900)
-
-        assertEquals(
-            listOf("Hello world", "北京欢迎你"),
-            inference.segments.value.map { it.text },
-        )
-        inference.close()
-    }
+            assertEquals(2, models.size)
+            assertEquals(2, recognizers.size)
+            waitForCondition { models[0].closeCalls == 1 }
+            assertEquals(0, models[1].closeCalls)
+            inference.close()
+        }
 
     @Test
-    fun segmentCallback_carriesContextAcrossSessions() = runTest {
-        val models = mutableListOf<MockModel>()
-        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
-        val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
-        inference.setSourceLanguage("en")
-        inference.load(files())
-        recognizers[0].processResult = 0L
-        inference.start(this)
-        recognizers[0].emit("hello", 0, 100, intArrayOf(7, 8, 9))
+    fun start_notLoaded_throws() =
+        runTest {
+            val inference = buildInference(testScheduler)
 
-        inference.stop()
-        advanceUntilIdle()
-        inference.start(this)
-
-        assertArrayEquals(intArrayOf(7, 8, 9), recognizers[0].lastCarriedContext)
-        inference.close()
-    }
+            try {
+                inference.start(this)
+                fail("Expected IllegalStateException")
+            } catch (e: IllegalStateException) {
+                assertEquals("Speech recognition is not loaded", e.message)
+            }
+        }
 
     @Test
-    fun rtf_reflectsRecognizerMetrics() = runTest {
-        val models = mutableListOf<MockModel>()
-        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
-        val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
-        inference.setSourceLanguage("en")
-        inference.load(files())
-        recognizers[0].metricsResult = metrics(rtf = 1.5)
-        inference.start(this)
+    fun start_whileListening_isIgnored() =
+        runTest {
+            val models = mutableListOf<MockModel>()
+            val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
+            val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
+            inference.setSourceLanguage("en")
+            inference.load(files())
+            inference.start(this)
+            recognizers[0].emit("hello", 0, 100)
 
-        advanceTimeBy(1)
-        Thread.sleep(1_100)
-        advanceTimeBy(200)
+            inference.start(this)
 
-        assertEquals(1.5f, inference.rtf.value)
-        inference.close()
-    }
+            assertEquals(listOf("hello"), inference.segments.value.map { it.text })
+            inference.close()
+        }
 
     @Test
-    fun spectrum_beforeLoad_isSilent() = runTest {
-        val inference = buildInference(testScheduler)
+    fun start_whileDraining_isIgnored() =
+        runTest {
+            val inference = buildInference(testScheduler)
+            inference.setSourceLanguage("en")
+            inference.load(files())
+            inference.start(this)
+            inference.stop()
 
-        assertTrue(inference.spectrum.first().all { it == 0f })
-        inference.close()
-    }
+            inference.start(this)
+
+            assertFalse(inference.listening.value)
+            assertTrue(inference.finalizing.value)
+            inference.close()
+        }
+
+    @Test
+    fun start_whenMicUnavailable_throwsCaptureExceptionAndStaysIdle() =
+        runTest {
+            val captures = mutableListOf<MockAudioCapture>()
+            val inference =
+                buildInference(testScheduler, captureHook = {
+                    it.startError = IllegalStateException("Microphone not available")
+                    captures.add(it)
+                })
+            inference.setSourceLanguage("en")
+            inference.load(files())
+
+            try {
+                inference.start(this)
+                fail("Expected MicrophoneCaptureException")
+            } catch (_: MicrophoneCaptureException) {
+            }
+
+            assertFalse(inference.listening.value)
+            assertTrue(inference.segments.value.isEmpty())
+            inference.close()
+        }
+
+    @Test
+    fun stop_drainsBufferedAudio() =
+        runTest {
+            val models = mutableListOf<MockModel>()
+            val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
+            val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
+            inference.setSourceLanguage("en")
+            inference.load(files())
+            recognizers[0].processResult = 0L
+            inference.start(this)
+
+            inference.stop()
+
+            assertFalse(inference.listening.value)
+            assertTrue(inference.finalizing.value)
+
+            advanceUntilIdle()
+
+            assertEquals(1, recognizers[0].flushCalls)
+            assertEquals(1, recognizers[0].resetCalls)
+            assertFalse(inference.listening.value)
+            assertFalse(inference.finalizing.value)
+            inference.close()
+        }
+
+    @Test
+    fun stop_whenNotListening_isNoOp() =
+        runTest {
+            val captures = mutableListOf<MockAudioCapture>()
+            val inference = buildInference(testScheduler, captureHook = { captures.add(it) })
+
+            inference.stop()
+
+            assertEquals(0, captures.size)
+        }
+
+    @Test
+    fun segmentCallback_filtersDegenerateAndTrims() =
+        runTest {
+            val models = mutableListOf<MockModel>()
+            val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
+            val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
+            inference.setSourceLanguage("en")
+            inference.load(files())
+            inference.start(this)
+            val recognizer = recognizers[0]
+
+            recognizer.emit("  Hello world  ", 0, 100)
+            recognizer.emit("...", 200, 300)
+            recognizer.emit("'s", 400, 500)
+            recognizer.emit("   ", 600, 700)
+            recognizer.emit("北京欢迎你", 800, 900)
+
+            assertEquals(
+                listOf("Hello world", "北京欢迎你"),
+                inference.segments.value.map { it.text },
+            )
+            inference.close()
+        }
+
+    @Test
+    fun segmentCallback_carriesContextAcrossSessions() =
+        runTest {
+            val models = mutableListOf<MockModel>()
+            val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
+            val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
+            inference.setSourceLanguage("en")
+            inference.load(files())
+            recognizers[0].processResult = 0L
+            inference.start(this)
+            recognizers[0].emit("hello", 0, 100, intArrayOf(7, 8, 9))
+
+            inference.stop()
+            advanceUntilIdle()
+            inference.start(this)
+
+            assertArrayEquals(intArrayOf(7, 8, 9), recognizers[0].lastCarriedContext)
+            inference.close()
+        }
+
+    @Test
+    fun rtf_reflectsRecognizerMetrics() =
+        runTest {
+            val models = mutableListOf<MockModel>()
+            val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
+            val inference = buildInference(testScheduler, { models.add(it) }, { recognizers.add(it) })
+            inference.setSourceLanguage("en")
+            inference.load(files())
+            recognizers[0].metricsResult = metrics(rtf = 1.5)
+            inference.start(this)
+
+            advanceTimeBy(1)
+            Thread.sleep(1_100)
+            advanceTimeBy(200)
+
+            assertEquals(1.5f, inference.rtf.value)
+            inference.close()
+        }
+
+    @Test
+    fun spectrum_beforeLoad_isSilent() =
+        runTest {
+            val inference = buildInference(testScheduler)
+
+            assertTrue(inference.spectrum.first().all { it == 0f })
+            inference.close()
+        }
 
     // The spectrum tests run against a live session whose process loop polls
     // forever on the test scheduler, so idle-based waits would hang:
     // runCurrent() flushes the flow dispatches at the current virtual time.
     @Test
-    fun spectrum_whenSessionRunning_reflectsCaptureSpectrum() = runTest {
-        val captures = mutableListOf<MockAudioCapture>()
-        val inference = buildInference(testScheduler, captureHook = { captures.add(it) })
-        inference.setSourceLanguage("en")
-        inference.load(files())
-        val observed = mutableListOf<FloatArray>()
-        backgroundScope.launch { inference.spectrum.collect { observed.add(it) } }
-        runCurrent()
-        inference.start(this)
-        runCurrent()
+    fun spectrum_whenSessionRunning_reflectsCaptureSpectrum() =
+        runTest {
+            val captures = mutableListOf<MockAudioCapture>()
+            val inference = buildInference(testScheduler, captureHook = { captures.add(it) })
+            inference.setSourceLanguage("en")
+            inference.load(files())
+            val observed = mutableListOf<FloatArray>()
+            backgroundScope.launch { inference.spectrum.collect { observed.add(it) } }
+            runCurrent()
+            inference.start(this)
+            runCurrent()
 
-        captures[0].spectrum.value = FloatArray(SPECTRUM_BAND_COUNT) { 0.6f }
-        runCurrent()
+            captures[0].spectrum.value = FloatArray(SPECTRUM_BAND_COUNT) { 0.6f }
+            runCurrent()
 
-        assertTrue(observed.last().all { it == 0.6f })
-        inference.close()
-    }
-
-    @Test
-    fun spectrum_afterStop_isSilent() = runTest {
-        val captures = mutableListOf<MockAudioCapture>()
-        val inference = buildInference(testScheduler, captureHook = { captures.add(it) })
-        inference.setSourceLanguage("en")
-        inference.load(files())
-        val observed = mutableListOf<FloatArray>()
-        backgroundScope.launch { inference.spectrum.collect { observed.add(it) } }
-        runCurrent()
-        inference.start(this)
-        runCurrent()
-        captures[0].spectrum.value = FloatArray(SPECTRUM_BAND_COUNT) { 0.9f }
-        runCurrent()
-        assertTrue(observed.last().all { it == 0.9f })
-
-        inference.stop()
-        runCurrent()
-
-        assertTrue(observed.last().all { it == 0f })
-        inference.close()
-    }
+            assertTrue(observed.last().all { it == 0.6f })
+            inference.close()
+        }
 
     @Test
-    fun close_clearsContextAndClosesResources() = runTest {
-        val models = mutableListOf<MockModel>()
-        val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
-        val captures = mutableListOf<MockAudioCapture>()
-        val inference = buildInference(
-            testScheduler,
-            { models.add(it) },
-            { recognizers.add(it) },
-            { captures.add(it) },
-        )
-        inference.setSourceLanguage("en")
-        inference.load(files())
-        inference.start(this)
-        recognizers[0].emit("hello", 0, 100, intArrayOf(7, 8, 9))
+    fun spectrum_afterStop_isSilent() =
+        runTest {
+            val captures = mutableListOf<MockAudioCapture>()
+            val inference = buildInference(testScheduler, captureHook = { captures.add(it) })
+            inference.setSourceLanguage("en")
+            inference.load(files())
+            val observed = mutableListOf<FloatArray>()
+            backgroundScope.launch { inference.spectrum.collect { observed.add(it) } }
+            runCurrent()
+            inference.start(this)
+            runCurrent()
+            captures[0].spectrum.value = FloatArray(SPECTRUM_BAND_COUNT) { 0.9f }
+            runCurrent()
+            assertTrue(observed.last().all { it == 0.9f })
 
-        inference.close()
+            inference.stop()
+            runCurrent()
 
-        assertEquals(1, captures[0].stopCalls)
-        waitForCondition { models[0].closeCalls == 1 }
-        waitForCondition { recognizers[0].closeCalls == 1 }
+            assertTrue(observed.last().all { it == 0f })
+            inference.close()
+        }
 
-        // Carried context is gone: a fresh session starts cold.
-        inference.load(files())
-        inference.start(this)
-        assertTrue(recognizers[1].lastCarriedContext!!.isEmpty())
-        inference.close()
-    }
+    @Test
+    fun close_clearsContextAndClosesResources() =
+        runTest {
+            val models = mutableListOf<MockModel>()
+            val recognizers = mutableListOf<MockSpeechRecognitionEngine>()
+            val captures = mutableListOf<MockAudioCapture>()
+            val inference =
+                buildInference(
+                    testScheduler,
+                    { models.add(it) },
+                    { recognizers.add(it) },
+                    { captures.add(it) },
+                )
+            inference.setSourceLanguage("en")
+            inference.load(files())
+            inference.start(this)
+            recognizers[0].emit("hello", 0, 100, intArrayOf(7, 8, 9))
+
+            inference.close()
+
+            assertEquals(1, captures[0].stopCalls)
+            waitForCondition { models[0].closeCalls == 1 }
+            waitForCondition { recognizers[0].closeCalls == 1 }
+
+            // Carried context is gone: a fresh session starts cold.
+            inference.load(files())
+            inference.start(this)
+            assertTrue(recognizers[1].lastCarriedContext!!.isEmpty())
+            inference.close()
+        }
 }

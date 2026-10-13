@@ -6,8 +6,6 @@ class TextToSpeechMockTokenizer : TextToSpeechTokenizer {
     override fun tokenize(
         text: String,
         language: Language,
-        splitSentences: Boolean
-    ): List<LongArray> {
-        return emptyList()
-    }
+        splitSentences: Boolean,
+    ): List<LongArray> = emptyList()
 }

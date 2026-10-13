@@ -118,36 +118,41 @@ fun ScaffoldCompactBar(
         containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                modifier = Modifier.background(
-                    color = MaterialTheme.colorScheme.background.copy(alpha = 0.72f),
-                ),
-                windowInsets = TopAppBarDefaults.windowInsets.only(
-                    WindowInsetsSides.Top + WindowInsetsSides.Bottom + WindowInsetsSides.End
-                ),
+                modifier =
+                    Modifier.background(
+                        color = MaterialTheme.colorScheme.background.copy(alpha = 0.72f),
+                    ),
+                windowInsets =
+                    TopAppBarDefaults.windowInsets.only(
+                        WindowInsetsSides.Top + WindowInsetsSides.Bottom + WindowInsetsSides.End,
+                    ),
                 colors = ScaffoldCompactBarDefaults.topAppBarTransparentColor(),
                 title = {
                     Row(
-                        modifier = Modifier
-                            .padding(end = if (windowAdaptiveInfo.isExpanded()) MaterialTheme.spacing.medium else 0.dp)
-                            .fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .padding(end = if (windowAdaptiveInfo.isExpanded()) MaterialTheme.spacing.medium else 0.dp)
+                                .fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         AnimatedContent(
                             targetState = titleComponent,
                             contentKey = { it.contentKey },
                             transitionSpec = {
                                 ContentTransform(
-                                    targetContentEnter = slideInVertically(
-                                        animationSpec = tween(
-                                            delayMillis = DefaultDurationMillis
-                                        )
-                                    ) { -it } + fadeIn(animationSpec = tween(delayMillis = DefaultDurationMillis)),
+                                    targetContentEnter =
+                                        slideInVertically(
+                                            animationSpec =
+                                                tween(
+                                                    delayMillis = DefaultDurationMillis,
+                                                ),
+                                        ) { -it } + fadeIn(animationSpec = tween(delayMillis = DefaultDurationMillis)),
                                     initialContentExit = slideOutVertically { -it } + fadeOut(),
-                                    sizeTransform = null
+                                    sizeTransform = null,
                                 )
                             },
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             it.component?.invoke()
                         }
@@ -168,16 +173,18 @@ fun ScaffoldCompactBar(
                         contentKey = { it.contentKey },
                         transitionSpec = {
                             ContentTransform(
-                                targetContentEnter = slideInHorizontally(
-                                    animationSpec = tween(
-                                        delayMillis = DefaultDurationMillis
-                                    )
-                                ) { it } + fadeIn(animationSpec = tween(delayMillis = DefaultDurationMillis)),
+                                targetContentEnter =
+                                    slideInHorizontally(
+                                        animationSpec =
+                                            tween(
+                                                delayMillis = DefaultDurationMillis,
+                                            ),
+                                    ) { it } + fadeIn(animationSpec = tween(delayMillis = DefaultDurationMillis)),
                                 initialContentExit = slideOutHorizontally { it } + fadeOut(),
-                                sizeTransform = null
+                                sizeTransform = null,
                             )
                         },
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         Row {
                             it.component?.invoke(this@TopAppBar)
@@ -199,16 +206,18 @@ fun ScaffoldCompactBar(
                         contentKey = { it.contentKey },
                         transitionSpec = {
                             ContentTransform(
-                                targetContentEnter = slideInHorizontally(
-                                    animationSpec = tween(
-                                        delayMillis = DefaultDurationMillis
-                                    )
-                                ) { -it } + fadeIn(animationSpec = tween(delayMillis = DefaultDurationMillis)),
+                                targetContentEnter =
+                                    slideInHorizontally(
+                                        animationSpec =
+                                            tween(
+                                                delayMillis = DefaultDurationMillis,
+                                            ),
+                                    ) { -it } + fadeIn(animationSpec = tween(delayMillis = DefaultDurationMillis)),
                                 initialContentExit = slideOutHorizontally { -it } + fadeOut(),
-                                sizeTransform = null
+                                sizeTransform = null,
                             )
                         },
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         it.component?.invoke()
                     }
@@ -219,7 +228,7 @@ fun ScaffoldCompactBar(
             ScaffoldCompactContentWrapping(
                 wrapContent = wrapContent,
                 innerPadding = innerPadding,
-                content = content
+                content = content,
             )
         },
         bottomBar = {
@@ -230,14 +239,14 @@ fun ScaffoldCompactBar(
                     ContentTransform(
                         targetContentEnter = slideInVertically { it } + fadeIn(),
                         initialContentExit = slideOutVertically { it } + fadeOut(),
-                        sizeTransform = null
+                        sizeTransform = null,
                     )
                 },
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 it.component?.invoke()
             }
-        }
+        },
     )
 }
 
@@ -255,18 +264,20 @@ fun ScaffoldCompactContentWrapping(
 
     if (shouldWrap) {
         Box(
-            modifier = Modifier.padding(
-                top = innerPadding.calculateTopPadding(),
-                end = innerPadding.calculateEndPadding(layoutDirection = layoutDirection),
-            )
+            modifier =
+                Modifier.padding(
+                    top = innerPadding.calculateTopPadding(),
+                    end = innerPadding.calculateEndPadding(layoutDirection = layoutDirection),
+                ),
         ) {
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                shape = MaterialTheme.shapes.extraLarge.copy(
-                    topEnd = squaredCornerShape.topEnd,
-                    bottomStart = squaredCornerShape.bottomStart,
-                    bottomEnd = squaredCornerShape.bottomEnd
-                ),
+                shape =
+                    MaterialTheme.shapes.extraLarge.copy(
+                        topEnd = squaredCornerShape.topEnd,
+                        bottomStart = squaredCornerShape.bottomStart,
+                        bottomEnd = squaredCornerShape.bottomEnd,
+                    ),
             ) {
                 content(PaddingValues(bottom = innerPadding.calculateBottomPadding()))
             }
@@ -314,7 +325,7 @@ fun ScaffoldCompactBarMenuNavigationIcon(
             scope.launch {
                 navigationViewModel.setDrawerState(true)
             }
-        }
+        },
     ) {
         Icon(ImageVector.vectorResource(R.drawable.rounded_menu_24), "Navigation menu")
     }
@@ -333,7 +344,7 @@ fun ScaffoldCompactBarSettingsActions(
     IconButton(onClick = {
         navigationViewModel.clearAndNavigate(
             Screens.Settings,
-            navigationViewModel.navigationBackStack.lastOrNull()
+            navigationViewModel.navigationBackStack.lastOrNull(),
         )
     }) {
         Icon(ImageVector.vectorResource(R.drawable.round_settings_24), stringResource(R.string.settings))
@@ -344,14 +355,16 @@ fun ScaffoldCompactBarSettingsActions(
 @Composable
 fun ScaffoldCompactBarEmptyActions() {
     Box(
-        modifier = Modifier.size(
-            size = IconButtonDefaults.smallContainerSize().plus(
-                DpSize(
-                    width = MaterialTheme.spacing.small,
-                    height = MaterialTheme.spacing.small
-                )
-            )
-        )
+        modifier =
+            Modifier.size(
+                size =
+                    IconButtonDefaults.smallContainerSize().plus(
+                        DpSize(
+                            width = MaterialTheme.spacing.small,
+                            height = MaterialTheme.spacing.small,
+                        ),
+                    ),
+            ),
     )
 }
 
@@ -359,44 +372,50 @@ fun ScaffoldCompactBarEmptyActions() {
 @Preview(showBackground = true)
 fun ScaffoldCompactBarPreview() {
     ScaffoldCompactBar(
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = NavigationViewModel(Screens.TextTranslation),
-            defaultTitle = ScaffoldTitleComponent({ Text(text = "Compact Bar") }),
-            defaultActions = ScaffoldActionsComponent({
-                IconButton(onClick = {}) {
-                    Icon(
-                        ImageVector.vectorResource(R.drawable.rounded_search_24),
-                        contentDescription = "Search"
-                    )
-                }
-            }),
-            defaultNavigationIcon = ScaffoldNavigationIconComponent({
-                IconButton(onClick = {}) {
-                    Icon(
-                        ImageVector.vectorResource(R.drawable.rounded_menu_24),
-                        contentDescription = "Menu"
-                    )
-                }
-            }),
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = NavigationViewModel(Screens.TextTranslation),
+                defaultTitle = ScaffoldTitleComponent({ Text(text = "Compact Bar") }),
+                defaultActions =
+                    ScaffoldActionsComponent({
+                        IconButton(onClick = {}) {
+                            Icon(
+                                ImageVector.vectorResource(R.drawable.rounded_search_24),
+                                contentDescription = "Search",
+                            )
+                        }
+                    }),
+                defaultNavigationIcon =
+                    ScaffoldNavigationIconComponent({
+                        IconButton(onClick = {}) {
+                            Icon(
+                                ImageVector.vectorResource(R.drawable.rounded_menu_24),
+                                contentDescription = "Menu",
+                            )
+                        }
+                    }),
+            ),
         content = { innerPadding ->
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(innerPadding),
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
             ) {
                 items(20) { index ->
                     Text(
                         text = "Item #$index",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surface)
-                            .padding(MaterialTheme.spacing.medium)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surface)
+                                .padding(MaterialTheme.spacing.medium),
                     )
                 }
             }
-        })
+        },
+    )
 }
 
 @Composable
@@ -415,35 +434,37 @@ fun ScaffoldComponentProvider(
 ) {
     LaunchedEffect(Unit) {
         scaffoldViewModel.registerRouteComponents(
-            title = title?.let {
-                ScaffoldTitleComponent(
-                    component = it,
-                    contentKey = titleContentKey
-                )
-            },
-            navigationIcon = navigationIcon?.let {
-                ScaffoldNavigationIconComponent(
-                    component = it,
-                    contentKey = navigationIconContentKey
-                )
-            },
-            actions = actions?.let {
-                ScaffoldActionsComponent(
-                    component = it,
-                    contentKey = actionsContentKey
-                )
-            },
-            bottomBar = bottomBar?.let {
-                ScaffoldBottomBarComponent(
-                    component = it,
-                    contentKey = bottomBarContentKey
-                )
-            },
-            wrapContent = wrapContent
+            title =
+                title?.let {
+                    ScaffoldTitleComponent(
+                        component = it,
+                        contentKey = titleContentKey,
+                    )
+                },
+            navigationIcon =
+                navigationIcon?.let {
+                    ScaffoldNavigationIconComponent(
+                        component = it,
+                        contentKey = navigationIconContentKey,
+                    )
+                },
+            actions =
+                actions?.let {
+                    ScaffoldActionsComponent(
+                        component = it,
+                        contentKey = actionsContentKey,
+                    )
+                },
+            bottomBar =
+                bottomBar?.let {
+                    ScaffoldBottomBarComponent(
+                        component = it,
+                        contentKey = bottomBarContentKey,
+                    )
+                },
+            wrapContent = wrapContent,
         )
     }
 
     content()
 }
-
-

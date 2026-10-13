@@ -24,9 +24,10 @@ import app.versta.translate.utils.darken
 fun SettingsHeaderItem(
     content: @Composable () -> Unit,
     modifier: Modifier = Modifier,
-    colors: ListItemColors = SettingsDefaults.colors(
-        headlineColor = MaterialTheme.colorScheme.primary
-    ),
+    colors: ListItemColors =
+        SettingsDefaults.colors(
+            headlineColor = MaterialTheme.colorScheme.primary,
+        ),
     tonalElevation: Dp = ListItemDefaults.Elevation,
     shadowElevation: Dp = ListItemDefaults.Elevation,
     index: Int = 0,
@@ -36,21 +37,23 @@ fun SettingsHeaderItem(
     val isFirstItem = remember { index == 0 }
     val isLastItem = remember { index == groupSize - 1 }
 
-    val borderRadius = RoundedCornerShape(
-        topStart = if (isFirstItem) MaterialTheme.shapes.extraLarge.topStart else MaterialTheme.shapes.small.topStart,
-        topEnd = if (isFirstItem) MaterialTheme.shapes.extraLarge.topEnd else MaterialTheme.shapes.small.topEnd,
-        bottomStart = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomStart else MaterialTheme.shapes.small.bottomStart,
-        bottomEnd = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomEnd else MaterialTheme.shapes.small.bottomEnd,
-    )
+    val borderRadius =
+        RoundedCornerShape(
+            topStart = if (isFirstItem) MaterialTheme.shapes.extraLarge.topStart else MaterialTheme.shapes.small.topStart,
+            topEnd = if (isFirstItem) MaterialTheme.shapes.extraLarge.topEnd else MaterialTheme.shapes.small.topEnd,
+            bottomStart = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomStart else MaterialTheme.shapes.small.bottomStart,
+            bottomEnd = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomEnd else MaterialTheme.shapes.small.bottomEnd,
+        )
 
     val topPadding =
         if (!isFirstItem) MaterialTheme.spacing.hairline else MaterialTheme.spacing.none
 
     Box(
-        modifier = Modifier
-            .padding(top = topPadding)
-            .clip(borderRadius)
-            .then(modifier),
+        modifier =
+            Modifier
+                .padding(top = topPadding)
+                .clip(borderRadius)
+                .then(modifier),
     ) {
         Surface(
             contentColor = if (enabled) colors.headlineColor else colors.disabledHeadlineColor,
@@ -59,16 +62,15 @@ fun SettingsHeaderItem(
             shadowElevation = shadowElevation,
         ) {
             Row(
-                modifier = Modifier
-                    .padding(
-                        vertical = MaterialTheme.spacing.medium,
-                        horizontal = MaterialTheme.spacing.large,
-                    )
-                    .fillMaxWidth()
+                modifier =
+                    Modifier
+                        .padding(
+                            vertical = MaterialTheme.spacing.medium,
+                            horizontal = MaterialTheme.spacing.large,
+                        ).fillMaxWidth(),
             ) {
                 content()
             }
-
         }
     }
 }
@@ -77,9 +79,10 @@ fun SettingsHeaderItem(
 fun SettingsHeaderItem(
     content: String,
     modifier: Modifier = Modifier,
-    colors: ListItemColors = SettingsDefaults.colors(
-        headlineColor = MaterialTheme.colorScheme.primary
-    ),
+    colors: ListItemColors =
+        SettingsDefaults.colors(
+            headlineColor = MaterialTheme.colorScheme.primary,
+        ),
     tonalElevation: Dp = ListItemDefaults.Elevation,
     shadowElevation: Dp = ListItemDefaults.Elevation,
     index: Int = 0,

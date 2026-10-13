@@ -12,5 +12,5 @@ import app.versta.translate.core.entity.ObjectCharacterRecogniserResult
  */
 data class OcrPostProcessorContext(
     val imageProxy: ImageProxy,
-    val results: List<ObjectCharacterRecogniserResult>
+    val results: List<ObjectCharacterRecogniserResult>,
 )

@@ -17,7 +17,9 @@ sealed class Screens : NavKey {
     data object LanguageSettings : Screens()
 
     @Serializable
-    data class LanguageDetails(val id: String) : Screens()
+    data class LanguageDetails(
+        val id: String,
+    ) : Screens()
 
     @Serializable
     data object LanguageAttributions : Screens()
@@ -38,7 +40,9 @@ sealed class Screens : NavKey {
     data object VoiceSettings : Screens()
 
     @Serializable
-    data class VoiceDetails(val id: String) : Screens()
+    data class VoiceDetails(
+        val id: String,
+    ) : Screens()
 
     @Serializable
     data object VoiceAttributions : Screens()
@@ -47,7 +51,9 @@ sealed class Screens : NavKey {
     data object ObjectCharacterRecognitionSettings : Screens()
 
     @Serializable
-    data class ObjectCharacterRecognitionDetails(val id: String) : Screens()
+    data class ObjectCharacterRecognitionDetails(
+        val id: String,
+    ) : Screens()
 
     @Serializable
     data object ObjectCharacterRecognitionAttributions : Screens()
@@ -56,7 +62,9 @@ sealed class Screens : NavKey {
     data object SpeechRecognitionSettings : Screens()
 
     @Serializable
-    data class SpeechRecognitionDetails(val id: String) : Screens()
+    data class SpeechRecognitionDetails(
+        val id: String,
+    ) : Screens()
 
     @Serializable
     data object About : Screens()

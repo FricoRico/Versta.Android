@@ -48,6 +48,7 @@ import app.versta.translate.core.model.SpeechRecognitionViewModel
 import app.versta.translate.ui.component.DownloadButton
 import app.versta.translate.ui.component.LanguageBadge
 import app.versta.translate.ui.component.ListDivider
+import app.versta.translate.ui.component.ModelDeletionConfirmationDialog
 import app.versta.translate.ui.component.ScaffoldCompactBarBackNavigationIcon
 import app.versta.translate.ui.component.ScaffoldCompactBarEmptyActions
 import app.versta.translate.ui.component.ScaffoldCompactBarTitle
@@ -55,7 +56,6 @@ import app.versta.translate.ui.component.ScaffoldComponentProvider
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.component.SettingsDefaults
 import app.versta.translate.ui.component.SettingsHeaderItem
-import app.versta.translate.ui.component.ModelDeletionConfirmationDialog
 import app.versta.translate.ui.theme.spacing
 
 @Composable
@@ -66,7 +66,7 @@ fun SpeechRecognitionSettings(
     speechRecognitionViewModel: SpeechRecognitionViewModel,
 ) {
     val speechRecognitionModels by speechRecognitionViewModel.speechRecognitionModelsByState.collectAsStateWithLifecycle(
-        ExternalSpeechRecognitionModels()
+        ExternalSpeechRecognitionModels(),
     )
     val downloadTasks by speechRecognitionViewModel.downloadTasks.collectAsStateWithLifecycle()
     val translationLanguageIsoCodes by speechRecognitionViewModel.translationLanguageIsoCodes
@@ -74,15 +74,18 @@ fun SpeechRecognitionSettings(
 
     var toDelete by remember { mutableStateOf<String?>(null) }
 
-    val queuedTasks = (speechRecognitionModels.updates + speechRecognitionModels.available).filter { model ->
-        downloadTasks.any { it.model == model.definition }
-    }
-    val filteredUpdates = speechRecognitionModels.updates.filterNot { model ->
-        downloadTasks.any { it.model == model.definition }
-    }
-    val filteredAvailable = speechRecognitionModels.available.filterNot { model ->
-        downloadTasks.any { it.model == model.definition }
-    }
+    val queuedTasks =
+        (speechRecognitionModels.updates + speechRecognitionModels.available).filter { model ->
+            downloadTasks.any { it.model == model.definition }
+        }
+    val filteredUpdates =
+        speechRecognitionModels.updates.filterNot { model ->
+            downloadTasks.any { it.model == model.definition }
+        }
+    val filteredAvailable =
+        speechRecognitionModels.available.filterNot { model ->
+            downloadTasks.any { it.model == model.definition }
+        }
 
     val layoutDirection = LocalLayoutDirection.current
 
@@ -97,7 +100,7 @@ fun SpeechRecognitionSettings(
     fun onClick(model: ExternalSpeechRecognitionModelDefinition) {
         navigationViewModel.navigate(
             Screens.SpeechRecognitionDetails(model.id),
-            Screens.SpeechRecognitionSettings
+            Screens.SpeechRecognitionSettings,
         )
     }
 
@@ -112,17 +115,19 @@ fun SpeechRecognitionSettings(
             ScaffoldCompactBarEmptyActions()
         },
         actionsContentKey = "ScaffoldCompactBarEmptyActions",
-        wrapContent = true
+        wrapContent = true,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            )
+            modifier =
+                Modifier
+                    .fillMaxSize(),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
         ) {
             SpeechRecognitionModels(
                 models = queuedTasks,
@@ -131,7 +136,8 @@ fun SpeechRecognitionSettings(
                 header = { size ->
                     SettingsHeaderItem(
                         content = stringResource(R.string.downloading),
-                        groupSize = size + 1, index = 0
+                        groupSize = size + 1,
+                        index = 0,
                     )
                 },
                 onDownload = {
@@ -145,7 +151,7 @@ fun SpeechRecognitionSettings(
                 },
                 onSwipeToDelete = { model ->
                     toDelete = model.id
-                }
+                },
             )
 
             SpeechRecognitionModels(
@@ -155,7 +161,8 @@ fun SpeechRecognitionSettings(
                 header = { size ->
                     SettingsHeaderItem(
                         content = stringResource(R.string.installed_headline),
-                        groupSize = size + 1, index = 0
+                        groupSize = size + 1,
+                        index = 0,
                     )
                 },
                 onClick = {
@@ -163,7 +170,7 @@ fun SpeechRecognitionSettings(
                 },
                 onSwipeToDelete = { model ->
                     toDelete = model.id
-                }
+                },
             )
 
             SpeechRecognitionModels(
@@ -173,7 +180,8 @@ fun SpeechRecognitionSettings(
                 header = { size ->
                     SettingsHeaderItem(
                         content = stringResource(R.string.updates_headline),
-                        groupSize = size + 1, index = 0
+                        groupSize = size + 1,
+                        index = 0,
                     )
                 },
                 onDownload = {
@@ -187,7 +195,7 @@ fun SpeechRecognitionSettings(
                 },
                 onSwipeToDelete = { model ->
                     toDelete = model.id
-                }
+                },
             )
 
             SpeechRecognitionModels(
@@ -197,7 +205,8 @@ fun SpeechRecognitionSettings(
                 header = { size ->
                     SettingsHeaderItem(
                         content = stringResource(R.string.available_headline),
-                        groupSize = size + 1, index = 0
+                        groupSize = size + 1,
+                        index = 0,
                     )
                 },
                 onDownload = {
@@ -208,7 +217,7 @@ fun SpeechRecognitionSettings(
                 },
                 onClick = {
                     onClick(it)
-                }
+                },
             )
         }
 
@@ -222,7 +231,8 @@ fun SpeechRecognitionSettings(
             },
             onDismissRequest = {
                 toDelete = null
-            })
+            },
+        )
     }
 }
 
@@ -248,16 +258,17 @@ private fun LazyListScope.SpeechRecognitionModels(
 
     items(
         count = models.size,
-        key = { models[it].definition.id }
+        key = { models[it].definition.id },
     ) { it ->
         val modelWithState = remember(models[it]) { models[it] }
         val model = modelWithState.definition
         val task = downloadTasks.firstOrNull { it.model == model }
-        val languages = model.languages
-            .filter { it in translationLanguageIsoCodes }
-            .map { Language.fromIsoCode(it) }
-            .distinctBy { it.isoCode }
-            .sortedBy { it.name }
+        val languages =
+            model.languages
+                .filter { it in translationLanguageIsoCodes }
+                .map { Language.fromIsoCode(it) }
+                .distinctBy { it.isoCode }
+                .sortedBy { it.name }
 
         val size = ((modelWithState.extracted ?: model.size) / 1e6)
 
@@ -271,17 +282,17 @@ private fun LazyListScope.SpeechRecognitionModels(
                 Row(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                    modifier = Modifier.padding(top = MaterialTheme.spacing.extraSmall)
+                    modifier = Modifier.padding(top = MaterialTheme.spacing.extraSmall),
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             if (modelWithState.extracted != null) ImageVector.vectorResource(R.drawable.round_save_24) else ImageVector.vectorResource(R.drawable.round_cloud_download_24),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.requiredSize(MaterialTheme.spacing.medium)
+                            modifier = Modifier.requiredSize(MaterialTheme.spacing.medium),
                         )
                         Text(
                             text = "${sizeFormat.format(size)} MB",
@@ -295,7 +306,7 @@ private fun LazyListScope.SpeechRecognitionModels(
             underlineContent = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall)
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
                 ) {
                     languages.take(5).forEach {
                         LanguageBadge(
@@ -307,7 +318,7 @@ private fun LazyListScope.SpeechRecognitionModels(
                         Text(
                             text = "+${languages.size - 5}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -326,11 +337,13 @@ private fun LazyListScope.SpeechRecognitionModels(
                     )
                 }
             },
-            onSwipeToDelete = if (onSwipeToDelete != null) {
-                { onSwipeToDelete(model) }
-            } else {
-                null
-            })
+            onSwipeToDelete =
+                if (onSwipeToDelete != null) {
+                    { onSwipeToDelete(model) }
+                } else {
+                    null
+                },
+        )
     }
 
     ListDivider()
@@ -340,25 +353,28 @@ private fun LazyListScope.SpeechRecognitionModels(
 @Preview(showBackground = true)
 private fun PreviewSpeechRecognitionSettings() {
     val navigationViewModel = NavigationViewModel(Screens.TextTranslation)
-    val languageViewModel = LanguageViewModel(
-        context = LocalContext.current,
-        languageRepository = LanguageMemoryRepository(),
-        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-    )
+    val languageViewModel =
+        LanguageViewModel(
+            context = LocalContext.current,
+            languageRepository = LanguageMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+        )
 
     SpeechRecognitionSettings(
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel,
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
-        speechRecognitionViewModel = SpeechRecognitionViewModel(
-            context = LocalContext.current,
-            speechRecognitionRepository = SpeechRecognitionMemoryRepository(),
-            externalSpeechRecognitionModelsRepository = ExternalSpeechRecognitionModelsMemoryRepository(),
-            speechRecognitionInference = SpeechRecognitionMockInference(),
-            languageViewModel = languageViewModel,
-        ),
+        speechRecognitionViewModel =
+            SpeechRecognitionViewModel(
+                context = LocalContext.current,
+                speechRecognitionRepository = SpeechRecognitionMemoryRepository(),
+                externalSpeechRecognitionModelsRepository = ExternalSpeechRecognitionModelsMemoryRepository(),
+                speechRecognitionInference = SpeechRecognitionMockInference(),
+                languageViewModel = languageViewModel,
+            ),
     )
 }

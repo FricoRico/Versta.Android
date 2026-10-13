@@ -5,7 +5,9 @@ import kotlinx.serialization.Serializable
 import java.nio.file.Path
 import kotlin.io.path.exists
 
-enum class LanguageModelArchitecture(val value: String) {
+enum class LanguageModelArchitecture(
+    val value: String,
+) {
     MarianMTModel("MarianMTModel"),
     BergamotTinyModel("BergamotTinyModel"),
 }
@@ -22,12 +24,13 @@ data class LanguageModelMetadata(
     val score: Double? = 0.0,
     val files: LanguageModelFilesMetadata,
     val config: LanguageModelConfigurationMetadata,
-    var root: Path? = null
+    var root: Path? = null,
 ) {
-    fun isValid() = baseModel.isNotBlank()
-            && sourceLanguage.isNotBlank()
-            && (root != null && files.isValid(root!!))
-            && root?.isAbsolute ?: false
+    fun isValid() =
+        baseModel.isNotBlank() &&
+            sourceLanguage.isNotBlank() &&
+            (root != null && files.isValid(root!!)) &&
+            root?.isAbsolute ?: false
 
     fun setRootPath(path: Path): LanguageModelMetadata {
         root = path
@@ -42,7 +45,7 @@ data class LanguageMetadata(
     @SerialName("source_language")
     val sourceLanguage: String,
     @SerialName("target_language")
-    val targetLanguage: String
+    val targetLanguage: String,
 )
 
 @Serializable
@@ -50,25 +53,24 @@ data class LanguageBundleMetadata(
     val version: String = "",
     val metadata: List<LanguageMetadata>,
     val bidirectional: Boolean,
-    val languages: List<String>
+    val languages: List<String>,
 ) {
     fun isValid() =
-        languages.isNotEmpty()
-                && (if (bidirectional) languages.size % 2 == 0 else true)
-                && metadata.isNotEmpty()
+        languages.isNotEmpty() &&
+            (if (bidirectional) languages.size % 2 == 0 else true) &&
+            metadata.isNotEmpty()
 
-    fun languagePairs(): List<LanguagePair> {
-        return metadata.map {
+    fun languagePairs(): List<LanguagePair> =
+        metadata.map {
             LanguagePair.fromIsoCodes(it.sourceLanguage, it.targetLanguage)
         }
-    }
 
-    fun distinctLanguagePairs(): List<LanguagePair> {
-        return languagePairs().distinctBy { pair ->
+    fun distinctLanguagePairs(): List<LanguagePair> =
+        languagePairs().distinctBy { pair ->
             pair.uniqueId()
         }
-    }
 }
+
 @Serializable
 data class LanguageModelFilesMetadata(
     val model: String,
@@ -78,7 +80,8 @@ data class LanguageModelFilesMetadata(
     val targetVocabulary: String? = null,
     val shortlist: String,
 ) {
-    fun isValid(path: Path) = path.resolve(model).exists() &&
+    fun isValid(path: Path) =
+        path.resolve(model).exists() &&
             path.resolve(vocabulary).exists() &&
             targetVocabulary?.let { path.resolve(it).exists() } ?: true &&
             path.resolve(shortlist).exists()
@@ -95,14 +98,15 @@ data class LanguageModelConfigurationMetadata(
     @SerialName("num_heads")
     val numHeads: Long,
     @SerialName("split_mode")
-    val splitMode: String = "sentence"
+    val splitMode: String = "sentence",
 ) {
-    fun isValid() = encoderLayers > 0 && decoderLayers > 0 &&
+    fun isValid() =
+        encoderLayers > 0 && decoderLayers > 0 &&
             ffnDepth > 0 && numHeads > 0
 }
 
 @Serializable
 data class LanguageBundleData(
     val bundle: LanguageBundleMetadata,
-    val languages: List<LanguageModelMetadata>
+    val languages: List<LanguageModelMetadata>,
 )

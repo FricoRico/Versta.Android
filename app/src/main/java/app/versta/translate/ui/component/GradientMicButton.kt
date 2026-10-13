@@ -3,8 +3,6 @@ package app.versta.translate.ui.component
 import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -14,6 +12,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -49,9 +49,9 @@ import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.lightness
 
 private val OrbRingSize = 88.dp
-private val RingStrokeWidth = 2.5.dp
-private val RingGlowRadiusScale = 0.78f
-private const val RingRotationDurationMillis = 4200
+private val RING_STROKE_WIDTH = 2.5.dp
+private val RING_GLOW_RADIUS_SCALE = 0.78f
+private const val RING_ROTATION_DURATION_MILLIS = 4200
 
 /**
  * Primary voice-input action: a filled mic orb ringed by a slowly rotating
@@ -69,28 +69,32 @@ fun GradientMicButton(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val animationsEnabled = remember(context) {
-        Settings.Global.getFloat(
-            context.contentResolver,
-            Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f,
-        ) > 0f
-    }
+    val animationsEnabled =
+        remember(context) {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f,
+            ) > 0f
+        }
 
-    val ringRotation = if (animationsEnabled && listening) {
-        val transition = rememberInfiniteTransition(label = "micRingRotation")
-        transition.animateFloat(
-            initialValue = 0f,
-            targetValue = 360f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(RingRotationDurationMillis, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-            label = "micRingAngle",
-        ).value
-    } else {
-        0f
-    }
+    val ringRotation =
+        if (animationsEnabled && listening) {
+            val transition = rememberInfiniteTransition(label = "micRingRotation")
+            transition
+                .animateFloat(
+                    initialValue = 0f,
+                    targetValue = 360f,
+                    animationSpec =
+                        infiniteRepeatable(
+                            animation = tween(RING_ROTATION_DURATION_MILLIS, easing = LinearEasing),
+                            repeatMode = RepeatMode.Restart,
+                        ),
+                    label = "micRingAngle",
+                ).value
+        } else {
+            0f
+        }
 
     val glowAlpha by animateFloatAsState(
         targetValue = if (listening) 1f else 0f,
@@ -102,62 +106,70 @@ fun GradientMicButton(
     val pressed by interactionSource.collectIsPressedAsState()
     val pressScale by animateFloatAsState(
         targetValue = if (pressed) 0.94f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessHigh,
-        ),
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessHigh,
+            ),
         label = "micPress",
     )
 
     val dark = MaterialTheme.colorScheme.background.lightness() < 0.5f
-    val ringBrush = Brush.sweepGradient(
-        colors = listOf(
-            VoiceAccentIndigo,
-            VoiceAccentBridge,
-            VoiceAccentMagenta,
-            VoiceAccentIndigo,
+    val ringBrush =
+        Brush.sweepGradient(
+            colors =
+                listOf(
+                    VoiceAccentIndigo,
+                    VoiceAccentBridge,
+                    VoiceAccentMagenta,
+                    VoiceAccentIndigo,
+                ),
         )
-    )
-    val glowBrush = Brush.radialGradient(
-        colors = listOf(
-            VoiceAccentBridge.copy(alpha = 0.6f),
-            VoiceAccentMagenta.copy(alpha = 0.3f),
-            Color.Transparent,
+    val glowBrush =
+        Brush.radialGradient(
+            colors =
+                listOf(
+                    VoiceAccentBridge.copy(alpha = 0.6f),
+                    VoiceAccentMagenta.copy(alpha = 0.3f),
+                    Color.Transparent,
+                ),
         )
-    )
 
     val containerColor by animateColorAsState(
-        targetValue = if (listening) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerHighest
-        },
+        targetValue =
+            if (listening) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerHighest
+            },
         label = "micContainer",
     )
     val contentColor by animateColorAsState(
-        targetValue = if (listening) {
-            MaterialTheme.colorScheme.onPrimary
-        } else {
-            MaterialTheme.colorScheme.onSurface
-        },
+        targetValue =
+            if (listening) {
+                MaterialTheme.colorScheme.onPrimary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
         label = "micContent",
     )
 
     Box(
-        modifier = modifier
-            .size(OrbRingSize)
-            .graphicsLayer {
-                scaleX = pressScale
-                scaleY = pressScale
-            },
+        modifier =
+            modifier
+                .size(OrbRingSize)
+                .graphicsLayer {
+                    scaleX = pressScale
+                    scaleY = pressScale
+                },
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.matchParentSize()) {
-            val ringRadius = (OrbRingSize - RingStrokeWidth).toPx() / 2f
+            val ringRadius = (OrbRingSize - RING_STROKE_WIDTH).toPx() / 2f
             if (dark && glowAlpha > 0f) {
                 drawCircle(
                     brush = glowBrush,
-                    radius = size.maxDimension * RingGlowRadiusScale,
+                    radius = size.maxDimension * RING_GLOW_RADIUS_SCALE,
                     alpha = glowAlpha,
                 )
             }
@@ -165,9 +177,10 @@ fun GradientMicButton(
                 drawCircle(
                     brush = ringBrush,
                     radius = ringRadius,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(
-                        width = RingStrokeWidth.toPx(),
-                    ),
+                    style =
+                        androidx.compose.ui.graphics.drawscope.Stroke(
+                            width = RING_STROKE_WIDTH.toPx(),
+                        ),
                     alpha = if (enabled) 1f else 0.5f,
                 )
             }
@@ -177,13 +190,15 @@ fun GradientMicButton(
             onClick = onClick,
             enabled = enabled && !processing,
             interactionSource = interactionSource,
-            modifier = Modifier
-                .size(MaterialTheme.spacing.extraExtraLarge)
-                .clip(MaterialTheme.shapes.extraExtraLarge),
-            colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = containerColor,
-                contentColor = contentColor,
-            ),
+            modifier =
+                Modifier
+                    .size(MaterialTheme.spacing.extraExtraLarge)
+                    .clip(MaterialTheme.shapes.extraExtraLarge),
+            colors =
+                IconButtonDefaults.filledIconButtonColors(
+                    containerColor = containerColor,
+                    contentColor = contentColor,
+                ),
         ) {
             Box(contentAlignment = Alignment.Center) {
                 AnimatedVisibility(
@@ -192,7 +207,7 @@ fun GradientMicButton(
                     exit = fadeOut(),
                 ) {
                     CircularWavyProgressIndicator(
-                        modifier = Modifier.size(MaterialTheme.spacing.extraLarge)
+                        modifier = Modifier.size(MaterialTheme.spacing.extraLarge),
                     )
                 }
                 AnimatedVisibility(

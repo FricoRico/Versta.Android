@@ -41,16 +41,18 @@ class PaddleObjectCharacterRecognition(
     val maxCandidates: Int = 100,
     val batchSize: Int = 24,
     val threads: Int = 4,
-) : ObjectCharacterRecognitionInference, AutoCloseable {
-    private val _paddleOCR = PaddleOCR(
-        detectSize = detectSize,
-        recognizeSize = recognizeSize,
-        cropHeight = cropHeight,
-        maxCropSize = maxCropSize,
-        unclipRatio = unclipRatio,
-        maxCandidates = maxCandidates,
-        threads = threads
-    )
+) : ObjectCharacterRecognitionInference,
+    AutoCloseable {
+    private val _paddleOCR =
+        PaddleOCR(
+            detectSize = detectSize,
+            recognizeSize = recognizeSize,
+            cropHeight = cropHeight,
+            maxCropSize = maxCropSize,
+            unclipRatio = unclipRatio,
+            maxCandidates = maxCandidates,
+            threads = threads,
+        )
 
     private var _detectSessionFile: File? = null
     private var _detectSession: OrtSession? = null
@@ -63,28 +65,31 @@ class PaddleObjectCharacterRecognition(
             throw InstantiationException("PaddleOCR detect session is not initialized.")
         }
 
-        val detectInput = PaddleObjectCharacterRecognitionDetectInput(
-            ortEnvironment = ortEnvironment,
-            paddleOCR = _paddleOCR,
-            detectSize = detectSize
-        )
+        val detectInput =
+            PaddleObjectCharacterRecognitionDetectInput(
+                ortEnvironment = ortEnvironment,
+                paddleOCR = _paddleOCR,
+                detectSize = detectSize,
+            )
 
-        val detectOutput = PaddleObjectCharacterRecognitionDetectOutput(
-            ortEnvironment = ortEnvironment,
-            paddleOCR = _paddleOCR,
-            detectSize = detectSize,
-            maxCandidates = maxCandidates
-        )
+        val detectOutput =
+            PaddleObjectCharacterRecognitionDetectOutput(
+                ortEnvironment = ortEnvironment,
+                paddleOCR = _paddleOCR,
+                detectSize = detectSize,
+                maxCandidates = maxCandidates,
+            )
 
         var inferenceTime = 0L
 
         try {
-            val success = detectInput.preprocess(
-                input = input.planes[0].buffer,
-                width = input.width,
-                height = input.height,
-                rotation = input.imageInfo.rotationDegrees
-            )
+            val success =
+                detectInput.preprocess(
+                    input = input.planes[0].buffer,
+                    width = input.width,
+                    height = input.height,
+                    rotation = input.imageInfo.rotationDegrees,
+                )
             if (!success) {
                 throw IllegalStateException("Failed to preprocess camera frame.")
             }
@@ -94,13 +99,14 @@ class PaddleObjectCharacterRecognition(
             detectOutput.run(_detectSession!!, inputs)
             inferenceTime += System.currentTimeMillis() - startTime
 
-            val regions = detectOutput.parse().map { result ->
-                DetectedRegion(points = result.points)
-            }
+            val regions =
+                detectOutput.parse().map { result ->
+                    DetectedRegion(points = result.points)
+                }
 
             return DetectResult(
                 regions = regions,
-                resultBuffer = detectOutput.resultBuffer
+                resultBuffer = detectOutput.resultBuffer,
             )
         } finally {
             detectInput.destroy()
@@ -110,37 +116,43 @@ class PaddleObjectCharacterRecognition(
         }
     }
 
-    override fun recognize(input: ImageProxy, detectResult: DetectResult): RecognizeResult {
+    override fun recognize(
+        input: ImageProxy,
+        detectResult: DetectResult,
+    ): RecognizeResult {
         if (_recognizeSession == null) {
             throw InstantiationException("PaddleOCR recognize session is not initialized.")
         }
 
-        val recognizeInput = PaddleObjectCharacterRecognitionRecognizeInput(
-            ortEnvironment = ortEnvironment,
-            paddleOCR = _paddleOCR,
-            maxBatchSize = maxCandidates,
-            cropHeight = cropHeight,
-            maxCropSize = maxCropSize
-        )
+        val recognizeInput =
+            PaddleObjectCharacterRecognitionRecognizeInput(
+                ortEnvironment = ortEnvironment,
+                paddleOCR = _paddleOCR,
+                maxBatchSize = maxCandidates,
+                cropHeight = cropHeight,
+                maxCropSize = maxCropSize,
+            )
 
-        val recognizeOutput = PaddleObjectCharacterRecognitionRecognizeOutput(
-            ortEnvironment = ortEnvironment,
-            paddleOCR = _paddleOCR,
-            session = _recognizeSession!!,
-            maxCandidates = maxCandidates,
-            maxCropSize = maxCropSize
-        )
+        val recognizeOutput =
+            PaddleObjectCharacterRecognitionRecognizeOutput(
+                ortEnvironment = ortEnvironment,
+                paddleOCR = _paddleOCR,
+                session = _recognizeSession!!,
+                maxCandidates = maxCandidates,
+                maxCropSize = maxCropSize,
+            )
 
         var inferenceTime = 0L
 
         try {
-            val (success, metrics) = recognizeInput.preprocess(
-                origin = input.planes[0].buffer,
-                detectResultBuffer = detectResult.resultBuffer,
-                originWidth = input.width,
-                originHeight = input.height,
-                originRotation = input.imageInfo.rotationDegrees
-            )
+            val (success, metrics) =
+                recognizeInput.preprocess(
+                    origin = input.planes[0].buffer,
+                    detectResultBuffer = detectResult.resultBuffer,
+                    originWidth = input.width,
+                    originHeight = input.height,
+                    originRotation = input.imageInfo.rotationDegrees,
+                )
 
             if (!success) {
                 throw IllegalStateException("Failed to preprocess recognition frames.")
@@ -159,12 +171,14 @@ class PaddleObjectCharacterRecognition(
                 inferenceTime += System.currentTimeMillis() - startTime
 
                 val batchResults = recognizeOutput.parse(processed, currentBatchSize)
-                results.addAll(batchResults.map { result ->
-                    RecognizedRegion(
-                        tokens = result.tokens,
-                        score = result.score,
-                    )
-                })
+                results.addAll(
+                    batchResults.map { result ->
+                        RecognizedRegion(
+                            tokens = result.tokens,
+                            score = result.score,
+                        )
+                    },
+                )
 
                 processed += currentBatchSize
             }
@@ -205,51 +219,57 @@ class PaddleObjectCharacterRecognition(
 
     private fun combineWithMetrics(
         regions: List<RecognizedRegion>,
-        metrics: List<TextRegionMetrics>
+        metrics: List<TextRegionMetrics>,
     ): RecognizeResult {
         if (regions.size != metrics.size) {
-            throw IllegalStateException("Mismatched regions and metrics size: " +
-                "regions=${regions.size}, metrics=${metrics.size}")
-        }
-
-        val combinedRegions = regions.mapIndexed { i, region ->
-            val metric = metrics[i]
-            RecognizedRegion(
-                tokens = region.tokens,
-                score = region.score,
-                colors = metric.colors,
-                fontSize = metric.fontSize,
-                lineHeight = metric.lineHeight,
-                fontWeight = metric.fontWeight
+            throw IllegalStateException(
+                "Mismatched regions and metrics size: " +
+                    "regions=${regions.size}, metrics=${metrics.size}",
             )
         }
+
+        val combinedRegions =
+            regions.mapIndexed { i, region ->
+                val metric = metrics[i]
+                RecognizedRegion(
+                    tokens = region.tokens,
+                    score = region.score,
+                    colors = metric.colors,
+                    fontSize = metric.fontSize,
+                    lineHeight = metric.lineHeight,
+                    fontWeight = metric.fontWeight,
+                )
+            }
 
         return RecognizeResult(regions = combinedRegions)
     }
 
     private fun combineResults(
         detectResult: DetectResult,
-        recognizeResult: RecognizeResult
+        recognizeResult: RecognizeResult,
     ): CombinedOcrResult {
         if (detectResult.regions.size != recognizeResult.regions.size) {
-            throw IllegalStateException("Mismatched detect and recognize results size: " +
-                "detect=${detectResult.regions.size}, recognize=${recognizeResult.regions.size}")
-        }
-
-        val combinedRegions = detectResult.regions.indices.map { i ->
-            val detected = detectResult.regions[i]
-            val recognized = recognizeResult.regions[i]
-
-            CombinedOcrRegion(
-                points = detected.points,
-                tokens = recognized.tokens,
-                score = recognized.score,
-                colors = recognized.colors,
-                fontSize = recognized.fontSize,
-                lineHeight = recognized.lineHeight,
-                fontWeight = recognized.fontWeight
+            throw IllegalStateException(
+                "Mismatched detect and recognize results size: " +
+                    "detect=${detectResult.regions.size}, recognize=${recognizeResult.regions.size}",
             )
         }
+
+        val combinedRegions =
+            detectResult.regions.indices.map { i ->
+                val detected = detectResult.regions[i]
+                val recognized = recognizeResult.regions[i]
+
+                CombinedOcrRegion(
+                    points = detected.points,
+                    tokens = recognized.tokens,
+                    score = recognized.score,
+                    colors = recognized.colors,
+                    fontSize = recognized.fontSize,
+                    lineHeight = recognized.lineHeight,
+                    fontWeight = recognized.fontWeight,
+                )
+            }
 
         return CombinedOcrResult(regions = combinedRegions)
     }
@@ -272,7 +292,7 @@ class PaddleObjectCharacterRecognition(
     override fun load(
         detect: ObjectCharacterRecognitionDetectorWithFiles,
         recognize: ObjectCharacterRecognitionRecognizerWithFiles,
-        threads: Int
+        threads: Int,
     ) {
         val detectFile = File(detect.inference.model.pathString)
         val recognizeFile = File(recognize.inference.model.pathString)
@@ -282,41 +302,42 @@ class PaddleObjectCharacterRecognition(
         }
 
         close()
-        val options = OrtSession.SessionOptions().apply {
-            setCPUArenaAllocator(true)
-            setMemoryPatternOptimization(true)
-            setIntraOpNumThreads(threads)
-            setInterOpNumThreads(threads)
-            disableProfiling()
-            setOptimizationLevel(OptLevel.ALL_OPT)
-            addConfigEntry("optimization.enable_gelu_approximation", "1")
-            addConfigEntry("session.disable_aot_function_inlining", "0")
-            addConfigEntry("optimization.minimal_build_optimizations", "")
-            addConfigEntry("mlas.enable_gemm_fastmath_arm64_bfloat16", "1")
-            addConfigEntry("session.allow_released_opsets_only", "1")
-            addConfigEntry("session.graph_optimizations_loop_level", "1")
-            addConfigEntry("session.use_ort_model_bytes_directly", "1")
-            addConfigEntry("session.use_ort_model_bytes_for_initializers", "0")
-            addConfigEntry("session.set_denormal_as_zero", "1")
-            addConfigEntry("session.use_env_allocators", "1")
-            addConfigEntry("session.use_device_allocator_for_initializers", "1")
-            addConfigEntry("ep.dynamic.workload_type", "Default")
-            addConfigEntry("session.qdq_matmulnbits_accuracy_level", "2")
-            addNnapi(EnumSet.of(NNAPIFlags.USE_FP16, NNAPIFlags.USE_NCHW))
-            DeviceUtils.isEmulator.let {
-                if (it) {
-                    Timber.tag(TAG).d("Emulator detected, skipping WebGPU")
-                    return@let
-                }
+        val options =
+            OrtSession.SessionOptions().apply {
+                setCPUArenaAllocator(true)
+                setMemoryPatternOptimization(true)
+                setIntraOpNumThreads(threads)
+                setInterOpNumThreads(threads)
+                disableProfiling()
+                setOptimizationLevel(OptLevel.ALL_OPT)
+                addConfigEntry("optimization.enable_gelu_approximation", "1")
+                addConfigEntry("session.disable_aot_function_inlining", "0")
+                addConfigEntry("optimization.minimal_build_optimizations", "")
+                addConfigEntry("mlas.enable_gemm_fastmath_arm64_bfloat16", "1")
+                addConfigEntry("session.allow_released_opsets_only", "1")
+                addConfigEntry("session.graph_optimizations_loop_level", "1")
+                addConfigEntry("session.use_ort_model_bytes_directly", "1")
+                addConfigEntry("session.use_ort_model_bytes_for_initializers", "0")
+                addConfigEntry("session.set_denormal_as_zero", "1")
+                addConfigEntry("session.use_env_allocators", "1")
+                addConfigEntry("session.use_device_allocator_for_initializers", "1")
+                addConfigEntry("ep.dynamic.workload_type", "Default")
+                addConfigEntry("session.qdq_matmulnbits_accuracy_level", "2")
+                addNnapi(EnumSet.of(NNAPIFlags.USE_FP16, NNAPIFlags.USE_NCHW))
+                DeviceUtils.isEmulator.let {
+                    if (it) {
+                        Timber.tag(TAG).d("Emulator detected, skipping WebGPU")
+                        return@let
+                    }
 
-                addWebGPU(
-                    mapOf(
-                        "preferredLayout" to "NCHW",
-                        "enableGraphCapture" to "1"
+                    addWebGPU(
+                        mapOf(
+                            "preferredLayout" to "NCHW",
+                            "enableGraphCapture" to "1",
+                        ),
                     )
-                )
+                }
             }
-        }
 
         _detectSession = ortEnvironment.createSession(readFileToByteBuffer(detectFile), options)
         _detectSessionFile = detectFile

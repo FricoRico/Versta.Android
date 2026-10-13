@@ -7,7 +7,7 @@ import java.net.URI
 import java.util.UUID
 
 @Serializable
-data class ExternalVoiceModelDefinition (
+data class ExternalVoiceModelDefinition(
     val id: String,
     val name: String,
     @SerialName("base_model")
@@ -21,13 +21,15 @@ data class ExternalVoiceModelDefinition (
     private val checksum: String,
 ) {
     fun bundleUri() = URI(bundle)
+
     fun checksumUri() = URI(checksum)
 
-    fun isValid() = baseModel.isNotBlank()
-            && bundle.isNotBlank()
-            && checksum.isNotBlank()
-            && size > 0
-            && version.isNotBlank()
+    fun isValid() =
+        baseModel.isNotBlank() &&
+            bundle.isNotBlank() &&
+            checksum.isNotBlank() &&
+            size > 0 &&
+            version.isNotBlank()
 }
 
 typealias ExternalVoiceModelDefinitions = List<ExternalVoiceModelDefinition>
@@ -41,7 +43,7 @@ fun ExternalVoiceModelDefinitions.isValid(): Boolean {
 }
 
 @Serializable
-data class ExternalVoice (
+data class ExternalVoice(
     val gender: VoiceGender,
     val language: String,
 )
@@ -55,28 +57,22 @@ data class ExternalVoiceModels(
 data class ExternalVoiceDownloadTask(
     override val id: UUID = UUID.randomUUID(),
     val model: ExternalVoiceModelDefinition,
-    override val status: DownloadStatus
+    override val status: DownloadStatus,
 ) : DownloadTask {
+    override fun copyWithStatus(status: DownloadStatus): DownloadTask = copy(status = status)
 
-    override fun copyWithStatus(status: DownloadStatus): DownloadTask {
-        return copy(status = status)
-    }
-
-    override fun getWorkData(): Map<String, Any> {
-        return mapOf(
+    override fun getWorkData(): Map<String, Any> =
+        mapOf(
             "taskId" to id.toString(),
             "name" to model.name,
             "uri" to model.bundleUri().toString(),
-            "checksum" to model.checksumUri().toString()
+            "checksum" to model.checksumUri().toString(),
         )
-    }
 
-    override fun getName(): String {
-        return model.name
-    }
+    override fun getName(): String = model.name
 }
 
 data class ExternalVoiceLanguageVoiceGenders(
     val language: Language,
-    val genders: List<VoiceGender>
+    val genders: List<VoiceGender>,
 )

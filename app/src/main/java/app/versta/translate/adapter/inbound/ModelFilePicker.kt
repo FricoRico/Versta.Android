@@ -14,21 +14,25 @@ object ModelFilePicker : FilePicker {
      * Registers the file picker for the given activity.
      */
     fun registerForActivity(activity: ComponentActivity) {
-        filePicker = activity.registerForActivityResult(
-            ActivityResultContracts.OpenDocument(),
-        ) { uri: Uri? ->
-            if (uri == null) {
-                return@registerForActivityResult
-            }
+        filePicker =
+            activity.registerForActivityResult(
+                ActivityResultContracts.OpenDocument(),
+            ) { uri: Uri? ->
+                if (uri == null) {
+                    return@registerForActivityResult
+                }
 
-            filePickerListener?.onFilePicked(uri)
-        }
+                filePickerListener?.onFilePicked(uri)
+            }
     }
 
     /**
      * Opens a file picker to select a file.
      */
-    override fun openFilePicker(listener: FilePickerCallback, fileTypes: Array<String>) {
+    override fun openFilePicker(
+        listener: FilePickerCallback,
+        fileTypes: Array<String>,
+    ) {
         var types = fileTypes
 
         if (fileTypes.isEmpty()) {

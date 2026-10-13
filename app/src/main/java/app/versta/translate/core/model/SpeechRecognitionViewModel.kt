@@ -52,7 +52,6 @@ class SpeechRecognitionViewModel(
     private val speechRecognitionInference: SpeechRecognitionInference,
     private val languageViewModel: LanguageViewModel,
 ) : ViewModel() {
-
     val speechRecognitionModels = externalSpeechRecognitionModelsRepository.getDefinitions().distinctUntilChanged()
 
     val translationLanguageIsoCodes: Flow<Set<String>> =
@@ -62,15 +61,18 @@ class SpeechRecognitionViewModel(
 
     private val importedModels = speechRecognitionRepository.getSpeechRecognitionModels().distinctUntilChanged()
 
-    val speechRecognitionModelsByState = externalSpeechRecognitionModelsRepository.getDefinitionsByState(
-        importedModels
-    ).distinctUntilChanged()
+    val speechRecognitionModelsByState =
+        externalSpeechRecognitionModelsRepository
+            .getDefinitionsByState(
+                importedModels,
+            ).distinctUntilChanged()
 
-    private val downloadManager = DownloadManager<ExternalSpeechRecognitionDownloadTask>(
-        context = context,
-        statusIntentAction = DOWNLOAD_SPEECH_RECOGNITION_STATUS_INTENT,
-        workerClass = DownloadSpeechRecognitionWorker::class.java
-    )
+    private val downloadManager =
+        DownloadManager<ExternalSpeechRecognitionDownloadTask>(
+            context = context,
+            statusIntentAction = DOWNLOAD_SPEECH_RECOGNITION_STATUS_INTENT,
+            workerClass = DownloadSpeechRecognitionWorker::class.java,
+        )
     val downloadTasks: StateFlow<List<ExternalSpeechRecognitionDownloadTask>> =
         downloadManager.downloadTasks.asStateFlow()
 
@@ -89,8 +91,8 @@ class SpeechRecognitionViewModel(
      * saying otherwise — triggers a reload via [invalidate] and returns false
      * so the caller can queue the start instead.
      */
-    fun start(scope: CoroutineScope): StartResult {
-        return try {
+    fun start(scope: CoroutineScope): StartResult =
+        try {
             speechRecognitionInference.start(scope)
             StartResult.Started
         } catch (e: MicrophoneCaptureException) {
@@ -101,7 +103,6 @@ class SpeechRecognitionViewModel(
             invalidate()
             StartResult.NotLoaded
         }
-    }
 
     /**
      * Cuts the microphone; buffered audio keeps transcribing until
@@ -148,15 +149,14 @@ class SpeechRecognitionViewModel(
         _reloadTrigger.value += 1
     }
 
-    fun getSpeechRecognitionModelDefinition(id: String): Flow<ExternalSpeechRecognitionModelDefinition> {
-        return externalSpeechRecognitionModelsRepository.getDefinition(id).distinctUntilChanged()
-    }
+    fun getSpeechRecognitionModelDefinition(id: String): Flow<ExternalSpeechRecognitionModelDefinition> = externalSpeechRecognitionModelsRepository.getDefinition(id).distinctUntilChanged()
 
     fun queueDownload(model: ExternalSpeechRecognitionModelDefinition) {
-        val task = ExternalSpeechRecognitionDownloadTask(
-            model = model,
-            status = DownloadStatus.Queued
-        )
+        val task =
+            ExternalSpeechRecognitionDownloadTask(
+                model = model,
+                status = DownloadStatus.Queued,
+            )
         downloadManager.queueDownload(task)
     }
 
@@ -194,12 +194,15 @@ class SpeechRecognitionViewModel(
                 _reloadTrigger,
             ) { modelsByState, sourceLanguageIsoCode, trigger ->
                 LoadRequest(
-                    id = modelsByState.installed.firstOrNull()?.definition?.id,
+                    id =
+                        modelsByState.installed
+                            .firstOrNull()
+                            ?.definition
+                            ?.id,
                     sourceLanguageIsoCode = sourceLanguageIsoCode,
                     trigger = trigger,
                 )
-            }
-                .distinctUntilChanged()
+            }.distinctUntilChanged()
                 .conflate()
                 .collect { request ->
                     if (request.id == null) {
@@ -217,7 +220,10 @@ class SpeechRecognitionViewModel(
         }
     }
 
-    private suspend fun load(id: String, sourceLanguageIsoCode: String?) {
+    private suspend fun load(
+        id: String,
+        sourceLanguageIsoCode: String?,
+    ) {
         withContext(Dispatchers.IO) {
             _loadMutex.withLock {
                 _speechRecognitionReadyState.value = ReadyState.NotReady

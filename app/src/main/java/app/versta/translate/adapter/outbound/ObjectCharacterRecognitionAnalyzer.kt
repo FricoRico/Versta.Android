@@ -23,35 +23,38 @@ class ObjectCharacterRecognitionAnalyzer(
 
         val rawResults = objectCharacterRecognitionInference.run(imageProxy)
 
-        val decodedResults = rawResults.regions.map { region ->
-            ObjectCharacterRecogniserResult(
-                points = region.points,
-                score = region.score,
-                tokens = region.tokens,
-                text = tokenizer.decode(region.tokens),
-                colors = region.colors,
-                fontSize = region.fontSize,
-                lineHeight = region.lineHeight,
-                fontWeight = FontWeight.fromInt(region.fontWeight)
-            )
-        }
+        val decodedResults =
+            rawResults.regions.map { region ->
+                ObjectCharacterRecogniserResult(
+                    points = region.points,
+                    score = region.score,
+                    tokens = region.tokens,
+                    text = tokenizer.decode(region.tokens),
+                    colors = region.colors,
+                    fontSize = region.fontSize,
+                    lineHeight = region.lineHeight,
+                    fontWeight = FontWeight.fromInt(region.fontWeight),
+                )
+            }
 
-        val results = if (postProcessor != null && decodedResults.isNotEmpty()) {
-            val context = OcrPostProcessorContext(
-                imageProxy = imageProxy,
-                results = decodedResults
-            )
+        val results =
+            if (postProcessor != null && decodedResults.isNotEmpty()) {
+                val context =
+                    OcrPostProcessorContext(
+                        imageProxy = imageProxy,
+                        results = decodedResults,
+                    )
 
-            val processedContext = postProcessor.process(context)
-            processedContext.results
-        } else {
-            decodedResults
-        }
+                val processedContext = postProcessor.process(context)
+                processedContext.results
+            } else {
+                decodedResults
+            }
 
         scope.launch {
             onFrameProcessed(
                 results,
-                imageProxy.imageInfo.timestamp
+                imageProxy.imageInfo.timestamp,
             )
 
             imageProxy.close()

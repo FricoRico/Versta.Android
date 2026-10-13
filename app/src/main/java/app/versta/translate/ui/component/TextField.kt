@@ -48,7 +48,7 @@ object TextFieldDefaults {
         unfocusedLabelColor = unfocusedLabelColor,
         focusedLabelColor = focusedLabelColor,
         unfocusedPlaceholderColor = unfocusedPlaceholderColor,
-        focusedPlaceholderColor = focusedPlaceholderColor
+        focusedPlaceholderColor = focusedPlaceholderColor,
     )
 
     @Composable
@@ -75,7 +75,7 @@ object TextFieldDefaults {
         unfocusedLabelColor = unfocusedLabelColor,
         focusedLabelColor = focusedLabelColor,
         focusedPlaceholderColor = focusedPlaceholderColor,
-        unfocusedPlaceholderColor = unfocusedPlaceholderColor
+        unfocusedPlaceholderColor = unfocusedPlaceholderColor,
     )
 
     @Composable
@@ -102,7 +102,7 @@ object TextFieldDefaults {
         unfocusedLabelColor = unfocusedLabelColor,
         focusedLabelColor = focusedLabelColor,
         focusedPlaceholderColor = focusedPlaceholderColor,
-        unfocusedPlaceholderColor = unfocusedPlaceholderColor
+        unfocusedPlaceholderColor = unfocusedPlaceholderColor,
     )
 }
 
@@ -127,28 +127,30 @@ fun TextField(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     TextField(
-        modifier = Modifier
-            .onFocusChanged { focusState ->
-                if (focusState.isFocused) {
-                    onFocus?.invoke()
-                    return@onFocusChanged
-                }
+        modifier =
+            Modifier
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        onFocus?.invoke()
+                        return@onFocusChanged
+                    }
 
-                onBlur?.invoke()
-            }
-            .then(modifier),
+                    onBlur?.invoke()
+                }.then(modifier),
         value = value,
         onValueChange = onValueChange,
-        keyboardOptions = KeyboardOptions.Default.copy(
-            imeAction = onSubmit?.let { ImeAction.Done } ?: ImeAction.Default,
-            hintLocales = sourceLocale?.let {
-                LocaleList(
-                    Locale(sourceLocale.isoCode)
-                )
-            }
-        ),
-        keyboardActions = KeyboardActions(
-            onDone = {
+        keyboardOptions =
+            KeyboardOptions.Default.copy(
+                imeAction = onSubmit?.let { ImeAction.Done } ?: ImeAction.Default,
+                hintLocales =
+                    sourceLocale?.let {
+                        LocaleList(
+                            Locale(sourceLocale.isoCode),
+                        )
+                    },
+            ),
+        keyboardActions =
+            KeyboardActions(onDone = {
                 onSubmit?.invoke()
                 keyboardController?.hide()
             }),

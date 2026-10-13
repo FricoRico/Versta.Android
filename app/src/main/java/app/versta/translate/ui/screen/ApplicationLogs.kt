@@ -40,7 +40,7 @@ fun ApplicationLogs(
     innerPadding: PaddingValues,
     scaffoldViewModel: ScaffoldViewModel,
     navigationViewModel: NavigationViewModel,
-    loggingViewModel: LoggingViewModel
+    loggingViewModel: LoggingViewModel,
 ) {
     val context = LocalContext.current
     val layoutDirection = LocalLayoutDirection.current
@@ -49,11 +49,12 @@ fun ApplicationLogs(
 
     val logs by loggingViewModel.logs.collectAsStateWithLifecycle()
 
-    val onSaveLocationPicked: FileSaverCallback = object : FileSaverCallback {
-        override fun onFileSaved(uri: Uri) {
-            loggingViewModel.saveLogs(context, uri)
+    val onSaveLocationPicked: FileSaverCallback =
+        object : FileSaverCallback {
+            override fun onFileSaved(uri: Uri) {
+                loggingViewModel.saveLogs(context, uri)
+            }
         }
-    }
 
     ScaffoldComponentProvider(
         scaffoldViewModel = scaffoldViewModel,
@@ -70,7 +71,7 @@ fun ApplicationLogs(
             }) {
                 Icon(
                     ImageVector.vectorResource(R.drawable.round_delete_forever_24),
-                    contentDescription = stringResource(R.string.application_logs_clear)
+                    contentDescription = stringResource(R.string.application_logs_clear),
                 )
             }
 
@@ -79,23 +80,25 @@ fun ApplicationLogs(
             }) {
                 Icon(
                     ImageVector.vectorResource(R.drawable.round_save_24),
-                    contentDescription = stringResource(R.string.application_logs_save)
+                    contentDescription = stringResource(R.string.application_logs_save),
                 )
             }
         },
-        wrapContent = true
+        wrapContent = true,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .horizontalScroll(scrollState)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            ),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+            modifier =
+                Modifier
+                    .horizontalScroll(scrollState)
+                    .fillMaxSize(),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
         ) {
             if (logs.isEmpty()) {
                 item {
@@ -123,10 +126,11 @@ fun ApplicationLogsPreview() {
 
     ApplicationLogs(
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
-        loggingViewModel = LoggingViewModel(LocalContext.current.getExternalFilesDir(null))
+        loggingViewModel = LoggingViewModel(LocalContext.current.getExternalFilesDir(null)),
     )
 }

@@ -13,7 +13,10 @@ class SpeechRecognitionMockInference : SpeechRecognitionInference {
         return
     }
 
-    override fun load(files: SpeechRecognitionInferenceFiles, threads: Int) {
+    override fun load(
+        files: SpeechRecognitionInferenceFiles,
+        threads: Int,
+    ) {
         return
     }
 

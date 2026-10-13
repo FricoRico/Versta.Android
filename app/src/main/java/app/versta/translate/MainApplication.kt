@@ -8,34 +8,28 @@ import android.app.NotificationManager
 import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
 import app.versta.translate.adapter.inbound.CompressedFileExtractor
-import app.versta.translate.adapter.outbound.ExternalLanguageModelsFileRepository
-import app.versta.translate.adapter.outbound.ExternalLanguageModelsRepository
 import app.versta.translate.adapter.inbound.FileHashValidator
 import app.versta.translate.adapter.inbound.PrecomputedHashFileValidator
 import app.versta.translate.adapter.inbound.TarballExtractor
 import app.versta.translate.adapter.outbound.AudioTrackPlayer
+import app.versta.translate.adapter.outbound.BergamotTinyInference
+import app.versta.translate.adapter.outbound.DEFAULT_CACHE_SIZE
 import app.versta.translate.adapter.outbound.DataDatabaseRepository
 import app.versta.translate.adapter.outbound.DataRepository
 import app.versta.translate.adapter.outbound.ExternalDataFileRepository
 import app.versta.translate.adapter.outbound.ExternalDataRepository
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsFileRepository
+import app.versta.translate.adapter.outbound.ExternalLanguageModelsRepository
 import app.versta.translate.adapter.outbound.ExternalObjectCharacterRecognitionModelsFileRepository
 import app.versta.translate.adapter.outbound.ExternalObjectCharacterRecognitionModelsRepository
 import app.versta.translate.adapter.outbound.ExternalSpeechRecognitionModelsFileRepository
 import app.versta.translate.adapter.outbound.ExternalSpeechRecognitionModelsRepository
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsFileRepository
 import app.versta.translate.adapter.outbound.ExternalVoiceModelsRepository
-import app.versta.translate.adapter.outbound.SpeechRecognitionDatabaseRepository
-import app.versta.translate.adapter.outbound.SpeechRecognitionInference
-import app.versta.translate.adapter.outbound.SpeechRecognitionRepository
-import app.versta.translate.adapter.outbound.StyleTextToSpeechInference
-import app.versta.translate.adapter.outbound.WhisperSpeechRecognition
-import app.versta.translate.adapter.outbound.StyleTextToSpeech2Tokenizer
 import app.versta.translate.adapter.outbound.LanguageDatabaseRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
-import app.versta.translate.adapter.outbound.BergamotTinyInference
-import app.versta.translate.adapter.outbound.DEFAULT_CACHE_SIZE
 import app.versta.translate.adapter.outbound.LicenseDataStoreRepository
 import app.versta.translate.adapter.outbound.LicenseRepository
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionInference
@@ -45,15 +39,21 @@ import app.versta.translate.adapter.outbound.OcrPostProcessorPipeline
 import app.versta.translate.adapter.outbound.PaddleObjectCharacterRecognition
 import app.versta.translate.adapter.outbound.PaddleObjectCharacterRecognitionTokenizer
 import app.versta.translate.adapter.outbound.ParagraphGroupingPostProcessor
-import app.versta.translate.adapter.outbound.VoiceDatabaseRepository
+import app.versta.translate.adapter.outbound.SpeechRecognitionDatabaseRepository
+import app.versta.translate.adapter.outbound.SpeechRecognitionInference
+import app.versta.translate.adapter.outbound.SpeechRecognitionRepository
+import app.versta.translate.adapter.outbound.StyleTextToSpeech2Tokenizer
+import app.versta.translate.adapter.outbound.StyleTextToSpeechInference
 import app.versta.translate.adapter.outbound.TextToSpeechInference
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceRepository
-import app.versta.translate.adapter.outbound.VoiceRepository
 import app.versta.translate.adapter.outbound.TextToSpeechTokenizer
 import app.versta.translate.adapter.outbound.TranslationInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
+import app.versta.translate.adapter.outbound.VoiceDatabaseRepository
+import app.versta.translate.adapter.outbound.VoiceRepository
+import app.versta.translate.adapter.outbound.WhisperSpeechRecognition
 import app.versta.translate.bridge.leanmt.Leanmt
 import app.versta.translate.bridge.speech.ESpeakNG
 import app.versta.translate.bridge.speech.OpenJTalk
@@ -74,15 +74,14 @@ import app.versta.translate.core.model.TranslationViewModel
 import app.versta.translate.core.model.VoiceViewModel
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.ui.component.LanguageSelector
-import app.versta.translate.ui.component.ScaffoldCompactBarSettingsActions
 import app.versta.translate.ui.component.ScaffoldCompactBarMenuNavigationIcon
+import app.versta.translate.ui.component.ScaffoldCompactBarSettingsActions
 import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.theme.ObsidianColorScheme
 import app.versta.translate.utils.CustomTheme
 import app.versta.translate.utils.FileLoggingTree
 import timber.log.Timber
 import timber.log.Timber.Forest.plant
-
 
 val Context.dataStore by preferencesDataStore(name = "preferences")
 
@@ -134,7 +133,9 @@ interface ApplicationModuleInterface {
     val speechRecognitionViewModel: SpeechRecognitionViewModel
 }
 
-class ApplicationModule(private val context: Context) : ApplicationModuleInterface {
+class ApplicationModule(
+    private val context: Context,
+) : ApplicationModuleInterface {
     override val database = DatabaseContainer(context)
 
     override val dataRepository: DataRepository by lazy {
@@ -202,46 +203,50 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
     override val scaffoldViewModel: ScaffoldViewModel by lazy {
         ScaffoldViewModel(
             navigationViewModel = navigationViewModel,
-            defaultTitle = ScaffoldTitleComponent(
-                contentKey = "ScaffoldCompactBarLanguageSelector",
-                component = {
-                    LanguageSelector(
-                        languageViewModel = languageViewModel,
-                    )
-                }
-            ),
-            defaultNavigationIcon = ScaffoldNavigationIconComponent(
-                contentKey = "ScaffoldCompactBarMenuNavigationIcon",
-                component = {
-                    ScaffoldCompactBarMenuNavigationIcon(
-                        navigationViewModel = navigationViewModel
-                    )
-                }
-            ),
-            defaultActions = ScaffoldActionsComponent(
-                contentKey = "ScaffoldCompactBarSettingsActions",
-                component = {
-                    ScaffoldCompactBarSettingsActions(
-                        navigationViewModel = navigationViewModel
-                    )
-                }
-            )
+            defaultTitle =
+                ScaffoldTitleComponent(
+                    contentKey = "ScaffoldCompactBarLanguageSelector",
+                    component = {
+                        LanguageSelector(
+                            languageViewModel = languageViewModel,
+                        )
+                    },
+                ),
+            defaultNavigationIcon =
+                ScaffoldNavigationIconComponent(
+                    contentKey = "ScaffoldCompactBarMenuNavigationIcon",
+                    component = {
+                        ScaffoldCompactBarMenuNavigationIcon(
+                            navigationViewModel = navigationViewModel,
+                        )
+                    },
+                ),
+            defaultActions =
+                ScaffoldActionsComponent(
+                    contentKey = "ScaffoldCompactBarSettingsActions",
+                    component = {
+                        ScaffoldCompactBarSettingsActions(
+                            navigationViewModel = navigationViewModel,
+                        )
+                    },
+                ),
         )
     }
 
     override val cameraTranslationViewModel: CameraTranslationViewModel by lazy {
         // All text metrics (colors, font, style) extracted in PaddleOCR.preprocessTextRegions()
         // TextStyleAnalysisPostProcessor removed - eliminates ~300ms duplicate processing
-        val ocrPipeline = OcrPostProcessorPipeline(
-            listOf(
-                ParagraphGroupingPostProcessor(
-                    verticalThresholdFactor = 1f,
-                    horizontalEps = 5f,
-                    colorTolerance = 0.15f,
-                    fontSizeTolerance = 0.25f
-                )
+        val ocrPipeline =
+            OcrPostProcessorPipeline(
+                listOf(
+                    ParagraphGroupingPostProcessor(
+                        verticalThresholdFactor = 1f,
+                        horizontalEps = 5f,
+                        colorTolerance = 0.15f,
+                        fontSizeTolerance = 0.25f,
+                    ),
+                ),
             )
-        )
 
         CameraTranslationViewModel(
             objectCharacterRecognitionInference = objectCharacterRecognitionInference,
@@ -250,7 +255,7 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
             languagePreferenceRepository = languagePreferenceRepository,
             translationViewModel = translationViewModel,
             objectCharacterRecognizerRepository = objectCharacterRecognizerRepository,
-            ocrPostProcessor = ocrPipeline
+            ocrPostProcessor = ocrPipeline,
         )
     }
 
@@ -258,7 +263,7 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
         CustomThemeViewModel(
             mapOf(
                 CustomTheme.Obsidian to ObsidianColorScheme,
-            )
+            ),
         )
     }
 
@@ -271,7 +276,7 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
             context = context,
             languageRepository = languageRepository,
             languagePreferenceRepository = languagePreferenceRepository,
-            externalLanguageModelsRepository = externalLanguageModelsRepository
+            externalLanguageModelsRepository = externalLanguageModelsRepository,
         )
     }
 
@@ -280,7 +285,7 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
             intermediateModel = intermediateTranslationInference,
             outputModel = outputTranslationInference,
             translationPreferenceRepository = translatorPreferenceRepository,
-            languageViewModel = languageViewModel
+            languageViewModel = languageViewModel,
         )
     }
 
@@ -303,7 +308,7 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
             voiceRepository = voiceRepository,
             textToSpeechPreferenceRepository = textToSpeechPreferenceRepository,
             languagePreferenceRepository = languagePreferenceRepository,
-            externalDataRepository = externalDataRepository
+            externalDataRepository = externalDataRepository,
         )
     }
 
@@ -311,7 +316,7 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
         VoiceViewModel(
             context = context,
             voiceRepository = voiceRepository,
-            externalVoiceModelsRepository = externalVoiceModelsRepository
+            externalVoiceModelsRepository = externalVoiceModelsRepository,
         )
     }
 
@@ -319,7 +324,7 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
         ObjectCharacterRecognitionViewModel(
             context = context,
             objectCharacterRecognitionRepository = objectCharacterRecognizerRepository,
-            externalObjectCharacterRecognitionModelsRepository = externalObjectCharacterRecognitionModelsRepository
+            externalObjectCharacterRecognitionModelsRepository = externalObjectCharacterRecognitionModelsRepository,
         )
     }
 
@@ -339,7 +344,8 @@ class ApplicationModule(private val context: Context) : ApplicationModuleInterfa
             "VerstaInference",
             OrtEnvironment.ThreadingOptions().apply {
                 setGlobalSpinControl(true)
-            })
+            },
+        )
     }
 
     override val extractor: CompressedFileExtractor by lazy {
@@ -411,21 +417,23 @@ class MainApplication : Application() {
     }
 
     private fun createNotificationChannels() {
-        val translationChannel = NotificationChannel(
-            TRANSLATION_NOTIFICATION_CHANNEL_ID,
-            getString(R.string.translation_bubbles_notification_channel_title),
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = getString(R.string.translation_bubbles_notification_channel_description)
-        }
+        val translationChannel =
+            NotificationChannel(
+                TRANSLATION_NOTIFICATION_CHANNEL_ID,
+                getString(R.string.translation_bubbles_notification_channel_title),
+                NotificationManager.IMPORTANCE_LOW,
+            ).apply {
+                description = getString(R.string.translation_bubbles_notification_channel_description)
+            }
 
-        val downloadChannel = NotificationChannel(
-            DOWNLOAD_NOTIFICATION_CHANNEL_ID,
-            getString(R.string.download_progress_notification_channel_title),
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = getString(R.string.download_progress_notification_channel_description)
-        }
+        val downloadChannel =
+            NotificationChannel(
+                DOWNLOAD_NOTIFICATION_CHANNEL_ID,
+                getString(R.string.download_progress_notification_channel_title),
+                NotificationManager.IMPORTANCE_LOW,
+            ).apply {
+                description = getString(R.string.download_progress_notification_channel_description)
+            }
 
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannels(listOf(translationChannel, downloadChannel))

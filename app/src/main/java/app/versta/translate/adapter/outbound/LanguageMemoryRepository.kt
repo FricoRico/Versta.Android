@@ -1,14 +1,14 @@
 package app.versta.translate.adapter.outbound
 
-import app.versta.translate.core.entity.LanguageBundleMetadata
 import app.versta.translate.core.entity.Language
-import app.versta.translate.core.entity.LanguageModelMetadata
+import app.versta.translate.core.entity.LanguageBundleData
+import app.versta.translate.core.entity.LanguageBundleMetadata
 import app.versta.translate.core.entity.LanguageModel
 import app.versta.translate.core.entity.LanguageModelConfiguration
 import app.versta.translate.core.entity.LanguageModelFiles
-import app.versta.translate.core.entity.LanguagePair
+import app.versta.translate.core.entity.LanguageModelMetadata
 import app.versta.translate.core.entity.LanguageModelPair
-import app.versta.translate.core.entity.LanguageBundleData
+import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.PivotPairModelFiles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -18,39 +18,44 @@ import kotlin.io.path.Path
 class LanguageMemoryRepository : LanguageRepository {
     private val _mockPath = Path("")
 
-    private val _languages = mutableListOf(
-        LanguagePair(
-            source = Language.fromIsoCode("en"),
-            target = Language.fromIsoCode("ja"),
-        ),
-        LanguagePair(
-            source = Language.fromIsoCode("en"),
-            target = Language.fromIsoCode("de"),
-        ),
-        LanguagePair(
-            source = Language.fromIsoCode("ja"),
-            target = Language.fromIsoCode("en"),
-        )
-    )
-    private val _languageModels = mutableMapOf(
-        "en-ja" to LanguageModel(
-            baseModel = "Helsinki-NLP/opus-mt-en-ja",
-            path = _mockPath,
-            version = "v1.0.0",
-            score = 52.8,
-            files = LanguageModelFiles(
-                model = _mockPath,
-                vocabulary = _mockPath,
-                shortlist = _mockPath,
+    private val _languages =
+        mutableListOf(
+            LanguagePair(
+                source = Language.fromIsoCode("en"),
+                target = Language.fromIsoCode("ja"),
             ),
-            config = LanguageModelConfiguration(
-                encoderLayers = 6,
-                decoderLayers = 6,
-                ffnDepth = 2,
-                numHeads = 8,
-            )
+            LanguagePair(
+                source = Language.fromIsoCode("en"),
+                target = Language.fromIsoCode("de"),
+            ),
+            LanguagePair(
+                source = Language.fromIsoCode("ja"),
+                target = Language.fromIsoCode("en"),
+            ),
         )
-    )
+    private val _languageModels =
+        mutableMapOf(
+            "en-ja" to
+                LanguageModel(
+                    baseModel = "Helsinki-NLP/opus-mt-en-ja",
+                    path = _mockPath,
+                    version = "v1.0.0",
+                    score = 52.8,
+                    files =
+                        LanguageModelFiles(
+                            model = _mockPath,
+                            vocabulary = _mockPath,
+                            shortlist = _mockPath,
+                        ),
+                    config =
+                        LanguageModelConfiguration(
+                            encoderLayers = 6,
+                            decoderLayers = 6,
+                            ffnDepth = 2,
+                            numHeads = 8,
+                        ),
+                ),
+        )
 
     /**
      * Gets the languages available in the repository.
@@ -70,35 +75,38 @@ class LanguageMemoryRepository : LanguageRepository {
     /**
      * Gets the language models metadata available in the repository.
      */
-    override fun getLanguages(): Flow<List<LanguageModelPair>> = flow {
-        emit(
-            _languages.map {
-                val files = _languageModels[it.id] ?: return@map null
+    override fun getLanguages(): Flow<List<LanguageModelPair>> =
+        flow {
+            emit(
+                _languages
+                    .map {
+                        val files = _languageModels[it.id] ?: return@map null
 
-                LanguageModelPair(
-                    sourceLocale = it.source.locale,
-                    targetLocale = it.target.locale,
-                    files = files
-                )
-            }.filterNotNull()
-        )
-    }
+                        LanguageModelPair(
+                            sourceLocale = it.source.locale,
+                            targetLocale = it.target.locale,
+                            files = files,
+                        )
+                    }.filterNotNull(),
+            )
+        }
 
     /**
      * Gets the target languages for a given source language.
      */
-    override fun getTargetLanguagesBySource(sourceLanguage: Language) =
-        _languages.filter { it.source == sourceLanguage }.map { it.target }.distinct()
+    override fun getTargetLanguagesBySource(sourceLanguage: Language) = _languages.filter { it.source == sourceLanguage }.map { it.target }.distinct()
 
     /**
      * Gets the language model files for a given language pair.
      */
-    override fun getLanguageModel(languagePair: LanguagePair, pivotTranslation: Boolean): PivotPairModelFiles? {
-        return PivotPairModelFiles(
+    override fun getLanguageModel(
+        languagePair: LanguagePair,
+        pivotTranslation: Boolean,
+    ): PivotPairModelFiles? =
+        PivotPairModelFiles(
             intermediary = null,
-            output = _languageModels[languagePair.toString()]
+            output = _languageModels[languagePair.toString()],
         )
-    }
 
     /**
      * Inserts a [LanguageModelMetadata] into the repository, ignoring if it already exists.
@@ -107,7 +115,7 @@ class LanguageMemoryRepository : LanguageRepository {
      */
     override fun insertLanguageOrIgnore(
         languageBundleMetadata: LanguageBundleMetadata,
-        languageModelMetadata: LanguageModelMetadata
+        languageModelMetadata: LanguageModelMetadata,
     ) {
         val sourceLanguage = Language.fromIsoCode(languageModelMetadata.sourceLanguage)
         val targetLanguage = Language.fromIsoCode(languageModelMetadata.targetLanguage)
@@ -120,7 +128,7 @@ class LanguageMemoryRepository : LanguageRepository {
             LanguagePair(
                 source = sourceLanguage,
                 target = targetLanguage,
-            )
+            ),
         )
     }
 
@@ -138,24 +146,26 @@ class LanguageMemoryRepository : LanguageRepository {
             LanguageModel(
                 path = path,
                 baseModel = metadata.baseModel,
-
                 version = metadata.version,
                 score = metadata.score ?: 0.0,
-                files = LanguageModelFiles(
-                    model = Path(metadata.files.model),
-                    vocabulary = Path(metadata.files.vocabulary),
-                    targetVocabulary = metadata.files.targetVocabulary?.let {
-                        Path(it)
-                    },
-                    shortlist = Path(metadata.files.shortlist),
-                ),
-                config = LanguageModelConfiguration(
-                    encoderLayers = metadata.config.encoderLayers,
-                    decoderLayers = metadata.config.decoderLayers,
-                    ffnDepth = metadata.config.ffnDepth,
-                    numHeads = metadata.config.numHeads,
-                    splitMode = metadata.config.splitMode
-                )
+                files =
+                    LanguageModelFiles(
+                        model = Path(metadata.files.model),
+                        vocabulary = Path(metadata.files.vocabulary),
+                        targetVocabulary =
+                            metadata.files.targetVocabulary?.let {
+                                Path(it)
+                            },
+                        shortlist = Path(metadata.files.shortlist),
+                    ),
+                config =
+                    LanguageModelConfiguration(
+                        encoderLayers = metadata.config.encoderLayers,
+                        decoderLayers = metadata.config.decoderLayers,
+                        ffnDepth = metadata.config.ffnDepth,
+                        numHeads = metadata.config.numHeads,
+                        splitMode = metadata.config.splitMode,
+                    ),
             )
     }
 
@@ -188,7 +198,10 @@ class LanguageMemoryRepository : LanguageRepository {
      * @param languagePair The language pair to delete.
      * @param bidirectional Whether to delete the bidirectional model.
      */
-    override fun deleteLanguageModel(languagePair: LanguagePair, bidirectional: Boolean): List<LanguagePair> {
+    override fun deleteLanguageModel(
+        languagePair: LanguagePair,
+        bidirectional: Boolean,
+    ): List<LanguagePair> {
         _languages.remove(languagePair)
         _languageModels.remove(languagePair.id)
 

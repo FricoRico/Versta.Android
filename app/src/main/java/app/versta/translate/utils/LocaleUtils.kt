@@ -31,4 +31,3 @@ object LocaleUtils {
         return localeMap.getOrDefault(code, Locale(twoLetterCode))
     }
 }
-

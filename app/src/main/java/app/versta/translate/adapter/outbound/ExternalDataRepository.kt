@@ -1,11 +1,11 @@
 package app.versta.translate.adapter.outbound
 
 import app.versta.translate.core.entity.DataFilesInterface
+import app.versta.translate.core.entity.DataType
 import app.versta.translate.core.entity.DataWithFiles
+import app.versta.translate.core.entity.ExternalData
 import app.versta.translate.core.entity.ExternalDataDefinition
 import app.versta.translate.core.entity.ExternalDataDefinitions
-import app.versta.translate.core.entity.ExternalData
-import app.versta.translate.core.entity.DataType
 import app.versta.translate.core.entity.VoiceWithModelFiles
 import kotlinx.coroutines.flow.Flow
 import java.nio.file.Path

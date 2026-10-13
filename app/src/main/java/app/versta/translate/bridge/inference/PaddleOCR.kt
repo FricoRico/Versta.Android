@@ -14,7 +14,7 @@ data class TextRegionMetrics(
     val colors: ObjectCharacterRecogniserColors,
     val fontSize: Float,
     val lineHeight: Float,
-    val fontWeight: Int
+    val fontWeight: Int,
 )
 
 class PaddleOCR(
@@ -29,15 +29,16 @@ class PaddleOCR(
     private var _handle: Long
 
     init {
-        _handle = construct(
-            detectSize = detectSize,
-            recognizeSize = recognizeSize,
-            cropHeight = cropHeight,
-            maxCropSize = maxCropSize,
-            unclipRatio = unclipRatio,
-            maxCandidates = maxCandidates,
-            threads = threads
-        )
+        _handle =
+            construct(
+                detectSize = detectSize,
+                recognizeSize = recognizeSize,
+                cropHeight = cropHeight,
+                maxCropSize = maxCropSize,
+                unclipRatio = unclipRatio,
+                maxCandidates = maxCandidates,
+                threads = threads,
+            )
 
         if (_handle == 0L) {
             throw RuntimeException("Failed to initialize BeamSearch")
@@ -87,7 +88,7 @@ class PaddleOCR(
         handle: Long,
         outputBuffer: Buffer,
         outputShape: LongArray,
-        tokenBuffer: Buffer
+        tokenBuffer: Buffer,
     ): Boolean
 
     fun preProcessDetect(
@@ -95,9 +96,9 @@ class PaddleOCR(
         output: Buffer,
         width: Int,
         height: Int,
-        rotation: Int
-    ): Boolean {
-        return preProcessDetect(
+        rotation: Int,
+    ): Boolean =
+        preProcessDetect(
             handle = _handle,
             input = input,
             output = output,
@@ -105,19 +106,19 @@ class PaddleOCR(
             inputHeight = height,
             outputRotation = rotation,
         )
-    }
 
     fun postProcessDetect(
         input: Buffer,
         output: ByteBuffer,
     ): List<ObjectCharacterRecogniserResult> {
-        val success = postProcessDetect(
-            handle = _handle,
-            input = input,
-            output = output,
-            threshold = 0.3f,
-            maxValue = 1f,
-        )
+        val success =
+            postProcessDetect(
+                handle = _handle,
+                input = input,
+                output = output,
+                threshold = 0.3f,
+                maxValue = 1f,
+            )
 
         if (!success) {
             return emptyList()
@@ -129,11 +130,12 @@ class PaddleOCR(
 
         val results = mutableListOf<ObjectCharacterRecogniserResult>()
         repeat(count) {
-            val points = Array(4) {
-                val x = output.int
-                val y = output.int
-                PointF(x.toFloat(), y.toFloat())
-            }
+            val points =
+                Array(4) {
+                    val x = output.int
+                    val y = output.int
+                    PointF(x.toFloat(), y.toFloat())
+                }
             results.add(ObjectCharacterRecogniserResult(points))
         }
         return results.reversed()
@@ -145,17 +147,18 @@ class PaddleOCR(
         output: Buffer,
         originWidth: Int,
         originHeight: Int,
-        originRotation: Int = 0
+        originRotation: Int = 0,
     ): Pair<Boolean, List<TextRegionMetrics>> {
-        val metrics = preprocessTextRegions(
-            handle = _handle,
-            origin = origin,
-            input = input,
-            output = output,
-            originWidth = originWidth,
-            originHeight = originHeight,
-            originRotation = originRotation,
-        )
+        val metrics =
+            preprocessTextRegions(
+                handle = _handle,
+                origin = origin,
+                input = input,
+                output = output,
+                originWidth = originWidth,
+                originHeight = originHeight,
+                originRotation = originRotation,
+            )
 
         val success = metrics.isNotEmpty() && metrics[0] > 0
         val count = if (metrics.isNotEmpty()) metrics[0] else 0
@@ -189,8 +192,8 @@ class PaddleOCR(
                         colors = ObjectCharacterRecogniserColors(bgColor, txtColor),
                         fontSize = fontSize,
                         lineHeight = lineHeight,
-                        fontWeight = fontWeight
-                    )
+                        fontWeight = fontWeight,
+                    ),
                 )
                 i += 5
             }
@@ -202,14 +205,15 @@ class PaddleOCR(
     fun postProcessRecognize(
         outputBuffer: Buffer,
         outputShape: LongArray,
-        tokenBuffer: ByteBuffer
+        tokenBuffer: ByteBuffer,
     ): List<ObjectCharacterRecogniserResult> {
-        val success = postProcessRecognize(
-            handle = _handle,
-            outputBuffer = outputBuffer,
-            outputShape = outputShape,
-            tokenBuffer = tokenBuffer
-        )
+        val success =
+            postProcessRecognize(
+                handle = _handle,
+                outputBuffer = outputBuffer,
+                outputShape = outputShape,
+                tokenBuffer = tokenBuffer,
+            )
 
         if (!success) {
             return emptyList()
@@ -224,14 +228,17 @@ class PaddleOCR(
             val wordCount = tokenBuffer.int
             val score = tokenBuffer.int / 1000f
 
-            val tokens = LongArray(wordCount) {
-                tokenBuffer.int.toLong()
-            }
+            val tokens =
+                LongArray(wordCount) {
+                    tokenBuffer.int.toLong()
+                }
 
-            results.add(ObjectCharacterRecogniserResult(
-                score = score,
-                tokens = tokens
-            ))
+            results.add(
+                ObjectCharacterRecogniserResult(
+                    score = score,
+                    tokens = tokens,
+                ),
+            )
         }
 
         return results

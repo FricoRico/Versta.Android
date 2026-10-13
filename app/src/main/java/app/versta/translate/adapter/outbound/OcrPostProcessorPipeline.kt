@@ -15,9 +15,8 @@ import timber.log.Timber
  * ```
  */
 class OcrPostProcessorPipeline(
-    private val processors: List<OcrPostProcessor>
+    private val processors: List<OcrPostProcessor>,
 ) : OcrPostProcessor {
-
     override fun process(context: OcrPostProcessorContext): OcrPostProcessorContext {
         var currentContext = context
 
@@ -29,7 +28,7 @@ class OcrPostProcessorPipeline(
             val duration = System.currentTimeMillis() - startTime
             if (duration > 10) {
                 Timber.tag(TAG).d(
-                    "Processor ${processor::class.simpleName} took ${duration}ms"
+                    "Processor ${processor::class.simpleName} took ${duration}ms",
                 )
             }
         }
@@ -41,4 +40,3 @@ class OcrPostProcessorPipeline(
         private val TAG: String = OcrPostProcessorPipeline::class.java.simpleName
     }
 }
-

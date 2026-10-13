@@ -13,18 +13,18 @@ import app.versta.translate.ui.theme.spacing
 
 @Composable
 fun Divider(
-    size: Dp = MaterialTheme.spacing.medium
-){
+    size: Dp = MaterialTheme.spacing.medium,
+) {
     HorizontalDivider(
         modifier = Modifier.padding(top = size),
         thickness = 0.dp,
-        color = Color.Transparent
+        color = Color.Transparent,
     )
 }
 
 fun LazyListScope.ListDivider(
-    size: Dp = 16.dp
-){
+    size: Dp = 16.dp,
+) {
     item {
         Divider(size = size)
     }

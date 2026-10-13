@@ -5,8 +5,10 @@ import kotlinx.serialization.Serializable
 import java.nio.file.Path
 import kotlin.io.path.exists
 
-enum class ObjectCharacterRecognitionArchitecture(val value: String) {
-    PaddleOCR("PaddleOCR")
+enum class ObjectCharacterRecognitionArchitecture(
+    val value: String,
+) {
+    PaddleOCR("PaddleOCR"),
 }
 
 @Serializable
@@ -15,7 +17,7 @@ enum class ObjectCharacterRecognitionModule {
     Detector,
 
     @SerialName("recognizer")
-    Recognizer
+    Recognizer,
 }
 
 @Serializable
@@ -28,8 +30,7 @@ class ObjectCharacterRecognitionDetectorMetadata(
     val files: ObjectCharacterRecognitionDetectorFilesMetadata,
     var root: Path? = null,
 ) {
-    fun isValid() =
-        baseModel.isNotBlank() && architectures.isNotEmpty() && (root != null && files.isValid(root!!)) && root?.isAbsolute == true
+    fun isValid() = baseModel.isNotBlank() && architectures.isNotEmpty() && (root != null && files.isValid(root!!)) && root?.isAbsolute == true
 
     fun setRootPath(path: Path): ObjectCharacterRecognitionDetectorMetadata {
         root = path
@@ -69,8 +70,7 @@ class ObjectCharacterRecognitionRecognizerMetadata(
     val files: ObjectCharacterRecognitionRecognitionRecognizerFilesMetadata,
     var root: Path? = null,
 ) {
-    fun isValid() =
-        baseModel.isNotBlank() && architectures.isNotEmpty() && (root != null && files.isValid(root!!)) && root?.isAbsolute == true
+    fun isValid() = baseModel.isNotBlank() && architectures.isNotEmpty() && (root != null && files.isValid(root!!)) && root?.isAbsolute == true
 
     fun setRootPath(path: Path): ObjectCharacterRecognitionRecognizerMetadata {
         root = path
@@ -84,8 +84,7 @@ data class ObjectCharacterRecognitionRecognitionRecognizerFilesMetadata(
     val inference: ObjectCharacterRecognitionRecognizerInferenceFilesMetadata,
     val tokenizer: ObjectCharacterRecognitionRecognizerTokenizerFilesMetadata,
 ) {
-    fun isValid(path: Path) =
-        inference.isValid(path) && tokenizer.isValid(path)
+    fun isValid(path: Path) = inference.isValid(path) && tokenizer.isValid(path)
 }
 
 @Serializable
@@ -112,13 +111,13 @@ class ObjectCharacterRecognitionBundleMetadata(
 ) {
     fun isValid() =
         metadata.all { it.directory.isNotEmpty() } &&
-        modules.isNotEmpty()
+            modules.isNotEmpty()
 }
 
 @Serializable
 data class ObjectCharacterRecognitionDetectorModel(
     val bundle: ObjectCharacterRecognitionBundleMetadata,
-    val model: ObjectCharacterRecognitionDetectorMetadata
+    val model: ObjectCharacterRecognitionDetectorMetadata,
 ) {
     val id: String
         get() = bundle.id
@@ -127,7 +126,7 @@ data class ObjectCharacterRecognitionDetectorModel(
 @Serializable
 data class ObjectCharacterRecognitionRecognizerModel(
     val bundle: ObjectCharacterRecognitionBundleMetadata,
-    val model: ObjectCharacterRecognitionRecognizerMetadata
+    val model: ObjectCharacterRecognitionRecognizerMetadata,
 ) {
     val id: String
         get() = bundle.id

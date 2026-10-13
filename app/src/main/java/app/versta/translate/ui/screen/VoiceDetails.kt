@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -58,30 +57,34 @@ fun VoiceDetails(
     innerPadding: PaddingValues,
     scaffoldViewModel: ScaffoldViewModel,
     navigationViewModel: NavigationViewModel,
-    voiceViewModel: VoiceViewModel
+    voiceViewModel: VoiceViewModel,
 ) {
-    val model by voiceViewModel.getVoiceModelDefinition(id)
+    val model by voiceViewModel
+        .getVoiceModelDefinition(id)
         .collectAsStateWithLifecycle(null)
     val importedLanguagePairs by voiceViewModel.importedVoices.collectAsStateWithLifecycle(
-        emptyList()
+        emptyList(),
     )
 
     if (model == null) {
         return
     }
 
-    val voiceLanguages = model?.voices
-        ?.groupBy { it.language }
-        ?.map { (language, voices) ->
-            ExternalVoiceLanguageVoiceGenders(
-                language = Language.fromIsoCode(language),
-                genders = voices.map { it.gender }
-            )
-        } ?: emptyList()
-    val voiceOptions = mapOf(
-        VoiceGender.Female to stringResource(R.string.text_to_speech_settings_voice_gender_female),
-        VoiceGender.Male to stringResource(R.string.text_to_speech_settings_voice_gender_male)
-    )
+    val voiceLanguages =
+        model
+            ?.voices
+            ?.groupBy { it.language }
+            ?.map { (language, voices) ->
+                ExternalVoiceLanguageVoiceGenders(
+                    language = Language.fromIsoCode(language),
+                    genders = voices.map { it.gender },
+                )
+            } ?: emptyList()
+    val voiceOptions =
+        mapOf(
+            VoiceGender.Female to stringResource(R.string.text_to_speech_settings_voice_gender_female),
+            VoiceGender.Male to stringResource(R.string.text_to_speech_settings_voice_gender_male),
+        )
 
     var voiceToBeDeleted by remember { mutableStateOf<ExternalVoiceModelDefinition?>(null) }
 
@@ -99,38 +102,41 @@ fun VoiceDetails(
         actions = {
             if (importedLanguagePairs.any {
                     it.id == model!!.id
-                }) {
+                }
+            ) {
                 IconButton(onClick = {
                     voiceToBeDeleted = model
                 }) {
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.round_delete_forever_24),
-                        contentDescription = stringResource(R.string.delete)
+                        contentDescription = stringResource(R.string.delete),
                     )
                 }
             }
         },
-        wrapContent = true
+        wrapContent = true,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            )
+            modifier =
+                Modifier
+                    .fillMaxSize(),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
         ) {
             Details(
-                definition = model!!
+                definition = model!!,
             )
 
             ListDivider()
 
             Voices(
                 voiceLanguages = voiceLanguages,
-                voiceOptions = voiceOptions
+                voiceOptions = voiceOptions,
             )
         }
 
@@ -142,13 +148,13 @@ fun VoiceDetails(
             },
             onDismissRequest = {
                 voiceToBeDeleted = null
-            }
+            },
         )
     }
 }
 
 fun LazyListScope.Details(
-    definition: ExternalVoiceModelDefinition
+    definition: ExternalVoiceModelDefinition,
 ) {
     val sizeFormat = DecimalFormat("#.##")
     val size = definition.size / 1e6
@@ -158,21 +164,22 @@ fun LazyListScope.Details(
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainer,
             contentColor = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.extraLarge)
+            modifier =
+                Modifier
+                    .clip(MaterialTheme.shapes.extraLarge),
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                modifier = Modifier
-                    .padding(
-                        vertical = MaterialTheme.spacing.medium,
-                        horizontal = MaterialTheme.spacing.large,
-                    )
-                    .fillMaxWidth()
+                modifier =
+                    Modifier
+                        .padding(
+                            vertical = MaterialTheme.spacing.medium,
+                            horizontal = MaterialTheme.spacing.large,
+                        ).fillMaxWidth(),
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraLarge),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     VoiceDetailsData(
                         label = stringResource(R.string.language_details_download_size_label),
@@ -208,54 +215,54 @@ fun LazyListScope.Details(
 
 fun LazyListScope.Voices(
     voiceLanguages: List<ExternalVoiceLanguageVoiceGenders>,
-    voiceOptions: Map<VoiceGender, String>
-) {
-    return item {
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
+    voiceOptions: Map<VoiceGender, String>,
+) = item {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        modifier =
+            Modifier
                 .padding(bottom = MaterialTheme.spacing.extraSmall)
-                .clip(MaterialTheme.shapes.extraLarge)
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-                modifier = Modifier
+                .clip(MaterialTheme.shapes.extraLarge),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+            modifier =
+                Modifier
                     .padding(
                         vertical = MaterialTheme.spacing.medium,
                         horizontal = MaterialTheme.spacing.large,
+                    ).fillMaxWidth(),
+        ) {
+            voiceLanguages.map {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+                ) {
+                    LanguageBadge(
+                        language = it.language,
                     )
-                    .fillMaxWidth()
-            ) {
-                voiceLanguages.map {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
+
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.hairline),
                     ) {
-                        LanguageBadge(
-                            language = it.language
+                        Text(
+                            text = it.language.name,
+                            style = MaterialTheme.typography.labelLarge,
                         )
 
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.hairline)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.large),
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Text(
-                                text = it.language.name,
-                                style = MaterialTheme.typography.labelLarge
-                            )
-
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.large),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                it.genders.map {
-                                    Text(
-                                        text = voiceOptions[it]
+                            it.genders.map {
+                                Text(
+                                    text =
+                                        voiceOptions[it]
                                             ?: stringResource(R.string.unknown),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
                     }
@@ -272,36 +279,36 @@ fun VoiceDetailsData(
     icon: ImageVector? = null,
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.hairline)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.hairline),
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelLarge
+            style = MaterialTheme.typography.labelLarge,
         )
 
         if (icon != null) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     icon,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.requiredSize(MaterialTheme.spacing.medium)
+                    modifier = Modifier.requiredSize(MaterialTheme.spacing.medium),
                 )
 
                 Text(
                     text = value,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -315,14 +322,16 @@ fun VoiceDetailsPreview() {
     VoiceDetails(
         id = "kokoro",
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
-        voiceViewModel = VoiceViewModel(
-            context = LocalContext.current,
-            voiceRepository = VoiceMemoryRepository(),
-            externalVoiceModelsRepository = ExternalVoiceModelsMemoryRepository()
-        )
+        voiceViewModel =
+            VoiceViewModel(
+                context = LocalContext.current,
+                voiceRepository = VoiceMemoryRepository(),
+                externalVoiceModelsRepository = ExternalVoiceModelsMemoryRepository(),
+            ),
     )
 }

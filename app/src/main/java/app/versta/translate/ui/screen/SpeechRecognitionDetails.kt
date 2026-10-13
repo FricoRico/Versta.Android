@@ -48,10 +48,10 @@ import app.versta.translate.core.model.ScaffoldViewModel
 import app.versta.translate.core.model.SpeechRecognitionViewModel
 import app.versta.translate.ui.component.LanguageBadge
 import app.versta.translate.ui.component.ListDivider
+import app.versta.translate.ui.component.ModelDeletionConfirmationDialog
 import app.versta.translate.ui.component.ScaffoldCompactBarBackNavigationIcon
 import app.versta.translate.ui.component.ScaffoldCompactBarTitle
 import app.versta.translate.ui.component.ScaffoldComponentProvider
-import app.versta.translate.ui.component.ModelDeletionConfirmationDialog
 import app.versta.translate.ui.theme.spacing
 
 @Composable
@@ -60,12 +60,13 @@ fun SpeechRecognitionDetails(
     innerPadding: PaddingValues,
     scaffoldViewModel: ScaffoldViewModel,
     navigationViewModel: NavigationViewModel,
-    speechRecognitionViewModel: SpeechRecognitionViewModel
+    speechRecognitionViewModel: SpeechRecognitionViewModel,
 ) {
-    val model by speechRecognitionViewModel.getSpeechRecognitionModelDefinition(id)
+    val model by speechRecognitionViewModel
+        .getSpeechRecognitionModelDefinition(id)
         .collectAsStateWithLifecycle(null)
     val importedModels by speechRecognitionViewModel.speechRecognitionModelsByState.collectAsStateWithLifecycle(
-        ExternalSpeechRecognitionModels()
+        ExternalSpeechRecognitionModels(),
     )
     val translationLanguageIsoCodes by speechRecognitionViewModel.translationLanguageIsoCodes
         .collectAsStateWithLifecycle(emptySet())
@@ -74,11 +75,13 @@ fun SpeechRecognitionDetails(
         return
     }
 
-    val languages = model!!.languages
-        .filter { it in translationLanguageIsoCodes }
-        .map { Language.fromIsoCode(it) }
-        .distinctBy { it.isoCode }
-        .sortedBy { it.name }
+    val languages =
+        model!!
+            .languages
+            .filter { it in translationLanguageIsoCodes }
+            .map { Language.fromIsoCode(it) }
+            .distinctBy { it.isoCode }
+            .sortedBy { it.name }
 
     var toDelete by remember { mutableStateOf<String?>(null) }
 
@@ -103,32 +106,34 @@ fun SpeechRecognitionDetails(
                 }) {
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.round_delete_forever_24),
-                        contentDescription = stringResource(R.string.delete)
+                        contentDescription = stringResource(R.string.delete),
                     )
                 }
             }
         },
-        wrapContent = true
+        wrapContent = true,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            )
+            modifier =
+                Modifier
+                    .fillMaxSize(),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
         ) {
             SpeechRecognitionDetailsSection(
                 definition = model!!,
-                extracted = extracted
+                extracted = extracted,
             )
 
             ListDivider()
 
             SpeechRecognitionLanguages(
-                languages = languages
+                languages = languages,
             )
         }
 
@@ -143,7 +148,7 @@ fun SpeechRecognitionDetails(
             },
             onDismissRequest = {
                 toDelete = null
-            }
+            },
         )
     }
 }
@@ -152,33 +157,36 @@ fun SpeechRecognitionDetails(
 @Preview(showBackground = true)
 fun SpeechRecognitionDetailsPreview() {
     val navigationViewModel = NavigationViewModel(Screens.TextTranslation)
-    val languageViewModel = LanguageViewModel(
-        context = LocalContext.current,
-        languageRepository = LanguageMemoryRepository(),
-        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-    )
+    val languageViewModel =
+        LanguageViewModel(
+            context = LocalContext.current,
+            languageRepository = LanguageMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+        )
 
     SpeechRecognitionDetails(
         id = "whisper-base-en",
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
-        speechRecognitionViewModel = SpeechRecognitionViewModel(
-            context = LocalContext.current,
-            speechRecognitionRepository = SpeechRecognitionMemoryRepository(),
-            externalSpeechRecognitionModelsRepository = ExternalSpeechRecognitionModelsMemoryRepository(),
-            speechRecognitionInference = SpeechRecognitionMockInference(),
-            languageViewModel = languageViewModel,
-        )
+        speechRecognitionViewModel =
+            SpeechRecognitionViewModel(
+                context = LocalContext.current,
+                speechRecognitionRepository = SpeechRecognitionMemoryRepository(),
+                externalSpeechRecognitionModelsRepository = ExternalSpeechRecognitionModelsMemoryRepository(),
+                speechRecognitionInference = SpeechRecognitionMockInference(),
+                languageViewModel = languageViewModel,
+            ),
     )
 }
 
 fun LazyListScope.SpeechRecognitionDetailsSection(
     definition: ExternalSpeechRecognitionModelDefinition,
-    extracted: Long?
+    extracted: Long?,
 ) {
     val sizeFormat = DecimalFormat("#.##")
     val size = definition.size / 1e6
@@ -188,21 +196,22 @@ fun LazyListScope.SpeechRecognitionDetailsSection(
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainer,
             contentColor = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.extraLarge)
+            modifier =
+                Modifier
+                    .clip(MaterialTheme.shapes.extraLarge),
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                modifier = Modifier
-                    .padding(
-                        vertical = MaterialTheme.spacing.medium,
-                        horizontal = MaterialTheme.spacing.large,
-                    )
-                    .fillMaxWidth()
+                modifier =
+                    Modifier
+                        .padding(
+                            vertical = MaterialTheme.spacing.medium,
+                            horizontal = MaterialTheme.spacing.large,
+                        ).fillMaxWidth(),
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraLarge),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     OcrDetailsData(
                         label = stringResource(R.string.language_details_download_size_label),
@@ -237,55 +246,54 @@ fun LazyListScope.SpeechRecognitionDetailsSection(
 }
 
 fun LazyListScope.SpeechRecognitionLanguages(
-    languages: List<Language>
-) {
-    return item {
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
+    languages: List<Language>,
+) = item {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        modifier =
+            Modifier
                 .padding(bottom = MaterialTheme.spacing.extraSmall)
-                .clip(MaterialTheme.shapes.extraLarge)
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-                modifier = Modifier
+                .clip(MaterialTheme.shapes.extraLarge),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+            modifier =
+                Modifier
                     .padding(
                         vertical = MaterialTheme.spacing.medium,
                         horizontal = MaterialTheme.spacing.large,
-                    )
-                    .fillMaxWidth()
-            ) {
-                Text(
-                    text = stringResource(R.string.ocr_details_supported_languages_label),
-                    style = MaterialTheme.typography.labelLarge
-                )
+                    ).fillMaxWidth(),
+        ) {
+            Text(
+                text = stringResource(R.string.ocr_details_supported_languages_label),
+                style = MaterialTheme.typography.labelLarge,
+            )
 
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
-                ) {
-                    languages.chunked(2).forEach { row ->
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            row.forEach { language ->
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    LanguageBadge(
-                                        language = language,
-                                        size = MaterialTheme.spacing.medium,
-                                    )
-                                    Text(
-                                        text = language.name,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1
-                                    )
-                                }
+            Column(
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+            ) {
+                languages.chunked(2).forEach { row ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        row.forEach { language ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                LanguageBadge(
+                                    language = language,
+                                    size = MaterialTheme.spacing.medium,
+                                )
+                                Text(
+                                    text = language.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                )
                             }
                         }
                     }

@@ -17,8 +17,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -108,13 +108,22 @@ fun Conversation(
 
     fun startDictation() {
         when (speechRecognitionViewModel.start(scope)) {
-            StartResult.Started -> pendingStart = false
-            StartResult.NotLoaded -> pendingStart = true
-            StartResult.MicrophoneUnavailable -> Toast.makeText(
-                context,
-                R.string.speech_recognition_microphone_unavailable_message,
-                Toast.LENGTH_LONG
-            ).show()
+            StartResult.Started -> {
+                pendingStart = false
+            }
+
+            StartResult.NotLoaded -> {
+                pendingStart = true
+            }
+
+            StartResult.MicrophoneUnavailable -> {
+                Toast
+                    .makeText(
+                        context,
+                        R.string.speech_recognition_microphone_unavailable_message,
+                        Toast.LENGTH_LONG,
+                    ).show()
+            }
         }
     }
 
@@ -166,14 +175,15 @@ fun Conversation(
         titleContentKey = "Conversation",
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                    top = innerPadding.calculateTopPadding(),
-                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-                )
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(
+                        start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                        end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                        top = innerPadding.calculateTopPadding(),
+                        bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                    ),
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -187,9 +197,10 @@ fun Conversation(
                 ConversationTranscript(
                     segments = segments,
                     lazyListState = lazyListState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
                 )
 
                 ConversationStatus(
@@ -201,9 +212,10 @@ fun Conversation(
                 VoiceWaveform(
                     spectrum = spectrum,
                     active = listening,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(112.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(112.dp),
                 )
 
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
@@ -219,16 +231,18 @@ fun Conversation(
             if (!permissionGranted) {
                 ConversationPermissionDenied(
                     state = microphonePermission,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background),
                 )
             } else if (!modelInstalled) {
                 ConversationNoModel(
                     onManage = { navigationViewModel.navigate(Screens.SpeechRecognitionSettings) },
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background),
                 )
             }
         }
@@ -241,11 +255,12 @@ private fun ConversationLanguageChip(
     targetLanguage: Language?,
     modifier: Modifier = Modifier,
 ) {
-    val sourceName = when (sourceLanguage) {
-        is Language -> sourceLanguage.name
-        is AutoDetectLanguage -> sourceLanguage.name
-        else -> null
-    }
+    val sourceName =
+        when (sourceLanguage) {
+            is Language -> sourceLanguage.name
+            is AutoDetectLanguage -> sourceLanguage.name
+            else -> null
+        }
     val targetName = targetLanguage?.name
     if (sourceName == null || targetName == null) {
         return
@@ -280,9 +295,10 @@ private fun ConversationTranscript(
                 text = segment.text,
                 style = if (latest) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = if (latest) 1f else 0.55f),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateItem(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .animateItem(),
             )
         }
     }
@@ -294,11 +310,12 @@ private fun ConversationStatus(
     finalizing: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val label = when {
-        finalizing -> stringResource(R.string.conversation_processing)
-        listening -> stringResource(R.string.conversation_listening)
-        else -> stringResource(R.string.conversation_tap_to_speak)
-    }
+    val label =
+        when {
+            finalizing -> stringResource(R.string.conversation_processing)
+            listening -> stringResource(R.string.conversation_listening)
+            else -> stringResource(R.string.conversation_tap_to_speak)
+        }
 
     AnimatedContent(
         targetState = label,
@@ -367,27 +384,30 @@ private fun ConversationNoModel(
 @Composable
 private fun ConversationPreview() {
     val context = LocalContext.current
-    val languageViewModel = LanguageViewModel(
-        context = context,
-        languageRepository = LanguageMemoryRepository(),
-        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-    )
+    val languageViewModel =
+        LanguageViewModel(
+            context = context,
+            languageRepository = LanguageMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+        )
     val navigationViewModel = NavigationViewModel(Screens.Conversation)
 
     Conversation(
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
         languageViewModel = languageViewModel,
-        speechRecognitionViewModel = SpeechRecognitionViewModel(
-            context = context,
-            speechRecognitionRepository = SpeechRecognitionMemoryRepository(),
-            externalSpeechRecognitionModelsRepository = ExternalSpeechRecognitionModelsMemoryRepository(),
-            speechRecognitionInference = SpeechRecognitionMockInference(),
-            languageViewModel = languageViewModel,
-        ),
+        speechRecognitionViewModel =
+            SpeechRecognitionViewModel(
+                context = context,
+                speechRecognitionRepository = SpeechRecognitionMemoryRepository(),
+                externalSpeechRecognitionModelsRepository = ExternalSpeechRecognitionModelsMemoryRepository(),
+                speechRecognitionInference = SpeechRecognitionMockInference(),
+                languageViewModel = languageViewModel,
+            ),
     )
 }

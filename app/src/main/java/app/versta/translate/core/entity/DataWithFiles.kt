@@ -17,12 +17,16 @@ data class DataWithFiles(
     val path: Path,
     val version: String,
     val size: Long = 0,
-    val files: DataFilesInterface
+    val files: DataFilesInterface,
 ) {
     fun isValid() = files.isValid()
 
     companion object {
-        private val serializer = Json { ignoreUnknownKeys = true; classDiscriminator = "type" }
+        private val serializer =
+            Json {
+                ignoreUnknownKeys = true
+                classDiscriminator = "type"
+            }
 
         fun load(path: Path): DataWithFiles? {
             val metadataFile = File(path.toFile(), "metadata.json")
@@ -33,20 +37,24 @@ data class DataWithFiles(
             val metadata =
                 serializer.decodeFromString<DataMetadata>(metadataFile.readText())
 
-            val files = when (metadata) {
-                is TextToSpeechDataMetadata -> TextToSpeechDataFiles(
-                    espeak = path.resolve(metadata.files.espeak),
-                    openJTalk = path.resolve(metadata.files.openJTalk)
-                )
-            }
+            val files =
+                when (metadata) {
+                    is TextToSpeechDataMetadata -> {
+                        TextToSpeechDataFiles(
+                            espeak = path.resolve(metadata.files.espeak),
+                            openJTalk = path.resolve(metadata.files.openJTalk),
+                        )
+                    }
+                }
 
-            val data = DataWithFiles(
-                id = metadata.id,
-                path = path,
-                version = metadata.version,
-                size = path.parent.directorySize(),
-                files = files
-            )
+            val data =
+                DataWithFiles(
+                    id = metadata.id,
+                    path = path,
+                    version = metadata.version,
+                    size = path.parent.directorySize(),
+                    files = files,
+                )
 
             if (!data.isValid()) {
                 throw IllegalArgumentException("Data files are not complete and valid: $data")
@@ -60,9 +68,7 @@ data class DataWithFiles(
 @Serializable
 data class TextToSpeechDataFiles(
     val espeak: Path,
-    val openJTalk: Path
+    val openJTalk: Path,
 ) : DataFilesInterface {
-    override fun isValid(): Boolean {
-        return Files.exists(espeak) && Files.exists(openJTalk)
-    }
+    override fun isValid(): Boolean = Files.exists(espeak) && Files.exists(openJTalk)
 }

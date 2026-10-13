@@ -52,7 +52,7 @@ fun TranslationSettings(
     scaffoldViewModel: ScaffoldViewModel,
     navigationViewModel: NavigationViewModel,
     translationViewModel: TranslationViewModel,
-    languageViewModel: LanguageViewModel
+    languageViewModel: LanguageViewModel,
 ) {
     val layoutDirection = LocalLayoutDirection.current
 
@@ -61,16 +61,16 @@ fun TranslationSettings(
 
     val cacheSize by translationViewModel.cacheSize.collectAsStateWithLifecycle(DEFAULT_CACHE_SIZE)
     val cacheEnabled by translationViewModel.cacheEnabled.collectAsStateWithLifecycle(
-        DEFAULT_CACHE_ENABLED
+        DEFAULT_CACHE_ENABLED,
     )
     val pivotTranslationEnabled by languageViewModel.pivotTranslationEnabled.collectAsStateWithLifecycle(
-        DEFAULT_PIVOT_TRANSLATION
+        DEFAULT_PIVOT_TRANSLATION,
     )
     val beamSize by translationViewModel.beamSize.collectAsStateWithLifecycle(
-        DEFAULT_NUMBER_OF_BEAMS
+        DEFAULT_NUMBER_OF_BEAMS,
     )
     val maxSequenceLength by translationViewModel.maxSequenceLength.collectAsStateWithLifecycle(
-        DEFAULT_MAX_SEQUENCE_LENGTH
+        DEFAULT_MAX_SEQUENCE_LENGTH,
     )
 
     var settingsChanged by remember {
@@ -98,161 +98,163 @@ fun TranslationSettings(
             ScaffoldCompactBarEmptyActions()
         },
         actionsContentKey = "ScaffoldCompactBarEmptyActions",
-        wrapContent = true
+        wrapContent = true,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            )
+            modifier =
+                Modifier
+                    .fillMaxSize(),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
         ) {
-                item {
-                    SettingsHeaderItem(
-                        content = stringResource(R.string.translation_settings_history_headline),
-                        groupSize = 3,
-                        index = 0
-                    )
-                }
+            item {
+                SettingsHeaderItem(
+                    content = stringResource(R.string.translation_settings_history_headline),
+                    groupSize = 3,
+                    index = 0,
+                )
+            }
 
-                item {
-                    SettingsButtonItem(
-                        headlineContent = stringResource(R.string.translation_settings_history_toggle_title),
-                        supportingContent = stringResource(R.string.translation_settings_history_toggle_description),
-                        onClick = {
-                            settingsChanged = true
-                            translationViewModel.setCacheEnabled(!cacheEnabled)
-                        },
-                        trailingContent = {
-                            Switch(
-                                checked = cacheEnabled,
-                                onCheckedChange = {
-                                    settingsChanged = true
-                                    translationViewModel.setCacheEnabled(it)
-                                },
-                            )
-                        },
-                        groupSize = 3,
-                        index = 1
-                    )
-                }
+            item {
+                SettingsButtonItem(
+                    headlineContent = stringResource(R.string.translation_settings_history_toggle_title),
+                    supportingContent = stringResource(R.string.translation_settings_history_toggle_description),
+                    onClick = {
+                        settingsChanged = true
+                        translationViewModel.setCacheEnabled(!cacheEnabled)
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = cacheEnabled,
+                            onCheckedChange = {
+                                settingsChanged = true
+                                translationViewModel.setCacheEnabled(it)
+                            },
+                        )
+                    },
+                    groupSize = 3,
+                    index = 1,
+                )
+            }
 
-                item {
-                    SettingsButtonItem(
-                        enabled = cacheEnabled,
-                        headlineContent = stringResource(R.string.translation_settings_history_size_title),
-                        supportingContent = stringResource(R.string.translation_settings_history_size_description),
-                        trailingContent = {
-                            Text(
-                                text = if (cacheSize != Int.MAX_VALUE) cacheSize.toString() else "∞",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontSize = 22.sp
-                            )
-                        },
-                        underlineContent = {
-                            SliderPredefinedValues(
-                                value = cacheSize,
-                                options = cacheSizeOptions,
-                                onValueChange = {
-                                    settingsChanged = true
-                                    translationViewModel.setCacheSize(it)
-                                },
-                            )
-                        },
-                        groupSize = 3,
-                        index = 2
-                    )
-                }
+            item {
+                SettingsButtonItem(
+                    enabled = cacheEnabled,
+                    headlineContent = stringResource(R.string.translation_settings_history_size_title),
+                    supportingContent = stringResource(R.string.translation_settings_history_size_description),
+                    trailingContent = {
+                        Text(
+                            text = if (cacheSize != Int.MAX_VALUE) cacheSize.toString() else "∞",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontSize = 22.sp,
+                        )
+                    },
+                    underlineContent = {
+                        SliderPredefinedValues(
+                            value = cacheSize,
+                            options = cacheSizeOptions,
+                            onValueChange = {
+                                settingsChanged = true
+                                translationViewModel.setCacheSize(it)
+                            },
+                        )
+                    },
+                    groupSize = 3,
+                    index = 2,
+                )
+            }
 
-                ListDivider()
+            ListDivider()
 
-                item {
-                    SettingsHeaderItem(
-                        content = stringResource(R.string.translation_settings_inference_headline),
-                        groupSize = 4,
-                        index = 0
-                    )
-                }
+            item {
+                SettingsHeaderItem(
+                    content = stringResource(R.string.translation_settings_inference_headline),
+                    groupSize = 4,
+                    index = 0,
+                )
+            }
 
-                item {
-                    SettingsButtonItem(
-                        headlineContent = stringResource(R.string.translation_settings_language_pivot_translation_title),
-                        supportingContent = stringResource(R.string.translation_settings_language_pivot_translation_description),
-                        onClick = {
-                            settingsChanged = true
-                            languageViewModel.setPivotTranslationEnabled(!pivotTranslationEnabled)
-                        },
-                        trailingContent = {
-                            Switch(
-                                checked = pivotTranslationEnabled,
-                                onCheckedChange = {
-                                    settingsChanged = true
-                                    languageViewModel.setPivotTranslationEnabled(it)
-                                },
-                            )
-                        },
-                        groupSize = 4,
-                        index = 1
-                    )
-                }
+            item {
+                SettingsButtonItem(
+                    headlineContent = stringResource(R.string.translation_settings_language_pivot_translation_title),
+                    supportingContent = stringResource(R.string.translation_settings_language_pivot_translation_description),
+                    onClick = {
+                        settingsChanged = true
+                        languageViewModel.setPivotTranslationEnabled(!pivotTranslationEnabled)
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = pivotTranslationEnabled,
+                            onCheckedChange = {
+                                settingsChanged = true
+                                languageViewModel.setPivotTranslationEnabled(it)
+                            },
+                        )
+                    },
+                    groupSize = 4,
+                    index = 1,
+                )
+            }
 
-                item {
-                    SettingsButtonItem(
-                        headlineContent = stringResource(R.string.translation_settings_inference_beam_size_title),
-                        supportingContent = stringResource(R.string.translation_settings_inference_beam_size_description),
-                        trailingContent = {
-                            Text(
-                                text = beamSize.toString(),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontSize = 22.sp
-                            )
-                        },
-                        underlineContent = {
-                            Slider(
-                                value = beamSize.toFloat(),
-                                onValueChange = {
-                                    settingsChanged = true
-                                    translationViewModel.setBeamSize(it.toInt())
-                                },
-                                valueRange = 1f..8f,
-                                steps = 6,
-                            )
-                        },
-                        groupSize = 4,
-                        index = 2
-                    )
-                }
+            item {
+                SettingsButtonItem(
+                    headlineContent = stringResource(R.string.translation_settings_inference_beam_size_title),
+                    supportingContent = stringResource(R.string.translation_settings_inference_beam_size_description),
+                    trailingContent = {
+                        Text(
+                            text = beamSize.toString(),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontSize = 22.sp,
+                        )
+                    },
+                    underlineContent = {
+                        Slider(
+                            value = beamSize.toFloat(),
+                            onValueChange = {
+                                settingsChanged = true
+                                translationViewModel.setBeamSize(it.toInt())
+                            },
+                            valueRange = 1f..8f,
+                            steps = 6,
+                        )
+                    },
+                    groupSize = 4,
+                    index = 2,
+                )
+            }
 
-                item {
-                    SettingsButtonItem(
-                        headlineContent = stringResource(R.string.translation_settings_inference_max_length_title),
-                        supportingContent = stringResource(R.string.translation_settings_inference_max_length_description),
-                        trailingContent = {
-                            Text(
-                                text = maxSequenceLength.toString(),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontSize = 22.sp
-                            )
-                        },
-                        underlineContent = {
-                            SliderPredefinedValues(
-                                value = maxSequenceLength,
-                                options = sequenceLengthOptions,
-                                onValueChange = {
-                                    settingsChanged = true
-                                    translationViewModel.setMaxSequenceLength(it)
-                                },
-                            )
-                        },
-                        groupSize = 4,
-                        index = 3
-                    )
-                }
+            item {
+                SettingsButtonItem(
+                    headlineContent = stringResource(R.string.translation_settings_inference_max_length_title),
+                    supportingContent = stringResource(R.string.translation_settings_inference_max_length_description),
+                    trailingContent = {
+                        Text(
+                            text = maxSequenceLength.toString(),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontSize = 22.sp,
+                        )
+                    },
+                    underlineContent = {
+                        SliderPredefinedValues(
+                            value = maxSequenceLength,
+                            options = sequenceLengthOptions,
+                            onValueChange = {
+                                settingsChanged = true
+                                translationViewModel.setMaxSequenceLength(it)
+                            },
+                        )
+                    },
+                    groupSize = 4,
+                    index = 3,
+                )
             }
         }
+    }
 }
 
 @Composable
@@ -260,27 +262,30 @@ fun TranslationSettings(
 fun TranslationSettingsPreview() {
     val navigationViewModel = NavigationViewModel(Screens.TextTranslation)
 
-    val languageViewModel = LanguageViewModel(
-        context = LocalContext.current,
-        languageRepository = LanguageMemoryRepository(),
-        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-    )
+    val languageViewModel =
+        LanguageViewModel(
+            context = LocalContext.current,
+            languageRepository = LanguageMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+        )
 
     val translationMockInference = TranslationMockInference()
 
     TranslationSettings(
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
-        translationViewModel = TranslationViewModel(
-            intermediateModel = translationMockInference,
-            outputModel = translationMockInference,
-            translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
-            languageViewModel = languageViewModel
-        ),
-        languageViewModel = languageViewModel
+        translationViewModel =
+            TranslationViewModel(
+                intermediateModel = translationMockInference,
+                outputModel = translationMockInference,
+                translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+                languageViewModel = languageViewModel,
+            ),
+        languageViewModel = languageViewModel,
     )
 }

@@ -93,27 +93,34 @@ private data class VoiceStratum(
 // already mirrored at the follower), mid and face use the fast follower.
 // xShiftBands spreads the strata horizontally; slideBands is the slow
 // oscillation around that base offset — the wave-field parallax.
-private val VoiceStrata = listOf(
-    // Back: slow, mirrored spectrum, sits right of the face.
-    VoiceStratum(slideSpeed = 1.8f, slideBands = 0.3f, phaseOffset = 2.1f, xShiftBands = 0.3f, swingScale = 0.45f, alphaDark = 0.45f, alphaLight = 0.35f, mirrorY = 0.85f, yOffsetFraction = 0.0f),
-    // Mid: counter-slides and sits left, partially covered by the face.
-    VoiceStratum(slideSpeed = -1.3f, slideBands = 0.2f, phaseOffset = 4.2f, xShiftBands = -0.45f, swingScale = 0.75f, alphaDark = 0.7f, alphaLight = 0.5f, mirrorY = 0.75f, yOffsetFraction = 0.0f),
-)
+private val VoiceStrata =
+    listOf(
+        // Back: slow, mirrored spectrum, sits right of the face.
+        VoiceStratum(slideSpeed = 1.8f, slideBands = 0.3f, phaseOffset = 2.1f, xShiftBands = 0.3f, swingScale = 0.45f, alphaDark = 0.45f, alphaLight = 0.35f, mirrorY = 0.85f, yOffsetFraction = 0.0f),
+        // Mid: counter-slides and sits left, partially covered by the face.
+        VoiceStratum(slideSpeed = -1.3f, slideBands = 0.2f, phaseOffset = 4.2f, xShiftBands = -0.45f, swingScale = 0.75f, alphaDark = 0.7f, alphaLight = 0.5f, mirrorY = 0.75f, yOffsetFraction = 0.0f),
+    )
 
 /**
  * Super-gaussian edge window: flat in the middle, pinched to ~0 at both band
  * edges so the ridge never touches the sides of the screen.
  */
-private fun envelope(x: Float): Float {
-    return exp(-x.pow(6) * 1.25f)
-}
+private fun envelope(x: Float): Float = exp(-x.pow(6) * 1.25f)
 
-private fun catmullRom(p0: Float, p1: Float, p2: Float, p3: Float, t: Float): Float {
+private fun catmullRom(
+    p0: Float,
+    p1: Float,
+    p2: Float,
+    p3: Float,
+    t: Float,
+): Float {
     val t2 = t * t
     val t3 = t2 * t
-    return 0.5f * (2f * p1 + (-p0 + p2) * t +
+    return 0.5f * (
+        2f * p1 + (-p0 + p2) * t +
             (2f * p0 - 5f * p1 + 4f * p2 - p3) * t2 +
-            (-p0 + 3f * p1 - 3f * p2 + p3) * t3)
+            (-p0 + 3f * p1 - 3f * p2 + p3) * t3
+    )
 }
 
 /**
@@ -181,13 +188,14 @@ fun VoiceWaveform(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val animationsEnabled = remember(context) {
-        Settings.Global.getFloat(
-            context.contentResolver,
-            Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f,
-        ) > 0f
-    }
+    val animationsEnabled =
+        remember(context) {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f,
+            ) > 0f
+        }
 
     val latestSpectrum by rememberUpdatedState(spectrum)
     val latestActive by rememberUpdatedState(active)
@@ -215,14 +223,23 @@ fun VoiceWaveform(
                     var dirty = false
                     for (i in 0 until SPECTRUM_BAND_COUNT) {
                         val target = if (latestActive && i < latestSpectrum.size) latestSpectrum[i] else 0f
-                        val rate = 1f - exp(
-                            -dtMs / if (target > bands[i]) BAND_ATTACK_MS else BAND_RELEASE_MS
-                        )
+                        val rate =
+                            1f -
+                                exp(
+                                    -dtMs / if (target > bands[i]) BAND_ATTACK_MS else BAND_RELEASE_MS,
+                                )
                         val next = bands[i] + (target - bands[i]) * rate
                         // Snap when converged so a steady spectrum (or silence)
                         // stops scheduling redraws instead of floating forever.
                         val settled = next < SILENCE_EPSILON && target == 0f
-                        val snapped = if (settled) 0f else if (abs(target - next) < SILENCE_EPSILON) target else next
+                        val snapped =
+                            if (settled) {
+                                0f
+                            } else if (abs(target - next) < SILENCE_EPSILON) {
+                                target
+                            } else {
+                                next
+                            }
                         if (snapped != bands[i]) {
                             dirty = true
                         }
@@ -234,16 +251,24 @@ fun VoiceWaveform(
                         // terrain, not a copy.
                         val spec = latestSpectrum
                         val m = SPECTRUM_BAND_COUNT - 1 - i
-                        fun specAt(index: Int): Float =
-                            if (!latestActive || index < 0 || index >= spec.size) 0f else spec[index]
+
+                        fun specAt(index: Int): Float = if (!latestActive || index < 0 || index >= spec.size) 0f else spec[index]
                         val underTarget = (specAt(m) * 0.6f + (specAt(m - 1) + specAt(m + 1)) * 0.2f) * UNDER_DAMP
-                        val underRate = 1f - exp(
-                            -dtMs / if (underTarget > underBands[i]) UNDER_ATTACK_MS else UNDER_RELEASE_MS
-                        )
+                        val underRate =
+                            1f -
+                                exp(
+                                    -dtMs / if (underTarget > underBands[i]) UNDER_ATTACK_MS else UNDER_RELEASE_MS,
+                                )
                         val underNext = underBands[i] + (underTarget - underBands[i]) * underRate
                         val underSettled = underNext < SILENCE_EPSILON && underTarget == 0f
                         val underSnapped =
-                            if (underSettled) 0f else if (abs(underTarget - underNext) < SILENCE_EPSILON) underTarget else underNext
+                            if (underSettled) {
+                                0f
+                            } else if (abs(underTarget - underNext) < SILENCE_EPSILON) {
+                                underTarget
+                            } else {
+                                underNext
+                            }
                         if (underSnapped != underBands[i]) {
                             dirty = true
                         }
@@ -313,7 +338,8 @@ fun VoiceWaveform(
         val strataPaths = arrayOf(underside, midPath)
         VoiceStrata.forEachIndexed { index, stratum ->
             val levels = if (index == 0) underBands else bands
-            val slide = sin(phaseSec * stratum.slideSpeed + stratum.phaseOffset) *
+            val slide =
+                sin(phaseSec * stratum.slideSpeed + stratum.phaseOffset) *
                     bandWidth * stratum.slideBands + bandWidth * stratum.xShiftBands
             val stratumX = FloatArray(knotCount)
             val stratumY = FloatArray(knotCount)
@@ -325,9 +351,12 @@ fun VoiceWaveform(
                 stratumY[i + 1] = levels[i] * envelope(base / width * 2f - 1f) * swing * stratum.swingScale
             }
             appendRidge(
-                strataPaths[index], stratumX, stratumY,
+                strataPaths[index],
+                stratumX,
+                stratumY,
                 centerY + height * stratum.yOffsetFraction,
-                topScale = 1f, mirror = stratum.mirrorY,
+                topScale = 1f,
+                mirror = stratum.mirrorY,
             )
         }
 
@@ -345,49 +374,58 @@ fun VoiceWaveform(
         val hueStart = knotX[1]
         val hueEnd = knotX[knotCount - 2]
         val wobble = GRADIENT_WOBBLE * sin(2f * Math.PI.toFloat() * phaseMs / GRADIENT_WOBBLE_MS)
-        val midStop = (0.5f + GRADIENT_DRIFT * loudness.coerceIn(0f, 1f) + wobble)
-            .coerceIn(0.05f, 0.95f)
-        val surfaceBrush = Brush.horizontalGradient(
-            colorStops = arrayOf(
-                0.0f to VoiceAccentIndigo,
-                midStop to VoiceAccentCyan,
-                1.0f to VoiceAccentMagenta,
-            ),
-            startX = hueStart,
-            endX = hueEnd,
-        )
-        val undersideBrush = Brush.horizontalGradient(
-            colorStops = arrayOf(
-                0.0f to VoiceAccentIndigo,
-                midStop to VoiceAccentBridge,
-                1.0f to VoiceAccentMagenta,
-            ),
-            startX = hueStart,
-            endX = hueEnd,
-        )
-        val midBrush = Brush.horizontalGradient(
-            colorStops = arrayOf(
-                0.0f to VoiceAccentIndigo,
-                midStop to VoiceAccentBridge,
-                1.0f to VoiceAccentMagenta,
-            ),
-            startX = hueStart,
-            endX = hueEnd,
-        )
+        val midStop =
+            (0.5f + GRADIENT_DRIFT * loudness.coerceIn(0f, 1f) + wobble)
+                .coerceIn(0.05f, 0.95f)
+        val surfaceBrush =
+            Brush.horizontalGradient(
+                colorStops =
+                    arrayOf(
+                        0.0f to VoiceAccentIndigo,
+                        midStop to VoiceAccentCyan,
+                        1.0f to VoiceAccentMagenta,
+                    ),
+                startX = hueStart,
+                endX = hueEnd,
+            )
+        val undersideBrush =
+            Brush.horizontalGradient(
+                colorStops =
+                    arrayOf(
+                        0.0f to VoiceAccentIndigo,
+                        midStop to VoiceAccentBridge,
+                        1.0f to VoiceAccentMagenta,
+                    ),
+                startX = hueStart,
+                endX = hueEnd,
+            )
+        val midBrush =
+            Brush.horizontalGradient(
+                colorStops =
+                    arrayOf(
+                        0.0f to VoiceAccentIndigo,
+                        midStop to VoiceAccentBridge,
+                        1.0f to VoiceAccentMagenta,
+                    ),
+                startX = hueStart,
+                endX = hueEnd,
+            )
         val strataBrushes = listOf(undersideBrush, midBrush)
         // Hue by amplitude: magenta crest fading through green into
         // transparency at the base — every raised column then reads as a real
         // gradient (indigo base, cyan mid, green/magenta crest) instead of a
         // flat blue slab, regardless of where on the axis the energy sits.
-        val crestBrush = Brush.verticalGradient(
-            colorStops = arrayOf(
-                0.0f to VoiceAccentMagenta,
-                0.4f to VoiceCrestGreen,
-                0.75f to Color.Transparent,
-            ),
-            startY = centerY - swing,
-            endY = centerY + swing * 0.7f,
-        )
+        val crestBrush =
+            Brush.verticalGradient(
+                colorStops =
+                    arrayOf(
+                        0.0f to VoiceAccentMagenta,
+                        0.4f to VoiceCrestGreen,
+                        0.75f to Color.Transparent,
+                    ),
+                startY = centerY - swing,
+                endY = centerY + swing * 0.7f,
+            )
 
         drawPath(
             path = hairline,
@@ -429,21 +467,23 @@ fun VoiceWaveform(
 @Composable
 private fun VoiceWaveformDarkPreview() {
     // Synthetic speech-like spectrum: fundamental low, formant humps mid.
-    val spectrum = FloatArray(SPECTRUM_BAND_COUNT) { i ->
-        when {
-            i in 1..3 -> 0.85f - (i - 2) * (i - 2) * 0.15f
-            i in 4..6 -> 0.55f - (i - 5) * (i - 5) * 0.12f
-            else -> 0.1f
+    val spectrum =
+        FloatArray(SPECTRUM_BAND_COUNT) { i ->
+            when {
+                i in 1..3 -> 0.85f - (i - 2) * (i - 2) * 0.15f
+                i in 4..6 -> 0.55f - (i - 5) * (i - 5) * 0.12f
+                else -> 0.1f
+            }
         }
-    }
     MaterialExpressiveTheme(colorScheme = VerstaDarkColorScheme) {
         Column {
             VoiceWaveform(
                 spectrum = spectrum,
                 active = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(112.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(112.dp),
             )
         }
     }
@@ -453,20 +493,22 @@ private fun VoiceWaveformDarkPreview() {
 @Preview(widthDp = 420, showBackground = true, backgroundColor = 0xFFF8F9FF)
 @Composable
 private fun VoiceWaveformLightPreview() {
-    val spectrum = FloatArray(SPECTRUM_BAND_COUNT) { i ->
-        when {
-            i in 1..3 -> 0.85f - (i - 2) * (i - 2) * 0.15f
-            i in 4..6 -> 0.55f - (i - 5) * (i - 5) * 0.12f
-            else -> 0.1f
+    val spectrum =
+        FloatArray(SPECTRUM_BAND_COUNT) { i ->
+            when {
+                i in 1..3 -> 0.85f - (i - 2) * (i - 2) * 0.15f
+                i in 4..6 -> 0.55f - (i - 5) * (i - 5) * 0.12f
+                else -> 0.1f
+            }
         }
-    }
     MaterialExpressiveTheme(colorScheme = VerstaLightColorScheme) {
         VoiceWaveform(
             spectrum = spectrum,
             active = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(112.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(112.dp),
         )
     }
 }

@@ -18,83 +18,91 @@ import kotlin.io.path.Path
 class ObjectCharacterRecognitionRepositoryMemoryRepository : ObjectCharacterRecognitionRepository {
     private val _mockPath = Path("")
 
-    private val _detectors = mutableMapOf(
-        "pp-ocr-det*" to ObjectCharacterRecognitionDetectorWithFiles(
-            id = "pp-ocr-det",
-            path = _mockPath,
-            baseModel = "PaddlePaddle/PP-OCRv5_mobile_det",
-            architectures = listOf(ObjectCharacterRecognitionArchitecture.PaddleOCR),
-            languages = listOf("*"),
-            version = "v1.0.0",
-            size = 12345678,
-            inference = ObjectCharacterRecognitionDetectorInferenceFiles(
-                model = _mockPath
-            )
+    private val _detectors =
+        mutableMapOf(
+            "pp-ocr-det*" to
+                ObjectCharacterRecognitionDetectorWithFiles(
+                    id = "pp-ocr-det",
+                    path = _mockPath,
+                    baseModel = "PaddlePaddle/PP-OCRv5_mobile_det",
+                    architectures = listOf(ObjectCharacterRecognitionArchitecture.PaddleOCR),
+                    languages = listOf("*"),
+                    version = "v1.0.0",
+                    size = 12345678,
+                    inference =
+                        ObjectCharacterRecognitionDetectorInferenceFiles(
+                            model = _mockPath,
+                        ),
+                ),
         )
-    )
 
-    private val _recognizers = mutableMapOf(
-        "pp-ocr-rec-latin" to ObjectCharacterRecognitionRecognizerWithFiles(
-            id = "pp-ocr-rec-latin",
-            path = _mockPath,
-            baseModel = "PaddlePaddle/latin_PP-OCRv5_mobile_rec",
-            architectures = listOf(ObjectCharacterRecognitionArchitecture.PaddleOCR),
-            languages = listOf(
-                "ad",
-                "ar",
-                "at",
-                "au",
-                "be",
-                "bo",
-                "br",
-                "ca",
-                "ch",
-                "cl",
-                "co",
-                "cr",
-                "cu",
-                "cz",
-                "de",
-                "dk",
-                "do",
-                "ec",
-                "es",
-                "fi",
-                "fr",
-                "gt",
-                "hn",
-                "hr",
-                "ht",
-                "hu",
-                "id",
-                "ie",
-                "it",
-                "lu",
-                "mx",
-                "nl",
-                "no",
-                "pa",
-                "pe",
-                "ph",
-                "pl",
-                "pt",
-                "py",
-                "se",
-                "sv",
-                "us",
-                "uy",
-                "va",
-                "ve"
-            ),
-            version = "v1.0.0",
-            inference = ObjectCharacterRecognitionRecognizerInferenceFiles(
-                model = _mockPath,
-            ),
-            tokenizer = ObjectCharacterRecognitionRecognizerTokenizerFiles(
-                vocabulary = _mockPath,
-            )
+    private val _recognizers =
+        mutableMapOf(
+            "pp-ocr-rec-latin" to
+                ObjectCharacterRecognitionRecognizerWithFiles(
+                    id = "pp-ocr-rec-latin",
+                    path = _mockPath,
+                    baseModel = "PaddlePaddle/latin_PP-OCRv5_mobile_rec",
+                    architectures = listOf(ObjectCharacterRecognitionArchitecture.PaddleOCR),
+                    languages =
+                        listOf(
+                            "ad",
+                            "ar",
+                            "at",
+                            "au",
+                            "be",
+                            "bo",
+                            "br",
+                            "ca",
+                            "ch",
+                            "cl",
+                            "co",
+                            "cr",
+                            "cu",
+                            "cz",
+                            "de",
+                            "dk",
+                            "do",
+                            "ec",
+                            "es",
+                            "fi",
+                            "fr",
+                            "gt",
+                            "hn",
+                            "hr",
+                            "ht",
+                            "hu",
+                            "id",
+                            "ie",
+                            "it",
+                            "lu",
+                            "mx",
+                            "nl",
+                            "no",
+                            "pa",
+                            "pe",
+                            "ph",
+                            "pl",
+                            "pt",
+                            "py",
+                            "se",
+                            "sv",
+                            "us",
+                            "uy",
+                            "va",
+                            "ve",
+                        ),
+                    version = "v1.0.0",
+                    inference =
+                        ObjectCharacterRecognitionRecognizerInferenceFiles(
+                            model = _mockPath,
+                        ),
+                    tokenizer =
+                        ObjectCharacterRecognitionRecognizerTokenizerFiles(
+                            vocabulary = _mockPath,
+                        ),
+                ),
         )
-    )
 
     /**
      * Gets the object character recognizer available in the repository.
@@ -104,16 +112,13 @@ class ObjectCharacterRecognitionRepositoryMemoryRepository : ObjectCharacterReco
     /**
      * Gets the object character recognizers available in the repository.
      */
-    override fun getObjectCharacterRecognitionRecognizers(): Flow<List<ObjectCharacterRecognitionRecognizerWithFiles>> {
-        return flowOf(_recognizers.values.toList())
-    }
+    override fun getObjectCharacterRecognitionRecognizers(): Flow<List<ObjectCharacterRecognitionRecognizerWithFiles>> = flowOf(_recognizers.values.toList())
 
     /**
      * Gets the object character recognizer available in the repository by language.
      * @param language The language to filter the object character recognizers.
      */
-    override fun getObjectCharacterRecognizerByLanguage(language: Language) =
-        _recognizers.values.first()
+    override fun getObjectCharacterRecognizerByLanguage(language: Language) = _recognizers.values.first()
 
     /**
      * Inserts or updates the object character recognizer in the repository.
@@ -138,16 +143,13 @@ class ObjectCharacterRecognitionRepositoryMemoryRepository : ObjectCharacterReco
     /**
      * Gets the object character recognition detectors available in the repository.
      */
-    override fun getObjectCharacterRecognitionDetectors(): Flow<List<ObjectCharacterRecognitionDetectorWithFiles>> {
-        return flowOf(_detectors.values.toList())
-    }
+    override fun getObjectCharacterRecognitionDetectors(): Flow<List<ObjectCharacterRecognitionDetectorWithFiles>> = flowOf(_detectors.values.toList())
 
     /**
      * Gets the object character recognition detector available in the repository by language.
      * @param language The language to filter the object character recognition detectors.
      */
-    override fun getObjectCharacterRecognitionDetectorByLanguage(language: Language) =
-        _detectors.values.first()
+    override fun getObjectCharacterRecognitionDetectorByLanguage(language: Language) = _detectors.values.first()
 
     /**
      * Inserts or updates the object character recognition detector in the repository.

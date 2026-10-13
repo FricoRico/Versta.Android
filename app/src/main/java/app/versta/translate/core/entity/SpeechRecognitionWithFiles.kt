@@ -28,7 +28,10 @@ data class SpeechRecognitionWithFiles(
     companion object {
         private val serializer = Json { ignoreUnknownKeys = true }
 
-        fun load(id: String, path: Path): SpeechRecognitionWithFiles {
+        fun load(
+            id: String,
+            path: Path,
+        ): SpeechRecognitionWithFiles {
             val metadataFile = File(path.toFile(), "metadata.json")
             if (!metadataFile.exists()) {
                 throw IllegalArgumentException(
@@ -37,7 +40,8 @@ data class SpeechRecognitionWithFiles(
             }
 
             val metadata =
-                serializer.decodeFromString<SpeechRecognitionMetadata>(metadataFile.readText())
+                serializer
+                    .decodeFromString<SpeechRecognitionMetadata>(metadataFile.readText())
                     .setRootPath(path)
 
             if (!metadata.isValid()) {
@@ -46,19 +50,21 @@ data class SpeechRecognitionWithFiles(
                 )
             }
 
-            val files = SpeechRecognitionWithFiles(
-                id = id,
-                path = path,
-                baseModel = metadata.baseModel,
-                architectures = metadata.architectures,
-                languages = metadata.languages,
-                version = metadata.version,
-                size = path.parent.directorySize(),
-                inference = SpeechRecognitionInferenceFiles(
-                    model = path.resolve(metadata.files.inference.model),
-                    vad = path.resolve(metadata.files.inference.vad),
-                ),
-            )
+            val files =
+                SpeechRecognitionWithFiles(
+                    id = id,
+                    path = path,
+                    baseModel = metadata.baseModel,
+                    architectures = metadata.architectures,
+                    languages = metadata.languages,
+                    version = metadata.version,
+                    size = path.parent.directorySize(),
+                    inference =
+                        SpeechRecognitionInferenceFiles(
+                            model = path.resolve(metadata.files.inference.model),
+                            vad = path.resolve(metadata.files.inference.vad),
+                        ),
+                )
 
             if (!files.isValid()) {
                 throw IllegalArgumentException("Speech recognition model files are not complete and valid: $files")
@@ -74,7 +80,5 @@ data class SpeechRecognitionInferenceFiles(
     val model: Path,
     val vad: Path,
 ) {
-    fun isValid(): Boolean {
-        return model.exists() && vad.exists()
-    }
+    fun isValid(): Boolean = model.exists() && vad.exists()
 }

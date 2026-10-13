@@ -60,21 +60,24 @@ fun VoiceSettings(
     voiceViewModel: VoiceViewModel,
 ) {
     val voiceModels by voiceViewModel.voiceByState.collectAsStateWithLifecycle(
-        ExternalVoiceModels()
+        ExternalVoiceModels(),
     )
     val downloadTasks by voiceViewModel.downloadTasks.collectAsStateWithLifecycle()
 
     var voiceToBeDeleted by remember { mutableStateOf<ExternalVoiceModelDefinition?>(null) }
 
-    val queuedTasks = (voiceModels.updates + voiceModels.available).filter { model ->
-        downloadTasks.any { it.model == model }
-    }
-    val filteredUpdates = voiceModels.updates.filterNot { model ->
-        downloadTasks.any { it.model == model }
-    }
-    val filteredAvailable = voiceModels.available.filterNot { model ->
-        downloadTasks.any { it.model == model }
-    }
+    val queuedTasks =
+        (voiceModels.updates + voiceModels.available).filter { model ->
+            downloadTasks.any { it.model == model }
+        }
+    val filteredUpdates =
+        voiceModels.updates.filterNot { model ->
+            downloadTasks.any { it.model == model }
+        }
+    val filteredAvailable =
+        voiceModels.available.filterNot { model ->
+            downloadTasks.any { it.model == model }
+        }
 
     val layoutDirection = LocalLayoutDirection.current
 
@@ -101,17 +104,19 @@ fun VoiceSettings(
             ScaffoldCompactBarEmptyActions()
         },
         actionsContentKey = "ScaffoldCompactBarEmptyActions",
-        wrapContent = true
+        wrapContent = true,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            )
+            modifier =
+                Modifier
+                    .fillMaxSize(),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
         ) {
             Voices(
                 voices = queuedTasks,
@@ -119,7 +124,8 @@ fun VoiceSettings(
                 header = { size ->
                     SettingsHeaderItem(
                         content = stringResource(R.string.downloading),
-                        groupSize = size + 1, index = 0
+                        groupSize = size + 1,
+                        index = 0,
                     )
                 },
                 onDownload = {
@@ -133,7 +139,7 @@ fun VoiceSettings(
                 },
                 onSwipeToDelete = { language ->
                     voiceToBeDeleted = language
-                }
+                },
             )
 
             Voices(
@@ -142,7 +148,8 @@ fun VoiceSettings(
                 header = { size ->
                     SettingsHeaderItem(
                         content = stringResource(R.string.installed_headline),
-                        groupSize = size + 1, index = 0
+                        groupSize = size + 1,
+                        index = 0,
                     )
                 },
                 onClick = {
@@ -150,7 +157,7 @@ fun VoiceSettings(
                 },
                 onSwipeToDelete = { voice ->
                     voiceToBeDeleted = voice
-                }
+                },
             )
 
             Voices(
@@ -159,7 +166,8 @@ fun VoiceSettings(
                 header = { size ->
                     SettingsHeaderItem(
                         content = stringResource(R.string.updates_headline),
-                        groupSize = size + 1, index = 0
+                        groupSize = size + 1,
+                        index = 0,
                     )
                 },
                 onDownload = {
@@ -173,7 +181,7 @@ fun VoiceSettings(
                 },
                 onSwipeToDelete = { voice ->
                     voiceToBeDeleted = voice
-                }
+                },
             )
 
             Voices(
@@ -182,7 +190,8 @@ fun VoiceSettings(
                 header = { size ->
                     SettingsHeaderItem(
                         content = stringResource(R.string.available_headline),
-                        groupSize = size + 1, index = 0
+                        groupSize = size + 1,
+                        index = 0,
                     )
                 },
                 onDownload = {
@@ -193,7 +202,7 @@ fun VoiceSettings(
                 },
                 onClick = {
                     onClick(it)
-                }
+                },
             )
         }
 
@@ -205,7 +214,8 @@ fun VoiceSettings(
             },
             onDismissRequest = {
                 voiceToBeDeleted = null
-            })
+            },
+        )
     }
 }
 
@@ -230,13 +240,15 @@ private fun LazyListScope.Voices(
 
     items(
         count = voices.size,
-        key = { voices[it].id }
+        key = { voices[it].id },
     ) { it ->
         val model = remember { voices[it] }
         val task = downloadTasks.firstOrNull { it.model == model }
-        val languages = model.voices.map { Language.fromIsoCode(it.language) }
-            .distinctBy { it.isoCode }
-            .sortedBy { it.name }
+        val languages =
+            model.voices
+                .map { Language.fromIsoCode(it.language) }
+                .distinctBy { it.isoCode }
+                .sortedBy { it.name }
 
         val size = ((model.extracted ?: model.size) / 1e6)
 
@@ -250,17 +262,17 @@ private fun LazyListScope.Voices(
                 Row(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                    modifier = Modifier.padding(top = MaterialTheme.spacing.extraSmall)
+                    modifier = Modifier.padding(top = MaterialTheme.spacing.extraSmall),
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             if (model.extracted != null) ImageVector.vectorResource(R.drawable.round_save_24) else ImageVector.vectorResource(R.drawable.round_cloud_download_24),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.requiredSize(MaterialTheme.spacing.medium)
+                            modifier = Modifier.requiredSize(MaterialTheme.spacing.medium),
                         )
                         Text(
                             text = "${sizeFormat.format(size)} MB",
@@ -274,7 +286,7 @@ private fun LazyListScope.Voices(
             underlineContent = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall)
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
                 ) {
                     languages.map {
                         LanguageBadge(
@@ -298,11 +310,13 @@ private fun LazyListScope.Voices(
                     )
                 }
             },
-            onSwipeToDelete = if (onSwipeToDelete != null) {
-                { onSwipeToDelete(model) }
-            } else {
-                null
-            })
+            onSwipeToDelete =
+                if (onSwipeToDelete != null) {
+                    { onSwipeToDelete(model) }
+                } else {
+                    null
+                },
+        )
     }
 
     ListDivider()
@@ -315,14 +329,16 @@ private fun PreviewVoicesSettings() {
 
     VoiceSettings(
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel,
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
-        voiceViewModel = VoiceViewModel(
-            context = LocalContext.current,
-            voiceRepository = VoiceMemoryRepository(),
-            externalVoiceModelsRepository = ExternalVoiceModelsMemoryRepository()
-        ),
+        voiceViewModel =
+            VoiceViewModel(
+                context = LocalContext.current,
+                voiceRepository = VoiceMemoryRepository(),
+                externalVoiceModelsRepository = ExternalVoiceModelsMemoryRepository(),
+            ),
     )
 }

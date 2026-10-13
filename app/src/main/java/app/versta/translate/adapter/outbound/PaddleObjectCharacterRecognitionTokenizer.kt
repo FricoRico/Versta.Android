@@ -16,8 +16,7 @@ class PaddleObjectCharacterRecognitionTokenizer {
 
     fun decode(ids: LongArray): String {
         try {
-            var tokens = ids.map { convertIdToToken(it)  }
-
+            var tokens = ids.map { convertIdToToken(it) }
 
             return tokens.joinToString("").trim()
         } catch (e: Exception) {
@@ -34,7 +33,7 @@ class PaddleObjectCharacterRecognitionTokenizer {
     }
 
     fun load(
-        file: Path
+        file: Path,
     ) {
         if (_vocabularyPath == file.pathString) {
             return
@@ -45,6 +44,5 @@ class PaddleObjectCharacterRecognitionTokenizer {
     }
 
     companion object {
-
     }
 }

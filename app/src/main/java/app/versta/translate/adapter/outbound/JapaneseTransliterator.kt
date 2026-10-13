@@ -48,15 +48,13 @@ class JapaneseTransliterator : Transliteration {
         }
 
         return normalizeWhitespaces(output.toString())
-
     }
 
-    private fun normalizeWhitespaces(text: String): String {
-        return text
+    private fun normalizeWhitespaces(text: String): String =
+        text
             .replace("[^\\S \\n]".toRegex(), " ")
             .replace("  +".toRegex(), " ")
             .replace("(?<=\\n) +(?=\\n)".toRegex(), "")
-    }
 
     init {
         // Warm up the analyzer so that the vocabulary is loaded and optimised, this is a workaround

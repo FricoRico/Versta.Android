@@ -54,11 +54,13 @@ import kotlinx.coroutines.launch
 @Composable
 fun ScaffoldModalBottomSheet(
     modifier: Modifier = Modifier,
-    scaffoldState: BottomSheetScaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(
-            skipHiddenState = false,
-        )
-    ),
+    scaffoldState: BottomSheetScaffoldState =
+        rememberBottomSheetScaffoldState(
+            bottomSheetState =
+                rememberStandardBottomSheetState(
+                    skipHiddenState = false,
+                ),
+        ),
     sheetContent: @Composable ColumnScope.() -> Unit,
     sheetBottomBar: @Composable (() -> Unit)? = null,
     sheetPeekHeight: Dp = BottomSheetDefaults.SheetPeekHeight,
@@ -74,7 +76,7 @@ fun ScaffoldModalBottomSheet(
     snackbarHost: @Composable (SnackbarHostState) -> Unit = { SnackbarHost(it) },
     containerColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = contentColorFor(containerColor),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val sheetScope = rememberCoroutineScope()
 
@@ -83,7 +85,7 @@ fun ScaffoldModalBottomSheet(
     val screenHeightDp = configuration.screenHeightDp.dp
     val statusBarHeight: Dp =
         WindowInsets.safeContent.asPaddingValues().calculateTopPadding() +
-                WindowInsets.safeContent.asPaddingValues().calculateBottomPadding()
+            WindowInsets.safeContent.asPaddingValues().calculateBottomPadding()
 
     val bottomSheetMaxHeight = screenHeightDp - statusBarHeight
 
@@ -93,7 +95,7 @@ fun ScaffoldModalBottomSheet(
     val sheetBackgroundColor by animateColorAsState(
         targetValue = if (isExpanded) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer,
         animationSpec = TweenSpec(),
-        label = "drawerBackgroundColor"
+        label = "drawerBackgroundColor",
     )
 
     val contentPadding = WindowInsets.safeDrawing.asPaddingValues()
@@ -117,26 +119,31 @@ fun ScaffoldModalBottomSheet(
         content = { innerPadding ->
             val bottomPadding by animateDpAsState(
                 targetValue =
-                if (isVisible) (innerPadding.calculateBottomPadding())
-                else (WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
-                label = "bottom-padding"
+                    if (isVisible) {
+                        (innerPadding.calculateBottomPadding())
+                    } else {
+                        (WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
+                    },
+                label = "bottom-padding",
             )
 
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(
-                        start = contentPadding.calculateStartPadding(layoutDirection = LocalLayoutDirection.current),
-                        end = contentPadding.calculateEndPadding(layoutDirection = LocalLayoutDirection.current),
-                        bottom = bottomPadding
-                    )
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(
+                            start = contentPadding.calculateStartPadding(layoutDirection = LocalLayoutDirection.current),
+                            end = contentPadding.calculateEndPadding(layoutDirection = LocalLayoutDirection.current),
+                            bottom = bottomPadding,
+                        ),
             ) {
                 content()
             }
 
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
+                modifier =
+                    Modifier
+                        .fillMaxSize(),
             ) {
                 Scrim(
                     color = BottomSheetDefaults.ScrimColor,
@@ -151,11 +158,12 @@ fun ScaffoldModalBottomSheet(
         },
         sheetContent = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(
-                        max = bottomSheetMaxHeight
-                    ),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(
+                            max = bottomSheetMaxHeight,
+                        ),
             ) {
                 sheetContent()
             }
@@ -173,7 +181,7 @@ fun ScaffoldModalBottomSheet(
         sheetSwipeEnabled = sheetSwipeEnabled,
         snackbarHost = snackbarHost,
         containerColor = containerColor,
-        contentColor = contentColor
+        contentColor = contentColor,
     )
 
     if (sheetBottomBar != null) {
@@ -182,12 +190,14 @@ fun ScaffoldModalBottomSheet(
         ) {
             Column(
                 verticalArrangement = Arrangement.Bottom,
-                modifier = Modifier
-                    .padding(
-                        bottom = WindowInsets.navigationBars.asPaddingValues()
-                            .calculateBottomPadding()
-                    )
-                    .fillMaxSize()
+                modifier =
+                    Modifier
+                        .padding(
+                            bottom =
+                                WindowInsets.navigationBars
+                                    .asPaddingValues()
+                                    .calculateBottomPadding(),
+                        ).fillMaxSize(),
             ) {
                 sheetBottomBar()
             }
@@ -200,14 +210,15 @@ fun BoxScope.Scrim(
     color: Color,
     onDismissRequest: () -> Unit,
     visible: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     if (color.isSpecified) {
         val alpha by
-        animateFloatAsState(
-            targetValue = if (visible) 1f else 0f, animationSpec = TweenSpec(),
-            label = "scrimAlpha"
-        )
+            animateFloatAsState(
+                targetValue = if (visible) 1f else 0f,
+                animationSpec = TweenSpec(),
+                label = "scrimAlpha",
+            )
         val dismissSheet =
             if (visible) {
                 Modifier
@@ -225,7 +236,7 @@ fun BoxScope.Scrim(
             Modifier
                 .matchParentSize()
                 .then(dismissSheet)
-                .then(modifier)
+                .then(modifier),
         ) {
             drawRect(color = color, alpha = alpha.coerceIn(0f, 1f))
         }

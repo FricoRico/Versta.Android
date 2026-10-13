@@ -32,27 +32,29 @@ fun SwipeDelete(
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
 
-    val state = rememberSwipeToDismissBoxState(
-        positionalThreshold = {
-            with(density) {
-                (configuration.screenWidthDp * 0.33).dp.toPx()
-            }
-        },
-        confirmValueChange = { value ->
-            when (value) {
-                SwipeToDismissBoxValue.EndToStart -> {
-                    onSwipeToDeleteRequested()
+    val state =
+        rememberSwipeToDismissBoxState(
+            positionalThreshold = {
+                with(density) {
+                    (configuration.screenWidthDp * 0.33).dp.toPx()
+                }
+            },
+            confirmValueChange = { value ->
+                when (value) {
+                    SwipeToDismissBoxValue.EndToStart -> {
+                        onSwipeToDeleteRequested()
+                    }
+
+                    SwipeToDismissBoxValue.StartToEnd,
+                    SwipeToDismissBoxValue.Settled,
+                    -> {
+                        return@rememberSwipeToDismissBoxState false
+                    }
                 }
 
-                SwipeToDismissBoxValue.StartToEnd,
-                SwipeToDismissBoxValue.Settled -> {
-                    return@rememberSwipeToDismissBoxState false
-                }
-            }
-
-            return@rememberSwipeToDismissBoxState false
-        }
-    )
+                return@rememberSwipeToDismissBoxState false
+            },
+        )
 
     SwipeToDismissBox(
         state = state,
@@ -61,26 +63,30 @@ fun SwipeDelete(
         },
         content = { content() },
         enableDismissFromStartToEnd = false,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
 @Composable
 fun DeleteBackground(
-    swipeDismissState: SwipeToDismissBoxState
+    swipeDismissState: SwipeToDismissBoxState,
 ) {
-    val color = if (swipeDismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
-        MaterialTheme.colorScheme.error
-    } else Color.Transparent
+    val color =
+        if (swipeDismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
+            MaterialTheme.colorScheme.error
+        } else {
+            Color.Transparent
+        }
 
     val progress = swipeDismissState.progress
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color)
-            .padding(MaterialTheme.spacing.large),
-        contentAlignment = Alignment.CenterEnd
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(color)
+                .padding(MaterialTheme.spacing.large),
+        contentAlignment = Alignment.CenterEnd,
     ) {
         Icon(
             imageVector = if (progress > 0.33f && progress < 0.99f) ImageVector.vectorResource(R.drawable.round_delete_forever_24) else ImageVector.vectorResource(R.drawable.round_delete_outline_24),

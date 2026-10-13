@@ -13,9 +13,7 @@ class TextToSpeechPreferenceMemoryRepository : TextToSpeechPreferenceRepository 
     /**
      * Gets whether text-to-speech is enabled.
      */
-    override fun getTextToSpeechEnabled(): Flow<Boolean> {
-        return flowOf(_enabled)
-    }
+    override fun getTextToSpeechEnabled(): Flow<Boolean> = flowOf(_enabled)
 
     /**
      * Sets whether text-to-speech is enabled.
@@ -28,9 +26,7 @@ class TextToSpeechPreferenceMemoryRepository : TextToSpeechPreferenceRepository 
     /**
      * Gets the speed of the speech.
      */
-    override fun getSpeed(): Flow<Float> {
-        return flowOf(_speed)
-    }
+    override fun getSpeed(): Flow<Float> = flowOf(_speed)
 
     /**
      * Sets the speed of the speech.
@@ -43,9 +39,7 @@ class TextToSpeechPreferenceMemoryRepository : TextToSpeechPreferenceRepository 
     /**
      * Gets the preferred gender of the voice.
      */
-    override fun getGender(): Flow<VoiceGender> {
-        return flowOf(_gender)
-    }
+    override fun getGender(): Flow<VoiceGender> = flowOf(_gender)
 
     /**
      * Sets the preferred voice gender for synthesis.
@@ -58,9 +52,7 @@ class TextToSpeechPreferenceMemoryRepository : TextToSpeechPreferenceRepository 
     /**
      * Gets the thread count.
      */
-    override fun getThreadCount(): Flow<Int> {
-        return flowOf(_threadCount)
-    }
+    override fun getThreadCount(): Flow<Int> = flowOf(_threadCount)
 
     /**
      * Sets the thread count.

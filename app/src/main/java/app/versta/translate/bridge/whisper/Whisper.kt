@@ -77,21 +77,23 @@ class Whisper(
     noSpeechThreshold: Float = 0.6f,
     endpointSilenceMs: Int = 600,
     maxUtteranceMs: Int = 15_000,
-) : AutoCloseable, SpeechRecognitionEngine {
+) : AutoCloseable,
+    SpeechRecognitionEngine {
     @Volatile
     private var handle: Long
 
     init {
-        handle = create(
-            model.getHandle(),
-            vadEnabled,
-            vadThreshold,
-            language.orEmpty(),
-            initialPrompt.orEmpty(),
-            noSpeechThreshold,
-            endpointSilenceMs,
-            maxUtteranceMs,
-        )
+        handle =
+            create(
+                model.getHandle(),
+                vadEnabled,
+                vadThreshold,
+                language.orEmpty(),
+                initialPrompt.orEmpty(),
+                noSpeechThreshold,
+                endpointSilenceMs,
+                maxUtteranceMs,
+            )
 
         if (handle == 0L) {
             throw RuntimeException("Failed to create WhisperRecognizer")
@@ -107,7 +109,10 @@ class Whisper(
         feed(handle, pcm, pcm.size)
     }
 
-    override fun feed(pcm: FloatArray, length: Int) {
+    override fun feed(
+        pcm: FloatArray,
+        length: Int,
+    ) {
         if (handle == 0L) {
             return
         }
@@ -211,9 +216,16 @@ class Whisper(
 
     private external fun destroy(handle: Long)
 
-    private external fun setCallback(handle: Long, callback: WhisperSegmentCallback)
+    private external fun setCallback(
+        handle: Long,
+        callback: WhisperSegmentCallback,
+    )
 
-    private external fun feed(handle: Long, pcm: FloatArray, nSamples: Int)
+    private external fun feed(
+        handle: Long,
+        pcm: FloatArray,
+        nSamples: Int,
+    )
 
     private external fun process(handle: Long): Long
 
@@ -221,7 +233,10 @@ class Whisper(
 
     private external fun reset(handle: Long)
 
-    private external fun setCarriedContext(handle: Long, tokenIds: IntArray)
+    private external fun setCarriedContext(
+        handle: Long,
+        tokenIds: IntArray,
+    )
 
     private external fun getMetrics(handle: Long): SpeechRecognitionMetrics?
 
@@ -254,5 +269,10 @@ class Whisper(
  *   context".
  */
 interface WhisperSegmentCallback {
-    fun onSegment(text: String, startMs: Long, endMs: Long, contextTokenIds: IntArray)
+    fun onSegment(
+        text: String,
+        startMs: Long,
+        endMs: Long,
+        contextTokenIds: IntArray,
+    )
 }

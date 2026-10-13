@@ -44,19 +44,21 @@ import app.versta.translate.ui.component.ScaffoldComponentProvider
 import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.theme.spacing
 
-
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun About(
     innerPadding: PaddingValues,
     scaffoldViewModel: ScaffoldViewModel,
     navigationViewModel: NavigationViewModel,
-    licenseViewModel: LicenseViewModel
+    licenseViewModel: LicenseViewModel,
 ) {
     val layoutDirection = LocalLayoutDirection.current
-    val version = LocalContext.current.packageManager?.getPackageInfo(
-        LocalContext.current.packageName, 0
-    )?.versionName ?: "x.x.x"
+    val version =
+        LocalContext.current.packageManager
+            ?.getPackageInfo(
+                LocalContext.current.packageName,
+                0,
+            )?.versionName ?: "x.x.x"
 
     val hasLicense by licenseViewModel.hasLicense.collectAsStateWithLifecycle(true)
 
@@ -71,86 +73,101 @@ fun About(
             ScaffoldCompactBarEmptyActions()
         },
         actionsContentKey = "ScaffoldCompactBarEmptyActions",
-        wrapContent = true
+        wrapContent = true,
     ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            )
+            modifier = Modifier.fillMaxSize(),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
         ) {
             item {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = MaterialTheme.spacing.large),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = MaterialTheme.spacing.large),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .padding(bottom = MaterialTheme.spacing.large)
-                            .size(MaterialTheme.spacing.extraLarge * 3)
-                            .clip(MaterialTheme.shapes.extraExtraLarge),
+                        modifier =
+                            Modifier
+                                .padding(bottom = MaterialTheme.spacing.large)
+                                .size(MaterialTheme.spacing.extraLarge * 3)
+                                .clip(MaterialTheme.shapes.extraExtraLarge),
                     ) {
                         Image(
                             imageVector = ImageVector.vectorResource(R.drawable.ic_launcher_background),
-                            contentDescription = stringResource(
-                                R.string.icon_description, stringResource(R.string.app_name)
-                            ),
-                            colorFilter = ColorFilter.tint(
-                                MaterialTheme.colorScheme.primary, BlendMode.Color
-                            )
+                            contentDescription =
+                                stringResource(
+                                    R.string.icon_description,
+                                    stringResource(R.string.app_name),
+                                ),
+                            colorFilter =
+                                ColorFilter.tint(
+                                    MaterialTheme.colorScheme.primary,
+                                    BlendMode.Color,
+                                ),
                         )
                         Image(
                             imageVector = ImageVector.vectorResource(R.drawable.ic_launcher_foreground),
-                            contentDescription = stringResource(
-                                R.string.icon_description, stringResource(R.string.app_name)
-                            ),
+                            contentDescription =
+                                stringResource(
+                                    R.string.icon_description,
+                                    stringResource(R.string.app_name),
+                                ),
                             modifier = Modifier.requiredSize(144.dp),
-                            colorFilter = ColorFilter.tint(
-                                MaterialTheme.colorScheme.primary, BlendMode.Color
-                            )
+                            colorFilter =
+                                ColorFilter.tint(
+                                    MaterialTheme.colorScheme.primary,
+                                    BlendMode.Color,
+                                ),
                         )
                     }
 
                     Text(
                         text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.displaySmall
+                        style = MaterialTheme.typography.displaySmall,
                     )
 
                     Text(
                         text = stringResource(R.string.neurora_attribution),
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
                     )
 
                     Divider()
 
                     Text(
                         text = stringResource(R.string.version_number, version),
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
 
                     Surface(
                         color = MaterialTheme.colorScheme.inverseSurface,
                         contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                        modifier = Modifier
-                            .padding(top = MaterialTheme.spacing.extraSmall)
-                            .clip(MaterialTheme.shapes.extraLarge),
+                        modifier =
+                            Modifier
+                                .padding(top = MaterialTheme.spacing.extraSmall)
+                                .clip(MaterialTheme.shapes.extraLarge),
                     ) {
                         Text(
-                            text = if (hasLicense) {
-                                stringResource(R.string.paid_license_badge)
-                            } else {
-                                stringResource(R.string.trial_license_badge)
-                            },
+                            text =
+                                if (hasLicense) {
+                                    stringResource(R.string.paid_license_badge)
+                                } else {
+                                    stringResource(R.string.trial_license_badge)
+                                },
                             style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(
-                                vertical = MaterialTheme.spacing.extraSmall,
-                                horizontal = MaterialTheme.spacing.small
-                            )
+                            modifier =
+                                Modifier.padding(
+                                    vertical = MaterialTheme.spacing.extraSmall,
+                                    horizontal = MaterialTheme.spacing.small,
+                                ),
                         )
                     }
                 }
@@ -170,7 +187,7 @@ fun About(
                         )
                     },
                     index = 0,
-                    groupSize = 5
+                    groupSize = 5,
                 )
             }
 
@@ -188,7 +205,7 @@ fun About(
                         )
                     },
                     index = 1,
-                    groupSize = 5
+                    groupSize = 5,
                 )
             }
 
@@ -206,7 +223,7 @@ fun About(
                         )
                     },
                     index = 2,
-                    groupSize = 5
+                    groupSize = 5,
                 )
             }
 
@@ -224,7 +241,7 @@ fun About(
                         )
                     },
                     index = 3,
-                    groupSize = 5
+                    groupSize = 5,
                 )
             }
 
@@ -242,7 +259,7 @@ fun About(
                         )
                     },
                     index = 4,
-                    groupSize = 5
+                    groupSize = 5,
                 )
             }
         }
@@ -256,12 +273,14 @@ fun AboutPreview() {
 
     About(
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
-        licenseViewModel = LicenseViewModel(
-            licenseRepository = LicenseMemoryRepository()
-        )
+        licenseViewModel =
+            LicenseViewModel(
+                licenseRepository = LicenseMemoryRepository(),
+            ),
     )
 }

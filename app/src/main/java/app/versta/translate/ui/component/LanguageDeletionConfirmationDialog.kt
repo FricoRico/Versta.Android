@@ -29,27 +29,31 @@ fun LanguageDeletionConfirmationDialog(
         return
     }
 
-    AlertDialog(onDismissRequest = { onDismissRequest() },
+    AlertDialog(
+        onDismissRequest = { onDismissRequest() },
         shape = MaterialTheme.shapes.extraLarge,
         icon = {
             LanguagePairBadge(
                 pair = pair,
                 bidirectional = false,
                 icon = ImageVector.vectorResource(R.drawable.round_error_24),
-                colors = LanguagePairBadgeDefaults.colors(
-                    badgeColor = MaterialTheme.colorScheme.error,
-                    badgeContentColor = MaterialTheme.colorScheme.onError,
-                )
+                colors =
+                    LanguagePairBadgeDefaults.colors(
+                        badgeColor = MaterialTheme.colorScheme.error,
+                        badgeContentColor = MaterialTheme.colorScheme.onError,
+                    ),
             )
         },
         title = {
-            Text(text = stringResource(R.string.delete_language_title, "${pair.source.name} - ${pair.target.name}"),
-                textAlign = TextAlign.Center)
+            Text(
+                text = stringResource(R.string.delete_language_title, "${pair.source.name} - ${pair.target.name}"),
+                textAlign = TextAlign.Center,
+            )
         },
         text = {
             LazyColumn(
                 modifier = Modifier.heightIn(max = 320.dp),
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall)
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
             ) {
                 item {
                     Text(
@@ -71,7 +75,7 @@ fun LanguageDeletionConfirmationDialog(
             }) {
                 Text(text = stringResource(R.string.cancel))
             }
-        }
+        },
     )
 }
 
@@ -81,6 +85,6 @@ fun LanguageDeletionConfirmationDialogPreview() {
     LanguageDeletionConfirmationDialog(
         pair = LanguagePair.fromIsoCodes("nl", "en"),
         onConfirmation = {},
-        onDismissRequest = {}
+        onDismissRequest = {},
     )
 }

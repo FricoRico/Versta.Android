@@ -10,10 +10,11 @@ import kotlin.io.path.pathString
 
 interface SynthReadyCallback {
     fun onSynthDataReady(audioData: ByteArray)
+
     fun onSynthDataComplete()
 }
 
-class ESpeakNG() : AutoCloseable {
+class ESpeakNG : AutoCloseable {
     private var _callback: SynthReadyCallback? = null
     private var _instance: MutableStateFlow<ESpeakNG?> = MutableStateFlow(null)
 
@@ -25,13 +26,9 @@ class ESpeakNG() : AutoCloseable {
         ESpeakNG().also { _instance.value = it }.construct(data.pathString)
     }
 
-    fun isReady(): Boolean {
-        return _instance.value != null
-    }
+    fun isReady(): Boolean = _instance.value != null
 
-    fun isReadyStateFlow(): Flow<Boolean> {
-        return _instance.map { it != null }
-    }
+    fun isReadyStateFlow(): Flow<Boolean> = _instance.map { it != null }
 
     override fun close() {
         if (_instance.value == null) {
@@ -43,7 +40,10 @@ class ESpeakNG() : AutoCloseable {
         _instance.value = null
     }
 
-    fun phoneme(text: String, language: String): String {
+    fun phoneme(
+        text: String,
+        language: String,
+    ): String {
         if (_instance.value == null) {
             throw IllegalStateException("Not initialized")
         }
@@ -51,7 +51,10 @@ class ESpeakNG() : AutoCloseable {
         return phonemize(text, language)
     }
 
-    fun synthesize(text: String, language: Language) {
+    fun synthesize(
+        text: String,
+        language: Language,
+    ) {
         if (_instance.value == null) {
             throw IllegalStateException("Not initialized")
         }
@@ -86,9 +89,19 @@ class ESpeakNG() : AutoCloseable {
     }
 
     private external fun construct(path: String)
+
     private external fun terminate()
-    private external fun phonemize(text: String, language: String): String
-    private external fun synthesize(text: String, language: String)
+
+    private external fun phonemize(
+        text: String,
+        language: String,
+    ): String
+
+    private external fun synthesize(
+        text: String,
+        language: String,
+    )
+
     private external fun cancel()
 
     companion object {

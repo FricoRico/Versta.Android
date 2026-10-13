@@ -26,7 +26,7 @@ import app.versta.translate.ui.theme.spacing
 
 data class PrivacyPolicyParagraph(
     val title: String,
-    val content: String
+    val content: String,
 )
 
 @Composable
@@ -37,52 +37,57 @@ fun PrivacyPolicy(
 ) {
     val layoutDirection = LocalLayoutDirection.current
 
-    val privacyPolicyContent = listOf(
-        PrivacyPolicyParagraph(
-            title = stringResource(R.string.latest_updates_title),
-            content = stringResource(R.string.latest_updates_paragraph)
-        ),
-        PrivacyPolicyParagraph(
-            title = stringResource(R.string.information_collection_title),
-            content = stringResource(
-                R.string.information_collection_paragraph,
-                stringResource(R.string.app_name)
-            )
-        ),
-        PrivacyPolicyParagraph(
-            title = stringResource(R.string.internet_permissions_title),
-            content = stringResource(
-                R.string.internet_permission_paragraph,
-                stringResource(R.string.app_name)
-            )
-        ),
-        PrivacyPolicyParagraph(
-            title = stringResource(R.string.analytics_title),
-            content = stringResource(
-                R.string.analytics_paragraph,
-                stringResource(R.string.app_name)
-            )
-        ),
-        PrivacyPolicyParagraph(
-            title = stringResource(R.string.logging_title),
-            content = stringResource(R.string.logging_paragraph, stringResource(R.string.app_name))
-        ),
-        PrivacyPolicyParagraph(
-            title = stringResource(R.string.translation_models_title),
-            content = stringResource(
-                R.string.translation_models_paragraph,
-                stringResource(R.string.app_name)
-            )
-        ),
-        PrivacyPolicyParagraph(
-            title = stringResource(R.string.changes_title),
-            content = stringResource(R.string.changes_paragraph)
-        ),
-        PrivacyPolicyParagraph(
-            title = stringResource(R.string.questions_title),
-            content = stringResource(R.string.questions_paragraph)
+    val privacyPolicyContent =
+        listOf(
+            PrivacyPolicyParagraph(
+                title = stringResource(R.string.latest_updates_title),
+                content = stringResource(R.string.latest_updates_paragraph),
+            ),
+            PrivacyPolicyParagraph(
+                title = stringResource(R.string.information_collection_title),
+                content =
+                    stringResource(
+                        R.string.information_collection_paragraph,
+                        stringResource(R.string.app_name),
+                    ),
+            ),
+            PrivacyPolicyParagraph(
+                title = stringResource(R.string.internet_permissions_title),
+                content =
+                    stringResource(
+                        R.string.internet_permission_paragraph,
+                        stringResource(R.string.app_name),
+                    ),
+            ),
+            PrivacyPolicyParagraph(
+                title = stringResource(R.string.analytics_title),
+                content =
+                    stringResource(
+                        R.string.analytics_paragraph,
+                        stringResource(R.string.app_name),
+                    ),
+            ),
+            PrivacyPolicyParagraph(
+                title = stringResource(R.string.logging_title),
+                content = stringResource(R.string.logging_paragraph, stringResource(R.string.app_name)),
+            ),
+            PrivacyPolicyParagraph(
+                title = stringResource(R.string.translation_models_title),
+                content =
+                    stringResource(
+                        R.string.translation_models_paragraph,
+                        stringResource(R.string.app_name),
+                    ),
+            ),
+            PrivacyPolicyParagraph(
+                title = stringResource(R.string.changes_title),
+                content = stringResource(R.string.changes_paragraph),
+            ),
+            PrivacyPolicyParagraph(
+                title = stringResource(R.string.questions_title),
+                content = stringResource(R.string.questions_paragraph),
+            ),
         )
-    )
 
     ScaffoldComponentProvider(
         scaffoldViewModel = scaffoldViewModel,
@@ -99,15 +104,17 @@ fun PrivacyPolicy(
         actionsContentKey = "ScaffoldCompactBarEmptyActions",
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            ),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraLarge)
+            modifier =
+                Modifier
+                    .fillMaxSize(),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraLarge),
         ) {
             items(items = privacyPolicyContent, key = { it.title }) {
                 PrivacyPolicyTextParagraph(paragraph = it)
@@ -118,18 +125,18 @@ fun PrivacyPolicy(
 
 @Composable
 fun PrivacyPolicyTextParagraph(
-    paragraph: PrivacyPolicyParagraph
+    paragraph: PrivacyPolicyParagraph,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
     ) {
         Text(
             text = paragraph.title,
-            style = MaterialTheme.typography.titleLarge
+            style = MaterialTheme.typography.titleLarge,
         )
         Text(
             text = paragraph.content,
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyMedium,
         )
     }
 }
@@ -141,9 +148,10 @@ fun PrivacyPolicyPreview() {
 
     PrivacyPolicy(
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel,
-        ),
-        navigationViewModel = navigationViewModel
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
+        navigationViewModel = navigationViewModel,
     )
 }

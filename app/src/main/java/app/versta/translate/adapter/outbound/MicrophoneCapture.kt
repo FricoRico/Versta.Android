@@ -48,23 +48,25 @@ class MicrophoneCapture(
         if (_running) {
             return
         }
-        val minBuffer = AudioRecord.getMinBufferSize(
-            sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-        )
+        val minBuffer =
+            AudioRecord.getMinBufferSize(
+                sampleRate,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+            )
         if (minBuffer <= 0) {
             throw IllegalStateException("Microphone not available (buffer size $minBuffer)")
         }
 
         val bufferSize = min(minBuffer * 4, Int.MAX_VALUE)
-        val record = AudioRecord(
-            MediaRecorder.AudioSource.MIC,
-            sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-            bufferSize,
-        )
+        val record =
+            AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                sampleRate,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                bufferSize,
+            )
         if (record.state != AudioRecord.STATE_INITIALIZED) {
             record.release()
             throw IllegalStateException("Failed to initialize AudioRecord")
@@ -82,27 +84,28 @@ class MicrophoneCapture(
         _running = true
         _spectrum.value = FloatArray(SPECTRUM_BAND_COUNT)
 
-        _job = scope.launch(Dispatchers.IO) {
-            // Small read chunks on a big internal buffer: the spectrum for the
-            // waveform updates every 64 ms instead of waiting for the whole
-            // buffer (250+ ms), which is what made the visualization lag.
-            val shorts = ShortArray(READ_CHUNK_SAMPLES)
-            val floats = FloatArray(READ_CHUNK_SAMPLES)
-            while (isActive && _running) {
-                val read = record.read(shorts, 0, shorts.size)
-                if (read <= 0) {
-                    continue
+        _job =
+            scope.launch(Dispatchers.IO) {
+                // Small read chunks on a big internal buffer: the spectrum for the
+                // waveform updates every 64 ms instead of waiting for the whole
+                // buffer (250+ ms), which is what made the visualization lag.
+                val shorts = ShortArray(READ_CHUNK_SAMPLES)
+                val floats = FloatArray(READ_CHUNK_SAMPLES)
+                while (isActive && _running) {
+                    val read = record.read(shorts, 0, shorts.size)
+                    if (read <= 0) {
+                        continue
+                    }
+                    for (i in 0 until read) {
+                        floats[i] = shorts[i] / 32768.0f
+                    }
+                    val fftSize = Integer.highestOneBit(read)
+                    if (fftSize >= MIN_FFT_SIZE) {
+                        _spectrum.value = floats.fftMagnitudes(fftSize).spectrumBands(sampleRate = sampleRate)
+                    }
+                    recognizer.feed(floats, read)
                 }
-                for (i in 0 until read) {
-                    floats[i] = shorts[i] / 32768.0f
-                }
-                val fftSize = Integer.highestOneBit(read)
-                if (fftSize >= MIN_FFT_SIZE) {
-                    _spectrum.value = floats.fftMagnitudes(fftSize).spectrumBands(sampleRate = sampleRate)
-                }
-                recognizer.feed(floats, read)
             }
-        }
     }
 
     override fun stop() {
