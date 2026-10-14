@@ -11,6 +11,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <memory>
+#include <mutex>
+#include <unordered_map>
+
 #define LOG_TAG "VerstaGl"
 #include "include/Log.h"
 
@@ -302,16 +306,48 @@ bool readbackFrame(GlRendererHandle* h, GLuint cameraTex, int outW, int outH,
 
 } // namespace glr
 
+// Opaque handle pattern (app/native/AGENTS.md): Kotlin holds a scoped id, not
+// the raw pointer — unknown or already-destroyed ids resolve to nullptr and
+// the entry point fails gracefully instead of dereferencing stale memory.
+// All entry points, including construct/destroy, run on the GL thread that
+// owns the current EGL context (see VerstaGlSurfaceView teardown), so the
+// mutex only formalizes the boundary, guarding against off-thread misuse.
+namespace {
+
+std::mutex glRendererInstancesMutex;
+
+struct GlRendererDeleter {
+    void operator()(glr::GlRendererHandle* h) const { glr::destroyRenderer(h); }
+};
+
+std::unordered_map<jlong, std::unique_ptr<glr::GlRendererHandle, GlRendererDeleter>>
+    glRendererInstances;
+jlong glRendererInstanceCounter = 0;
+
+glr::GlRendererHandle* findRenderer(jlong handle) {
+    std::lock_guard<std::mutex> lock(glRendererInstancesMutex);
+    auto it = glRendererInstances.find(handle);
+    return it != glRendererInstances.end() ? it->second.get() : nullptr;
+}
+
+} // namespace
+
 extern "C" {
 
 JNIEXPORT jlong JNICALL
 Java_app_versta_translate_bridge_liverender_LiveGlRenderer_construct(JNIEnv*, jobject) {
-    return reinterpret_cast<jlong>(glr::createRenderer());
+    std::unique_ptr<glr::GlRendererHandle, GlRendererDeleter> h(glr::createRenderer());
+    if (!h) return 0L;
+    std::lock_guard<std::mutex> lock(glRendererInstancesMutex);
+    const jlong id = ++glRendererInstanceCounter;
+    glRendererInstances[id] = std::move(h);
+    return id;
 }
 
 JNIEXPORT void JNICALL
 Java_app_versta_translate_bridge_liverender_LiveGlRenderer_destroy(JNIEnv*, jobject, jlong handle) {
-    glr::destroyRenderer(reinterpret_cast<glr::GlRendererHandle*>(handle));
+    std::lock_guard<std::mutex> lock(glRendererInstancesMutex);
+    glRendererInstances.erase(handle);  // unknown/double destroy: no-op by design
 }
 
 JNIEXPORT jboolean JNICALL
@@ -320,7 +356,7 @@ Java_app_versta_translate_bridge_liverender_LiveGlRenderer_renderCameraNative(
         jint surfaceH, jfloatArray uvMatrix) {
     jfloat uv[9];
     env->GetFloatArrayRegion(uvMatrix, 0, 9, uv);
-    return glr::renderCamera(reinterpret_cast<glr::GlRendererHandle*>(handle),
+    return glr::renderCamera(findRenderer(handle),
                              static_cast<GLuint>(textureId), surfaceW, surfaceH,
                              uv)
                    ? JNI_TRUE
@@ -339,7 +375,7 @@ Java_app_versta_translate_bridge_liverender_LiveGlRenderer_readbackRgbaNative(
     }
     jfloat uv[9];
     env->GetFloatArrayRegion(uvMatrix, 0, 9, uv);
-    return glr::readbackFrame(reinterpret_cast<glr::GlRendererHandle*>(handle),
+    return glr::readbackFrame(findRenderer(handle),
                               static_cast<GLuint>(textureId), outW, outH, uv,
                               outAddr)
                    ? JNI_TRUE
@@ -354,7 +390,7 @@ Java_app_versta_translate_bridge_liverender_LiveGlRenderer_setOverlayRgbaNative(
     jbyte* bytes = env->GetByteArrayElements(rgba, nullptr);
     if (!bytes) return JNI_FALSE;
     const bool ok = glr::setOverlay(
-        reinterpret_cast<glr::GlRendererHandle*>(handle), w, hgt,
+        findRenderer(handle), w, hgt,
         reinterpret_cast<const uint8_t*>(bytes));
     env->ReleaseByteArrayElements(rgba, bytes, JNI_ABORT);
     return ok ? JNI_TRUE : JNI_FALSE;
@@ -366,7 +402,7 @@ Java_app_versta_translate_bridge_liverender_LiveGlRenderer_renderOverlayNative(
         jfloatArray uvMatrix) {
     jfloat uv[9];
     env->GetFloatArrayRegion(uvMatrix, 0, 9, uv);
-    return glr::renderOverlay(reinterpret_cast<glr::GlRendererHandle*>(handle),
+    return glr::renderOverlay(findRenderer(handle),
                               surfaceW, surfaceH, uv)
                    ? JNI_TRUE
                    : JNI_FALSE;
