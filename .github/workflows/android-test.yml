@@ -111,28 +111,22 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back virtualscene -camera-front emulated
           disable-animations: true
-          # connectedAndroidTest uninstalls the APK when it finishes, so the
-          # launch smoke reinstalls it. The suite result always wins the exit
-          # code; a fatal crash in the smoke launch also fails the run.
-          script: |
-            # The runner executes this with sh -e; the `|| TEST_EXIT=$?`
-            # form keeps the smoke evidence collection alive when the
-            # suite itself fails.
-            TEST_EXIT=0
-            ./gradlew :app:connectedX86_64DebugAndroidTest --console=plain --stacktrace || TEST_EXIT=$?
-            mkdir -p smoke-out
-            APK=$(ls app/build/outputs/apk/${ABI_FLAVOR}/debug/*.apk 2>/dev/null | head -1)
-            if [ -n "$APK" ]; then
-              adb install -r "$APK" || true
-              adb shell monkey -p app.versta.translate -c android.intent.category.LAUNCHER 1 || true
-              sleep 12
-              adb exec-out screencap -p > smoke-out/app-launch.png || true
-            fi
-            adb logcat -d -v threadtime > smoke-out/logcat.txt || true
-            if grep -E "FATAL EXCEPTION|ANR in app.versta.translate" smoke-out/logcat.txt; then
-              echo "Smoke launch produced a fatal app crash"
-              TEST_EXIT=90
-            fi
+          # android-emulator-runner executes each script line as a separate
+          # `sh -c`, so the smoke logic is one folded line. connectedAndroidTest
+          # uninstalls the APK when it finishes, so the launch smoke
+          # reinstalls it. The suite result always wins the exit code; a fatal
+          # crash in the smoke launch also fails the run.
+          script: >-
+            ./gradlew :app:connectedX86_64DebugAndroidTest --console=plain --stacktrace;
+            TEST_EXIT=$?;
+            mkdir -p smoke-out;
+            APK=$(ls app/build/outputs/apk/x86_64/debug/*.apk 2>/dev/null | head -1);
+            [ -n "$APK" ] && adb install -r "$APK";
+            adb shell monkey -p app.versta.translate -c android.intent.category.LAUNCHER 1;
+            sleep 12;
+            adb exec-out screencap -p > smoke-out/app-launch.png;
+            adb logcat -d -v threadtime > smoke-out/logcat.txt;
+            grep -E "FATAL EXCEPTION|ANR in app.versta.translate" smoke-out/logcat.txt && TEST_EXIT=90;
             exit $TEST_EXIT
 
       - name: Upload connected test reports
