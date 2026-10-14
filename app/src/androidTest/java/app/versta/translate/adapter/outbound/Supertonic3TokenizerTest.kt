@@ -114,16 +114,39 @@ class Supertonic3TokenizerTest {
     }
 
     @Test
-    fun tokenizePacksCommaPartsLikeTheReference() {
-        // Reference chunkText packs comma-separated parts on a `+ 1` check
-        // while the join adds ", ": 150 + 149 + 1 fits 300 exactly, so both
-        // parts share one 301-character chunk instead of two.
-        val first = "a".repeat(150)
-        val second = "b".repeat(149)
-        val tokens = tokenizer().tokenize("$first, $second", english)
+    fun tokenizeKeepsOverlongCommaSentenceWhole() {
+        // The reference chunker has no comma/word fallback: a sentence beyond
+        // the segment length stays one chunk (the engine's 1024-token cap is
+        // the tripwire). 301 chars > 300, still a single chunk.
+        val sentence = "a".repeat(150) + ", " + "b".repeat(149)
+        val tokens = tokenizer().tokenize(sentence, english)
 
-        assertEquals(1, tokens.size)
-        assertEquals(listOf("<en>$first, $second.</en>"), tokens.map(::decode))
+        assertEquals(listOf("<en>$sentence.</en>"), tokens.map(::decode))
+    }
+
+    @Test
+    fun tokenizeDoesNotSplitAfterSingleCapitalInitial() {
+        // The reference sentence splitter guards "F."-style initials.
+        val tokens =
+            tokenizer().tokenize(
+                "F. Scott Fitzgerald wrote about jazz. He sure did.",
+                english,
+            )
+
+        assertEquals(
+            listOf("<en>F. Scott Fitzgerald wrote about jazz. He sure did.</en>"),
+            tokens.map(::decode),
+        )
+    }
+
+    @Test
+    fun tokenizeKeepsAbbreviationsUnsplit() {
+        val tokens = tokenizer().tokenize("Dr. Acula rested. Patients waited.", english)
+
+        assertEquals(
+            listOf("<en>Dr. Acula rested. Patients waited.</en>"),
+            tokens.map(::decode),
+        )
     }
 
     /**
@@ -161,12 +184,13 @@ class Supertonic3TokenizerTest {
     }
 
     @Test
-    fun tokenizeChunksParagraphsOverTheSegmentLength() {
+    fun tokenizeKeepsOverlongSingleSentenceWhole() {
+        // 399 chars, no sentence boundary to split on: the reference keeps it
+        // as one chunk instead of force-splitting on commas or words.
         val sentence = "word ".repeat(80).trim()
         val tokens = tokenizer().tokenize(sentence, english)
 
-        assertTrue(tokens.size > 1)
-        assertTrue(tokens.all { it.size <= 300 + "<en></en>.".length })
+        assertEquals(listOf("<en>$sentence.</en>"), tokens.map(::decode))
     }
 
     @Test

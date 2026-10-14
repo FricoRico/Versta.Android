@@ -8,7 +8,11 @@ import java.text.Normalizer
 
 /**
  * Pure Kotlin port of the Supertonic reference `UnicodeProcessor` / text
- * chunker (https://github.com/supertone-inc/supertonic, `java/Helper.java`).
+ * chunker. Preprocessing matches every published port verbatim; the chunking
+ * policy follows the reference Python pipeline (supertone-inc `py/helper.py`,
+ * vra/supertonic-mnn `text.py`) — the Java port's comma/word fallbacks and
+ * extra abbreviation entries are not reference behavior and would desync the
+ * app-side chunks from the NEU-68 reference vectors.
  * Normalizes raw text (NFKD, emoji and symbol cleanup, `<lang>` tag wrap),
  * splits it into speakable chunks, and maps every chunk's code points through
  * the bundle's `unicode_indexer.json` to model input ids. Code points with no
@@ -108,11 +112,11 @@ class Supertonic3Tokenizer : TextToSpeechTokenizer {
     }
 
     /**
-     * Splits text into chunks of at most the language's segment length,
-     * mirroring the reference `chunkText`: paragraphs first, then sentences
-     * (abbreviation-aware), with comma and word fallbacks for overlong
-     * sentences. With [splitSentences] disabled each paragraph stays one
-     * candidate chunk.
+     * Splits text into chunks, mirroring the reference `chunk_text`: paragraphs
+     * first, then abbreviation-aware sentence packing up to the language's
+     * segment length. An overlong sentence stays whole, like the reference;
+     * the engine's 1024-token cap is the tripwire for pathological input. With
+     * [splitSentences] disabled each paragraph stays one candidate chunk.
      */
     private fun chunk(
         text: String,
@@ -123,7 +127,7 @@ class Supertonic3Tokenizer : TextToSpeechTokenizer {
 
         return text
             .trim()
-            .split("\\n\\s*\\n".toRegex())
+            .split("\\n\\s*\\n+".toRegex())
             .map { it.trim() }
             .filter { it.isNotEmpty() }
             .flatMap { chunkParagraph(it, maxLength, splitSentences) }
@@ -143,15 +147,11 @@ class Supertonic3Tokenizer : TextToSpeechTokenizer {
         var current = ""
 
         for (sentence in sentences.map { it.trim() }.filter { it.isNotEmpty() }) {
-            if (sentence.length > maxLength) {
-                if (current.isNotEmpty()) {
-                    chunks.add(current)
-                    current = ""
-                }
-                chunks.addAll(chunkLongSentence(sentence, maxLength))
-                continue
-            }
-
+            // The reference (vra/supertonic-mnn `text.py` chunk_text) keeps an
+            // overlong sentence whole and starts a new chunk with it; the
+            // native side's 1024-token cap is the declared tripwire. No
+            // comma/word fallback — chunk boundaries decide which NEU-68
+            // reference vector a chunk is compared against.
             if (current.isNotEmpty() && current.length + sentence.length + 1 > maxLength) {
                 chunks.add(current)
                 current = ""
@@ -167,66 +167,12 @@ class Supertonic3Tokenizer : TextToSpeechTokenizer {
         return chunks
     }
 
-    private fun chunkLongSentence(
-        sentence: String,
-        maxLength: Int,
-    ): List<String> {
-        val chunks = mutableListOf<String>()
-        var current = ""
-
-        for (part in sentence.split(",").map { it.trim() }.filter { it.isNotEmpty() }) {
-            if (part.length > maxLength) {
-                if (current.isNotEmpty()) {
-                    chunks.add(current)
-                    current = ""
-                }
-                chunks.addAll(chunkWords(part, maxLength))
-                continue
-            }
-
-            // The reference packs comma parts on a `+ 1` check while the join
-            // itself adds ", ", so a chunk here may reach maxLength + 1 chars.
-            // Mirrored verbatim: chunk boundaries must match the reference per
-            // chunk for the NEU-68 vector comparisons.
-            if (current.isNotEmpty() && current.length + part.length + 1 > maxLength) {
-                chunks.add(current)
-                current = ""
-            }
-            current = if (current.isEmpty()) part else "$current, $part"
-        }
-
-        if (current.isNotEmpty()) {
-            chunks.add(current)
-        }
-
-        return chunks
-    }
-
-    private fun chunkWords(
-        text: String,
-        maxLength: Int,
-    ): List<String> {
-        val chunks = mutableListOf<String>()
-        var current = ""
-
-        for (word in text.split("\\s+".toRegex())) {
-            if (current.isNotEmpty() && current.length + word.length + 1 > maxLength) {
-                chunks.add(current)
-                current = ""
-            }
-            current = if (current.isEmpty()) word else "$current $word"
-        }
-
-        if (current.isNotEmpty()) {
-            chunks.add(current)
-        }
-
-        return chunks
-    }
-
     private fun splitSentences(text: String): List<String> {
+        // Sentence boundaries are [.!?] followed by whitespace, except after a
+        // known abbreviation or a single capital letter ("F. Scott" must not
+        // split) — the reference pattern, verbatim.
         val abbreviations = ABBREVIATIONS.joinToString("|") { Regex.escape(it) }
-        return text.split("(?<!(?:$abbreviations))(?<=[.!?])\\s+".toRegex())
+        return text.split("(?<!(?:$abbreviations))(?<!\\b[A-Z]\\.)(?<=[.!?])\\s+".toRegex())
     }
 
     companion object {
@@ -235,29 +181,30 @@ class Supertonic3Tokenizer : TextToSpeechTokenizer {
 
         private val SHORT_SEGMENT_LANGUAGES = setOf("ja", "ko")
 
+        // The reference abbreviation set (supertone-inc `py/helper.py` and
+        // vra/supertonic-mnn `text.py`); the Java port's "Rd."/"Dept." entries
+        // never split sentence boundaries there, so they are not included.
         private val ABBREVIATIONS =
             listOf(
-                "Dr.",
                 "Mr.",
                 "Mrs.",
                 "Ms.",
+                "Dr.",
                 "Prof.",
                 "Sr.",
                 "Jr.",
-                "St.",
-                "Ave.",
-                "Rd.",
-                "Blvd.",
-                "Dept.",
+                "Ph.D.",
+                "etc.",
+                "e.g.",
+                "i.e.",
+                "vs.",
                 "Inc.",
                 "Ltd.",
                 "Co.",
                 "Corp.",
-                "etc.",
-                "vs.",
-                "i.e.",
-                "e.g.",
-                "Ph.D.",
+                "St.",
+                "Ave.",
+                "Blvd.",
             )
 
         private val emojiRanges =
