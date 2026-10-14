@@ -55,6 +55,38 @@ class LeanmtTest {
     }
 
     @Test
+    fun modelConfig_threads_defaultsToLibraryDefault() {
+        // 0 hands the thread-budget choice to leanmt (process default /
+        // LEANMT_THREADS); the bridge must not impose its own policy.
+        assertEquals(0L, LeanmtModelConfig(6, 2, 2, 8).threads)
+    }
+
+    @Test
+    fun loadModel_withThreads_reachesNativeLoad() {
+        // Missing files fail inside the native loader after the threads
+        // argument crosses JNI; an UnsatisfiedLinkError here would mean the
+        // Kotlin/native create signatures have drifted.
+        val leanmt = Leanmt(0L)
+
+        try {
+            leanmt.loadModel(
+                LeanmtPackage(
+                    "/nonexistent/model.bin",
+                    "/nonexistent/vocab.spm",
+                    "",
+                    "/nonexistent/shortlist.bin",
+                ),
+                LeanmtModelConfig(6, 2, 2, 8, threads = 2),
+            )
+            fail("Expected RuntimeException")
+        } catch (e: RuntimeException) {
+            assertEquals("Failed to load leanmt model from /nonexistent/model.bin", e.message)
+        } finally {
+            leanmt.close()
+        }
+    }
+
+    @Test
     fun translate_afterClose_throwsNotInitialized() {
         val leanmt = Leanmt(0L)
         leanmt.close()

@@ -20,6 +20,7 @@ class LeanmtModel(
                 config.decoderLayers,
                 config.feedForwardDepth,
                 config.numHeads,
+                config.threads,
                 pkg.model,
                 pkg.vocabulary,
                 pkg.targetVocabulary,
@@ -53,6 +54,7 @@ class LeanmtModel(
         decoderLayers: Long,
         feedForwardDepth: Long,
         numHeads: Long,
+        threads: Long,
         model: String,
         vocabulary: String,
         targetVocabulary: String,
@@ -85,13 +87,19 @@ data class LeanmtPackage(
 
 /**
  * Native model configuration. Mirrors leanmt's `leanmt::Model::Config`
- * (encoder/decoder layers, feed-forward depth and attention heads). The
- * original `split_mode` option is not part of the pristine leanmt API and
- * is intentionally omitted.
+ * (encoder/decoder layers, feed-forward depth, attention heads and the
+ * intra-op GEMM thread budget). The original `split_mode` option is not
+ * part of the pristine leanmt API and is intentionally omitted.
+ *
+ * [threads] maps to `Model::Config::threads`: 0 keeps the library default
+ * (currently 2, overridable process-wide via the `LEANMT_THREADS` env on
+ * the native side); a positive value pins the ruy pool size for the model.
+ * Output is bit-identical at any thread count — only latency/battery move.
  */
 data class LeanmtModelConfig(
     val encoderLayers: Long,
     val decoderLayers: Long,
     val feedForwardDepth: Long,
     val numHeads: Long,
+    val threads: Long = 0,
 )

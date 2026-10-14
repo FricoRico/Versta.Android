@@ -74,6 +74,7 @@ Java_app_versta_translate_bridge_leanmt_LeanmtModel_create(
         jlong decoderLayers,
         jlong feedForwardDepth,
         jlong numHeads,
+        jlong threads,
         jstring model,
         jstring vocabulary,
         jstring targetVocabulary,
@@ -84,6 +85,9 @@ Java_app_versta_translate_bridge_leanmt_LeanmtModel_create(
     config.decoder_layers = static_cast<size_t>(decoderLayers);
     config.feed_forward_depth = static_cast<size_t>(feedForwardDepth);
     config.num_heads = static_cast<size_t>(numHeads);
+    // 0 keeps the library default; see Model.hh for the ownership/threading
+    // contract (post-NEU-23 API, requires submodule pin >= b154996).
+    config.threads = static_cast<size_t>(threads);
 
     leanmt::Package<std::string> package;
     package.model = jstr(env, model);
