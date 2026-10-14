@@ -19,12 +19,12 @@ import app.versta.translate.adapter.outbound.ExternalDataMemoryRepository
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
-import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.adapter.outbound.TextToSpeechMockInference
 import app.versta.translate.adapter.outbound.TextToSpeechMockTokenizer
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
+import app.versta.translate.adapter.outbound.VoiceMemoryRepository
 import app.versta.translate.bridge.speech.ESpeakNG
 import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.model.LanguageViewModel
@@ -38,7 +38,7 @@ import app.versta.translate.ui.theme.spacing
 fun ModelLoadingProgressDialog(
     translationViewModel: TranslationViewModel,
     textTranslationViewModel: TextTranslationViewModel,
-    textToSpeechViewModel: TextToSpeechViewModel
+    textToSpeechViewModel: TextToSpeechViewModel,
 ) {
     val translationModelLoadingProgress =
         translationViewModel.loadingProgress.collectAsStateWithLifecycle(false)
@@ -50,15 +50,17 @@ fun ModelLoadingProgressDialog(
     if (translationModelLoadingProgress.value == LoadingProgress.InProgress || textTranslationLoadingProgress.value == LoadingProgress.InProgress || textToSpeechLoadingProgress.value == LoadingProgress.InProgress) {
         Dialog(onDismissRequest = { /* Can not be dismissed */ }) {
             Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-                shape = MaterialTheme.shapes.extraLarge
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                shape = MaterialTheme.shapes.extraLarge,
             ) {
                 CircularProgressIndicator(
-                    modifier = Modifier
-                        .padding(MaterialTheme.spacing.extraLarge)
-                        .align(Alignment.CenterHorizontally)
+                    modifier =
+                        Modifier
+                            .padding(MaterialTheme.spacing.extraLarge)
+                            .align(Alignment.CenterHorizontally),
                 )
             }
         }
@@ -68,40 +70,44 @@ fun ModelLoadingProgressDialog(
 @Composable
 @Preview(showBackground = true)
 fun ModelLoadingProgressDialogPreview() {
-    val languageViewModel = LanguageViewModel(
-        context = LocalContext.current,
-        languageRepository = LanguageMemoryRepository(),
-        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-    )
+    val languageViewModel =
+        LanguageViewModel(
+            context = LocalContext.current,
+            languageRepository = LanguageMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+        )
 
     val translationMockInference = TranslationMockInference()
 
-    val translationViewModel = TranslationViewModel(
-        intermediateModel = translationMockInference,
-        outputModel = translationMockInference,
-        translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
-        languageViewModel = languageViewModel
-    )
+    val translationViewModel =
+        TranslationViewModel(
+            intermediateModel = translationMockInference,
+            outputModel = translationMockInference,
+            translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+            languageViewModel = languageViewModel,
+        )
 
     ModelLoadingProgressDialog(
         translationViewModel = translationViewModel,
-        textTranslationViewModel = TextTranslationViewModel(
-            languageViewModel = languageViewModel,
-            translationViewModel = translationViewModel
-        ),
-        textToSpeechViewModel = TextToSpeechViewModel(
-            context = LocalContext.current,
-            espeakNG = ESpeakNG(),
-            openJTalk = OpenJTalk(),
-            tokenizer = TextToSpeechMockTokenizer(),
-            model = TextToSpeechMockInference(),
-            audioPlayer = AudioMockPlayer(),
-            dataRepository = DataMemoryRepository(),
-            voiceRepository = VoiceMemoryRepository(),
-            textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalDataRepository = ExternalDataMemoryRepository(),
-        )
+        textTranslationViewModel =
+            TextTranslationViewModel(
+                languageViewModel = languageViewModel,
+                translationViewModel = translationViewModel,
+            ),
+        textToSpeechViewModel =
+            TextToSpeechViewModel(
+                context = LocalContext.current,
+                espeakNG = ESpeakNG(),
+                openJTalk = OpenJTalk(),
+                tokenizer = TextToSpeechMockTokenizer(),
+                model = TextToSpeechMockInference(),
+                audioPlayer = AudioMockPlayer(),
+                dataRepository = DataMemoryRepository(),
+                voiceRepository = VoiceMemoryRepository(),
+                textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
+                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+                externalDataRepository = ExternalDataMemoryRepository(),
+            ),
     )
 }

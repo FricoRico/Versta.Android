@@ -29,23 +29,28 @@ internal data class DownloadQueue(
     val checksum: URI,
 )
 
-abstract class DownloadWorker(private val context: Context, params: WorkerParameters) :
-    CoroutineWorker(context, params) {
+abstract class DownloadWorker(
+    private val context: Context,
+    params: WorkerParameters,
+) : CoroutineWorker(context, params) {
     protected open val downloadStatusIntent: Intent? = null
 
     private val _workManager = WorkManager.getInstance(context)
 
     private var _previousProgress = 0
     private val _notification =
-        NotificationCompat.Builder(applicationContext, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
+        NotificationCompat
+            .Builder(applicationContext, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
             .setContentTitle(context.getString(R.string.download_progress_notification_title))
             .setTicker(context.getString(R.string.download_progress_notification_title))
             .setSmallIcon(R.drawable.ic_notification)
             .setOngoing(true)
             .addAction(
-                android.R.drawable.ic_delete, context.getString(R.string.cancel), _workManager.createCancelPendingIntent(
-                    id
-                )
+                android.R.drawable.ic_delete,
+                context.getString(R.string.cancel),
+                _workManager.createCancelPendingIntent(
+                    id,
+                ),
             )
 
     private val _downloadDirectory = context.cacheDir.resolve("downloads")
@@ -63,14 +68,13 @@ abstract class DownloadWorker(private val context: Context, params: WorkerParame
             return Result.failure()
         }
 
-
         _queue.add(
             DownloadQueue(
                 id = taskId,
                 name = name,
                 uri = uri,
                 checksum = checksum,
-            )
+            ),
         )
 
         setForegroundAsync(createForegroundInfo(name))
@@ -90,32 +94,39 @@ abstract class DownloadWorker(private val context: Context, params: WorkerParame
 
         try {
             _queue.poll()?.let { task ->
-                _downloadClient.download(task.uri, task.checksum, object : DownloadListener {
-                    override fun onProgressUpdate(downloaded: Long, total: Long) {
-                        if (isStopped) {
-                            setStatus(task.id, DownloadStatus.Cancelled)
-                            throw CancellationException("Download cancelled")
+                _downloadClient.download(
+                    task.uri,
+                    task.checksum,
+                    object : DownloadListener {
+                        override fun onProgressUpdate(
+                            downloaded: Long,
+                            total: Long,
+                        ) {
+                            if (isStopped) {
+                                setStatus(task.id, DownloadStatus.Cancelled)
+                                throw CancellationException("Download cancelled")
+                            }
+
+                            setProgress(task.name, downloaded, total)
+                            setStatus(task.id, DownloadStatus.Progress(downloaded, total))
                         }
 
-                        setProgress(task.name, downloaded, total)
-                        setStatus(task.id, DownloadStatus.Progress(downloaded, total))
-                    }
+                        override fun onCompletion(file: File) {
+                            setForegroundAsync(createForegroundInfo(task.name))
+                            setStatus(task.id, DownloadStatus.Processing)
 
-                    override fun onCompletion(file: File) {
-                        setForegroundAsync(createForegroundInfo(task.name))
-                        setStatus(task.id, DownloadStatus.Processing)
+                            extractDownload(task.id, file)
 
-                        extractDownload(task.id, file)
+                            setStatus(task.id, DownloadStatus.Completed)
+                            removeDownloadTask(task.id)
+                        }
 
-                        setStatus(task.id, DownloadStatus.Completed)
-                        removeDownloadTask(task.id)
-                    }
-
-                    override fun onError(exception: Exception) {
-                        setStatus(task.id, DownloadStatus.Error(exception))
-                        removeDownloadTask(task.id)
-                    }
-                })
+                        override fun onError(exception: Exception) {
+                            setStatus(task.id, DownloadStatus.Error(exception))
+                            removeDownloadTask(task.id)
+                        }
+                    },
+                )
             }
         } catch (e: Exception) {
             if (e is CancellationException) {
@@ -132,7 +143,10 @@ abstract class DownloadWorker(private val context: Context, params: WorkerParame
     /**
      * Extracts the downloaded language model.
      */
-    protected open fun extractDownload(taskId: UUID, file: File) {}
+    protected open fun extractDownload(
+        taskId: UUID,
+        file: File,
+    ) {}
 
     /**
      * Removes the download task from the queue.
@@ -141,7 +155,10 @@ abstract class DownloadWorker(private val context: Context, params: WorkerParame
         _queue.removeIf { it.id == taskId }
     }
 
-    internal fun setStatus(taskId: UUID, status: DownloadStatus) {
+    internal fun setStatus(
+        taskId: UUID,
+        status: DownloadStatus,
+    ) {
         if (downloadStatusIntent == null) {
             Timber.tag(TAG).e("Download status intent is null")
             return
@@ -153,32 +170,40 @@ abstract class DownloadWorker(private val context: Context, params: WorkerParame
         context.sendBroadcast(downloadStatusIntent)
     }
 
-    private fun createForegroundInfo(name: String?, progress: Int = 0): ForegroundInfo {
-        val notification = _notification
-            .setProgress(100, progress, progress == 0)
-            .apply {
-                if (name != null) {
-                    setContentText(
-                        applicationContext.getString(
-                            R.string.download_progress_notification_content,
-                            name
-                        ))
-                }
-            }
-            .build()
+    private fun createForegroundInfo(
+        name: String?,
+        progress: Int = 0,
+    ): ForegroundInfo {
+        val notification =
+            _notification
+                .setProgress(100, progress, progress == 0)
+                .apply {
+                    if (name != null) {
+                        setContentText(
+                            applicationContext.getString(
+                                R.string.download_progress_notification_content,
+                                name,
+                            ),
+                        )
+                    }
+                }.build()
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ForegroundInfo(
                 DOWNLOAD_NOTIFICATION_ID,
                 notification,
-                FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                FOREGROUND_SERVICE_TYPE_DATA_SYNC,
             )
         } else {
             ForegroundInfo(DOWNLOAD_NOTIFICATION_ID, notification)
         }
     }
 
-    private fun setProgress(name: String?, downloaded: Long, total: Long) {
+    private fun setProgress(
+        name: String?,
+        downloaded: Long,
+        total: Long,
+    ) {
         val progress = (downloaded * 100 / total).toInt()
         if (progress == _previousProgress) {
             return
@@ -192,7 +217,11 @@ abstract class DownloadWorker(private val context: Context, params: WorkerParame
         private var _downloading = false
         private val _queue: Queue<DownloadQueue> = ArrayDeque()
 
-        internal val _serializer = Json { ignoreUnknownKeys = true; classDiscriminator = "type" }
+        internal val _serializer =
+            Json {
+                ignoreUnknownKeys = true
+                classDiscriminator = "type"
+            }
 
         private val TAG = DownloadWorker::class.java.simpleName
     }

@@ -32,13 +32,17 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class BubbleActivity : ComponentActivity() {
-    private val _updateReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent != null) {
-                handleStartupAndResume(intent)
+    private val _updateReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                context: Context?,
+                intent: Intent?,
+            ) {
+                if (intent != null) {
+                    handleStartupAndResume(intent)
+                }
             }
         }
-    }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,7 +53,7 @@ class BubbleActivity : ComponentActivity() {
                 registerReceiver(
                     _updateReceiver,
                     IntentFilter(TRANSLATION_NOTIFICATION_CHANNEL_ID),
-                    RECEIVER_EXPORTED
+                    RECEIVER_EXPORTED,
                 )
             }
 
@@ -78,23 +82,23 @@ class BubbleActivity : ComponentActivity() {
                         languageViewModel = MainApplication.module.languageViewModel,
                         translationViewModel = MainApplication.module.translationViewModel,
                         textTranslationViewModel = MainApplication.module.textTranslationViewModel,
-                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
+                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel,
                     )
 
                     ModelLoadingProgressDialog(
                         translationViewModel = MainApplication.module.translationViewModel,
                         textTranslationViewModel = MainApplication.module.textTranslationViewModel,
-                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
+                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel,
                     )
 
                     ErrorAlertDialog(
                         translationViewModel = MainApplication.module.translationViewModel,
-                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
+                        textToSpeechViewModel = MainApplication.module.textToSpeechViewModel,
                     )
 
                     LanguageSelectionDrawer(
                         languageViewModel = MainApplication.module.languageViewModel,
-                        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium)
+                        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium),
                     )
 
                     LanguageSuggestionDrawer(languageViewModel = MainApplication.module.languageViewModel)
@@ -133,9 +137,13 @@ class BubbleActivity : ComponentActivity() {
         }
 
         lifecycleScope.launch {
-            MainApplication.module.languageViewModel.targetLanguage.conflate().filterNotNull()
+            MainApplication.module.languageViewModel.targetLanguage
+                .conflate()
+                .filterNotNull()
                 .collect {
-                    val text = MainApplication.module.textTranslationViewModel.input.first()
+                    val text =
+                        MainApplication.module.textTranslationViewModel.input
+                            .first()
 
                     TranslateBubbleShortcut.updateShortcutIcon(activity, it)
                     TranslateBubbleNotification.showNotification(activity, text)

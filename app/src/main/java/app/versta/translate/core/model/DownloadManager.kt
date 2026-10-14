@@ -29,8 +29,11 @@ interface DownloadTask {
     val status: DownloadStatus
 
     fun copyWithStatus(status: DownloadStatus): DownloadTask
+
     fun getWorkData(): Map<String, Any>
+
     fun getName(): String
+
     fun onComplete() {}
 }
 
@@ -42,7 +45,7 @@ interface DownloadTask {
 class DownloadManager<T : DownloadTask>(
     private val context: Context,
     private val statusIntentAction: String,
-    private val workerClass: Class<out DownloadWorker>
+    private val workerClass: Class<out DownloadWorker>,
 ) {
     private var downloadWorker: WorkRequest? = null
     val downloadTasks = MutableStateFlow<List<T>>(emptyList())
@@ -50,20 +53,25 @@ class DownloadManager<T : DownloadTask>(
     /**
      * Broadcast receiver for download status updates.
      */
-    private val downloadStatusReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val taskId = UUID.fromString(intent.getStringExtra("taskId"))
-            val status = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                intent.getSerializableExtra("status", DownloadStatus::class.java)
-            } else {
-                intent.getSerializableExtra("status") as? DownloadStatus
-            }
+    private val downloadStatusReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                context: Context,
+                intent: Intent,
+            ) {
+                val taskId = UUID.fromString(intent.getStringExtra("taskId"))
+                val status =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        intent.getSerializableExtra("status", DownloadStatus::class.java)
+                    } else {
+                        intent.getSerializableExtra("status") as? DownloadStatus
+                    }
 
-            status?.let {
-                updateDownloadStatus(context, taskId, it)
+                status?.let {
+                    updateDownloadStatus(context, taskId, it)
+                }
             }
         }
-    }
 
     /**
      * Queues a download for the given task.
@@ -71,13 +79,14 @@ class DownloadManager<T : DownloadTask>(
     fun queueDownload(task: T) {
         val existingTask = downloadTasks.value.firstOrNull { it.id == task.id }
 
-        val taskToQueue = if (existingTask != null) {
-            @Suppress("UNCHECKED_CAST")
-            existingTask.copyWithStatus(DownloadStatus.Queued) as T
-        } else {
-            @Suppress("UNCHECKED_CAST")
-            task.copyWithStatus(DownloadStatus.Queued) as T
-        }
+        val taskToQueue =
+            if (existingTask != null) {
+                @Suppress("UNCHECKED_CAST")
+                existingTask.copyWithStatus(DownloadStatus.Queued) as T
+            } else {
+                @Suppress("UNCHECKED_CAST")
+                task.copyWithStatus(DownloadStatus.Queued) as T
+            }
 
         if (existingTask == null) {
             downloadTasks.value += taskToQueue
@@ -86,9 +95,11 @@ class DownloadManager<T : DownloadTask>(
         }
 
         val manager = WorkManager.getInstance(context)
-        val worker = OneTimeWorkRequest.Builder(workerClass)
-            .setInputData(workDataOf(*taskToQueue.getWorkData().toList().toTypedArray()))
-            .build()
+        val worker =
+            OneTimeWorkRequest
+                .Builder(workerClass)
+                .setInputData(workDataOf(*taskToQueue.getWorkData().toList().toTypedArray()))
+                .build()
 
         manager.enqueue(worker)
         manager.getWorkInfoByIdLiveData(worker.id)
@@ -111,7 +122,11 @@ class DownloadManager<T : DownloadTask>(
     /**
      * Updates the download status of a task.
      */
-    private fun updateDownloadStatus(context: Context, taskId: UUID, status: DownloadStatus) {
+    private fun updateDownloadStatus(
+        context: Context,
+        taskId: UUID,
+        status: DownloadStatus,
+    ) {
         when (status) {
             is DownloadStatus.Completed -> {
                 triggerDownloadTaskCallback(taskId)
@@ -124,20 +139,23 @@ class DownloadManager<T : DownloadTask>(
 
                     is SocketException,
                     is SocketTimeoutException,
-                    is UnknownHostException -> {
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.download_error_no_internet),
-                            Toast.LENGTH_LONG
-                        ).show()
+                    is UnknownHostException,
+                    -> {
+                        Toast
+                            .makeText(
+                                context,
+                                context.getString(R.string.download_error_no_internet),
+                                Toast.LENGTH_LONG,
+                            ).show()
                     }
 
                     else -> {
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.download_error_unknown),
-                            Toast.LENGTH_LONG
-                        ).show()
+                        Toast
+                            .makeText(
+                                context,
+                                context.getString(R.string.download_error_unknown),
+                                Toast.LENGTH_LONG,
+                            ).show()
                     }
                 }
 
@@ -157,24 +175,29 @@ class DownloadManager<T : DownloadTask>(
     /**
      * Sets the download status of a task.
      */
-    private fun setDownloadStatus(taskId: UUID, status: DownloadStatus) {
-        downloadTasks.value = downloadTasks.value.map { task ->
-            if (task.id == taskId) {
-                @Suppress("UNCHECKED_CAST")
-                task.copyWithStatus(status) as T
-            } else {
-                task
+    private fun setDownloadStatus(
+        taskId: UUID,
+        status: DownloadStatus,
+    ) {
+        downloadTasks.value =
+            downloadTasks.value.map { task ->
+                if (task.id == taskId) {
+                    @Suppress("UNCHECKED_CAST")
+                    task.copyWithStatus(status) as T
+                } else {
+                    task
+                }
             }
-        }
     }
 
     /**
      * Updates a task in the list.
      */
     private fun updateTaskInList(task: T) {
-        downloadTasks.value = downloadTasks.value.map { existingTask ->
-            if (existingTask.id == task.id) task else existingTask
-        }
+        downloadTasks.value =
+            downloadTasks.value.map { existingTask ->
+                if (existingTask.id == task.id) task else existingTask
+            }
     }
 
     /**
@@ -206,12 +229,12 @@ class DownloadManager<T : DownloadTask>(
             context.registerReceiver(
                 downloadStatusReceiver,
                 IntentFilter(statusIntentAction),
-                Context.RECEIVER_EXPORTED
+                Context.RECEIVER_EXPORTED,
             )
         } else {
             context.registerReceiver(
                 downloadStatusReceiver,
-                IntentFilter(statusIntentAction)
+                IntentFilter(statusIntentAction),
             )
         }
     }

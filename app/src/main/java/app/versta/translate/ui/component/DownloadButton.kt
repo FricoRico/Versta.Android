@@ -38,20 +38,21 @@ fun DownloadButton(
         onClick = {
             when (status) {
                 is DownloadStatus.Idle,
-                is DownloadStatus.Error -> onClick()
+                is DownloadStatus.Error,
+                -> onClick()
 
                 else -> onCancel()
             }
         },
         enabled = !(status is DownloadStatus.Queued || status is DownloadStatus.Completed),
         colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
-        modifier = Modifier.then(modifier)
+        modifier = Modifier.then(modifier),
     ) {
         Box {
             AnimatedVisibility(
                 visible = status is DownloadStatus.Idle,
                 enter = fadeIn(),
-                exit = fadeOut()
+                exit = fadeOut(),
             ) {
                 Icon(
                     ImageVector.vectorResource(R.drawable.rounded_download_24),
@@ -62,7 +63,7 @@ fun DownloadButton(
             AnimatedVisibility(
                 visible = status is DownloadStatus.Queued,
                 enter = fadeIn(),
-                exit = fadeOut()
+                exit = fadeOut(),
             ) {
                 Icon(
                     ImageVector.vectorResource(R.drawable.round_hourglass_empty_24),
@@ -70,14 +71,14 @@ fun DownloadButton(
                 )
             }
 
-
             AnimatedVisibility(
                 visible = status is DownloadStatus.Progress || status is DownloadStatus.Processing,
                 enter = fadeIn(),
                 exit = fadeOut(),
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .requiredSize(MaterialTheme.spacing.medium)
+                modifier =
+                    Modifier
+                        .align(Alignment.Center)
+                        .requiredSize(MaterialTheme.spacing.medium),
             ) {
                 Icon(
                     ImageVector.vectorResource(R.drawable.rounded_stop_24),
@@ -88,7 +89,7 @@ fun DownloadButton(
             AnimatedVisibility(
                 visible = status is DownloadStatus.Progress,
                 enter = fadeIn(),
-                exit = fadeOut()
+                exit = fadeOut(),
             ) {
                 if (status !is DownloadStatus.Progress) return@AnimatedVisibility
                 val progress = status.downloaded.toFloat() / status.total.toFloat()
@@ -98,53 +99,57 @@ fun DownloadButton(
                     modifier = Modifier.size(24.dp),
                     color = MaterialTheme.colorScheme.onSurface,
                     wavelength = MaterialTheme.spacing.small,
-                    stroke = Stroke(
-                        width =
-                            with(LocalDensity.current) {
-                                MaterialTheme.spacing.hairline.toPx()
-                            },
-                        cap = StrokeCap.Round,
-                    ),
-                    trackStroke = Stroke(
-                        width =
-                            with(LocalDensity.current) {
-                                MaterialTheme.spacing.hairline.toPx()
-                            },
-                        cap = StrokeCap.Round,
-                    ),
+                    stroke =
+                        Stroke(
+                            width =
+                                with(LocalDensity.current) {
+                                    MaterialTheme.spacing.hairline.toPx()
+                                },
+                            cap = StrokeCap.Round,
+                        ),
+                    trackStroke =
+                        Stroke(
+                            width =
+                                with(LocalDensity.current) {
+                                    MaterialTheme.spacing.hairline.toPx()
+                                },
+                            cap = StrokeCap.Round,
+                        ),
                 )
             }
 
             AnimatedVisibility(
                 visible = status is DownloadStatus.Processing,
                 enter = fadeIn(),
-                exit = fadeOut()
+                exit = fadeOut(),
             ) {
                 CircularWavyProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     color = MaterialTheme.colorScheme.onSurface,
                     wavelength = MaterialTheme.spacing.small,
-                    stroke = Stroke(
-                        width =
-                            with(LocalDensity.current) {
-                                MaterialTheme.spacing.hairline.toPx()
-                            },
-                        cap = StrokeCap.Round,
-                    ),
-                    trackStroke = Stroke(
-                        width =
-                            with(LocalDensity.current) {
-                                MaterialTheme.spacing.hairline.toPx()
-                            },
-                        cap = StrokeCap.Round,
-                    )
+                    stroke =
+                        Stroke(
+                            width =
+                                with(LocalDensity.current) {
+                                    MaterialTheme.spacing.hairline.toPx()
+                                },
+                            cap = StrokeCap.Round,
+                        ),
+                    trackStroke =
+                        Stroke(
+                            width =
+                                with(LocalDensity.current) {
+                                    MaterialTheme.spacing.hairline.toPx()
+                                },
+                            cap = StrokeCap.Round,
+                        ),
                 )
             }
 
             AnimatedVisibility(
                 visible = status is DownloadStatus.Completed,
                 enter = fadeIn(),
-                exit = fadeOut()
+                exit = fadeOut(),
             ) {
                 Icon(
                     ImageVector.vectorResource(R.drawable.rounded_check_small_24),
@@ -155,7 +160,7 @@ fun DownloadButton(
             AnimatedVisibility(
                 visible = status is DownloadStatus.Error,
                 enter = fadeIn(),
-                exit = fadeOut()
+                exit = fadeOut(),
             ) {
                 Icon(
                     ImageVector.vectorResource(R.drawable.round_replay_24),

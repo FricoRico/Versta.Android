@@ -24,15 +24,18 @@ object TranslateBubbleShortcut {
     fun registerForActivity(activity: ComponentActivity) {
         manager = activity.getSystemService(Context.SHORTCUT_SERVICE) as ShortcutManager
 
-        val intent = Intent(activity, TranslateNotificationActivity::class.java).apply {
-            setAction(Intent.ACTION_DEFAULT)
-        }
+        val intent =
+            Intent(activity, TranslateNotificationActivity::class.java).apply {
+                setAction(Intent.ACTION_DEFAULT)
+            }
 
-        shortcut = ShortcutInfo.Builder(activity, TRANSLATION_BUBBLE_SHORTCUT_ID)
-            .setShortLabel("Translate")
-            .setLongLabel("Translate highlighted text in an overlay")
-            .setIntent(intent)
-            .setLongLived(true)
+        shortcut =
+            ShortcutInfo
+                .Builder(activity, TRANSLATION_BUBBLE_SHORTCUT_ID)
+                .setShortLabel("Translate")
+                .setLongLabel("Translate highlighted text in an overlay")
+                .setIntent(intent)
+                .setLongLived(true)
 
         manager?.removeAllDynamicShortcuts()
         manager?.addDynamicShortcuts(listOf(shortcut?.build()))
@@ -41,9 +44,14 @@ object TranslateBubbleShortcut {
     /**
      * Updates the shortcut icon for the translation bubble.
      */
-    fun updateShortcutIcon(context: Context, language: Language) {
+    fun updateShortcutIcon(
+        context: Context,
+        language: Language,
+    ) {
         val icon =
-            AppCompatResources.getDrawable(context, language.getFlagDrawable(context))?.toBitmap()
+            AppCompatResources
+                .getDrawable(context, language.getFlagDrawable(context))
+                ?.toBitmap()
                 ?.toAdaptiveIcon()
 
         if (icon == null) {

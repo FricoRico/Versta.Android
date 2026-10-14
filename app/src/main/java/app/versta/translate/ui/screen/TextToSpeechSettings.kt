@@ -98,15 +98,16 @@ fun TextToSpeechSettings(
 
     val maxThreadCount = remember { Runtime.getRuntime().availableProcessors() }
     var voiceOptionsExpanded by remember { mutableStateOf(false) }
-    val voiceOptions = mapOf(
-        VoiceGender.Female to stringResource(R.string.text_to_speech_settings_voice_gender_female),
-        VoiceGender.Male to stringResource(R.string.text_to_speech_settings_voice_gender_male)
-    )
+    val voiceOptions =
+        mapOf(
+            VoiceGender.Female to stringResource(R.string.text_to_speech_settings_voice_gender_female),
+            VoiceGender.Male to stringResource(R.string.text_to_speech_settings_voice_gender_male),
+        )
 
     val speed by textToSpeechViewModel.speed.collectAsStateWithLifecycle(DEFAULT_SPEED)
     val voiceGender by textToSpeechViewModel.gender.collectAsStateWithLifecycle(DEFAULT_VOICE_GENDER)
     val threadCount by textToSpeechViewModel.threadCount.collectAsStateWithLifecycle(
-        maxThreadCount
+        maxThreadCount,
     )
     val textToSpeechEnabled by textToSpeechViewModel.enabled.collectAsStateWithLifecycle(false)
     val downloadTasks by textToSpeechViewModel.downloadTasks.collectAsStateWithLifecycle(emptyList())
@@ -151,17 +152,19 @@ fun TextToSpeechSettings(
             ScaffoldCompactBarEmptyActions()
         },
         actionsContentKey = "ScaffoldCompactBarEmptyActions",
-        wrapContent = true
+        wrapContent = true,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            )
+            modifier =
+                Modifier
+                    .fillMaxSize(),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
         ) {
             item {
                 SettingsButtonItem(
@@ -182,10 +185,10 @@ fun TextToSpeechSettings(
                     },
                     underlineContent = {
                         Box(
-                            modifier = Modifier.animateContentSize()
+                            modifier = Modifier.animateContentSize(),
                         ) {
                             TextToSpeechDataDownloadProgress(
-                                status = downloadTask?.status
+                                status = downloadTask?.status,
                             )
                         }
                     },
@@ -202,7 +205,7 @@ fun TextToSpeechSettings(
                     enabled = textToSpeechEnabled,
                     content = stringResource(R.string.text_to_speech_settings_voice_headline),
                     groupSize = 3,
-                    index = 0
+                    index = 0,
                 )
             }
 
@@ -215,7 +218,7 @@ fun TextToSpeechSettings(
                         Text(
                             text = DecimalFormat("0.0").format(speed),
                             style = MaterialTheme.typography.labelLarge,
-                            fontSize = 22.sp
+                            fontSize = 22.sp,
                         )
                     },
                     underlineContent = {
@@ -231,7 +234,7 @@ fun TextToSpeechSettings(
                         )
                     },
                     groupSize = 3,
-                    index = 1
+                    index = 1,
                 )
             }
 
@@ -251,25 +254,26 @@ fun TextToSpeechSettings(
                                     Text(
                                         text = stringResource(R.string.text_to_speech_settings_voice_gender_footnote_text),
                                         style = MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.padding(
-                                            horizontal = MaterialTheme.spacing.extraSmall,
-                                            vertical = MaterialTheme.spacing.small
-                                        ),
+                                        modifier =
+                                            Modifier.padding(
+                                                horizontal = MaterialTheme.spacing.extraSmall,
+                                                vertical = MaterialTheme.spacing.small,
+                                            ),
                                     )
                                 }
                             },
-                            state = tooltipState
+                            state = tooltipState,
                         ) {
                             FilledIconButton(
                                 enabled = textToSpeechEnabled,
                                 colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
                                 onClick = {
                                     onShowPreferredGenderTooltip()
-                                }
+                                },
                             ) {
                                 Icon(
                                     imageVector = ImageVector.vectorResource(R.drawable.rounded_priority_high_24),
-                                    contentDescription = stringResource(R.string.text_to_speech_settings_voice_gender_footnote_button)
+                                    contentDescription = stringResource(R.string.text_to_speech_settings_voice_gender_footnote_button),
                                 )
                             }
                         }
@@ -278,30 +282,33 @@ fun TextToSpeechSettings(
                     underlineContent = {
                         ExposedDropdownMenuBox(
                             expanded = voiceOptionsExpanded,
-                            onExpandedChange = { voiceOptionsExpanded = !voiceOptionsExpanded }
+                            onExpandedChange = { voiceOptionsExpanded = !voiceOptionsExpanded },
                         ) {
                             Button(
                                 enabled = textToSpeechEnabled,
                                 colors = ButtonDefaults.transparentButtonColors(),
                                 onClick = { voiceOptionsExpanded = true },
-                                contentPadding = PaddingValues(
-                                    vertical = MaterialTheme.spacing.medium,
-                                    horizontal = MaterialTheme.spacing.large
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor(
-                                        type = PrimaryNotEditable,
-                                        enabled = true
-                                    )
+                                contentPadding =
+                                    PaddingValues(
+                                        vertical = MaterialTheme.spacing.medium,
+                                        horizontal = MaterialTheme.spacing.large,
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor(
+                                            type = PrimaryNotEditable,
+                                            enabled = true,
+                                        ),
                             ) {
                                 Text(
                                     modifier = Modifier.fillMaxWidth(),
-                                    text = voiceOptions[voiceGender]
-                                        ?: stringResource(R.string.unknown),
+                                    text =
+                                        voiceOptions[voiceGender]
+                                            ?: stringResource(R.string.unknown),
                                     style = MaterialTheme.typography.labelLarge,
                                     textAlign = TextAlign.Start,
-                                    fontSize = 22.sp
+                                    fontSize = 22.sp,
                                 )
                             }
 
@@ -317,26 +324,27 @@ fun TextToSpeechSettings(
                                         text = {
                                             Text(
                                                 text = voice.value,
-                                                fontSize = MaterialTheme.typography.bodyLarge.fontSize
+                                                fontSize = MaterialTheme.typography.bodyLarge.fontSize,
                                             )
                                         },
-                                        contentPadding = PaddingValues(
-                                            vertical = MaterialTheme.spacing.medium,
-                                            horizontal = MaterialTheme.spacing.large
-                                        ),
+                                        contentPadding =
+                                            PaddingValues(
+                                                vertical = MaterialTheme.spacing.medium,
+                                                horizontal = MaterialTheme.spacing.large,
+                                            ),
                                         onClick = {
                                             settingsChanged = true
 
                                             voiceOptionsExpanded = false
                                             textToSpeechViewModel.setGender(voice.key)
-                                        }
+                                        },
                                     )
                                 }
                             }
                         }
                     },
                     groupSize = 3,
-                    index = 2
+                    index = 2,
                 )
             }
 
@@ -347,7 +355,7 @@ fun TextToSpeechSettings(
                     enabled = textToSpeechEnabled,
                     content = stringResource(R.string.text_to_speech_settings_synthesis_headline),
                     groupSize = 2,
-                    index = 0
+                    index = 0,
                 )
             }
 
@@ -360,7 +368,7 @@ fun TextToSpeechSettings(
                         Text(
                             text = threadCount.toString(),
                             style = MaterialTheme.typography.labelLarge,
-                            fontSize = 22.sp
+                            fontSize = 22.sp,
                         )
                     },
                     underlineContent = {
@@ -376,7 +384,7 @@ fun TextToSpeechSettings(
                         )
                     },
                     groupSize = 2,
-                    index = 1
+                    index = 1,
                 )
             }
         }
@@ -392,11 +400,12 @@ fun TextToSpeechDataDownloadProgress(
         return
     }
 
-    val padding = PaddingValues(
-        start = MaterialTheme.spacing.large,
-        end = MaterialTheme.spacing.large,
-        bottom = MaterialTheme.spacing.large
-    )
+    val padding =
+        PaddingValues(
+            start = MaterialTheme.spacing.large,
+            end = MaterialTheme.spacing.large,
+            bottom = MaterialTheme.spacing.large,
+        )
     AnimatedVisibility(
         visible = status is DownloadStatus.Queued,
         enter = fadeIn(),
@@ -404,7 +413,7 @@ fun TextToSpeechDataDownloadProgress(
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-            modifier = Modifier.padding(padding)
+            modifier = Modifier.padding(padding),
         ) {
             Text(
                 text = "Waiting for other downloads to finish...",
@@ -429,7 +438,7 @@ fun TextToSpeechDataDownloadProgress(
 
         Column(
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-            modifier = Modifier.padding(padding)
+            modifier = Modifier.padding(padding),
         ) {
             Text(
                 text = "Downloading required data...",
@@ -452,7 +461,7 @@ fun TextToSpeechDataDownloadProgress(
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-            modifier = Modifier.padding(padding)
+            modifier = Modifier.padding(padding),
         ) {
             Text(
                 text = "Extracting...",
@@ -476,12 +485,12 @@ fun TextToSpeechDataDownloadProgress(
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-            modifier = Modifier.padding(padding)
+            modifier = Modifier.padding(padding),
         ) {
             Text(
                 text = "Something went wrong while downloading the required data. Please try again.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error
+                color = MaterialTheme.colorScheme.error,
             )
         }
     }
@@ -494,22 +503,24 @@ fun TextToSpeechSettingsPreview() {
 
     TextToSpeechSettings(
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
-        textToSpeechViewModel = TextToSpeechViewModel(
-            context = LocalContext.current,
-            espeakNG = ESpeakNG(),
-            openJTalk = OpenJTalk(),
-            tokenizer = TextToSpeechMockTokenizer(),
-            model = TextToSpeechMockInference(),
-            audioPlayer = AudioMockPlayer(),
-            dataRepository = DataMemoryRepository(),
-            voiceRepository = VoiceMemoryRepository(),
-            textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalDataRepository = ExternalDataMemoryRepository()
-        )
+        textToSpeechViewModel =
+            TextToSpeechViewModel(
+                context = LocalContext.current,
+                espeakNG = ESpeakNG(),
+                openJTalk = OpenJTalk(),
+                tokenizer = TextToSpeechMockTokenizer(),
+                model = TextToSpeechMockInference(),
+                audioPlayer = AudioMockPlayer(),
+                dataRepository = DataMemoryRepository(),
+                voiceRepository = VoiceMemoryRepository(),
+                textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
+                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+                externalDataRepository = ExternalDataMemoryRepository(),
+            ),
     )
 }

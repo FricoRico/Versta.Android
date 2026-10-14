@@ -7,7 +7,10 @@ interface FilePicker {
      * Opens a file picker to select a file.
      * @param listener The callback to be invoked when a file is picked.
      */
-    fun openFilePicker(listener: FilePickerCallback, fileTypes: Array<String> = emptyArray())
+    fun openFilePicker(
+        listener: FilePickerCallback,
+        fileTypes: Array<String> = emptyArray(),
+    )
 }
 
 interface FilePickerCallback {

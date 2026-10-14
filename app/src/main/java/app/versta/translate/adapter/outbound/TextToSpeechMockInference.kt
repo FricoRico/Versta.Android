@@ -4,9 +4,10 @@ import app.versta.translate.core.entity.VoiceModelInferenceFiles
 import java.nio.file.Path
 
 class TextToSpeechMockInference : TextToSpeechInference {
-    override fun synthesize(tokens: LongArray, speed: Float): FloatArray {
-        return floatArrayOf(0.0f)
-    }
+    override fun synthesize(
+        tokens: LongArray,
+        speed: Float,
+    ): FloatArray = floatArrayOf(0.0f)
 
     override fun setVoice(path: Path?) {
         return
@@ -16,7 +17,10 @@ class TextToSpeechMockInference : TextToSpeechInference {
         return
     }
 
-    override fun load(files: VoiceModelInferenceFiles, threads: Int) {
+    override fun load(
+        files: VoiceModelInferenceFiles,
+        threads: Int,
+    ) {
         return
     }
 

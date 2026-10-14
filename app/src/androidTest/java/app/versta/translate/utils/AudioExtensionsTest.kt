@@ -7,10 +7,12 @@ import kotlin.math.PI
 import kotlin.math.sin
 
 class AudioExtensionsTest {
-
-    private fun sine(frequency: Float, length: Int, sampleRate: Int = 16000, amplitude: Float = 1f): FloatArray {
-        return FloatArray(length) { i -> (amplitude * sin(2.0 * PI * frequency * i / sampleRate)).toFloat() }
-    }
+    private fun sine(
+        frequency: Float,
+        length: Int,
+        sampleRate: Int = 16000,
+        amplitude: Float = 1f,
+    ): FloatArray = FloatArray(length) { i -> (amplitude * sin(2.0 * PI * frequency * i / sampleRate)).toFloat() }
 
     @Test
     fun fftMagnitudes_silence_returnsZero() {
@@ -81,10 +83,11 @@ class AudioExtensionsTest {
         // Speech tilts roughly -6 dB/octave downward left; the per-band tilt
         // gain makes an equal-amplitude 3 kHz tone read higher than 300 Hz.
         val length = 2048
-        val pcm = FloatArray(length) { i ->
-            (0.25f * sin(2.0 * PI * 300.0 * i / 16000.0)).toFloat() +
+        val pcm =
+            FloatArray(length) { i ->
+                (0.25f * sin(2.0 * PI * 300.0 * i / 16000.0)).toFloat() +
                     (0.25f * sin(2.0 * PI * 3000.0 * i / 16000.0)).toFloat()
-        }
+            }
         val bands = pcm.fftMagnitudes(length).spectrumBands(sampleRate = 16000)
 
         val middle = SPECTRUM_BAND_COUNT / 2

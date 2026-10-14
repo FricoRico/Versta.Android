@@ -41,7 +41,11 @@ class WhisperModel(
         handle = 0L
     }
 
-    private external fun create(modelPath: String, vadModelPath: String, nThreads: Int): Long
+    private external fun create(
+        modelPath: String,
+        vadModelPath: String,
+        nThreads: Int,
+    ): Long
 
     private external fun destroy(handle: Long)
 

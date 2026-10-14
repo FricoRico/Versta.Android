@@ -19,7 +19,10 @@ interface SpeechRecognitionEngine : AutoCloseable {
      * avoid trimming [pcm] into a fresh array on every call; the default here
      * falls back to a copy for implementations that don't.
      */
-    fun feed(pcm: FloatArray, length: Int) {
+    fun feed(
+        pcm: FloatArray,
+        length: Int,
+    ) {
         feed(pcm.copyOf(length))
     }
 

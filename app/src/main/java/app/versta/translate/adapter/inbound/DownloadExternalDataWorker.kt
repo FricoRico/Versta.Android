@@ -14,8 +14,10 @@ import java.util.UUID
 
 const val DOWNLOAD_EXTERNAL_DATA_STATUS_INTENT = "DOWNLOAD_EXTERNAL_DATA_STATUS_UPDATE"
 
-class DownloadExternalDataWorker(context: Context, parameters: WorkerParameters) :
-    DownloadWorker(context, parameters) {
+class DownloadExternalDataWorker(
+    context: Context,
+    parameters: WorkerParameters,
+) : DownloadWorker(context, parameters) {
     override val downloadStatusIntent = Intent(DOWNLOAD_EXTERNAL_DATA_STATUS_INTENT)
 
     private val _extractionDirectory = context.filesDir
@@ -23,14 +25,18 @@ class DownloadExternalDataWorker(context: Context, parameters: WorkerParameters)
     private val _dataExtractor = MainApplication.module.extractor
     private val _dataRepository = MainApplication.module.dataRepository
 
-    override fun extractDownload(taskId: UUID, file: File) {
+    override fun extractDownload(
+        taskId: UUID,
+        file: File,
+    ) {
         var output: File? = null
 
         try {
-            output = _dataExtractor.extract(
-                file = file,
-                outputDir = _extractionDirectory,
-            )
+            output =
+                _dataExtractor.extract(
+                    file = file,
+                    outputDir = _extractionDirectory,
+                )
 
             if (!file.delete()) {
                 Timber.tag(TAG).e("Deleting file ${file.absolutePath}")
@@ -63,10 +69,12 @@ class DownloadExternalDataWorker(context: Context, parameters: WorkerParameters)
 
         val dataMetadataFile =
             File(output.resolve(dataBundleMetadata.metadata.directory), "metadata.json")
-        val dataMetadata = _serializer.decodeFromString<DataMetadata>(dataMetadataFile.readText())
-            .setRootPath(
-                path = output.resolve(dataBundleMetadata.metadata.directory).toPath()
-            )
+        val dataMetadata =
+            _serializer
+                .decodeFromString<DataMetadata>(dataMetadataFile.readText())
+                .setRootPath(
+                    path = output.resolve(dataBundleMetadata.metadata.directory).toPath(),
+                )
 
         if (!dataMetadata.isValid()) {
             throw Exception("Invalid data metadata file")
@@ -74,7 +82,7 @@ class DownloadExternalDataWorker(context: Context, parameters: WorkerParameters)
 
         return DataModel(
             bundle = dataBundleMetadata,
-            contents = dataMetadata
+            contents = dataMetadata,
         )
     }
 

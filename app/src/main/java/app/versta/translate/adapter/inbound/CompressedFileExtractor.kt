@@ -11,7 +11,11 @@ interface ExtractionProgressListener {
      * @param extracted The number of files that have been extracted so far.
      * @param total The total number of files in the archive.
      */
-    fun onProgressUpdate(file: File, extracted: Int, total: Int)
+    fun onProgressUpdate(
+        file: File,
+        extracted: Int,
+        total: Int,
+    )
 }
 
 interface CompressedFileExtractor {
@@ -25,7 +29,7 @@ interface CompressedFileExtractor {
         uri: Uri,
         outputDir: File,
         extractToDirectory: Boolean = true,
-        listener: ExtractionProgressListener? = null
+        listener: ExtractionProgressListener? = null,
     ): File?
 
     /**
@@ -38,7 +42,7 @@ interface CompressedFileExtractor {
         file: File,
         outputDir: File,
         extractToDirectory: Boolean = true,
-        listener: ExtractionProgressListener? = null
+        listener: ExtractionProgressListener? = null,
     ): File?
 
     /**
@@ -56,5 +60,8 @@ interface CompressedFileExtractor {
      * @param uri The Uri of the archive file.
      * @param fileName The name of the file to open.
      */
-    fun openFile(uri: Uri, fileName: String): File?
+    fun openFile(
+        uri: Uri,
+        fileName: String,
+    ): File?
 }

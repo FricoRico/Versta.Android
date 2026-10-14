@@ -7,25 +7,24 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SpeechRecognitionMetadataTest {
-
     private fun bundleMetadata(
         directories: List<String> = listOf("whisper"),
         modules: List<String> = listOf("recognition"),
-    ): SpeechRecognitionBundleMetadata {
-        return SpeechRecognitionBundleMetadata(
+    ): SpeechRecognitionBundleMetadata =
+        SpeechRecognitionBundleMetadata(
             id = "whisper-base-en",
             version = "v1.0.0",
             languages = listOf("en"),
             modules = modules,
-            metadata = directories.map { directory ->
-                SpeechRecognitionMetadataFile(
-                    directory = directory,
-                    languages = listOf("en"),
-                    module = SpeechRecognitionModule.Recognition,
-                )
-            },
+            metadata =
+                directories.map { directory ->
+                    SpeechRecognitionMetadataFile(
+                        directory = directory,
+                        languages = listOf("en"),
+                        module = SpeechRecognitionModule.Recognition,
+                    )
+                },
         )
-    }
 
     @Test
     fun bundleMetadata_validFields_isValid() {
@@ -60,11 +59,12 @@ class SpeechRecognitionMetadataTest {
 
     @Test
     fun metadataFile_serializesModule() {
-        val file = SpeechRecognitionMetadataFile(
-            directory = "whisper",
-            languages = listOf("en"),
-            module = SpeechRecognitionModule.Recognition,
-        )
+        val file =
+            SpeechRecognitionMetadataFile(
+                directory = "whisper",
+                languages = listOf("en"),
+                module = SpeechRecognitionModule.Recognition,
+            )
 
         val json = Json.encodeToString(SpeechRecognitionMetadataFile.serializer(), file)
 

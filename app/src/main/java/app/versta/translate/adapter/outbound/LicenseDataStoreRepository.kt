@@ -8,16 +8,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class LicenseDataStoreRepository(
-    private val dataStore: DataStore<Preferences>
+    private val dataStore: DataStore<Preferences>,
 ) : LicenseRepository {
     /**
      * Checks if the user has bought a license.
      */
-    override fun hasLicense(): Flow<Boolean> {
-        return dataStore.data.map { preferences ->
+    override fun hasLicense(): Flow<Boolean> =
+        dataStore.data.map { preferences ->
             preferences[LICENSE_KEY] ?: false
         }
-    }
 
     /**
      * Sets the license status.

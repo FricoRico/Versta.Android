@@ -36,23 +36,26 @@ fun TrialLicenseCard(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.tertiary.shift(-30f, 1.2f, 0.9f),
-                        MaterialTheme.colorScheme.tertiary,
-                    )
-                ),
-                shape = MaterialTheme.shapes.extraLarge,
-            )
-            .then(modifier),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(
+                    brush =
+                        Brush.horizontalGradient(
+                            colors =
+                                listOf(
+                                    MaterialTheme.colorScheme.tertiary.shift(-30f, 1.2f, 0.9f),
+                                    MaterialTheme.colorScheme.tertiary,
+                                ),
+                        ),
+                    shape = MaterialTheme.shapes.extraLarge,
+                ).then(modifier),
         shape = MaterialTheme.shapes.extraLarge,
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent,
-            contentColor = MaterialTheme.colorScheme.onTertiary,
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onTertiary,
+            ),
         onClick = {
             licenseViewModel.setLicenseDialogState(DialogState.Open)
         },
@@ -60,17 +63,18 @@ fun TrialLicenseCard(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-            modifier = Modifier.padding(
-                MaterialTheme.spacing.medium,
-            )
+            modifier =
+                Modifier.padding(
+                    MaterialTheme.spacing.medium,
+                ),
         ) {
             Box(
-                modifier = Modifier
-                    .background(
-                        MaterialTheme.colorScheme.onTertiaryContainer,
-                        MaterialTheme.shapes.extraLarge
-                    )
-                    .padding(MaterialTheme.spacing.small),
+                modifier =
+                    Modifier
+                        .background(
+                            MaterialTheme.colorScheme.onTertiaryContainer,
+                            MaterialTheme.shapes.extraLarge,
+                        ).padding(MaterialTheme.spacing.small),
             ) {
                 Icon(
                     ImageVector.vectorResource(R.drawable.round_bolt_24),
@@ -79,7 +83,7 @@ fun TrialLicenseCard(
                 )
             }
             Column(
-                modifier = Modifier.fillMaxWidth(0.8f) // 65% of the width
+                modifier = Modifier.fillMaxWidth(0.8f), // 65% of the width
             ) {
                 Text(
                     text = stringResource(R.string.trial_license_title),
@@ -96,12 +100,12 @@ fun TrialLicenseCard(
                 )
             }
             Box(
-                modifier = Modifier
-                    .background(
-                        MaterialTheme.colorScheme.tertiaryContainer,
-                        MaterialTheme.shapes.extraLarge
-                    )
-                    .padding(MaterialTheme.spacing.small),
+                modifier =
+                    Modifier
+                        .background(
+                            MaterialTheme.colorScheme.tertiaryContainer,
+                            MaterialTheme.shapes.extraLarge,
+                        ).padding(MaterialTheme.spacing.small),
             ) {
                 Icon(
                     ImageVector.vectorResource(R.drawable.rounded_call_made_24),
@@ -116,9 +120,10 @@ fun TrialLicenseCard(
 @Composable
 @Preview(showBackground = true)
 private fun TrialLicenseCardPreview() {
-        TrialLicenseCard(
-            licenseViewModel = LicenseViewModel(
-                licenseRepository = LicenseMemoryRepository()
-            )
-        )
+    TrialLicenseCard(
+        licenseViewModel =
+            LicenseViewModel(
+                licenseRepository = LicenseMemoryRepository(),
+            ),
+    )
 }

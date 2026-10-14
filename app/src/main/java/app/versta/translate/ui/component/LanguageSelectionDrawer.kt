@@ -79,11 +79,12 @@ fun LanguageSelectionDrawer(
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(MaterialTheme.spacing.small)
-                .padding(bottom = MaterialTheme.spacing.large)
-                .then(modifier)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(MaterialTheme.spacing.small)
+                    .padding(bottom = MaterialTheme.spacing.large)
+                    .then(modifier),
         ) {
             when (languageSelection) {
                 LanguageType.Source -> {
@@ -93,7 +94,7 @@ fun LanguageSelectionDrawer(
                         onClick = {
                             languageViewModel.setSourceLanguage(it)
                             languageViewModel.setLanguageSelectionState(null)
-                        }
+                        },
                     )
                 }
 
@@ -104,7 +105,7 @@ fun LanguageSelectionDrawer(
                         onClick = {
                             languageViewModel.setTargetLanguage(it)
                             languageViewModel.setLanguageSelectionState(null)
-                        }
+                        },
                     )
                 }
 
@@ -118,7 +119,7 @@ fun LanguageSelectionDrawer(
 fun LanguageSelectionSourceLanguage(
     context: Context,
     languages: List<LanguageOption>,
-    onClick: (language: LanguageOption) -> Unit
+    onClick: (language: LanguageOption) -> Unit,
 ) {
     if (languages.isEmpty()) {
         LanguageSelectionNoItems()
@@ -126,19 +127,20 @@ fun LanguageSelectionSourceLanguage(
     }
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             Text(
                 text = stringResource(R.string.select_source_language),
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = MaterialTheme.spacing.large)
+                modifier = Modifier.padding(bottom = MaterialTheme.spacing.large),
             )
         }
 
         LazyColumn(
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.extraLarge)
+            modifier =
+                Modifier
+                    .clip(MaterialTheme.shapes.extraLarge),
         ) {
             items(languages, key = { it.isoCode }) {
                 LanguageSelectionListItem(
@@ -146,7 +148,7 @@ fun LanguageSelectionSourceLanguage(
                     language = it,
                     onClick = {
                         onClick(it)
-                    }
+                    },
                 )
             }
         }
@@ -157,7 +159,7 @@ fun LanguageSelectionSourceLanguage(
 fun LanguageSelectionTargetLanguage(
     context: Context,
     languages: List<Language>,
-    onClick: (language: Language) -> Unit
+    onClick: (language: Language) -> Unit,
 ) {
     if (languages.isEmpty()) {
         LanguageSelectionNoItems()
@@ -165,19 +167,20 @@ fun LanguageSelectionTargetLanguage(
     }
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             Text(
                 text = stringResource(R.string.select_target_language),
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = MaterialTheme.spacing.large)
+                modifier = Modifier.padding(bottom = MaterialTheme.spacing.large),
             )
         }
 
         LazyColumn(
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.extraLarge)
+            modifier =
+                Modifier
+                    .clip(MaterialTheme.shapes.extraLarge),
         ) {
             items(languages, key = { it.isoCode }) {
                 LanguageSelectionListItem(
@@ -185,7 +188,7 @@ fun LanguageSelectionTargetLanguage(
                     language = it,
                     onClick = {
                         onClick(it)
-                    }
+                    },
                 )
             }
         }
@@ -200,14 +203,14 @@ fun LanguageSelectionNoItems() {
                 text = stringResource(R.string.no_languages_available),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
             Text(
                 text = stringResource(R.string.select_language_hint),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(MaterialTheme.spacing.extraLarge)
+                modifier = Modifier.padding(MaterialTheme.spacing.extraLarge),
             )
         }
     }
@@ -232,20 +235,21 @@ fun LanguageSelectionListItem(
             when (language) {
                 is AutoDetectLanguage -> {
                     Box(
-                        modifier = Modifier
-                            .background(
-                                MaterialTheme.colorScheme.surfaceContainerHigh,
-                                MaterialTheme.shapes.extraLarge
-                            )
-                            .size(MaterialTheme.spacing.extraLarge)
+                        modifier =
+                            Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    MaterialTheme.shapes.extraLarge,
+                                ).size(MaterialTheme.spacing.extraLarge),
                     ) {
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.rounded_wand_stars_24),
                             contentDescription = stringResource(R.string.detect_language),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier
-                                .requiredSize(18.dp)
-                                .align(Alignment.Center)
+                            modifier =
+                                Modifier
+                                    .requiredSize(18.dp)
+                                    .align(Alignment.Center),
                         )
                     }
                 }
@@ -255,27 +259,31 @@ fun LanguageSelectionListItem(
 
                     Image(
                         painter = painterResource(flagDrawable),
-                        contentDescription = stringResource(
-                            R.string.flag, language.name
-                        ),
-                        modifier = Modifier
-                            .requiredSize(MaterialTheme.spacing.extraLarge)
-                            .clip(MaterialTheme.shapes.extraLarge)
+                        contentDescription =
+                            stringResource(
+                                R.string.flag,
+                                language.name,
+                            ),
+                        modifier =
+                            Modifier
+                                .requiredSize(MaterialTheme.spacing.extraLarge)
+                                .clip(MaterialTheme.shapes.extraLarge),
                     )
                 }
 
                 else -> {}
             }
         },
-        colors = ListItemDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        ),
-        modifier = Modifier
-            .defaultMinSize(minHeight = 64.dp)
-            .clickable(
-                onClick = { onClick() },
-            )
-            .then(modifier),
+        colors =
+            ListItemDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            ),
+        modifier =
+            Modifier
+                .defaultMinSize(minHeight = 64.dp)
+                .clickable(
+                    onClick = { onClick() },
+                ).then(modifier),
     )
 }
 
@@ -283,13 +291,14 @@ fun LanguageSelectionListItem(
 @Preview(showBackground = true)
 fun LanguageSelectionDrawerPreview() {
     LanguageSelectionDrawer(
-        languageViewModel = LanguageViewModel(
-            context = LocalContext.current,
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-        ).apply {
-            setLanguageSelectionState(LanguageType.Source)
-        },
+        languageViewModel =
+            LanguageViewModel(
+                context = LocalContext.current,
+                languageRepository = LanguageMemoryRepository(),
+                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+                externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+            ).apply {
+                setLanguageSelectionState(LanguageType.Source)
+            },
     )
 }

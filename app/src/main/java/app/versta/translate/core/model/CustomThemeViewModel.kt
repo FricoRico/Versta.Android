@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlin.collections.get
 
 class CustomThemeViewModel(
-    private val customThemeEntries: Map<CustomTheme, ColorScheme>
-): ViewModel() {
+    private val customThemeEntries: Map<CustomTheme, ColorScheme>,
+) : ViewModel() {
     private val _currentTheme =
         MutableStateFlow<CustomTheme?>(null)
     private val _colorScheme = MutableStateFlow<ColorScheme?>(null)

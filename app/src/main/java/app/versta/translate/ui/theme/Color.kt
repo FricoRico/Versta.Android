@@ -15,13 +15,12 @@ val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
 
 object FilledIconButtonDefaults {
-
     @Composable
     fun surfaceIconButtonColors(
         containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
         contentColor: Color = MaterialTheme.colorScheme.onSurface,
         disabledContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        disabledContentColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest
+        disabledContentColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     ) = IconButtonDefaults.filledIconButtonColors(
         containerColor = containerColor,
         contentColor = contentColor,
@@ -41,11 +40,9 @@ object FilledIconButtonDefaults {
         disabledContainerColor = disabledContainerColor,
         disabledContentColor = disabledContentColor,
     )
-
 }
 
 object ButtonDefaults {
-
     @Composable
     fun tertiaryButtonColors(
         containerColor: Color = MaterialTheme.colorScheme.tertiary,
@@ -53,11 +50,11 @@ object ButtonDefaults {
         disabledContainerColor: Color = MaterialTheme.colorScheme.tertiaryContainer,
         disabledContentColor: Color = MaterialTheme.colorScheme.onTertiaryContainer,
     ) = ButtonDefaults.buttonColors(
-            containerColor = containerColor,
-            contentColor = contentColor,
-            disabledContainerColor = disabledContainerColor,
-            disabledContentColor = disabledContentColor
-        )
+        containerColor = containerColor,
+        contentColor = contentColor,
+        disabledContainerColor = disabledContainerColor,
+        disabledContentColor = disabledContentColor,
+    )
 
     @Composable
     fun transparentButtonColors(
@@ -69,7 +66,6 @@ object ButtonDefaults {
         containerColor = containerColor,
         contentColor = contentColor,
         disabledContainerColor = disabledContainerColor,
-        disabledContentColor = disabledContentColor
+        disabledContentColor = disabledContentColor,
     )
-
 }

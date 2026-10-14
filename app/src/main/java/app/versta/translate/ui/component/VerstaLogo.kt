@@ -20,17 +20,18 @@ fun VerstaLogo(
     size: Dp = MaterialTheme.spacing.extraLarge * 1.2f,
 ) {
     Box(
-        modifier = modifier
+        modifier = modifier,
     ) {
         Box {
             Image(
                 modifier = Modifier.height(size),
                 imageVector = ImageVector.vectorResource(R.drawable.versta_logo_monochrome),
                 contentDescription = null,
-                colorFilter = ColorFilter.tint(
-                    MaterialTheme.colorScheme.primary,
-                    BlendMode.SrcAtop
-                )
+                colorFilter =
+                    ColorFilter.tint(
+                        MaterialTheme.colorScheme.primary,
+                        BlendMode.SrcAtop,
+                    ),
             )
         }
     }

@@ -12,7 +12,9 @@ import kotlinx.coroutines.flow.Flow
  * [IllegalStateException], which signals the inference was never loaded, so
  * callers do not misreport a capture failure as "model not loaded".
  */
-class MicrophoneCaptureException(cause: Throwable) : RuntimeException(cause)
+class MicrophoneCaptureException(
+    cause: Throwable,
+) : RuntimeException(cause)
 
 interface SpeechRecognitionInference {
     /**
@@ -24,7 +26,10 @@ interface SpeechRecognitionInference {
     /**
      * Loads the whisper + VAD model bundle and prepares the recognizer.
      */
-    fun load(files: SpeechRecognitionInferenceFiles, threads: Int = 4)
+    fun load(
+        files: SpeechRecognitionInferenceFiles,
+        threads: Int = 4,
+    )
 
     /**
      * Starts the real-time recognition loop: captures microphone audio and emits

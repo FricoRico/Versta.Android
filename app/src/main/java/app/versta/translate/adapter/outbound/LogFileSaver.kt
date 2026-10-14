@@ -1,9 +1,9 @@
 package app.versta.translate.adapter.outbound
 
 import android.net.Uri
+import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.ComponentActivity
 
 object LogFileSaver : FileSaver {
     private var fileSaver: ActivityResultLauncher<String>? = null
@@ -13,15 +13,16 @@ object LogFileSaver : FileSaver {
      * Registers the file saver for the given activity.
      */
     fun registerForActivity(activity: ComponentActivity) {
-        fileSaver = activity.registerForActivityResult(
-            ActivityResultContracts.CreateDocument("text/plain"),
-        ) { uri: Uri? ->
-            if (uri == null) {
-                return@registerForActivityResult
-            }
+        fileSaver =
+            activity.registerForActivityResult(
+                ActivityResultContracts.CreateDocument("text/plain"),
+            ) { uri: Uri? ->
+                if (uri == null) {
+                    return@registerForActivityResult
+                }
 
-            fileSaverListener?.onFileSaved(uri)
-        }
+                fileSaverListener?.onFileSaved(uri)
+            }
     }
 
     /**

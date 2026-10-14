@@ -25,14 +25,16 @@ class VoiceDatabaseRepository(
      */
     override fun getVoiceModel(id: String) =
         mapVoiceModelDatabaseModelToVoiceModelFiles(
-            database.voiceModels.getById(id).executeAsOneOrNull()
+            database.voiceModels.getById(id).executeAsOneOrNull(),
         )
 
     /**
      * Gets the text to speech models available in the repository.
      */
     override fun getVoiceModels() =
-        database.voiceModels.getAll().executeAsListFlow()
+        database.voiceModels
+            .getAll()
+            .executeAsListFlow()
             .map { it.mapNotNull { voice -> mapVoiceModelDatabaseModelToVoiceModelFiles(voice) } }
 
     /**
@@ -44,7 +46,7 @@ class VoiceDatabaseRepository(
             database.voices.getByLanguage(language.isoCode).executeAsOneOrNull() ?: return null
 
         return mapVoiceModelDatabaseModelToVoiceModelFiles(
-            database.voiceModels.getById(voice.modelId).executeAsOneOrNull()
+            database.voiceModels.getById(voice.modelId).executeAsOneOrNull(),
         )
     }
 
@@ -66,8 +68,11 @@ class VoiceDatabaseRepository(
      */
     @OptIn(ExperimentalPathApi::class)
     override fun deleteVoiceModel(id: String) {
-        database.voiceModels.getById(id = id).executeAsList()
-            .map { it.path.toPath().toNioPath() }.distinct()
+        database.voiceModels
+            .getById(id = id)
+            .executeAsList()
+            .map { it.path.toPath().toNioPath() }
+            .distinct()
             .forEach { it.deleteRecursively() }
 
         database.voiceModels.deleteById(id = id)
@@ -84,7 +89,7 @@ class VoiceDatabaseRepository(
             baseModel = data.baseModel,
             architectures = data.architectures,
             path = data.path,
-            version = data.version
+            version = data.version,
         )
     }
 
@@ -98,7 +103,7 @@ class VoiceDatabaseRepository(
                 database.voices.insertOrIgnore(
                     modelId = it.modelId,
                     language = it.language,
-                    gender = it.gender
+                    gender = it.gender,
                 )
             }
         }
@@ -111,16 +116,15 @@ class VoiceDatabaseRepository(
      */
     private fun mapVoiceMetadataToVoiceModelDatabaseModel(
         id: String,
-        data: VoiceModelMetadata
-    ): VoiceModelDatabaseModel {
-        return VoiceModelDatabaseModel(
+        data: VoiceModelMetadata,
+    ): VoiceModelDatabaseModel =
+        VoiceModelDatabaseModel(
             id = id,
             baseModel = data.baseModel,
             architectures = data.architectures.map { it.value },
             path = data.root?.absolutePathString() ?: "",
-            version = data.version
+            version = data.version,
         )
-    }
 
     /**
      * Maps a [VoiceModelDatabaseModel] to a [VoiceWithModelFiles].
@@ -149,37 +153,38 @@ class VoiceDatabaseRepository(
      */
     private fun mapVoiceMetadataToVoiceDatabaseModel(
         modelId: String,
-        data: VoiceModelMetadata
-    ): List<VoiceDatabaseModel> {
-        return data.files.voices.map {
+        data: VoiceModelMetadata,
+    ): List<VoiceDatabaseModel> =
+        data.files.voices.map {
             val file = Path(it).fileName.toString()
 
-            val language = when {
-                file.startsWith("a") -> "en"
-                file.startsWith("b") -> "en"
-                file.startsWith("j") -> "ja"
-                file.startsWith("f") -> "fr"
-                file.startsWith("e") -> "es"
-                file.startsWith("h") -> "hi"
-                file.startsWith("i") -> "it"
-                file.startsWith("z") -> "zh"
-                file.startsWith("p") -> "pt"
-                else -> throw Exception("Determining language from file name: $it")
-            }
+            val language =
+                when {
+                    file.startsWith("a") -> "en"
+                    file.startsWith("b") -> "en"
+                    file.startsWith("j") -> "ja"
+                    file.startsWith("f") -> "fr"
+                    file.startsWith("e") -> "es"
+                    file.startsWith("h") -> "hi"
+                    file.startsWith("i") -> "it"
+                    file.startsWith("z") -> "zh"
+                    file.startsWith("p") -> "pt"
+                    else -> throw Exception("Determining language from file name: $it")
+                }
 
-            val gender = when {
-                file.startsWith("f", 1) -> "female"
-                file.startsWith("m", 1) -> "male"
-                else -> throw Exception("Determining gender from file name: $it")
-            }
+            val gender =
+                when {
+                    file.startsWith("f", 1) -> "female"
+                    file.startsWith("m", 1) -> "male"
+                    else -> throw Exception("Determining gender from file name: $it")
+                }
 
             VoiceDatabaseModel(
                 modelId = modelId,
                 language = language,
-                gender = gender
+                gender = gender,
             )
         }
-    }
 
     companion object {
         private val TAG: String = VoiceDatabaseRepository::class.java.simpleName

@@ -16,12 +16,14 @@ data class ExternalDataDefinition(
     private val checksum: String,
 ) {
     fun bundleUri() = URI(bundle)
+
     fun checksumUri() = URI(checksum)
 
-    fun isValid() = bundle.isNotBlank()
-            && checksum.isNotBlank()
-            && size > 0
-            && version.isNotBlank()
+    fun isValid() =
+        bundle.isNotBlank() &&
+            checksum.isNotBlank() &&
+            size > 0 &&
+            version.isNotBlank()
 }
 
 typealias ExternalDataDefinitions = List<ExternalDataDefinition>
@@ -45,25 +47,19 @@ data class ExternalDataDownloadTask(
     val downloadName: String,
     val definition: ExternalDataDefinition,
     override val status: DownloadStatus,
-    val onComplete: (ExternalDataDefinition) -> Unit = {}
+    val onComplete: (ExternalDataDefinition) -> Unit = {},
 ) : DownloadTask {
+    override fun copyWithStatus(status: DownloadStatus): DownloadTask = copy(status = status)
 
-    override fun copyWithStatus(status: DownloadStatus): DownloadTask {
-        return copy(status = status)
-    }
-
-    override fun getWorkData(): Map<String, Any> {
-        return mapOf(
+    override fun getWorkData(): Map<String, Any> =
+        mapOf(
             "taskId" to id.toString(),
             "name" to downloadName,
             "uri" to definition.bundleUri().toString(),
-            "checksum" to definition.checksumUri().toString()
+            "checksum" to definition.checksumUri().toString(),
         )
-    }
 
-    override fun getName(): String {
-        return downloadName
-    }
+    override fun getName(): String = downloadName
 
     override fun onComplete() {
         onComplete(definition)

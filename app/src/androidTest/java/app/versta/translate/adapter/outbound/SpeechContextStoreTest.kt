@@ -7,12 +7,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SpeechContextStoreTest {
-
     private var nowMs: Long = 1_000L
 
-    private fun store(ttlMs: Long = SpeechContextStore.DEFAULT_TTL_MS): SpeechContextStore {
-        return SpeechContextStore(ttlMs = ttlMs, now = { nowMs })
-    }
+    private fun store(ttlMs: Long = SpeechContextStore.DEFAULT_TTL_MS): SpeechContextStore = SpeechContextStore(ttlMs = ttlMs, now = { nowMs })
 
     private fun tokens(vararg values: Int) = intArrayOf(*values)
 

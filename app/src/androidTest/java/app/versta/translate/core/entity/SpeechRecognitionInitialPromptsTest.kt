@@ -7,7 +7,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SpeechRecognitionInitialPromptsTest {
-
     @Test
     fun forLanguage_en_returnsPrompt() {
         val prompt = SpeechRecognitionInitialPrompts.forLanguage("en")

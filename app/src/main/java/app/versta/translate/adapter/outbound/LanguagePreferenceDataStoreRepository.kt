@@ -14,17 +14,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class LanguagePreferenceDataStoreRepository(
-    private val dataStore: DataStore<Preferences>
+    private val dataStore: DataStore<Preferences>,
 ) : LanguagePreferenceRepository {
     /**
      * Gets the source language from the repository.
      */
-    override fun getSourceLanguage(): Flow<LanguageOption?> {
-        return dataStore.data.map { preferences ->
+    override fun getSourceLanguage(): Flow<LanguageOption?> =
+        dataStore.data.map { preferences ->
             val data = preferences[SOURCE_LANGUAGE_KEY]
             if (data != null) mapIsoCodeToLanguage(data) else null
         }
-    }
 
     /**
      * Sets the source language in the repository.
@@ -59,8 +58,8 @@ class LanguagePreferenceDataStoreRepository(
     /**
      * Gets the language pair from the repository.
      */
-    override fun getLanguagePair(): Flow<LanguageOptionPair?> {
-        return dataStore.data.map { preferences ->
+    override fun getLanguagePair(): Flow<LanguageOptionPair?> =
+        dataStore.data.map { preferences ->
             val sourceData = preferences[SOURCE_LANGUAGE_KEY]
             val targetData = preferences[TARGET_LANGUAGE_KEY]
 
@@ -70,7 +69,6 @@ class LanguagePreferenceDataStoreRepository(
                 null
             }
         }
-    }
 
     /**
      * Sets the target language in the repository.
@@ -85,11 +83,10 @@ class LanguagePreferenceDataStoreRepository(
     /**
      * Gets the pivot translation option from the data store.
      */
-    override fun getPivotTranslation(): Flow<Boolean> {
-        return dataStore.data.map { preferences ->
+    override fun getPivotTranslation(): Flow<Boolean> =
+        dataStore.data.map { preferences ->
             preferences[PIVOT_TRANSLATION_KEY]?.toBoolean() ?: DEFAULT_PIVOT_TRANSLATION
         }
-    }
 
     /**
      * Sets the pivot translation option in the data store.
@@ -149,9 +146,7 @@ class LanguagePreferenceDataStoreRepository(
      * Maps a [Language] to an ISO code.
      * @param language The language to map.
      */
-    private fun mapLanguageEntityToIsoCode(language: LanguageOption): String {
-        return language.isoCode
-    }
+    private fun mapLanguageEntityToIsoCode(language: LanguageOption): String = language.isoCode
 
     /**
      * Maps an ISO code to a [Language].
@@ -172,7 +167,7 @@ class LanguagePreferenceDataStoreRepository(
      */
     private fun mapIsoCodesToLanguagePair(
         sourceIsoCode: String,
-        targetIsoCode: String
+        targetIsoCode: String,
     ): LanguageOptionPair? {
         val source = mapIsoCodeToLanguage(sourceIsoCode)
         val target = mapIsoCodeToLanguage(targetIsoCode)
@@ -183,7 +178,7 @@ class LanguagePreferenceDataStoreRepository(
 
         return LanguageOptionPair(
             source = source,
-            target = target
+            target = target,
         )
     }
 

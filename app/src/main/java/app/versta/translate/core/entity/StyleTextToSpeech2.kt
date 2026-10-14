@@ -9,18 +9,22 @@ import app.versta.translate.utils.TensorUtils
 // Shape: [1, num_samples]
 internal typealias Waveform = FloatArray
 
-class StyleTextToSpeech2Input(ortEnvironment: OrtEnvironment, tokens: LongArray, style: FloatArray, speed: Float) {
+class StyleTextToSpeech2Input(
+    ortEnvironment: OrtEnvironment,
+    tokens: LongArray,
+    style: FloatArray,
+    speed: Float,
+) {
     private val _tokenTensor = OnnxTensor.createTensor(ortEnvironment, arrayOf(tokens))
     private val _styleTensor = OnnxTensor.createTensor(ortEnvironment, arrayOf(style))
     private val _speedTensor = OnnxTensor.createTensor(ortEnvironment, floatArrayOf(speed))
 
-    fun get(): Map<String, OnnxTensorLike> {
-        return mapOf(
+    fun get(): Map<String, OnnxTensorLike> =
+        mapOf(
             "input_ids" to _tokenTensor,
             "style" to _styleTensor,
-            "speed" to _speedTensor
+            "speed" to _speedTensor,
         )
-    }
 
     fun destroy() {
         TensorUtils.closeTensor(_tokenTensor)

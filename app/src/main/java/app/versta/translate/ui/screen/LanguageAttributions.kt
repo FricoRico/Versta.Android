@@ -45,7 +45,7 @@ fun LanguageAttributions(
     innerPadding: PaddingValues,
     scaffoldViewModel: ScaffoldViewModel,
     navigationViewModel: NavigationViewModel,
-    languageViewModel: LanguageViewModel
+    languageViewModel: LanguageViewModel,
 ) {
     val context = LocalContext.current
 
@@ -66,24 +66,27 @@ fun LanguageAttributions(
             ScaffoldCompactBarEmptyActions()
         },
         actionsContentKey = "ScaffoldCompactBarEmptyActions",
-        wrapContent = true
+        wrapContent = true,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            )
+            modifier =
+                Modifier
+                    .fillMaxSize(),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
         ) {
             items(items = languageModels, key = { it.pair.uniqueId() }) { model ->
                 for (metadata in model.metadata) {
-                    val onClick = Intent(
-                        Intent.ACTION_VIEW,
-                        stringResource(R.string.hugginface_url, metadata.baseModel).toUri()
-                    )
+                    val onClick =
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            stringResource(R.string.hugginface_url, metadata.baseModel).toUri(),
+                        )
 
                     Surface(
                         color = MaterialTheme.colorScheme.surfaceContainer,
@@ -92,23 +95,25 @@ fun LanguageAttributions(
                         },
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(MaterialTheme.spacing.medium),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(MaterialTheme.spacing.medium),
                             verticalAlignment = Alignment.Top,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             Column(
-                                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall)
+                                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
                             ) {
                                 Text(
-                                    text = stringResource(
-                                        R.string.language_attributes_source_target_combination,
-                                        metadata.source.name,
-                                        metadata.target.name
-                                    ),
+                                    text =
+                                        stringResource(
+                                            R.string.language_attributes_source_target_combination,
+                                            metadata.source.name,
+                                            metadata.target.name,
+                                        ),
                                     style = MaterialTheme.typography.titleLarge,
-                                    maxLines = 1
+                                    maxLines = 1,
                                 )
 
                                 Text(
@@ -117,20 +122,21 @@ fun LanguageAttributions(
                                 )
 
                                 Row(
-                                    modifier = Modifier.padding(top = MaterialTheme.spacing.small)
+                                    modifier = Modifier.padding(top = MaterialTheme.spacing.small),
                                 ) {
                                     metadata.architectures.forEach { architecture ->
                                         Surface(
                                             color = MaterialTheme.colorScheme.primary,
                                             contentColor = MaterialTheme.colorScheme.onPrimary,
-                                            modifier = Modifier.clip(MaterialTheme.shapes.extraLarge)
+                                            modifier = Modifier.clip(MaterialTheme.shapes.extraLarge),
                                         ) {
                                             Text(
                                                 text = architecture.name,
-                                                modifier = Modifier.padding(
-                                                    vertical = 1.dp,
-                                                    horizontal = MaterialTheme.spacing.extraSmall
-                                                ),
+                                                modifier =
+                                                    Modifier.padding(
+                                                        vertical = 1.dp,
+                                                        horizontal = MaterialTheme.spacing.extraSmall,
+                                                    ),
                                                 style = MaterialTheme.typography.labelSmall,
                                             )
                                         }
@@ -157,15 +163,17 @@ fun LanguageAttributionsPreview() {
 
     LanguageAttributions(
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
-        languageViewModel = LanguageViewModel(
-            context = LocalContext.current,
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-        )
+        languageViewModel =
+            LanguageViewModel(
+                context = LocalContext.current,
+                languageRepository = LanguageMemoryRepository(),
+                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+                externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+            ),
     )
 }

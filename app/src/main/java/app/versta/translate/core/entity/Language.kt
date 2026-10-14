@@ -7,9 +7,11 @@ import app.versta.translate.R
 import app.versta.translate.utils.LocaleUtils
 import java.util.Locale
 
-enum class WritingDirection(val value: Int) {
+enum class WritingDirection(
+    val value: Int,
+) {
     LTR(0),
-    RTL(1)
+    RTL(1),
 }
 
 interface LanguageOption {
@@ -27,56 +29,61 @@ class AutoDetectLanguage : LanguageOption {
     override val isoCode: String = AUTO_DETECT_ISO_CODE
 }
 
-data class Language(override val locale: Locale): LanguageOption {
+data class Language(
+    override val locale: Locale,
+) : LanguageOption {
     override val name: String = locale.displayLanguage
     override val isoCode: String = locale.language
 
     fun getFlagDrawable(context: Context): Int {
-        val code = when (isoCode) {
-            "iw" -> "he"
-            "in" -> "id"
-            else -> isoCode
-        }
+        val code =
+            when (isoCode) {
+                "iw" -> "he"
+                "in" -> "id"
+                else -> isoCode
+            }
 
         return context.resources.getIdentifier(code, "drawable", context.packageName)
     }
 
-    fun getWritingDirection(): WritingDirection {
-        return when (isoCode) {
+    fun getWritingDirection(): WritingDirection =
+        when (isoCode) {
             "ar" -> WritingDirection.RTL
+
             "iw",
-            "he" -> WritingDirection.RTL
+            "he",
+            -> WritingDirection.RTL
+
             else -> WritingDirection.LTR
         }
-    }
 
     companion object {
         /**
          * Returns a language instance from the given locale.
          */
-        fun fromLocale(locale: Locale): Language {
-            return Language(locale = locale)
-        }
+        fun fromLocale(locale: Locale): Language = Language(locale = locale)
 
         /**
          * Returns a language instance from the given ISO code.
          */
-        fun fromIsoCode(isoCode: String): Language {
-            return Language(locale = LocaleUtils.getLocale(isoCode))
-        }
+        fun fromIsoCode(isoCode: String): Language = Language(locale = LocaleUtils.getLocale(isoCode))
     }
 }
 
-data class LanguageOptionPair(val source: LanguageOption, val target: Language) {
+data class LanguageOptionPair(
+    val source: LanguageOption,
+    val target: Language,
+) {
     fun toLanguagePair(): LanguagePair? {
         if (source !is Language) {
             return null
         }
 
-        val pair = LanguagePair(
-            source = source,
-            target = target
-        )
+        val pair =
+            LanguagePair(
+                source = source,
+                target = target,
+            )
 
         if (!pair.isValid()) {
             return null
@@ -86,21 +93,21 @@ data class LanguageOptionPair(val source: LanguageOption, val target: Language) 
     }
 }
 
-data class LanguagePair(val source: Language, val target: Language) {
+data class LanguagePair(
+    val source: Language,
+    val target: Language,
+) {
     val id: String = "${source.locale.language}-${target.locale.language}"
 
-    fun isValid(): Boolean {
-        return source.locale.language != target.locale.language
-    }
+    fun isValid(): Boolean = source.locale.language != target.locale.language
 
     /**
      * Returns a string representation of the language pair.
      */
-    fun uniqueId(): String {
-        return listOf(source.isoCode, target.isoCode)
+    fun uniqueId(): String =
+        listOf(source.isoCode, target.isoCode)
             .sortedBy { it }
             .joinToString("-")
-    }
 
     /**
      * Checks if the language pair is equal to another language pair based on the non-unique ID.
@@ -112,27 +119,25 @@ data class LanguagePair(val source: Language, val target: Language) {
         return other.id == id
     }
 
-    override fun hashCode(): Int {
-        return javaClass.hashCode()
-    }
+    override fun hashCode(): Int = javaClass.hashCode()
 
     /**
      * Checks if the language pair is equal to another language pair based on unique ID.
      */
-    fun uniqueEquals(other: LanguagePair): Boolean {
-        return other.uniqueId() == uniqueId()
-    }
+    fun uniqueEquals(other: LanguagePair): Boolean = other.uniqueId() == uniqueId()
 
     companion object {
         /**
          * Returns a language pair instance from the given ISO codes.
          */
-        fun fromIsoCodes(sourceLanguage: String, targetLanguage: String): LanguagePair {
-            return LanguagePair(
+        fun fromIsoCodes(
+            sourceLanguage: String,
+            targetLanguage: String,
+        ): LanguagePair =
+            LanguagePair(
                 source = Language.fromIsoCode(sourceLanguage),
-                target = Language.fromIsoCode(targetLanguage)
+                target = Language.fromIsoCode(targetLanguage),
             )
-        }
 
         /**
          * Returns a language pair instance from the given ID.
@@ -141,7 +146,7 @@ data class LanguagePair(val source: Language, val target: Language) {
             val languages = uniqueId.split("-")
             return LanguagePair(
                 source = Language.fromIsoCode(languages[0]),
-                target = Language.fromIsoCode(languages[1])
+                target = Language.fromIsoCode(languages[1]),
             )
         }
     }
@@ -149,5 +154,5 @@ data class LanguagePair(val source: Language, val target: Language) {
 
 data class PivotPair(
     val intermediary: LanguagePair,
-    val output: LanguagePair
+    val output: LanguagePair,
 )

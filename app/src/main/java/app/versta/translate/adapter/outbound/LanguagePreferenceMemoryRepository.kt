@@ -11,19 +11,19 @@ import java.util.Locale
 class LanguagePreferenceMemoryRepository : LanguagePreferenceRepository {
     private var _pivotTranslation: Boolean = DEFAULT_PIVOT_TRANSLATION
 
-    private var _sourceLanguage: LanguageOption? = Language(
-        locale = Locale.ENGLISH
-    )
-    private var _targetLanguage: Language? = Language(
-        locale = Locale.JAPANESE
-    )
+    private var _sourceLanguage: LanguageOption? =
+        Language(
+            locale = Locale.ENGLISH,
+        )
+    private var _targetLanguage: Language? =
+        Language(
+            locale = Locale.JAPANESE,
+        )
 
     /**
      * Gets the source language from the repository.
      */
-    override fun getSourceLanguage(): Flow<LanguageOption?> {
-        return flowOf(_sourceLanguage)
-    }
+    override fun getSourceLanguage(): Flow<LanguageOption?> = flowOf(_sourceLanguage)
 
     /**
      * Sets the source language in the repository.
@@ -36,9 +36,7 @@ class LanguagePreferenceMemoryRepository : LanguagePreferenceRepository {
     /**
      * Gets the target language from the repository.
      */
-    override fun getTargetLanguage(): Flow<Language?> {
-        return flowOf(_targetLanguage)
-    }
+    override fun getTargetLanguage(): Flow<Language?> = flowOf(_targetLanguage)
 
     /**
      * Sets the target language in the repository.
@@ -51,9 +49,7 @@ class LanguagePreferenceMemoryRepository : LanguagePreferenceRepository {
     /**
      * Gets the pivot translation option from the data store.
      */
-    override fun getPivotTranslation(): Flow<Boolean> {
-        return flowOf(_pivotTranslation)
-    }
+    override fun getPivotTranslation(): Flow<Boolean> = flowOf(_pivotTranslation)
 
     /**
      * Sets the pivot translation option in the data store.
@@ -70,8 +66,8 @@ class LanguagePreferenceMemoryRepository : LanguagePreferenceRepository {
             return flowOf(
                 LanguageOptionPair(
                     source = _sourceLanguage!!,
-                    target = _targetLanguage!!
-                )
+                    target = _targetLanguage!!,
+                ),
             )
         }
 

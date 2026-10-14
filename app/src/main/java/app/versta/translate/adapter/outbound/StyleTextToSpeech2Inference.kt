@@ -1,6 +1,5 @@
 package app.versta.translate.adapter.outbound
 
-
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import app.versta.translate.core.entity.StyleTextToSpeech2Input
@@ -24,21 +23,27 @@ internal const val OFFSET_SPEED = 0.9f
 const val MAX_TOKEN_LENGTH = 509
 const val STYLE_DIM = 256
 
-class StyleTextToSpeechInference(private val ortEnvironment: OrtEnvironment): TextToSpeechInference {
+class StyleTextToSpeechInference(
+    private val ortEnvironment: OrtEnvironment,
+) : TextToSpeechInference {
     private var session: OrtSession? = null
     private var voice: FloatArray? = null
 
-    override fun synthesize(tokens: LongArray, speed: Float): Waveform {
+    override fun synthesize(
+        tokens: LongArray,
+        speed: Float,
+    ): Waveform {
         if (session == null) {
             throw IllegalStateException("Session is not loaded")
         }
 
-        val styleTextToSpeech2Input = StyleTextToSpeech2Input(
-            ortEnvironment = ortEnvironment,
-            tokens = tokens,
-            style = getStyle(tokens),
-            speed = getSpeed(speed, tokens.size)
-        )
+        val styleTextToSpeech2Input =
+            StyleTextToSpeech2Input(
+                ortEnvironment = ortEnvironment,
+                tokens = tokens,
+                style = getStyle(tokens),
+                speed = getSpeed(speed, tokens.size),
+            )
 
         val styleTextToSpeech2Output = StyleTextToSpeech2Output()
 
@@ -84,21 +89,28 @@ class StyleTextToSpeechInference(private val ortEnvironment: OrtEnvironment): Te
         return styleArray
     }
 
-    private fun getSpeed(speed: Float, tokens: Int): Float {
+    private fun getSpeed(
+        speed: Float,
+        tokens: Int,
+    ): Float {
         val minTokens = 1
         val clamped = minTokens.coerceAtLeast(tokens.coerceAtMost(MAX_TOKEN_LENGTH))
 
         return speed * OFFSET_SPEED * (MAX_SPEED - (clamped - minTokens) * (MAX_SPEED - MIN_SPEED) / (MAX_TOKEN_LENGTH - minTokens))
     }
 
-    override fun load(files: VoiceModelInferenceFiles, threads: Int) {
+    override fun load(
+        files: VoiceModelInferenceFiles,
+        threads: Int,
+    ) {
         close()
 
         val modelFile = File(files.model.pathString)
-        val options = OrtSession.SessionOptions().apply {
-            addXnnpack(mapOf("intra_op_num_threads" to threads.toString()))
-            addConfigEntry("kOrtSessionOptionsConfigAllowIntraOpSpinning", "0")
-        }
+        val options =
+            OrtSession.SessionOptions().apply {
+                addXnnpack(mapOf("intra_op_num_threads" to threads.toString()))
+                addConfigEntry("kOrtSessionOptionsConfigAllowIntraOpSpinning", "0")
+            }
 
         session = ortEnvironment.createSession(readFileToByteBuffer(modelFile), options)
     }
@@ -109,7 +121,6 @@ class StyleTextToSpeechInference(private val ortEnvironment: OrtEnvironment): Te
         session = null
         voice = null
     }
-
 
     private fun readFileToByteBuffer(file: File): ByteBuffer {
         FileInputStream(file).use { inputStream ->

@@ -16,8 +16,9 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.io.InputStream
 
-class ExternalVoiceModelsFileRepository(private val stream: InputStream) :
-    ExternalVoiceModelsRepository {
+class ExternalVoiceModelsFileRepository(
+    private val stream: InputStream,
+) : ExternalVoiceModelsRepository {
     private val _loadingScope = CoroutineScope(Dispatchers.IO)
 
     private val _downloadableVoiceModels =
@@ -27,50 +28,50 @@ class ExternalVoiceModelsFileRepository(private val stream: InputStream) :
      * Returns a flow of [ExternalVoiceModelDefinitions] that contains the definitions of the
      * external text-to-speech models.
      */
-    override fun getDefinitions(): Flow<ExternalVoiceModelDefinitions> {
-        return _downloadableVoiceModels
-    }
+    override fun getDefinitions(): Flow<ExternalVoiceModelDefinitions> = _downloadableVoiceModels
 
     /**
      * Returns a flow of [ExternalVoiceModelDefinitions] that contains the definition of the
      * external language model for the given [id].
      */
-    override fun getDefinition(id: String): Flow<ExternalVoiceModelDefinition> {
-        return _downloadableVoiceModels.map { model -> model.first { it.id == id } }
-    }
+    override fun getDefinition(id: String): Flow<ExternalVoiceModelDefinition> = _downloadableVoiceModels.map { model -> model.first { it.id == id } }
 
     /**
      * Returns a flow of [VoiceWithModelFiles] that contains the definition of the
      * external text-to-speech models. These definitions are filtered by the state of the imported
      * text-to-speech models.
      */
-    override fun getDefinitionsByState(imported: Flow<List<VoiceWithModelFiles>>): Flow<ExternalVoiceModels> {
-        return _downloadableVoiceModels.combine(imported) { model, existing ->
+    override fun getDefinitionsByState(imported: Flow<List<VoiceWithModelFiles>>): Flow<ExternalVoiceModels> =
+        _downloadableVoiceModels.combine(imported) { model, existing ->
             ExternalVoiceModels(
-                installed = model.mapNotNull { speech ->
-                    existing.find {
-                        speech.id == it.id && it.version == speech.version
-                    }?.let {
-                        speech.apply {
-                            extracted = it.size
-                        }
-                    }
-                },
-                updates = model.filter { speech ->
-                    existing.find {
-                        speech.id == it.id && it.version < speech.version
-                    }?.let {
-                        speech.apply {
-                            extracted = it.size
-                        }
-                    } != null
-                },
-                available = model.filter { speech ->
-                    existing.none { speech.id == it.id }
-                }
+                installed =
+                    model.mapNotNull { speech ->
+                        existing
+                            .find {
+                                speech.id == it.id && it.version == speech.version
+                            }?.let {
+                                speech.apply {
+                                    extracted = it.size
+                                }
+                            }
+                    },
+                updates =
+                    model.filter { speech ->
+                        existing
+                            .find {
+                                speech.id == it.id && it.version < speech.version
+                            }?.let {
+                                speech.apply {
+                                    extracted = it.size
+                                }
+                            } != null
+                    },
+                available =
+                    model.filter { speech ->
+                        existing.none { speech.id == it.id }
+                    },
             )
         }
-    }
 
     private fun mapVoiceModelDefinitionToDownloadableVoiceModel(definitions: ExternalVoiceModelDefinitions): List<ExternalVoiceModelDefinition> {
         if (!definitions.any { it.isValid() }) {
@@ -83,9 +84,10 @@ class ExternalVoiceModelsFileRepository(private val stream: InputStream) :
     init {
         _loadingScope.launch {
             stream.use {
-                val data = it.bufferedReader().use { reader ->
-                    reader.readText()
-                }
+                val data =
+                    it.bufferedReader().use { reader ->
+                        reader.readText()
+                    }
 
                 val serializer =
                     ListSerializer(ExternalVoiceModelDefinition.serializer())
@@ -98,6 +100,10 @@ class ExternalVoiceModelsFileRepository(private val stream: InputStream) :
 
     companion object {
         @OptIn(ExperimentalSerializationApi::class)
-        private val _serializer = Json { ignoreUnknownKeys = true; decodeEnumsCaseInsensitive = true }
+        private val _serializer =
+            Json {
+                ignoreUnknownKeys = true
+                decodeEnumsCaseInsensitive = true
+            }
     }
 }

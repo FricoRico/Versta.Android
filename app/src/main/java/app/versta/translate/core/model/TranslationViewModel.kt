@@ -35,7 +35,9 @@ sealed class LoadingProgress {
 
     data object Completed : LoadingProgress()
 
-    data class Error(val exception: Exception) : LoadingProgress()
+    data class Error(
+        val exception: Exception,
+    ) : LoadingProgress()
 }
 
 sealed class ReadyState {
@@ -49,7 +51,7 @@ class TranslationViewModel(
     private var intermediateModel: TranslationInference,
     private var outputModel: TranslationInference,
     private val translationPreferenceRepository: TranslationPreferenceRepository,
-    private val languageViewModel: LanguageViewModel
+    private val languageViewModel: LanguageViewModel,
 ) : ViewModel() {
     val cacheSize = translationPreferenceRepository.getCacheSize().distinctUntilChanged()
     val cacheEnabled = translationPreferenceRepository.getCacheEnabled().distinctUntilChanged()
@@ -73,7 +75,6 @@ class TranslationViewModel(
     val translationError: StateFlow<Throwable?> = _translationError.asStateFlow()
 
     private val _loadMutex = Mutex()
-
 
     /**
      * Recreates the underlying leanmt inference engines with the effective cache
@@ -107,48 +108,42 @@ class TranslationViewModel(
      * size is preserved even when the cache is disabled; the effective size
      * passed to the engine becomes 0 only while disabled.
      */
-    fun setCacheSize(size: Int): Job {
-        return viewModelScope.launch {
+    fun setCacheSize(size: Int): Job =
+        viewModelScope.launch {
             translationPreferenceRepository.setCacheSize(size)
             reloadModel()
         }
-    }
 
     /**
      * Sets whether the translation cache is enabled. The engine is recreated with
      * the effective cache size (0 while disabled, the chosen size while enabled).
      */
-    fun setCacheEnabled(enabled: Boolean): Job {
-        return viewModelScope.launch {
+    fun setCacheEnabled(enabled: Boolean): Job =
+        viewModelScope.launch {
             translationPreferenceRepository.setCacheEnabled(enabled)
             reloadModel()
         }
-    }
 
     /**
      * Gets the actual cache size if cache is enabled.
      */
-    private suspend fun getCacheSize(): Int {
-        return if (cacheEnabled.first()) cacheSize.first() else -2
-    }
+    private suspend fun getCacheSize(): Int = if (cacheEnabled.first()) cacheSize.first() else -2
 
     /**
      * Sets the number of beams.
      */
-    fun setBeamSize(beams: Int): Job {
-        return viewModelScope.launch {
+    fun setBeamSize(beams: Int): Job =
+        viewModelScope.launch {
             translationPreferenceRepository.setNumberOfBeams(beams)
         }
-    }
 
     /**
      * Sets the maximum sequence length.
      */
-    fun setMaxSequenceLength(length: Int): Job {
-        return viewModelScope.launch {
+    fun setMaxSequenceLength(length: Int): Job =
+        viewModelScope.launch {
             translationPreferenceRepository.setMaxSequenceLength(length)
         }
-    }
 
     /**
      * Sets the translation error.
@@ -168,7 +163,10 @@ class TranslationViewModel(
     /**
      * Translates the input text to the target language.
      */
-    suspend fun translate(input: String, languages: LanguagePair): String {
+    suspend fun translate(
+        input: String,
+        languages: LanguagePair,
+    ): String {
         try {
             val sanitized = sanitize(input)
 
@@ -181,18 +179,20 @@ class TranslationViewModel(
                 var text = sanitized
 
                 if (_languageModels.first()?.intermediary != null) {
-                    text = intermediate.translate(
-                        text = text,
-                        maxBeamWidth = beamSize.first(),
-                        maxSequenceLength = maxSequenceLength.first()
-                    )
+                    text =
+                        intermediate.translate(
+                            text = text,
+                            maxBeamWidth = beamSize.first(),
+                            maxSequenceLength = maxSequenceLength.first(),
+                        )
                 }
 
-                val result = output.translate(
-                    text = text,
-                    maxBeamWidth = beamSize.first(),
-                    maxSequenceLength = maxSequenceLength.first()
-                )
+                val result =
+                    output.translate(
+                        text = text,
+                        maxBeamWidth = beamSize.first(),
+                        maxSequenceLength = maxSequenceLength.first(),
+                    )
                 _translationInProgress.value = false
 
                 return result
@@ -233,33 +233,37 @@ class TranslationViewModel(
     /**
      * Loads the model from the given files.
      */
-    suspend fun load(files: PivotPairModelFiles?, languages: LanguagePair) {
+    suspend fun load(
+        files: PivotPairModelFiles?,
+        languages: LanguagePair,
+    ) {
         cancelTranslation()
 
-        viewModelScope.async(Dispatchers.IO) {
-            _loadMutex.withLock {
-                _languageReadyState.value = ReadyState.NotReady
-                _loadingProgress.value = LoadingProgress.InProgress
+        viewModelScope
+            .async(Dispatchers.IO) {
+                _loadMutex.withLock {
+                    _languageReadyState.value = ReadyState.NotReady
+                    _loadingProgress.value = LoadingProgress.InProgress
 
-                try {
-                    if (files?.intermediary != null) {
-                        intermediateModel.load(files.intermediary.files, files.intermediary.config)
-                    } else {
-                        intermediateModel.close()
+                    try {
+                        if (files?.intermediary != null) {
+                            intermediateModel.load(files.intermediary.files, files.intermediary.config)
+                        } else {
+                            intermediateModel.close()
+                        }
+
+                        if (files?.output != null) {
+                            outputModel.load(files.output.files, files.output.config)
+                        }
+
+                        _languageReadyState.value = ReadyState.Ready
+                        _loadingProgress.value = LoadingProgress.Completed
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).e(e)
+                        _loadingProgress.value = LoadingProgress.Error(e)
                     }
-
-                    if (files?.output != null) {
-                        outputModel.load(files.output.files, files.output.config)
-                    }
-
-                    _languageReadyState.value = ReadyState.Ready
-                    _loadingProgress.value = LoadingProgress.Completed
-                } catch (e: Exception) {
-                    Timber.tag(TAG).e(e)
-                    _loadingProgress.value = LoadingProgress.Error(e)
                 }
-            }
-        }.await()
+            }.await()
     }
 
     /**
@@ -281,10 +285,10 @@ class TranslationViewModel(
      */
     fun reload() {
         viewModelScope.launch {
-            _languageModels.combine(_languages) { files, pair ->
-                Pair(files, pair)
-            }
-                .conflate()
+            _languageModels
+                .combine(_languages) { files, pair ->
+                    Pair(files, pair)
+                }.conflate()
                 .collect { (files, pair) ->
                     if (pair?.source !is Language) {
                         unload()
@@ -296,7 +300,8 @@ class TranslationViewModel(
         }
 
         viewModelScope.launch {
-            cacheEnabled.combine(cacheSize) { enabled, size -> if (enabled) size else 0 }
+            cacheEnabled
+                .combine(cacheSize) { enabled, size -> if (enabled) size else 0 }
                 .conflate()
                 .collect { reloadModel() }
         }

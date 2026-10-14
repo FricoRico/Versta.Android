@@ -9,9 +9,7 @@ class LicenseMemoryRepository : LicenseRepository {
     /**
      * Checks if the user has bought a license.
      */
-    override fun hasLicense(): Flow<Boolean> {
-        return flowOf(license)
-    }
+    override fun hasLicense(): Flow<Boolean> = flowOf(license)
 
     /**
      * Sets the license status.

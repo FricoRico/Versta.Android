@@ -93,9 +93,7 @@ class TranslationPreferenceMemoryRepository : TranslationPreferenceRepository {
     /**
      * Gets the penalty for repeating tokens.
      */
-    override fun getRepetitionPenalty(): Flow<Float> {
-        return flowOf(repetitionPenalty)
-    }
+    override fun getRepetitionPenalty(): Flow<Float> = flowOf(repetitionPenalty)
 
     /**
      * Sets the penalty for repeating tokens.

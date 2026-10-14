@@ -5,10 +5,12 @@ import kotlinx.serialization.Serializable
 import java.nio.file.Path
 import kotlin.io.path.exists
 
-const val DataTypeTextToSpeech = "tts"
+const val DATA_TYPE_TEXT_TO_SPEECH = "tts"
 
-enum class DataType(val value: String) {
-    TTS(DataTypeTextToSpeech)
+enum class DataType(
+    val value: String,
+) {
+    TTS(DATA_TYPE_TEXT_TO_SPEECH),
 }
 
 internal interface DataMetadataInterface {
@@ -30,10 +32,10 @@ sealed class DataMetadata : DataMetadataInterface {
 }
 
 @Serializable
-@SerialName(DataTypeTextToSpeech)
+@SerialName(DATA_TYPE_TEXT_TO_SPEECH)
 class TextToSpeechDataMetadata(
     override val id: String,
-    override val type: String = DataTypeTextToSpeech,
+    override val type: String = DATA_TYPE_TEXT_TO_SPEECH,
     override val version: String = "",
     val files: TextToSpeechDataFilesMetadata,
 ) : DataMetadata() {
@@ -60,14 +62,13 @@ data class TextToSpeechDataFilesMetadata(
     @SerialName("open_jtalk")
     val openJTalk: String,
 ) {
-    fun isValid(path: Path) =
-        path.resolve(espeak).exists() && path.resolve(openJTalk).exists()
+    fun isValid(path: Path) = path.resolve(espeak).exists() && path.resolve(openJTalk).exists()
 }
 
 @Serializable
 data class DataModel(
     val bundle: DataBundleMetadata,
-    val contents: DataMetadata
+    val contents: DataMetadata,
 ) {
     val id: String
         get() = bundle.id

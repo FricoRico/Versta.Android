@@ -6,5 +6,8 @@ interface TranslateNotification {
     /**
      * Shows a notification with the given text to be translated.
      */
-    fun showNotification(context: Context, text: CharSequence)
+    fun showNotification(
+        context: Context,
+        text: CharSequence,
+    )
 }

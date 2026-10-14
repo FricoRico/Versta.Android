@@ -5,7 +5,9 @@ import kotlinx.serialization.Serializable
 import java.nio.file.Path
 import kotlin.io.path.exists
 
-enum class SpeechRecognitionArchitecture(val value: String) {
+enum class SpeechRecognitionArchitecture(
+    val value: String,
+) {
     Whisper("Whisper"),
 }
 

@@ -1,8 +1,8 @@
 package app.versta.translate.adapter.outbound
 
-import app.versta.translate.bridge.leanmt.TranslationEngine
 import app.versta.translate.bridge.leanmt.LeanmtModelConfig
 import app.versta.translate.bridge.leanmt.LeanmtPackage
+import app.versta.translate.bridge.leanmt.TranslationEngine
 import app.versta.translate.core.entity.LanguageModelConfiguration
 import app.versta.translate.core.entity.LanguageModelFiles
 import org.junit.Assert.assertArrayEquals
@@ -13,7 +13,6 @@ import org.junit.Test
 import java.nio.file.Path
 
 class BergamotTinyInferenceTest {
-
     private class MockTranslationEngine : TranslationEngine {
         var loaded = false
         var loadCalls = 0
@@ -25,7 +24,10 @@ class BergamotTinyInferenceTest {
         var closeCalls = 0
         var translateResult: (Array<String>) -> Array<String> = { it }
 
-        override fun loadModel(pkg: LeanmtPackage, config: LeanmtModelConfig) {
+        override fun loadModel(
+            pkg: LeanmtPackage,
+            config: LeanmtModelConfig,
+        ) {
             loadCalls++
             lastPackage = pkg
             lastConfig = config
@@ -52,20 +54,20 @@ class BergamotTinyInferenceTest {
         }
     }
 
-    private fun files(model: String = "model.bin"): LanguageModelFiles {
-        return LanguageModelFiles(
+    private fun files(model: String = "model.bin"): LanguageModelFiles =
+        LanguageModelFiles(
             model = Path.of(model),
             vocabulary = Path.of("vocab.spm"),
             shortlist = Path.of("shortlist.bin"),
         )
-    }
 
-    private val config = LanguageModelConfiguration(
-        encoderLayers = 6,
-        decoderLayers = 2,
-        ffnDepth = 2,
-        numHeads = 8,
-    )
+    private val config =
+        LanguageModelConfiguration(
+            encoderLayers = 6,
+            decoderLayers = 2,
+            ffnDepth = 2,
+            numHeads = 8,
+        )
 
     @Test
     fun translate_blankInput_returnsEmptyWithoutTranslating() {

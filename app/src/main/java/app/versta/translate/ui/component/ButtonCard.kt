@@ -39,14 +39,13 @@ class ButtonCardColors(
     val disabledIconColor: Color = disabledContainerColor,
 ) {
     @Composable
-    fun buttonColors(): ButtonColors {
-        return ButtonDefaults.filledTonalButtonColors(
+    fun buttonColors(): ButtonColors =
+        ButtonDefaults.filledTonalButtonColors(
             containerColor = containerColor,
             contentColor = contentColor,
             disabledContainerColor = disabledContainerColor,
             disabledContentColor = disabledContentColor,
         )
-    }
 }
 
 object ButtonCardDefaults {
@@ -58,9 +57,10 @@ object ButtonCardDefaults {
         disabledContentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
         iconContainerColor: Color = MaterialTheme.colorScheme.inverseSurface,
         iconColor: Color = MaterialTheme.colorScheme.surfaceContainer,
-        disabledIconContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.darken(
-            0.2f
-        ),
+        disabledIconContainerColor: Color =
+            MaterialTheme.colorScheme.surfaceContainerHighest.darken(
+                0.2f,
+            ),
         disabledIconColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     ) = ButtonCardColors(
         containerColor = containerColor,
@@ -74,32 +74,36 @@ object ButtonCardDefaults {
     )
 
     @Composable
-    fun colorsPrimary() = colors(
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
-        disabledContainerColor = MaterialTheme.colorScheme.primaryContainer,
-        disabledContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        iconContainerColor = MaterialTheme.colorScheme.primary.lighten(0.5f),
-        iconColor = MaterialTheme.colorScheme.primary,
-        disabledIconContainerColor = MaterialTheme.colorScheme.primaryContainer.darken(
-            0.2f
-        ),
-        disabledIconColor = MaterialTheme.colorScheme.primaryContainer,
-    )
+    fun colorsPrimary() =
+        colors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            disabledContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            disabledContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            iconContainerColor = MaterialTheme.colorScheme.primary.lighten(0.5f),
+            iconColor = MaterialTheme.colorScheme.primary,
+            disabledIconContainerColor =
+                MaterialTheme.colorScheme.primaryContainer.darken(
+                    0.2f,
+                ),
+            disabledIconColor = MaterialTheme.colorScheme.primaryContainer,
+        )
 
     @Composable
-    fun colorsSecondary() = colors(
-        containerColor = MaterialTheme.colorScheme.secondary,
-        contentColor = MaterialTheme.colorScheme.onSecondary,
-        disabledContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-        disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        iconContainerColor = MaterialTheme.colorScheme.secondary.lighten(0.5f),
-        iconColor = MaterialTheme.colorScheme.secondary,
-        disabledIconContainerColor = MaterialTheme.colorScheme.secondaryContainer.darken(
-            0.2f
-        ),
-        disabledIconColor = MaterialTheme.colorScheme.secondaryContainer,
-    )
+    fun colorsSecondary() =
+        colors(
+            containerColor = MaterialTheme.colorScheme.secondary,
+            contentColor = MaterialTheme.colorScheme.onSecondary,
+            disabledContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+            disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            iconContainerColor = MaterialTheme.colorScheme.secondary.lighten(0.5f),
+            iconColor = MaterialTheme.colorScheme.secondary,
+            disabledIconContainerColor =
+                MaterialTheme.colorScheme.secondaryContainer.darken(
+                    0.2f,
+                ),
+            disabledIconColor = MaterialTheme.colorScheme.secondaryContainer,
+        )
 }
 
 @Composable
@@ -110,34 +114,37 @@ fun ButtonCard(
     subtitle: String? = null,
     icon: ImageVector? = null,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     FilledTonalButton(
         onClick = onClick,
         enabled = enabled,
-        contentPadding = PaddingValues(
-            vertical = MaterialTheme.spacing.large,
-            horizontal = MaterialTheme.spacing.medium
-        ),
+        contentPadding =
+            PaddingValues(
+                vertical = MaterialTheme.spacing.large,
+                horizontal = MaterialTheme.spacing.medium,
+            ),
         colors = colors.buttonColors(),
         shape = MaterialTheme.shapes.extraLarge,
-        modifier = Modifier
-            .then(modifier),
+        modifier =
+            Modifier
+                .then(modifier),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier =
+                Modifier
+                    .fillMaxWidth(),
         ) {
             if (icon != null) {
                 Box(
-                    modifier = Modifier
-                        .background(
-                            if (enabled) colors.iconContainerColor else colors.disabledIconContainerColor,
-                            MaterialTheme.shapes.extraLarge
-                        )
-                        .padding(MaterialTheme.spacing.small),
+                    modifier =
+                        Modifier
+                            .background(
+                                if (enabled) colors.iconContainerColor else colors.disabledIconContainerColor,
+                                MaterialTheme.shapes.extraLarge,
+                            ).padding(MaterialTheme.spacing.small),
                 ) {
                     Icon(
                         imageVector = icon,

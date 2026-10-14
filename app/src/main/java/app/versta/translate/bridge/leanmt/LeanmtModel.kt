@@ -14,16 +14,17 @@ class LeanmtModel(
     private var handle: Long
 
     init {
-        handle = create(
-            config.encoderLayers,
-            config.decoderLayers,
-            config.feedForwardDepth,
-            config.numHeads,
-            pkg.model,
-            pkg.vocabulary,
-            pkg.targetVocabulary,
-            pkg.shortlist,
-        )
+        handle =
+            create(
+                config.encoderLayers,
+                config.decoderLayers,
+                config.feedForwardDepth,
+                config.numHeads,
+                pkg.model,
+                pkg.vocabulary,
+                pkg.targetVocabulary,
+                pkg.shortlist,
+            )
 
         if (handle == 0L) {
             throw RuntimeException("Failed to load leanmt model from ${pkg.model}")

@@ -11,11 +11,11 @@ import kotlinx.coroutines.launch
 enum class DialogState {
     Open,
     Closed,
-    Confirm
+    Confirm,
 }
 
 class LicenseViewModel(
-    private val licenseRepository: LicenseRepository
+    private val licenseRepository: LicenseRepository,
 ) : ViewModel() {
     private val _licenseDialogState = MutableStateFlow(DialogState.Closed)
     val licenseDialogState: StateFlow<DialogState> = _licenseDialogState

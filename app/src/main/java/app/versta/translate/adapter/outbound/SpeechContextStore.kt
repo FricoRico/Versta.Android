@@ -28,7 +28,10 @@ class SpeechContextStore(
     private val ttlMs: Long = DEFAULT_TTL_MS,
     private val now: () -> Long = { System.currentTimeMillis() },
 ) {
-    private data class Entry(val tokens: IntArray, val capturedAtMs: Long)
+    private data class Entry(
+        val tokens: IntArray,
+        val capturedAtMs: Long,
+    )
 
     // record() runs on the process thread (segment callback) while get() runs
     // on whoever calls start(); a session teardown can also be flushing its
@@ -45,7 +48,10 @@ class SpeechContextStore(
      * TTL) should be left untouched rather than cleared by a single bad
      * utterance.
      */
-    fun record(languageIsoCode: String?, tokens: IntArray?) {
+    fun record(
+        languageIsoCode: String?,
+        tokens: IntArray?,
+    ) {
         if (languageIsoCode.isNullOrBlank() || tokens == null || tokens.isEmpty()) {
             return
         }

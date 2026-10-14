@@ -51,8 +51,12 @@ fun FloatArray.fftMagnitudes(length: Int = size): FloatArray {
     for (i in 0 until length) {
         val j = Integer.reverse(i) ushr (32 - log2n)
         if (j > i) {
-            val tmpRe = re[i]; re[i] = re[j]; re[j] = tmpRe
-            val tmpIm = im[i]; im[i] = im[j]; im[j] = tmpIm
+            val tmpRe = re[i]
+            re[i] = re[j]
+            re[j] = tmpRe
+            val tmpIm = im[i]
+            im[i] = im[j]
+            im[j] = tmpIm
         }
     }
 
@@ -89,7 +93,10 @@ fun FloatArray.fftMagnitudes(length: Int = size): FloatArray {
  * each band's peak magnitude mapped from dBFS to 0..1 with [LEVEL_FLOOR_DB]
  * treated as silence.
  */
-fun FloatArray.spectrumBands(bandCount: Int = SPECTRUM_BAND_COUNT, sampleRate: Int): FloatArray {
+fun FloatArray.spectrumBands(
+    bandCount: Int = SPECTRUM_BAND_COUNT,
+    sampleRate: Int,
+): FloatArray {
     val fftLength = size * 2
     val low = ln(VOCAL_LOW_HZ)
     val high = ln(sampleRate / 2f)

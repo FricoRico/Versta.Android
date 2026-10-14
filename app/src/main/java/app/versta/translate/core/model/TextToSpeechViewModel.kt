@@ -62,7 +62,7 @@ class TextToSpeechViewModel(
     private val voiceRepository: VoiceRepository,
     private val textToSpeechPreferenceRepository: TextToSpeechPreferenceRepository,
     private val externalDataRepository: ExternalDataRepository,
-    private val languagePreferenceRepository: LanguagePreferenceRepository
+    private val languagePreferenceRepository: LanguagePreferenceRepository,
 ) : ViewModel() {
     val enabled = textToSpeechPreferenceRepository.getTextToSpeechEnabled().distinctUntilChanged()
     val speed = textToSpeechPreferenceRepository.getSpeed().distinctUntilChanged()
@@ -71,29 +71,38 @@ class TextToSpeechViewModel(
 
     private val _japaneseTransliterator = JapaneseTransliterator()
     private val _language = languagePreferenceRepository.getTargetLanguage().distinctUntilChanged()
-    private val _textToSpeechData = dataRepository.getDataByType(type = DataType.TTS).mapNotNull {
-        it.firstOrNull()
-    }.distinctUntilChanged()
+    private val _textToSpeechData =
+        dataRepository
+            .getDataByType(type = DataType.TTS)
+            .mapNotNull {
+                it.firstOrNull()
+            }.distinctUntilChanged()
 
-    private val _voiceModel = _language.filterNotNull().map { language ->
-        voiceRepository.getVoiceModelsByLanguage(language = language)
-    }.distinctUntilChanged()
+    private val _voiceModel =
+        _language
+            .filterNotNull()
+            .map { language ->
+                voiceRepository.getVoiceModelsByLanguage(language = language)
+            }.distinctUntilChanged()
 
-    val textToSpeechReady = combine(
-        enabled,
-        espeakNG.isReadyStateFlow(),
-        openJTalk.isReadyStateFlow()
-    ) { enabled, espeakReady, openJTalkReady ->
-        enabled && espeakReady && openJTalkReady
-    }.distinctUntilChanged()
+    val textToSpeechReady =
+        combine(
+            enabled,
+            espeakNG.isReadyStateFlow(),
+            openJTalk.isReadyStateFlow(),
+        ) { enabled, espeakReady, openJTalkReady ->
+            enabled && espeakReady && openJTalkReady
+        }.distinctUntilChanged()
 
-    val voiceAvailable = _language.map { language ->
-        val files = _voiceModel.first()
-        val gender = gender.first()
-        files != null && language != null && files.voices.getVoiceByLanguage(
-            language, gender
-        ) != null
-    }
+    val voiceAvailable =
+        _language.map { language ->
+            val files = _voiceModel.first()
+            val gender = gender.first()
+            files != null && language != null && files.voices.getVoiceByLanguage(
+                language,
+                gender,
+            ) != null
+        }
 
     private val _loadingProgress = MutableStateFlow<LoadingProgress>(LoadingProgress.Idle)
     val loadingProgress: Flow<LoadingProgress> = _loadingProgress.asStateFlow().sample(10)
@@ -107,11 +116,12 @@ class TextToSpeechViewModel(
 
     private val _loadMutex = Mutex()
 
-    private val downloadManager = DownloadManager<ExternalDataDownloadTask>(
-        context = context,
-        statusIntentAction = DOWNLOAD_EXTERNAL_DATA_STATUS_INTENT,
-        workerClass = DownloadExternalDataWorker::class.java,
-    )
+    private val downloadManager =
+        DownloadManager<ExternalDataDownloadTask>(
+            context = context,
+            statusIntentAction = DOWNLOAD_EXTERNAL_DATA_STATUS_INTENT,
+            workerClass = DownloadExternalDataWorker::class.java,
+        )
     val downloadTasks: StateFlow<List<ExternalDataDownloadTask>> =
         downloadManager.downloadTasks.asStateFlow()
 
@@ -120,18 +130,22 @@ class TextToSpeechViewModel(
     private val _synthesizeScope = CoroutineScope(Dispatchers.Default)
 
     private val _speechInference = MutableStateFlow(false)
-    private val _speechCallback = object : SynthReadyCallback {
-        override fun onSynthDataReady(audioData: ByteArray) {
-            _speechProgress.value = TextToSpeechSynthesisState.Synthesizing
-            audioPlayer.play(audioData)
+    private val _speechCallback =
+        object : SynthReadyCallback {
+            override fun onSynthDataReady(audioData: ByteArray) {
+                _speechProgress.value = TextToSpeechSynthesisState.Synthesizing
+                audioPlayer.play(audioData)
+            }
+
+            override fun onSynthDataComplete() {
+                _speechProgress.value = TextToSpeechSynthesisState.Idle
+            }
         }
 
-        override fun onSynthDataComplete() {
-            _speechProgress.value = TextToSpeechSynthesisState.Idle
-        }
-    }
-
-    suspend fun synthesize(text: String, language: Language) {
+    suspend fun synthesize(
+        text: String,
+        language: Language,
+    ) {
         try {
             if (voiceAvailable.first()) {
                 highDefinitionSynthesize(text, language)
@@ -145,7 +159,10 @@ class TextToSpeechViewModel(
         }
     }
 
-    private fun highDefinitionSynthesize(text: String, language: Language) {
+    private fun highDefinitionSynthesize(
+        text: String,
+        language: Language,
+    ) {
         val tokens = tokenizer.tokenize(text, language)
 
         _speechInference.value = true
@@ -175,7 +192,10 @@ class TextToSpeechViewModel(
         }
     }
 
-    private fun lowDefinitionSynthesize(text: String, language: Language) {
+    private fun lowDefinitionSynthesize(
+        text: String,
+        language: Language,
+    ) {
         val transliterated = transliterate(text, language)
 
         _synthesizeScope.launch {
@@ -248,29 +268,26 @@ class TextToSpeechViewModel(
     /**
      * Sets the speech rate.
      */
-    fun setSpeed(speed: Float): Job {
-        return viewModelScope.launch {
+    fun setSpeed(speed: Float): Job =
+        viewModelScope.launch {
             textToSpeechPreferenceRepository.setSpeed(speed)
         }
-    }
 
     /**
      * Sets the voice gender.
      */
-    fun setGender(gender: VoiceGender): Job {
-        return viewModelScope.launch {
+    fun setGender(gender: VoiceGender): Job =
+        viewModelScope.launch {
             textToSpeechPreferenceRepository.setGender(gender)
         }
-    }
 
     /**
      * Sets the thread count.
      */
-    fun setThreadCount(count: Int): Job {
-        return viewModelScope.launch {
+    fun setThreadCount(count: Int): Job =
+        viewModelScope.launch {
             textToSpeechPreferenceRepository.setThreadCount(count)
         }
-    }
 
     /**
      * Enables the text to speech feature by downloading the data.
@@ -280,7 +297,8 @@ class TextToSpeechViewModel(
             cancelDownload()
 
             textToSpeechPreferenceRepository.setTextToSpeechEnabled(true)
-            externalDataRepository.getDefinitions(DataType.TTS)
+            externalDataRepository
+                .getDefinitions(DataType.TTS)
                 .collect { definitions ->
                     if (definitions.isEmpty()) {
                         Timber.tag(TAG).e("No text to speech data definitions found")
@@ -313,14 +331,22 @@ class TextToSpeechViewModel(
      * Transliterate text using the appropriate transliterator. Currently only supports Japanese
      * as it requires Kanji to Hiragana conversion as ESpeakNG does not support Kanji.
      */
-    private fun transliterate(text: String, language: Language): String {
-        return when (language.locale) {
-            Locale.JAPANESE -> _japaneseTransliterator.convertToFurigana(text).replace("・", "")
-                .replace("ー", "")
+    private fun transliterate(
+        text: String,
+        language: Language,
+    ): String =
+        when (language.locale) {
+            Locale.JAPANESE -> {
+                _japaneseTransliterator
+                    .convertToFurigana(text)
+                    .replace("・", "")
+                    .replace("ー", "")
+            }
 
-            else -> text
+            else -> {
+                text
+            }
         }
-    }
 
     /**
      * Loads the voice model from given files.
@@ -347,7 +373,10 @@ class TextToSpeechViewModel(
     /**
      * Sets the voice from given files and language.
      */
-    private fun setVoice(files: VoiceWithModelFiles, language: Language) {
+    private fun setVoice(
+        files: VoiceWithModelFiles,
+        language: Language,
+    ) {
         cancelSynthesis()
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -443,14 +472,15 @@ class TextToSpeechViewModel(
     private fun queueDownload(
         name: String,
         definition: ExternalDataDefinition,
-        onComplete: (ExternalDataDefinition) -> Unit = {}
+        onComplete: (ExternalDataDefinition) -> Unit = {},
     ) {
-        val task = ExternalDataDownloadTask(
-            downloadName = name,
-            definition = definition,
-            status = DownloadStatus.Queued,
-            onComplete = onComplete
-        )
+        val task =
+            ExternalDataDownloadTask(
+                downloadName = name,
+                definition = definition,
+                status = DownloadStatus.Queued,
+                onComplete = onComplete,
+            )
         downloadManager.queueDownload(task)
     }
 

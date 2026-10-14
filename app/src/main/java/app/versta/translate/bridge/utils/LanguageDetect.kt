@@ -5,7 +5,7 @@ import timber.log.Timber
 data class LanguageDetectResult(
     val language: String,
     val isReliable: Boolean,
-    val confidence: Int
+    val confidence: Int,
 )
 
 class LanguageDetect : AutoCloseable {
@@ -18,9 +18,7 @@ class LanguageDetect : AutoCloseable {
         }
     }
 
-    fun detectLanguage(text: String): LanguageDetectResult? {
-        return detectLanguage(handle, text)
-    }
+    fun detectLanguage(text: String): LanguageDetectResult? = detectLanguage(handle, text)
 
     override fun close() {
         if (handle == 0L) {
@@ -33,7 +31,12 @@ class LanguageDetect : AutoCloseable {
     }
 
     private external fun construct(): Long
-    private external fun detectLanguage(handle: Long, text: String): LanguageDetectResult?
+
+    private external fun detectLanguage(
+        handle: Long,
+        text: String,
+    ): LanguageDetectResult?
+
     private external fun close(handle: Long): Boolean
 
     companion object {

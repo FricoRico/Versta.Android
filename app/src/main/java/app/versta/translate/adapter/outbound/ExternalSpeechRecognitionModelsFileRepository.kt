@@ -16,40 +16,42 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.io.InputStream
 
-class ExternalSpeechRecognitionModelsFileRepository(private val stream: InputStream) :
-    ExternalSpeechRecognitionModelsRepository {
+class ExternalSpeechRecognitionModelsFileRepository(
+    private val stream: InputStream,
+) : ExternalSpeechRecognitionModelsRepository {
     private val _loadingScope = CoroutineScope(Dispatchers.IO)
 
     private val _downloadableModels =
         MutableStateFlow<List<ExternalSpeechRecognitionModelDefinition>>(emptyList())
 
-    override fun getDefinitions(): Flow<List<ExternalSpeechRecognitionModelDefinition>> {
-        return _downloadableModels
-    }
+    override fun getDefinitions(): Flow<List<ExternalSpeechRecognitionModelDefinition>> = _downloadableModels
 
-    override fun getDefinition(id: String): Flow<ExternalSpeechRecognitionModelDefinition> {
-        return _downloadableModels.map { models -> models.first { it.id == id } }
-    }
+    override fun getDefinition(id: String): Flow<ExternalSpeechRecognitionModelDefinition> = _downloadableModels.map { models -> models.first { it.id == id } }
 
     override fun getDefinitionsByState(
         imported: Flow<List<SpeechRecognitionWithFiles>>,
-    ): Flow<ExternalSpeechRecognitionModels> {
-        return _downloadableModels.combine(imported) { models, installed ->
+    ): Flow<ExternalSpeechRecognitionModels> =
+        _downloadableModels.combine(imported) { models, installed ->
             ExternalSpeechRecognitionModels(
-                installed = models.mapNotNull { model ->
-                    installed.find { it.id == model.id && it.version == model.version }
-                        ?.let { ExternalSpeechRecognitionModelWithState(definition = model, extracted = it.size) }
-                },
-                updates = models.mapNotNull { model ->
-                    installed.find { it.id == model.id && it.version < model.version }
-                        ?.let { ExternalSpeechRecognitionModelWithState(definition = model, extracted = it.size) }
-                },
-                available = models.filter { model ->
-                    installed.none { it.id == model.id }
-                }.map { ExternalSpeechRecognitionModelWithState(definition = it) },
+                installed =
+                    models.mapNotNull { model ->
+                        installed
+                            .find { it.id == model.id && it.version == model.version }
+                            ?.let { ExternalSpeechRecognitionModelWithState(definition = model, extracted = it.size) }
+                    },
+                updates =
+                    models.mapNotNull { model ->
+                        installed
+                            .find { it.id == model.id && it.version < model.version }
+                            ?.let { ExternalSpeechRecognitionModelWithState(definition = model, extracted = it.size) }
+                    },
+                available =
+                    models
+                        .filter { model ->
+                            installed.none { it.id == model.id }
+                        }.map { ExternalSpeechRecognitionModelWithState(definition = it) },
             )
         }
-    }
 
     init {
         _loadingScope.launch {
@@ -70,6 +72,10 @@ class ExternalSpeechRecognitionModelsFileRepository(private val stream: InputStr
 
     companion object {
         @OptIn(ExperimentalSerializationApi::class)
-        private val _serializer = Json { ignoreUnknownKeys = true; decodeEnumsCaseInsensitive = true }
+        private val _serializer =
+            Json {
+                ignoreUnknownKeys = true
+                decodeEnumsCaseInsensitive = true
+            }
     }
 }

@@ -12,7 +12,11 @@ import androidx.compose.ui.text.withStyle
  * @param annotation The annotation to apply to the sentence.
  * @param style The style to apply to the annotation.
  */
-fun annotateSentence(sentence: String, annotation: String, style: SpanStyle): AnnotatedString {
+fun annotateSentence(
+    sentence: String,
+    annotation: String,
+    style: SpanStyle,
+): AnnotatedString {
     val startIndex = sentence.indexOf(annotation)
     val endIndex = startIndex + annotation.length
 

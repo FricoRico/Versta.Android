@@ -11,22 +11,27 @@ internal const val SAMPLE_RATE = 24000
 class AudioTrackPlayer : AudioPlayer {
     private val channelMask = CHANNEL_OUT_MONO
     private val encoding = AudioFormat.ENCODING_PCM_16BIT
-    private val _audioTrack = AudioTrack.Builder().apply {
-        setAudioAttributes(
-            android.media.AudioAttributes.Builder()
-                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
-                .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                .build()
-        )
-        setAudioFormat(
-            AudioFormat.Builder()
-                .setEncoding(encoding)
-                .setSampleRate(SAMPLE_RATE)
-                .setChannelMask(channelMask)
-                .build()
-        )
-        setBufferSizeInBytes(AudioTrack.getMinBufferSize(SAMPLE_RATE, channelMask, encoding))
-    }.build()
+    private val _audioTrack =
+        AudioTrack
+            .Builder()
+            .apply {
+                setAudioAttributes(
+                    android.media.AudioAttributes
+                        .Builder()
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                        .build(),
+                )
+                setAudioFormat(
+                    AudioFormat
+                        .Builder()
+                        .setEncoding(encoding)
+                        .setSampleRate(SAMPLE_RATE)
+                        .setChannelMask(channelMask)
+                        .build(),
+                )
+                setBufferSizeInBytes(AudioTrack.getMinBufferSize(SAMPLE_RATE, channelMask, encoding))
+            }.build()
 
     /**
      * Plays the audio file at the given path.

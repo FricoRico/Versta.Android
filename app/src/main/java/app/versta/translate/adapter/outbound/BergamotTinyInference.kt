@@ -1,8 +1,8 @@
 package app.versta.translate.adapter.outbound
 
-import app.versta.translate.bridge.leanmt.TranslationEngine
 import app.versta.translate.bridge.leanmt.LeanmtModelConfig
 import app.versta.translate.bridge.leanmt.LeanmtPackage
+import app.versta.translate.bridge.leanmt.TranslationEngine
 import app.versta.translate.core.entity.LanguageModelConfiguration
 import app.versta.translate.core.entity.LanguageModelFiles
 
@@ -20,7 +20,11 @@ class BergamotTinyInference(
 ) : TranslationInference {
     private var _loadedKey: String? = null
 
-    override fun translate(text: String, maxBeamWidth: Int, maxSequenceLength: Int): String {
+    override fun translate(
+        text: String,
+        maxBeamWidth: Int,
+        maxSequenceLength: Int,
+    ): String {
         if (text.isBlank()) {
             return ""
         }
@@ -33,36 +37,42 @@ class BergamotTinyInference(
             return ""
         }
 
-        return engine.translate(
-            paragraphs.toTypedArray(),
-            maxBeamWidth.toLong(),
-            maxSequenceLength.toLong(),
-        ).joinToString("\n")
+        return engine
+            .translate(
+                paragraphs.toTypedArray(),
+                maxBeamWidth.toLong(),
+                maxSequenceLength.toLong(),
+            ).joinToString("\n")
     }
 
     override fun cancel() {
         return
     }
 
-    override fun load(files: LanguageModelFiles, config: LanguageModelConfiguration) {
+    override fun load(
+        files: LanguageModelFiles,
+        config: LanguageModelConfiguration,
+    ) {
         val key = files.model.toString()
         if (key == _loadedKey) {
             return
         }
 
-        val pkg = LeanmtPackage(
-            files.model.toString(),
-            files.vocabulary.toString(),
-            files.targetVocabulary?.toString() ?: "",
-            files.shortlist.toString(),
-        )
+        val pkg =
+            LeanmtPackage(
+                files.model.toString(),
+                files.vocabulary.toString(),
+                files.targetVocabulary?.toString() ?: "",
+                files.shortlist.toString(),
+            )
 
-        val modelConfig = LeanmtModelConfig(
-            config.encoderLayers,
-            config.decoderLayers,
-            config.ffnDepth,
-            config.numHeads
-        )
+        val modelConfig =
+            LeanmtModelConfig(
+                config.encoderLayers,
+                config.decoderLayers,
+                config.ffnDepth,
+                config.numHeads,
+            )
 
         engine.loadModel(pkg, modelConfig)
         _loadedKey = key

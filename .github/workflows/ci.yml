@@ -1,0 +1,139 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+# One active run per ref: retriggering or pushing again cancels the stale run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write # upload-artifact on failure
+
+env:
+  JAVA_VERSION: "17"
+
+jobs:
+  # Kotlin formatting (ktlint) + static analysis (detekt).
+  static-analysis:
+    name: static-analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      # AGP needs SDK location even for pure Kotlin checks.
+      # setup-android v3 defaults to installing the legacy `tools` package,
+      # which Google has removed from the SDK repository manifests; skip it
+      # (packages: "") and install exactly what we need in the next step.
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ""
+
+      - name: Install platform and build-tools
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: ktlint
+        run: ./gradlew :app:ktlintCheck --console=plain
+
+      - name: detekt
+        run: ./gradlew :app:detekt --console=plain
+
+      - name: Upload detekt report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detekt-report
+          path: "**/build/reports/detekt/*.sarif"
+          if-no-files-found: ignore
+
+  # Android lint on a single ABI flavor (findings are ABI-independent).
+  android-lint:
+    name: android-lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ""
+
+      - name: Install platform and build-tools
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: lint
+        run: ./gradlew :app:lintArm64-v8aDebug --console=plain
+
+      - name: Upload lint report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: "**/build/reports/lint-results-*"
+          if-no-files-found: ignore
+
+  # Proves the full toolchain (Kotlin + CMake native build) compiles.
+  # Heavy (~20+ min cold): the native inference bridge is built from the git
+  # submodules. The per-flavour abiFilters in app/build.gradle.kts scope this
+  # to one architecture; without it every assemble builds all four ABIs.
+  # Kept as a gate so broken native builds never reach develop.
+  assemble:
+    name: assemble
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ""
+
+      - name: Install NDK, CMake, platform and build-tools
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Assemble debug (arm64-v8a)
+        run: ./gradlew :app:assembleArm64-v8aDebug --console=plain

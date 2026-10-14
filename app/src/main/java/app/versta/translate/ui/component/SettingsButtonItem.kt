@@ -33,7 +33,7 @@ import app.versta.translate.utils.darken
 import app.versta.translate.utils.lighten
 
 object SettingsDefaults {
-    const val DefaultDisabledAlpha = 0.38f
+    const val DEFAULT_DISABLED_ALPHA = 0.38f
 
     @Composable
     fun colors(
@@ -43,9 +43,9 @@ object SettingsDefaults {
         leadingIconColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
         overlineColor: Color = leadingIconColor,
         trailingIconColor: Color = leadingIconColor,
-        disabledHeadlineColor: Color = headlineColor.copy(DefaultDisabledAlpha),
+        disabledHeadlineColor: Color = headlineColor.copy(DEFAULT_DISABLED_ALPHA),
         disabledLeadingIconColor: Color = disabledHeadlineColor,
-        disabledTrailingIconColor: Color = disabledHeadlineColor
+        disabledTrailingIconColor: Color = disabledHeadlineColor,
     ) = ListItemDefaults.colors(
         containerColor = containerColor,
         headlineColor = headlineColor,
@@ -66,7 +66,7 @@ object SettingsDefaults {
         leadingIconColor: Color = MaterialTheme.colorScheme.inverseOnSurface.lighten(0.3f),
         overlineColor: Color = leadingIconColor,
         trailingIconColor: Color = leadingIconColor,
-        disabledHeadlineColor: Color = headlineColor.copy(DefaultDisabledAlpha),
+        disabledHeadlineColor: Color = headlineColor.copy(DEFAULT_DISABLED_ALPHA),
         disabledLeadingIconColor: Color = disabledHeadlineColor,
         disabledTrailingIconColor: Color = disabledHeadlineColor,
     ) = ListItemDefaults.colors(
@@ -89,7 +89,7 @@ object SettingsDefaults {
         leadingIconColor: Color = MaterialTheme.colorScheme.onPrimary.darken(0.2f),
         overlineColor: Color = leadingIconColor,
         trailingIconColor: Color = leadingIconColor,
-        disabledHeadlineColor: Color = headlineColor.copy(DefaultDisabledAlpha),
+        disabledHeadlineColor: Color = headlineColor.copy(DEFAULT_DISABLED_ALPHA),
         disabledLeadingIconColor: Color = disabledHeadlineColor,
         disabledTrailingIconColor: Color = disabledHeadlineColor,
     ) = ListItemDefaults.colors(
@@ -112,7 +112,7 @@ object SettingsDefaults {
         leadingIconColor: Color = MaterialTheme.colorScheme.onSecondary.lighten(0.2f),
         overlineColor: Color = leadingIconColor,
         trailingIconColor: Color = leadingIconColor,
-        disabledHeadlineColor: Color = headlineColor.copy(DefaultDisabledAlpha),
+        disabledHeadlineColor: Color = headlineColor.copy(DEFAULT_DISABLED_ALPHA),
         disabledLeadingIconColor: Color = disabledHeadlineColor,
         disabledTrailingIconColor: Color = disabledHeadlineColor,
     ) = ListItemDefaults.colors(
@@ -135,7 +135,7 @@ object SettingsDefaults {
         leadingIconColor: Color = MaterialTheme.colorScheme.onTertiary.lighten(0.2f),
         overlineColor: Color = leadingIconColor,
         trailingIconColor: Color = leadingIconColor,
-        disabledHeadlineColor: Color = headlineColor.copy(DefaultDisabledAlpha),
+        disabledHeadlineColor: Color = headlineColor.copy(DEFAULT_DISABLED_ALPHA),
         disabledLeadingIconColor: Color = disabledHeadlineColor,
         disabledTrailingIconColor: Color = disabledHeadlineColor,
     ) = ListItemDefaults.colors(
@@ -149,7 +149,6 @@ object SettingsDefaults {
         disabledLeadingIconColor = disabledLeadingIconColor,
         disabledTrailingIconColor = disabledTrailingIconColor,
     )
-
 }
 
 @Composable
@@ -162,11 +161,12 @@ fun SettingsButtonItem(
     leadingContent: @Composable (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
     underlineContent: @Composable (() -> Unit)? = null,
-    underlineContentPadding: PaddingValues = PaddingValues(
-        start = MaterialTheme.spacing.large,
-        end = MaterialTheme.spacing.large,
-        bottom = MaterialTheme.spacing.large
-    ),
+    underlineContentPadding: PaddingValues =
+        PaddingValues(
+            start = MaterialTheme.spacing.large,
+            end = MaterialTheme.spacing.large,
+            bottom = MaterialTheme.spacing.large,
+        ),
     colors: ListItemColors = SettingsDefaults.colors(),
     tonalElevation: Dp = ListItemDefaults.Elevation,
     shadowElevation: Dp = ListItemDefaults.Elevation,
@@ -211,11 +211,12 @@ fun SettingsButtonItem(
     leadingContent: @Composable (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
     underlineContent: @Composable (() -> Unit)? = null,
-    underlineContentPadding: PaddingValues = PaddingValues(
-        start = MaterialTheme.spacing.large,
-        end = MaterialTheme.spacing.large,
-        bottom = MaterialTheme.spacing.large
-    ),
+    underlineContentPadding: PaddingValues =
+        PaddingValues(
+            start = MaterialTheme.spacing.large,
+            end = MaterialTheme.spacing.large,
+            bottom = MaterialTheme.spacing.large,
+        ),
     colors: ListItemColors = SettingsDefaults.colors(),
     tonalElevation: Dp = ListItemDefaults.Elevation,
     shadowElevation: Dp = ListItemDefaults.Elevation,
@@ -226,12 +227,13 @@ fun SettingsButtonItem(
     val isFirstItem = remember { index == 0 }
     val isLastItem = remember { index == groupSize - 1 }
 
-    val borderRadius = RoundedCornerShape(
-        topStart = if (isFirstItem) MaterialTheme.shapes.extraLarge.topStart else MaterialTheme.shapes.small.topStart,
-        topEnd = if (isFirstItem) MaterialTheme.shapes.extraLarge.topEnd else MaterialTheme.shapes.small.topEnd,
-        bottomStart = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomStart else MaterialTheme.shapes.small.bottomStart,
-        bottomEnd = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomEnd else MaterialTheme.shapes.small.bottomEnd,
-    )
+    val borderRadius =
+        RoundedCornerShape(
+            topStart = if (isFirstItem) MaterialTheme.shapes.extraLarge.topStart else MaterialTheme.shapes.small.topStart,
+            topEnd = if (isFirstItem) MaterialTheme.shapes.extraLarge.topEnd else MaterialTheme.shapes.small.topEnd,
+            bottomStart = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomStart else MaterialTheme.shapes.small.bottomStart,
+            bottomEnd = if (isLastItem) MaterialTheme.shapes.extraLarge.bottomEnd else MaterialTheme.shapes.small.bottomEnd,
+        )
 
     val topPadding =
         if (!isFirstItem) MaterialTheme.spacing.hairline else MaterialTheme.spacing.none
@@ -239,10 +241,11 @@ fun SettingsButtonItem(
     if (onSwipeToDelete != null) {
         SwipeDelete(
             onSwipeToDeleteRequested = onSwipeToDelete,
-            modifier = Modifier
-                .padding(top = topPadding)
-                .clip(borderRadius)
-                .then(modifier),
+            modifier =
+                Modifier
+                    .padding(top = topPadding)
+                    .clip(borderRadius)
+                    .then(modifier),
         ) {
             SettingsButtonItemContent(
                 headlineContent = headlineContent,
@@ -260,10 +263,11 @@ fun SettingsButtonItem(
         }
     } else {
         Box(
-            modifier = Modifier
-                .padding(top = topPadding)
-                .clip(borderRadius)
-                .then(modifier),
+            modifier =
+                Modifier
+                    .padding(top = topPadding)
+                    .clip(borderRadius)
+                    .then(modifier),
         ) {
             SettingsButtonItemContent(
                 headlineContent = headlineContent,
@@ -294,34 +298,37 @@ private fun SettingsButtonItemContent(
     colors: ListItemColors,
     tonalElevation: Dp,
     shadowElevation: Dp,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     Surface(
         color = if (enabled) colors.containerColor else colors.containerColor.darken(0.1f),
         contentColor = if (enabled) colors.headlineColor else colors.disabledHeadlineColor,
         tonalElevation = tonalElevation,
         shadowElevation = shadowElevation,
-        modifier = Modifier
-            .then(if (onClick != null && enabled) Modifier.clickable { onClick() } else Modifier),
+        modifier =
+            Modifier
+                .then(if (onClick != null && enabled) Modifier.clickable { onClick() } else Modifier),
     ) {
         Column(
-            modifier = Modifier
-                .defaultMinSize(minHeight = 96.dp)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(
-                MaterialTheme.spacing.medium,
-                Alignment.CenterVertically
-            ),
+            modifier =
+                Modifier
+                    .defaultMinSize(minHeight = 96.dp)
+                    .fillMaxWidth(),
+            verticalArrangement =
+                Arrangement.spacedBy(
+                    MaterialTheme.spacing.medium,
+                    Alignment.CenterVertically,
+                ),
         ) {
             Row(
-                modifier = Modifier
-                    .padding(
-                        top = MaterialTheme.spacing.large,
-                        bottom = if (underlineContent != null) 0.dp else MaterialTheme.spacing.large,
-                    )
-                    .padding(
-                        horizontal = MaterialTheme.spacing.large,
-                    ),
+                modifier =
+                    Modifier
+                        .padding(
+                            top = MaterialTheme.spacing.large,
+                            bottom = if (underlineContent != null) 0.dp else MaterialTheme.spacing.large,
+                        ).padding(
+                            horizontal = MaterialTheme.spacing.large,
+                        ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
             ) {
@@ -354,9 +361,10 @@ private fun SettingsButtonItemContent(
 
             if (underlineContent != null) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(underlineContentPadding),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(underlineContentPadding),
                 ) {
                     underlineContent()
                 }

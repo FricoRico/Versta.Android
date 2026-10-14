@@ -8,7 +8,6 @@ import org.junit.Test
 // JNI lifecycle guards. No model files are involved — a usable leanmt Model
 // bundle cannot be fabricated without downloaded artifacts.
 class LeanmtTest {
-
     @Test
     fun create_withCacheSizeZero_succeeds() {
         Leanmt(0L).close()
