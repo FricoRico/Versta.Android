@@ -115,8 +115,11 @@ jobs:
           # launch smoke reinstalls it. The suite result always wins the exit
           # code; a fatal crash in the smoke launch also fails the run.
           script: |
-            ./gradlew :app:connectedX86_64DebugAndroidTest --console=plain --stacktrace
-            TEST_EXIT=$?
+            # The runner executes this with sh -e; the `|| TEST_EXIT=$?`
+            # form keeps the smoke evidence collection alive when the
+            # suite itself fails.
+            TEST_EXIT=0
+            ./gradlew :app:connectedX86_64DebugAndroidTest --console=plain --stacktrace || TEST_EXIT=$?
             mkdir -p smoke-out
             APK=$(ls app/build/outputs/apk/${ABI_FLAVOR}/debug/*.apk 2>/dev/null | head -1)
             if [ -n "$APK" ]; then
