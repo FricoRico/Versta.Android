@@ -105,7 +105,8 @@ class StyleTextToSpeechInference(
     ) {
         close()
 
-        val modelFile = File(files.model.pathString)
+        val model = requireNotNull(files.model) { "StyleTTS2 model file missing" }
+        val modelFile = File(model.pathString)
         val options =
             OrtSession.SessionOptions().apply {
                 addXnnpack(mapOf("intra_op_num_threads" to threads.toString()))
