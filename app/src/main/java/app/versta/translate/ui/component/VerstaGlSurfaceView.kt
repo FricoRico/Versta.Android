@@ -6,7 +6,6 @@ import android.opengl.EGL14
 import android.opengl.GLUtils
 import android.opengl.EGLConfig
 import android.opengl.EGLContext
-import android.opengl.EGLDisplay
 import android.opengl.EGLSurface
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
@@ -63,6 +62,10 @@ class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolde
 
     fun setSurfaceRequest(request: SurfaceRequest, executor: Executor) {
         synchronized(reconciliationLock) {
+            // Recomposition re-invokes us with the same request: providing and
+            // re-listening pile duplicate cancellation listeners onto one
+            // SurfaceRequest. Only a genuinely new request proceeds.
+            if (providedRequest === request || pendingRequest === request) return
             request.addRequestCancellationListener(executor) {
                 synchronized(reconciliationLock) {
                     if (pendingRequest === request) pendingRequest = null
