@@ -56,12 +56,13 @@ class AudioExtensionsTest {
 
     @Test
     fun spectrumBands_sine_peaksInVocalBandOnly() {
-        // A 440 Hz fundamental lives in band 2 of 8 log-spaced bands over 80 Hz - 8 kHz.
+        // 12 log-spaced bands cover 40 Hz - 8 kHz (VOCAL_LOW_HZ to Nyquist);
+        // a 440 Hz fundamental lives in band 5 (~364-566 Hz).
         val bands = sine(440f, 512).fftMagnitudes().spectrumBands(sampleRate = 16000)
 
         val peakBand = bands.indices.maxBy { bands[it] }
 
-        assertTrue("peak band $peakBand should be near band 2", peakBand in 2..3)
+        assertTrue("peak band $peakBand should be near band 5", peakBand in 5..6)
         assertTrue(bands[peakBand] > 0.5f)
         // A band far away (high end) stays silent despite tilt gain.
         assertTrue(bands[SPECTRUM_BAND_COUNT - 1] < 0.1f)
@@ -70,7 +71,7 @@ class AudioExtensionsTest {
     @Test
     fun spectrumBands_midLevelSine_gammaLiftsMidrange() {
         // Amplitude 0.1 sine: peak magnitude ~0.025 ≈ -32 dBFS → raw level 0.36,
-        // gamma-lifted to ~0.49, tilt-boosted (band 2 of 8) to ~0.57.
+        // gamma-lifted to ~0.49, tilt-boosted (band 5 of 12) to ~0.57.
         val bands = sine(440f, 512, amplitude = 0.1f).fftMagnitudes().spectrumBands(sampleRate = 16000)
 
         val peakBand = bands.indices.maxBy { bands[it] }

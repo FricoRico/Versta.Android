@@ -45,10 +45,24 @@ jobs:
       - name: Install platform and build-tools
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
+      # The MNN submodule vendors third-party Gradle wrapper jars (e.g.
+      # mnn/3rd_party/flatbuffers/samples/android) that are absent from the
+      # checksum database used by setup-gradle's built-in validation and are
+      # never executed by this build. Validation is therefore pinned to the
+      # root wrapper, which is the only jar that bootstraps this project.
+      # When regenerating the wrapper (`gradle wrapper --gradle-version X`),
+      # update WRAPPER_JAR_SHA256 to the new official checksum.
+      - name: Validate root Gradle Wrapper
+        env:
+          WRAPPER_JAR_SHA256: e996d452d2645e70c01c11143ca2d3742734a28da2bf61f25c82bdc288c9e637
+        run: |
+          echo "$WRAPPER_JAR_SHA256  gradle/wrapper/gradle-wrapper.jar" | sha256sum --check -
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: false
+          validate-wrappers: false
 
       - name: ktlint
         run: ./gradlew :app:ktlintCheck --console=plain
@@ -90,6 +104,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: false
+          validate-wrappers: false
 
       - name: lint
         run: ./gradlew :app:lintArm64-v8aDebug --console=plain
