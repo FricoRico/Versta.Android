@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lint>
     <issue id="ViewModelConstructorInComposable" severity="ignore" />
+    <!-- CameraTranslationViewModel deliberately drives Camera2 legacy video
+         stabilization through the camera2 interop; the @OptIn-annotated call
+         sites carry the compiler opt-in, and lint does not pick Kotlin @OptIn
+         up for UnsafeOptInUsageError — opt in project-wide per the check's
+         own configuration guidance. -->
+    <issue id="UnsafeOptInUsageError">
+        <option
+            name="opt-in"
+            value="androidx.camera.camera2.interop.ExperimentalCamera2Interop" />
+    </issue>
 </lint>

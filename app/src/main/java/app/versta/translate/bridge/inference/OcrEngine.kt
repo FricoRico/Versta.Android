@@ -14,32 +14,50 @@ class OcrEngine : AutoCloseable {
 
     init {
         _handle = construct()
-        if (_handle == 0L) {
-            throw RuntimeException("Failed to initialize OcrEngine")
-        }
+        check(_handle != 0L) { "Failed to initialize OcrEngine" }
     }
 
     private external fun construct(): Long
+
     private external fun close(handle: Long): Boolean
 
-    private external fun setDetector(handle: Long, modelPath: String, threads: Int): Boolean
+    private external fun setDetector(
+        handle: Long,
+        modelPath: String,
+        threads: Int,
+    ): Boolean
 
     /**
      * @param routes One recognizer key per PULC script class for auto routing
      * (order: arabic, chinese, cyrillic, devanagari, japanese, kannada, korean,
      * tamil, telugu, latin); empty string = no recognizer for that class.
      */
-    private external fun setScriptClassifier(handle: Long, modelPath: String, routes: Array<String>): Boolean
+    private external fun setScriptClassifier(
+        handle: Long,
+        modelPath: String,
+        routes: Array<String>,
+    ): Boolean
 
-    private external fun setGlyphMatte(handle: Long, modelPath: String): Boolean
+    private external fun setGlyphMatte(
+        handle: Long,
+        modelPath: String,
+    ): Boolean
 
-    private external fun setAligner(handle: Long, modelPath: String): Boolean
+    private external fun setAligner(
+        handle: Long,
+        modelPath: String,
+    ): Boolean
 
     /**
      * Registers a recognizer under [key] (its module directory name). The
      * model is loaded lazily on first use.
      */
-    private external fun addRecognizer(handle: Long, key: String, modelPath: String, vocabPath: String): Boolean
+    private external fun addRecognizer(
+        handle: Long,
+        key: String,
+        modelPath: String,
+        vocabPath: String,
+    ): Boolean
 
     private external fun analyze(
         handle: Long,
@@ -48,7 +66,7 @@ class OcrEngine : AutoCloseable {
         inputHeight: Int,
         rotationDegrees: Int,
         profile: Int,
-        forcedRecognizer: String?
+        forcedRecognizer: String?,
     ): Array<OcrDetectedLine>?
 
     /**
@@ -61,7 +79,7 @@ class OcrEngine : AutoCloseable {
         input: Buffer,
         inputWidth: Int,
         inputHeight: Int,
-        rotationDegrees: Int
+        rotationDegrees: Int,
     ): FloatArray?
 
     /**
@@ -70,17 +88,25 @@ class OcrEngine : AutoCloseable {
      */
     private external fun liveContent(handle: Long): Array<OcrDetectedLine>?
 
-    fun setDetector(modelPath: String, threads: Int): Boolean = setDetector(_handle, modelPath, threads)
+    fun setDetector(
+        modelPath: String,
+        threads: Int,
+    ): Boolean = setDetector(_handle, modelPath, threads)
 
-    fun setScriptClassifier(modelPath: String, routes: Array<String>): Boolean =
-        setScriptClassifier(_handle, modelPath, routes)
+    fun setScriptClassifier(
+        modelPath: String,
+        routes: Array<String>,
+    ): Boolean = setScriptClassifier(_handle, modelPath, routes)
 
     fun setGlyphMatte(modelPath: String): Boolean = setGlyphMatte(_handle, modelPath)
 
     fun setAligner(modelPath: String): Boolean = setAligner(_handle, modelPath)
 
-    fun addRecognizer(key: String, modelPath: String, vocabPath: String): Boolean =
-        addRecognizer(_handle, key, modelPath, vocabPath)
+    fun addRecognizer(
+        key: String,
+        modelPath: String,
+        vocabPath: String,
+    ): Boolean = addRecognizer(_handle, key, modelPath, vocabPath)
 
     /**
      * Runs the full pipeline over one RGBA frame.
@@ -96,14 +122,14 @@ class OcrEngine : AutoCloseable {
         inputHeight: Int,
         rotationDegrees: Int,
         profile: Int,
-        forcedRecognizer: String?
+        forcedRecognizer: String?,
     ): Array<OcrDetectedLine>? = analyze(_handle, input, inputWidth, inputHeight, rotationDegrees, profile, forcedRecognizer)
 
     fun tick(
         input: Buffer,
         inputWidth: Int,
         inputHeight: Int,
-        rotationDegrees: Int = 0
+        rotationDegrees: Int = 0,
     ): FloatArray? {
         if (_handle == 0L) return null
         return tick(_handle, input, inputWidth, inputHeight, rotationDegrees)
@@ -126,7 +152,11 @@ class OcrEngine : AutoCloseable {
         rotationDegrees: Int,
     ): Boolean
 
-    fun probeLive(input: Buffer, inputWidth: Int, inputHeight: Int): Boolean {
+    fun probeLive(
+        input: Buffer,
+        inputWidth: Int,
+        inputHeight: Int,
+    ): Boolean {
         if (_handle == 0L) return false
         return probeLive(_handle, input, inputWidth, inputHeight, 0)
     }

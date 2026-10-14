@@ -16,7 +16,9 @@ import kotlin.io.path.pathString
  * models); [load] recreates it, so bundle swaps never leave native state
  * behind.
  */
-class MnnObjectCharacterRecognition : ObjectCharacterRecognitionInference, AutoCloseable {
+class MnnObjectCharacterRecognition :
+    ObjectCharacterRecognitionInference,
+    AutoCloseable {
     private var _engine: OcrEngine? = OcrEngine()
 
     private var _bundleId: String? = null
@@ -24,7 +26,10 @@ class MnnObjectCharacterRecognition : ObjectCharacterRecognitionInference, AutoC
     @Volatile
     private var _loaded = false
 
-    override fun load(bundle: ObjectCharacterRecognitionBundleWithFiles, threads: Int) {
+    override fun load(
+        bundle: ObjectCharacterRecognitionBundleWithFiles,
+        threads: Int,
+    ) {
         if (_bundleId == bundle.id && _loaded) {
             return
         }
@@ -33,18 +38,20 @@ class MnnObjectCharacterRecognition : ObjectCharacterRecognitionInference, AutoC
         val engine = OcrEngine()
         _engine = engine
 
-        val detector = bundle.module(ObjectCharacterRecognitionModule.Detector)
-            ?: throw IllegalStateException("OCR bundle ${bundle.id} has no detector module")
+        val detector =
+            bundle.module(ObjectCharacterRecognitionModule.Detector)
+                ?: error("OCR bundle ${bundle.id} has no detector module")
 
         // The half-resolution det head is exact and ~2x faster; the full head
         // is only worth it on still captures at extreme resolutions.
-        val detectorFile = detector.files.firstOrNull { it.inference.contains("_half_") }
-            ?: detector.files.firstOrNull()
-        detectorFile ?: throw IllegalStateException("OCR detector module has no model file")
+        val detectorFile =
+            detector.files.firstOrNull { it.inference.contains("_half_") }
+                ?: detector.files.firstOrNull()
+        detectorFile ?: error("OCR detector module has no model file")
 
         engine.setDetector(
             detector.inferencePath(detectorFile).pathString,
-            threads
+            threads,
         )
 
         bundle.module(ObjectCharacterRecognitionModule.ScriptClassifier)?.let { module ->
@@ -63,12 +70,13 @@ class MnnObjectCharacterRecognition : ObjectCharacterRecognitionInference, AutoC
 
         bundle.recognizers().forEach { module ->
             module.preferredFile()?.let { file ->
-                val vocab = module.vocabPath(file)
-                    ?: throw IllegalStateException("OCR recognizer ${module.id} has no vocab file")
+                val vocab =
+                    module.vocabPath(file)
+                        ?: error("OCR recognizer ${module.id} has no vocab file")
                 engine.addRecognizer(
                     module.path.fileName.toString(),
                     module.inferencePath(file).pathString,
-                    vocab.pathString
+                    vocab.pathString,
                 )
             }
         }
@@ -77,20 +85,26 @@ class MnnObjectCharacterRecognition : ObjectCharacterRecognitionInference, AutoC
         _loaded = true
     }
 
-    override fun analyzeLive(input: ByteBuffer, width: Int, height: Int, forcedRecognizer: String?): OcrAnalysisResult {
-        if (!_loaded) {
-            throw IllegalStateException("OCR engine is not loaded")
-        }
+    override fun analyzeLive(
+        input: ByteBuffer,
+        width: Int,
+        height: Int,
+        forcedRecognizer: String?,
+    ): OcrAnalysisResult {
+        check(_loaded) { "OCR engine is not loaded" }
 
-        val engine = _engine ?: throw IllegalStateException("OCR engine is closed")
-        val lines = engine.analyze(
-            input,
-            width,
-            height,
-            /* rotationDegrees */ 0,
-            /* profile */ PROFILE_LIVE,
-            forcedRecognizer
-        ) ?: emptyArray()
+        val engine = _engine ?: error("OCR engine is closed")
+        val lines =
+            engine.analyze(
+                input,
+                width,
+                height,
+                // rotationDegrees
+                0,
+                // profile
+                PROFILE_LIVE,
+                forcedRecognizer,
+            ) ?: emptyArray()
 
         return OcrAnalysisResult(
             lines = lines.map { it.toLineResult() },
@@ -99,7 +113,11 @@ class MnnObjectCharacterRecognition : ObjectCharacterRecognitionInference, AutoC
         )
     }
 
-    override fun tickLive(input: ByteBuffer, width: Int, height: Int): ObjectCharacterRecognitionInference.LiveTick? {
+    override fun tickLive(
+        input: ByteBuffer,
+        width: Int,
+        height: Int,
+    ): ObjectCharacterRecognitionInference.LiveTick? {
         if (!_loaded) return null
 
         val engine = _engine ?: return null
@@ -111,7 +129,10 @@ class MnnObjectCharacterRecognition : ObjectCharacterRecognitionInference, AutoC
         )
     }
 
-    override fun pullLiveContent(width: Int, height: Int): OcrAnalysisResult? {
+    override fun pullLiveContent(
+        width: Int,
+        height: Int,
+    ): OcrAnalysisResult? {
         if (!_loaded) return null
 
         val lines = (_engine ?: return null).liveContent() ?: return null
@@ -122,35 +143,46 @@ class MnnObjectCharacterRecognition : ObjectCharacterRecognitionInference, AutoC
         )
     }
 
-    override fun analyzeStill(input: ByteBuffer, width: Int, height: Int, rotationDegrees: Int, forcedRecognizer: String?): OcrAnalysisResult {
-        if (!_loaded) {
-            throw IllegalStateException("OCR engine is not loaded")
-        }
+    override fun analyzeStill(
+        input: ByteBuffer,
+        width: Int,
+        height: Int,
+        rotationDegrees: Int,
+        forcedRecognizer: String?,
+    ): OcrAnalysisResult {
+        check(_loaded) { "OCR engine is not loaded" }
 
-        val engine = _engine ?: throw IllegalStateException("OCR engine is closed")
-        val lines = engine.analyze(
-            input,
-            width,
-            height,
-            rotationDegrees,
-            /* profile */ PROFILE_STILL,
-            forcedRecognizer
-        ) ?: emptyArray()
+        val engine = _engine ?: error("OCR engine is closed")
+        val lines =
+            engine.analyze(
+                input,
+                width,
+                height,
+                rotationDegrees,
+                // profile
+                PROFILE_STILL,
+                forcedRecognizer,
+            ) ?: emptyArray()
 
-        val (frameWidth, frameHeight) = if (rotationDegrees == 90 || rotationDegrees == 270) {
-            height to width
-        } else {
-            width to height
-        }
+        val (frameWidth, frameHeight) =
+            if (rotationDegrees == 90 || rotationDegrees == 270) {
+                height to width
+            } else {
+                width to height
+            }
 
         return OcrAnalysisResult(
             lines = lines.map { it.toLineResult() },
             width = frameWidth,
-            height = frameHeight
+            height = frameHeight,
         )
     }
 
-    override fun probeLive(input: ByteBuffer, width: Int, height: Int) {
+    override fun probeLive(
+        input: ByteBuffer,
+        width: Int,
+        height: Int,
+    ) {
         if (!_loaded) return
         _engine?.probeLive(input, width, height)
     }
@@ -174,8 +206,7 @@ class MnnObjectCharacterRecognition : ObjectCharacterRecognitionInference, AutoC
     }
 }
 
-private fun ObjectCharacterRecognitionModuleWithFiles.preferredFile() =
-    files.maxByOrNull { it.priority }
+private fun ObjectCharacterRecognitionModuleWithFiles.preferredFile() = files.maxByOrNull { it.priority }
 
 /**
  * Maps each PULC script class (in the model's fixed output order) to the
@@ -185,18 +216,29 @@ private fun ObjectCharacterRecognitionModuleWithFiles.preferredFile() =
  */
 private fun scriptRoutes(bundle: ObjectCharacterRecognitionBundleWithFiles): Array<String> {
     val dirs = bundle.recognizers().map { it.path.fileName.toString() }
+
     fun find(predicate: (String) -> Boolean) = dirs.firstOrNull(predicate) ?: ""
 
     return arrayOf(
-        /* arabic     */ find { it.startsWith("arabic_") },
-        /* chinese    */ dirs.firstOrNull { it.contains("small_rec") } ?: find { it == "PP-OCRv5_mobile_rec" },
-        /* cyrillic   */ find { it.startsWith("cyrillic_") }.ifEmpty { find { it.startsWith("eslav_") } },
-        /* devanagari */ find { it.startsWith("devanagari_") },
-        /* japanese   */ dirs.firstOrNull { it.contains("small_rec") } ?: find { it == "PP-OCRv5_mobile_rec" },
-        /* kannada    */ find { it.startsWith("indic") },
-        /* korean     */ find { it.startsWith("korean_") },
-        /* tamil      */ find { it.startsWith("ta_") },
-        /* telugu     */ find { it.startsWith("te_") },
-        /* latin      */ dirs.firstOrNull { it.contains("tiny_rec") } ?: find { it.startsWith("latin_") }
+        // arabic
+        find { it.startsWith("arabic_") },
+        // chinese
+        dirs.firstOrNull { it.contains("small_rec") } ?: find { it == "PP-OCRv5_mobile_rec" },
+        // cyrillic
+        find { it.startsWith("cyrillic_") }.ifEmpty { find { it.startsWith("eslav_") } },
+        // devanagari
+        find { it.startsWith("devanagari_") },
+        // japanese
+        dirs.firstOrNull { it.contains("small_rec") } ?: find { it == "PP-OCRv5_mobile_rec" },
+        // kannada
+        find { it.startsWith("indic") },
+        // korean
+        find { it.startsWith("korean_") },
+        // tamil
+        find { it.startsWith("ta_") },
+        // telugu
+        find { it.startsWith("te_") },
+        // latin
+        dirs.firstOrNull { it.contains("tiny_rec") } ?: find { it.startsWith("latin_") },
     )
 }

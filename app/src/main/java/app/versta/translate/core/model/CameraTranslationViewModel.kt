@@ -1,18 +1,24 @@
 package app.versta.translate.core.model
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
+import android.os.SystemClock
 import android.util.Size
 import android.view.View
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DisplayOrientedMeteringPointFactory
 import androidx.camera.core.ExtendableBuilder
 import androidx.camera.core.FocusMeteringAction
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.UseCaseGroup
@@ -20,6 +26,11 @@ import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -31,14 +42,12 @@ import app.versta.translate.adapter.outbound.mapOcrLineResult
 import app.versta.translate.core.entity.BakedOverlay
 import app.versta.translate.core.entity.CameraTranslationBlockLine
 import app.versta.translate.core.entity.CameraTranslationResult
+import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.LiveOverlayTick
-
+import app.versta.translate.core.entity.ObjectCharacterRecogniserResult
 import app.versta.translate.core.entity.ObjectCharacterRecognitionBundleWithFiles
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import app.versta.translate.utils.CameraFrameTransform
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -58,22 +67,13 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
-import android.graphics.Bitmap
-import android.os.SystemClock
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
-import androidx.core.content.ContextCompat
-import app.versta.translate.core.entity.ObjectCharacterRecogniserResult
-import app.versta.translate.core.entity.Language
-import app.versta.translate.utils.CameraFrameTransform
 
 class CameraTranslationViewModel(
     private val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference,
     private val translationViewModel: TranslationViewModel,
     private val objectCharacterRecognizerRepository: ObjectCharacterRecognitionRepository,
     private val languageViewModel: LanguageViewModel,
-    private val languagePreferenceRepository: LanguagePreferenceRepository
+    private val languagePreferenceRepository: LanguagePreferenceRepository,
 ) : ViewModel() {
     private val _surfaceRequests = MutableStateFlow<SurfaceRequest?>(null)
     val surfaceRequests: StateFlow<SurfaceRequest?> = _surfaceRequests.asStateFlow()
@@ -100,8 +100,6 @@ class CameraTranslationViewModel(
     private val _currentZoomRatio = MutableStateFlow(1f)
     val currentZoomRatio: StateFlow<Float> = _currentZoomRatio.asStateFlow()
 
-
-
     private var _camera: Camera? = null
     private var _cameraProvider: ProcessCameraProvider? = null
 
@@ -109,14 +107,17 @@ class CameraTranslationViewModel(
     // full-frame copy of the very buffer it presents back for the tracker,
     // so analyzer-frame points and the viewfinder always describe the same
     // sensor crop (the view's overlay mapping is built on that).
-    private val _cameraResolutionSelector = ResolutionSelector.Builder().apply {
-        setResolutionStrategy(
-            ResolutionStrategy(
-                Size(960, 960),
-                ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
-            )
-        )
-    }.build()
+    private val _cameraResolutionSelector =
+        ResolutionSelector
+            .Builder()
+            .apply {
+                setResolutionStrategy(
+                    ResolutionStrategy(
+                        Size(960, 960),
+                        ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
+                    ),
+                )
+            }.build()
 
     // Use cases are built in initializeCamera: video stabilization support is
     // camera-dependent and only knowable once the provider exists. Stabilized
@@ -133,21 +134,28 @@ class CameraTranslationViewModel(
      * preview surface itself, plain per-request stabilization keeps the
      * tracked overlay glued to a stabilized viewfinder.
      */
+    @OptIn(ExperimentalCamera2Interop::class)
     private fun stabilizationSupported(cameraProvider: ProcessCameraProvider): Boolean {
-        val info = runCatching {
-            CameraSelector.DEFAULT_BACK_CAMERA
-                .filter(cameraProvider.availableCameraInfos)
-                .firstOrNull()
-        }.getOrNull() ?: return false
-        val modes = runCatching {
-            Camera2CameraInfo.from(info).getCameraCharacteristic(
-                CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES
-            )
-        }.getOrNull() ?: return false
+        val info =
+            runCatching {
+                CameraSelector.DEFAULT_BACK_CAMERA
+                    .filter(cameraProvider.availableCameraInfos)
+                    .firstOrNull()
+            }.getOrNull() ?: return false
+        val modes =
+            runCatching {
+                Camera2CameraInfo.from(info).getCameraCharacteristic(
+                    CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES,
+                )
+            }.getOrNull() ?: return false
         return modes.contains(CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON)
     }
 
-    private fun <B : ExtendableBuilder<*>> stabilized(builder: B, enabled: Boolean): B {
+    @OptIn(ExperimentalCamera2Interop::class)
+    private fun <B : ExtendableBuilder<*>> stabilized(
+        builder: B,
+        enabled: Boolean,
+    ): B {
         if (enabled) {
             Camera2Interop.Extender(builder).setCaptureRequestOption(
                 CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
@@ -158,32 +166,43 @@ class CameraTranslationViewModel(
     }
 
     private fun buildUseCases(stabilize: Boolean) {
-        _cameraPreviewUseCase = stabilized(
-            Preview.Builder().setResolutionSelector(_cameraResolutionSelector), stabilize
-        ).build().apply {
-            setSurfaceProvider { newSurfaceRequest ->
-                _surfaceRequests.update { newSurfaceRequest }
+        _cameraPreviewUseCase =
+            stabilized(
+                Preview.Builder().setResolutionSelector(_cameraResolutionSelector),
+                stabilize,
+            ).build().apply {
+                setSurfaceProvider { newSurfaceRequest ->
+                    _surfaceRequests.update { newSurfaceRequest }
+                }
             }
-        }
-        _imageCaptureUseCase = stabilized(
-            ImageCapture.Builder().setResolutionSelector(_cameraResolutionSelector), stabilize
-        ).build()
+        _imageCaptureUseCase =
+            stabilized(
+                ImageCapture.Builder().setResolutionSelector(_cameraResolutionSelector),
+                stabilize,
+            ).build()
     }
 
     private val _language = languagePreferenceRepository.getSourceLanguage().distinctUntilChanged()
 
-    private val _bundleData = objectCharacterRecognizerRepository.getModules()
-        .distinctUntilChanged()
-        .map { objectCharacterRecognizerRepository.getCompleteBundle() }
+    private val _bundleData =
+        objectCharacterRecognizerRepository
+            .getModules()
+            .distinctUntilChanged()
+            .map { objectCharacterRecognizerRepository.getCompleteBundle() }
 
-    private val _forcedRecognizer = _language.map { language ->
-        if (language !is Language) {
-            return@map null
-        }
+    private val _forcedRecognizer =
+        _language
+            .map { language ->
+                if (language !is Language) {
+                    return@map null
+                }
 
-        objectCharacterRecognizerRepository.getRecognizerForLanguage(language = language)
-            ?.path?.fileName?.toString()
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+                objectCharacterRecognizerRepository
+                    .getRecognizerForLanguage(language = language)
+                    ?.path
+                    ?.fileName
+                    ?.toString()
+            }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     // Hot-path overlay state is Compose snapshot state written directly from
     // the GL viewfinder thread: publishing through MutableStateFlow + a
@@ -209,21 +228,23 @@ class CameraTranslationViewModel(
 
     /** Eager cache of the active language pair for the analyzer hot path —
      *  the previous [first] suspension hit DataStore plumbing per frame. */
-    private val _languagePairCache = languageViewModel.languagePair
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    private val _languagePairCache =
+        languageViewModel.languagePair
+            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    private val _objectCharacterRecognitionAnalyzer = ObjectCharacterRecognitionAnalyzer(
-        objectCharacterRecognitionInference = objectCharacterRecognitionInference,
-        scope = viewModelScope,
-        forcedRecognizer = { _forcedRecognizer.value },
-        onFrameProcessed = { objects, width, height ->
-            // Live-lane publish gate: frames whose sink entry predates the
-            // last viewfinder()/capture() epoch bump are stale by definition.
-            if (_sinkEpoch == _analysisEpoch) {
-                onAnalyzerFrame(objects, width, height)
-            }
-        }
-    )
+    private val _objectCharacterRecognitionAnalyzer =
+        ObjectCharacterRecognitionAnalyzer(
+            objectCharacterRecognitionInference = objectCharacterRecognitionInference,
+            scope = viewModelScope,
+            forcedRecognizer = { _forcedRecognizer.value },
+            onFrameProcessed = { objects, width, height ->
+                // Live-lane publish gate: frames whose sink entry predates the
+                // last viewfinder()/capture() epoch bump are stale by definition.
+                if (_sinkEpoch == _analysisEpoch) {
+                    onAnalyzerFrame(objects, width, height)
+                }
+            },
+        )
 
     /** Sources with a translation job in flight; failures remove the entry so
      *  the next frame retries. */
@@ -288,29 +309,32 @@ class CameraTranslationViewModel(
             _stripStore.reset()
             _contentVersion++
         }
-        val results = objects.filter {
-            it.text.isNotBlank()
-        }.groupBy {
-            it.blockId
-        }.filterValues { lines ->
-            lines.map { it.score }.average() >= BLOCK_SCORE_MIN
-        }.map { (blockId, lines) ->
-            val source = lines.joinToString(" ") { it.text }
-            requestTranslation(source, languages)
+        val results =
+            objects
+                .filter {
+                    it.text.isNotBlank()
+                }.groupBy {
+                    it.blockId
+                }.filterValues { lines ->
+                    lines.map { it.score }.average() >= BLOCK_SCORE_MIN
+                }.map { (blockId, lines) ->
+                    val source = lines.joinToString(" ") { it.text }
+                    requestTranslation(source, languages)
 
-            val strips = _stripStore.accept(blockId, lines)
-            CameraTranslationResult(
-                source = source,
-                lines = lines.mapIndexed { index, line ->
-                    CameraTranslationBlockLine(
-                        points = line.points,
-                        colors = line.colors,
-                        fontWeight = line.fontWeight,
-                        strip = strips[index],
+                    val strips = _stripStore.accept(blockId, lines)
+                    CameraTranslationResult(
+                        source = source,
+                        lines =
+                            lines.mapIndexed { index, line ->
+                                CameraTranslationBlockLine(
+                                    points = line.points,
+                                    colors = line.colors,
+                                    fontWeight = line.fontWeight,
+                                    strip = strips[index],
+                                )
+                            },
                     )
-                },
-            )
-        }
+                }
 
         frameWidth = width
         frameHeight = height
@@ -319,14 +343,18 @@ class CameraTranslationViewModel(
         _translating.value = false
     }
 
-    private fun requestTranslation(source: String, languages: LanguagePair) {
+    private fun requestTranslation(
+        source: String,
+        languages: LanguagePair,
+    ) {
         if (blockTranslations.containsKey(source)) return
         if (!_inFlightTranslations.add(source)) return
         val epoch = _analysisEpoch
         viewModelScope.launch(Dispatchers.Default) {
-            val translated = runCatching {
-                translationViewModel.translate(source, languages)
-            }.getOrNull()
+            val translated =
+                runCatching {
+                    translationViewModel.translate(source, languages)
+                }.getOrNull()
             _inFlightTranslations.remove(source)
             // Started in an ended session? The reset already cleared the
             // overlay content — this result belongs to the old scene.
@@ -352,44 +380,51 @@ class CameraTranslationViewModel(
         _stillBusy.value = true
 
         try {
-            val capture = suspendCoroutine<Pair<Bitmap, Int>?> { cont ->
-                _imageCaptureUseCase.takePicture(
-                    ContextCompat.getMainExecutor(appContext),
-                    object : ImageCapture.OnImageCapturedCallback() {
-                        override fun onCaptureSuccess(image: ImageProxy) {
-                            val rotation = image.imageInfo.rotationDegrees
-                            val bitmap = image.toBitmap()
-                            image.close()
-                            cont.resume(bitmap to rotation)
-                        }
+            val capture =
+                suspendCoroutine<Pair<Bitmap, Int>?> { cont ->
+                    _imageCaptureUseCase.takePicture(
+                        ContextCompat.getMainExecutor(appContext),
+                        object : ImageCapture.OnImageCapturedCallback() {
+                            override fun onCaptureSuccess(image: ImageProxy) {
+                                val rotation = image.imageInfo.rotationDegrees
+                                val bitmap = image.toBitmap()
+                                image.close()
+                                cont.resume(bitmap to rotation)
+                            }
 
-                        override fun onError(exception: ImageCaptureException) {
-                            Timber.tag(TAG).e(exception, "Still capture failed")
-                            cont.resume(null)
-                        }
-                    }
-                )
-            } ?: return
+                            override fun onError(exception: ImageCaptureException) {
+                                Timber.tag(TAG).e(exception, "Still capture failed")
+                                cont.resume(null)
+                            }
+                        },
+                    )
+                } ?: return
 
             val (bitmap, rotation) = capture
             val buffer = ByteBuffer.allocateDirect(bitmap.width * bitmap.height * 4)
             bitmap.copyPixelsToBuffer(buffer)
             buffer.rewind()
 
-            val result = try {
-                objectCharacterRecognitionInference.analyzeStill(
-                    buffer, bitmap.width, bitmap.height, rotation, _forcedRecognizer.value
-                )
-            } catch (e: IllegalStateException) {
-                // Engine still loading (models detected asynchronously after the
-                // camera opens); abort the still instead of crashing.
-                Timber.tag(TAG).e(e, "Still capture aborted: OCR engine not loaded")
-                return
-            }
+            val result =
+                try {
+                    objectCharacterRecognitionInference.analyzeStill(
+                        buffer,
+                        bitmap.width,
+                        bitmap.height,
+                        rotation,
+                        _forcedRecognizer.value,
+                    )
+                } catch (e: IllegalStateException) {
+                    // Engine still loading (models detected asynchronously after the
+                    // camera opens); abort the still instead of crashing.
+                    Timber.tag(TAG).e(e, "Still capture aborted: OCR engine not loaded")
+                    return
+                }
 
-            val mapped = result.lines.map { line ->
-                mapOcrLineResult(line)
-            }
+            val mapped =
+                result.lines.map { line ->
+                    mapOcrLineResult(line)
+                }
 
             // Pause live analysis while the still result is presented; the user
             // exits back to the viewfinder with the restart button.
@@ -422,7 +457,7 @@ class CameraTranslationViewModel(
 
     private fun initializeCamera(
         cameraProvider: ProcessCameraProvider,
-        lifecycleOwner: LifecycleOwner
+        lifecycleOwner: LifecycleOwner,
     ): Camera? {
         cameraProvider.unbindAll() // Only unbind once during initial setup
 
@@ -435,19 +470,22 @@ class CameraTranslationViewModel(
             attempt++
             buildUseCases(stabilize)
             try {
-                val useCaseGroup = UseCaseGroup.Builder()
-                    .addUseCase(_cameraPreviewUseCase)
-                    .addUseCase(_imageCaptureUseCase)
-                    .build()
+                val useCaseGroup =
+                    UseCaseGroup
+                        .Builder()
+                        .addUseCase(_cameraPreviewUseCase)
+                        .addUseCase(_imageCaptureUseCase)
+                        .build()
 
-                _camera = cameraProvider.bindToLifecycle(
-                    lifecycleOwner = lifecycleOwner,
-                    cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
-                    useCaseGroup = useCaseGroup
-                )
+                _camera =
+                    cameraProvider.bindToLifecycle(
+                        lifecycleOwner = lifecycleOwner,
+                        cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
+                        useCaseGroup = useCaseGroup,
+                    )
                 Timber.tag(TAG).i(
                     "Camera bound (video stabilization %s)",
-                    if (stabilize) "on" else "unavailable"
+                    if (stabilize) "on" else "unavailable",
                 )
                 _sensorRotationQuadrant.value =
                     _camera?.cameraInfo?.sensorRotationDegrees?.let {
@@ -479,7 +517,11 @@ class CameraTranslationViewModel(
      * pass composites with, and — only when content moved (fresh strips epoch
      * or newly-resolved translations) — a fresh canonical-space bake.
      */
-    fun onLiveGlFrame(buffer: ByteBuffer, width: Int, height: Int): LiveOverlayTick? {
+    fun onLiveGlFrame(
+        buffer: ByteBuffer,
+        width: Int,
+        height: Int,
+    ): LiveOverlayTick? {
         if (!_liveTrackingActive.value) return null
         val epoch = _analysisEpoch
         _sinkEpoch = epoch
@@ -491,13 +533,14 @@ class CameraTranslationViewModel(
             val startNs = SystemClock.elapsedRealtimeNanos()
             val inverse = CameraFrameTransform.invert3(homography)
             if (inverse != null) {
-                bake = _overlayBaker.bake(
-                    blocks = _lastLiveBlocks,
-                    translations = blockTranslations,
-                    inverseHomography = inverse,
-                    frameWidth = width,
-                    frameHeight = height,
-                )
+                bake =
+                    _overlayBaker.bake(
+                        blocks = _lastLiveBlocks,
+                        translations = blockTranslations,
+                        inverseHomography = inverse,
+                        frameWidth = width,
+                        frameHeight = height,
+                    )
                 _bakedVersion = _contentVersion
                 Timber.tag(TAG).d(
                     "OCR bake: v%d, %.1f ms, %d bytes",
@@ -535,7 +578,7 @@ class CameraTranslationViewModel(
     private suspend fun transitionCameraState(
         appContext: Context,
         lifecycleOwner: LifecycleOwner,
-        toLive: Boolean
+        toLive: Boolean,
     ) {
         if (!toLive) {
             _liveTrackingActive.value = false
@@ -561,11 +604,15 @@ class CameraTranslationViewModel(
         }
     }
 
-    suspend fun capture(appContext: Context, lifecycleOwner: LifecycleOwner) =
-        transitionCameraState(appContext, lifecycleOwner, toLive = true)
+    suspend fun capture(
+        appContext: Context,
+        lifecycleOwner: LifecycleOwner,
+    ) = transitionCameraState(appContext, lifecycleOwner, toLive = true)
 
-    suspend fun viewfinder(appContext: Context, lifecycleOwner: LifecycleOwner) =
-        transitionCameraState(appContext, lifecycleOwner, toLive = false)
+    suspend fun viewfinder(
+        appContext: Context,
+        lifecycleOwner: LifecycleOwner,
+    ) = transitionCameraState(appContext, lifecycleOwner, toLive = false)
 
     fun applyZoomDelta(zoomFactor: Float) {
         val current = _currentZoomRatio.value
@@ -575,10 +622,11 @@ class CameraTranslationViewModel(
 
     fun setZoomRatio(ratio: Float) {
         val clamped = ratio.coerceIn(_minZoomRatio.value, _maxZoomRatio.value)
-        val camera = _camera ?: run {
-            _currentZoomRatio.value = clamped
-            return
-        }
+        val camera =
+            _camera ?: run {
+                _currentZoomRatio.value = clamped
+                return
+            }
 
         try {
             camera.cameraControl.setZoomRatio(clamped)
@@ -592,19 +640,27 @@ class CameraTranslationViewModel(
     /** Tap-to-focus: meter AF+AE on the tapped viewfinder point, auto-cancelling
      *  back to continuous after a few seconds. The point's surface dimensions
      *  are the presenting view's — the preview fills it edge to edge. */
-    fun focusOnPoint(view: View, x: Float, y: Float) {
+    fun focusOnPoint(
+        view: View,
+        x: Float,
+        y: Float,
+    ) {
         val camera = _camera ?: return
         if (view.width <= 0 || view.height <= 0) return
-        val point = DisplayOrientedMeteringPointFactory(
-            view.display,
-            camera.cameraInfo,
-            view.width.toFloat(),
-            view.height.toFloat(),
-        ).createPoint(x, y)
-        val action = FocusMeteringAction.Builder(
-            point,
-            FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE,
-        ).setAutoCancelDuration(3, TimeUnit.SECONDS).build()
+        val point =
+            DisplayOrientedMeteringPointFactory(
+                view.display,
+                camera.cameraInfo,
+                view.width.toFloat(),
+                view.height.toFloat(),
+            ).createPoint(x, y)
+        val action =
+            FocusMeteringAction
+                .Builder(
+                    point,
+                    FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE,
+                ).setAutoCancelDuration(3, TimeUnit.SECONDS)
+                .build()
         camera.cameraControl.startFocusAndMetering(action)
     }
 

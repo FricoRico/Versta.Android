@@ -14,8 +14,10 @@ import java.util.UUID
 
 const val DOWNLOAD_OBJECT_CHARACTER_RECOGNITION_STATUS_INTENT = "DOWNLOAD_OBJECT_CHARACTER_RECOGNITION_STATUS_UPDATE"
 
-class DownloadObjectCharacterRecognitionWorker(context: Context, parameters: WorkerParameters) :
-    DownloadWorker(context, parameters) {
+class DownloadObjectCharacterRecognitionWorker(
+    context: Context,
+    parameters: WorkerParameters,
+) : DownloadWorker(context, parameters) {
     override val downloadStatusIntent = Intent(DOWNLOAD_OBJECT_CHARACTER_RECOGNITION_STATUS_INTENT)
 
     private val _extractionDirectory = context.filesDir
@@ -26,14 +28,18 @@ class DownloadObjectCharacterRecognitionWorker(context: Context, parameters: Wor
     /**
      * Extracts the downloaded OCR model.
      */
-    override fun extractDownload(taskId: UUID, file: File) {
+    override fun extractDownload(
+        taskId: UUID,
+        file: File,
+    ) {
         var output: File? = null
 
         try {
-            output = _ocrExtractor.extract(
-                file = file,
-                outputDir = _extractionDirectory,
-            )
+            output =
+                _ocrExtractor.extract(
+                    file = file,
+                    outputDir = _extractionDirectory,
+                )
 
             if (!file.delete()) {
                 Timber.tag(TAG).e("Deleting file ${file.absolutePath}")
@@ -55,7 +61,7 @@ class DownloadObjectCharacterRecognitionWorker(context: Context, parameters: Wor
      */
     private fun readMetadata(output: File?): List<ObjectCharacterRecognitionModuleModel> {
         if (output == null) {
-            throw Exception("Output directory is null")
+            error("Output directory is null")
         }
 
         val bundleMetadataFile = File(output, "metadata.json")
@@ -63,7 +69,7 @@ class DownloadObjectCharacterRecognitionWorker(context: Context, parameters: Wor
         val bundleMetadata = _serializer.decodeFromString<ObjectCharacterRecognitionBundleMetadata>(bundleMetadataText)
 
         if (!bundleMetadata.isValid()) {
-            throw Exception("Invalid bundle metadata file")
+            error("Invalid bundle metadata file")
         }
 
         return bundleMetadata.metadata.map { metadataFile ->
@@ -72,14 +78,14 @@ class DownloadObjectCharacterRecognitionWorker(context: Context, parameters: Wor
             val moduleMetadata = _serializer.decodeFromString<ObjectCharacterRecognitionModuleMetadata>(moduleMetadataFile.readText())
 
             if (!moduleMetadata.isValid(modulePath.toPath())) {
-                throw Exception("Invalid or incomplete module metadata at ${metadataFile.directory}")
+                error("Invalid or incomplete module metadata at ${metadataFile.directory}")
             }
 
             ObjectCharacterRecognitionModuleModel(
                 bundle = bundleMetadata,
                 model = moduleMetadata,
                 directory = metadataFile.directory,
-                root = modulePath.toPath()
+                root = modulePath.toPath(),
             )
         }
     }
