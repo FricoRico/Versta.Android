@@ -139,3 +139,14 @@ jobs:
             app/build/outputs/connected_android_test_additional_output/**
             smoke-out/**
           if-no-files-found: ignore
+
+      # The assembled debug APK is kept as an artifact so anyone can pull the
+      # exact build CI verified onto a local emulator or physical device
+      # (e.g. the x86_64 local loop from AGENTS.md) without rebuilding.
+      - name: Upload debug APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ env.ABI_FLAVOR }}-debug
+          path: app/build/outputs/apk/${{ env.ABI_FLAVOR }}/debug/*.apk
+          if-no-files-found: ignore
