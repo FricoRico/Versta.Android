@@ -38,17 +38,19 @@ class LoggingViewModel(
             // a full read on a long camera session crashes with OOM.
             val length = _file.length()
             val start = (length - MAX_LOG_BYTES).coerceAtLeast(0L)
-            val bytes = FileInputStream(_file).use { input ->
-                input.skip(start)
-                input.readBytes()
-            }
-            _logs.value = if (start > 0) {
-                // Skip to the next newline so the tail starts mid-line break.
-                val newline = bytes.indexOf('\n'.code.toByte())
-                bytes.decodeToString(if (newline >= 0) newline + 1 else 0)
-            } else {
-                bytes.decodeToString()
-            }
+            val bytes =
+                FileInputStream(_file).use { input ->
+                    input.skip(start)
+                    input.readBytes()
+                }
+            _logs.value =
+                if (start > 0) {
+                    // Skip to the next newline so the tail starts mid-line break.
+                    val newline = bytes.indexOf('\n'.code.toByte())
+                    bytes.decodeToString(if (newline >= 0) newline + 1 else 0)
+                } else {
+                    bytes.decodeToString()
+                }
         }
     }
 

@@ -12,8 +12,9 @@ package app.versta.translate.core.model
  * Admitted on the GL thread, reset from session transitions on the main
  * thread; the counter is a best-effort cross-thread signal.
  */
-class AnchorWarmupGate(private val ticks: Int = DEFAULT_WARMUP_TICKS) {
-
+class AnchorWarmupGate(
+    private val ticks: Int = DEFAULT_WARMUP_TICKS,
+) {
     @Volatile
     private var accepted = 0
 

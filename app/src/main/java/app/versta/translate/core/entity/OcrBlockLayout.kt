@@ -10,8 +10,10 @@ package app.versta.translate.core.entity
  * the whole block (conservative for mixed runs).
  */
 object OcrBlockLayout {
-
-    class Result(val segments: List<String>, val textSize: Float)
+    class Result(
+        val segments: List<String>,
+        val textSize: Float,
+    )
 
     /**
      * Greedy wrap of [text] into the per-line [lineWidths] (screen px), one
@@ -26,7 +28,7 @@ object OcrBlockLayout {
         text: String,
         lineWidths: List<Float>,
         startSize: Float,
-        measure: (from: Int, until: Int, size: Float) -> Float
+        measure: (from: Int, until: Int, size: Float) -> Float,
     ): Result? {
         val trimmed = text.trim()
         if (trimmed.isEmpty() || lineWidths.isEmpty()) return null
@@ -67,7 +69,7 @@ object OcrBlockLayout {
         text: String,
         size: Float,
         widths: List<Float>,
-        measure: (from: Int, until: Int, size: Float) -> Float
+        measure: (from: Int, until: Int, size: Float) -> Float,
     ): List<String>? {
         val opps = breakOpportunities(text)
         val out = ArrayList<String>(widths.size)
@@ -101,12 +103,12 @@ object OcrBlockLayout {
         return if (cursor < text.length) null else out
     }
 
-    /// Same greedy pass but the last line takes whatever remains.
+    // / Same greedy pass but the last line takes whatever remains.
     private fun cramRemaining(
         text: String,
         size: Float,
         widths: List<Float>,
-        measure: (from: Int, until: Int, size: Float) -> Float
+        measure: (from: Int, until: Int, size: Float) -> Float,
     ): List<String> {
         breakIntoLines(text, size, widths.dropLast(1) + Float.MAX_VALUE, measure)?.let {
             return it
@@ -114,7 +116,10 @@ object OcrBlockLayout {
         return List(widths.size - 1) { "" } + text
     }
 
-    private data class BreakOpp(val prefixEnd: Int, val nextStart: Int)
+    private data class BreakOpp(
+        val prefixEnd: Int,
+        val nextStart: Int,
+    )
 
     /**
      * UTF-16 indices at which [text] may wrap: at runs of spaces (the break
@@ -150,36 +155,106 @@ object OcrBlockLayout {
     }
 
     internal fun isCjkBreakable(cp: Int): Boolean =
-        cp in 0x3040..0x309F ||  // Hiragana
-        cp in 0x30A0..0x30FF ||  // Katakana
-        cp in 0x3400..0x4DBF ||  // CJK Unified Ext A
-        cp in 0x4E00..0x9FFF ||  // CJK Unified
-        cp in 0xF900..0xFAFF ||  // CJK Compatibility Ideographs
-        cp in 0xFF66..0xFF9D     // Halfwidth Katakana
+        cp in 0x3040..0x309F || // Hiragana
+            cp in 0x30A0..0x30FF || // Katakana
+            cp in 0x3400..0x4DBF || // CJK Unified Ext A
+            cp in 0x4E00..0x9FFF || // CJK Unified
+            cp in 0xF900..0xFAFF || // CJK Compatibility Ideographs
+            cp in 0xFF66..0xFF9D // Halfwidth Katakana
 
-    /// Kinsoku: prohibited line-initial characters (closing brackets, trailing
-    /// punctuation, small kana, sound/iteration marks).
-    private val noBreakBefore = setOf(
-        ')', ']', '}', '）', '］', '｝', '」', '』', '】', '〉', '》', '〕', '〗', '｣',
-        '、', '。', '，', '．', '：', '；', '？', '！', '・', '…', '‥', '､', '｡',
-        '”', '’', 'ー', 'ゝ', 'ゞ', '々', '〆',
-        'ぁ', 'ぃ', 'ぅ', 'ぇ', 'ぉ', 'っ', 'ゃ', 'ゅ', 'ょ', 'ゎ',
-        'ァ', 'ィ', 'ゥ', 'ェ', 'ォ', 'ッ', 'ャ', 'ュ', 'ョ', 'ヮ', 'ヵ', 'ヶ'
-    ).map { it.code }.toSet()
+    // / Kinsoku: prohibited line-initial characters (closing brackets, trailing
+    // / punctuation, small kana, sound/iteration marks).
+    private val noBreakBefore =
+        setOf(
+            ')',
+            ']',
+            '}',
+            '）',
+            '］',
+            '｝',
+            '」',
+            '』',
+            '】',
+            '〉',
+            '》',
+            '〕',
+            '〗',
+            '｣',
+            '、',
+            '。',
+            '，',
+            '．',
+            '：',
+            '；',
+            '？',
+            '！',
+            '・',
+            '…',
+            '‥',
+            '､',
+            '｡',
+            '”',
+            '’',
+            'ー',
+            'ゝ',
+            'ゞ',
+            '々',
+            '〆',
+            'ぁ',
+            'ぃ',
+            'ぅ',
+            'ぇ',
+            'ぉ',
+            'っ',
+            'ゃ',
+            'ゅ',
+            'ょ',
+            'ゎ',
+            'ァ',
+            'ィ',
+            'ゥ',
+            'ェ',
+            'ォ',
+            'ッ',
+            'ャ',
+            'ュ',
+            'ョ',
+            'ヮ',
+            'ヵ',
+            'ヶ',
+        ).map { it.code }.toSet()
 
-    /// Kinsoku: prohibited line-final characters (opening brackets, quotes).
-    private val noBreakAfter = setOf(
-        '(', '[', '{', '（', '［', '｛', '「', '『', '【', '〈', '《', '〔', '〖', '｢',
-        '“', '‘'
-    ).map { it.code }.toSet()
+    // / Kinsoku: prohibited line-final characters (opening brackets, quotes).
+    private val noBreakAfter =
+        setOf(
+            '(',
+            '[',
+            '{',
+            '（',
+            '［',
+            '｛',
+            '「',
+            '『',
+            '【',
+            '〈',
+            '《',
+            '〔',
+            '〖',
+            '｢',
+            '“',
+            '‘',
+        ).map { it.code }.toSet()
 
-    private fun cjkBreakAllowed(before: Int, after: Int): Boolean {
+    private fun cjkBreakAllowed(
+        before: Int,
+        after: Int,
+    ): Boolean {
         if (!isCjkBreakable(before) && !isCjkBreakable(after)) return false
         return before !in noBreakAfter && after !in noBreakBefore
     }
 
-    /// Raw-width/capacity ratio above which the shrink loop is skipped straight
-    /// to the capacity estimate.
+    // / Raw-width/capacity ratio above which the shrink loop is skipped straight
+    // / to the capacity estimate.
     private const val JUMP_THRESHOLD = 1.25f
 
     const val MIN_TEXT_SIZE = 8f

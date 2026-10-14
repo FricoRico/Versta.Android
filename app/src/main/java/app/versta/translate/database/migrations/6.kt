@@ -13,7 +13,12 @@ object Migration6 : Migration {
         database.languageModels.getAll().executeAsList().forEach { data ->
             if (data.version < "v2.0.0") {
                 database.languageModels.deleteById(data.languageId)
-                removeOldLanguageModels(data.path.toPath().toNioPath().parent)
+                removeOldLanguageModels(
+                    data.path
+                        .toPath()
+                        .toNioPath()
+                        .parent,
+                )
 
                 return@forEach
             }

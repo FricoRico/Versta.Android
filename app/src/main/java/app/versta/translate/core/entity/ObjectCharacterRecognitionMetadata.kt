@@ -2,8 +2,10 @@ package app.versta.translate.core.entity
 
 import kotlinx.serialization.Serializable
 
-enum class ObjectCharacterRecognitionArchitecture(val value: String) {
-    PaddleOCR("PaddleOCR")
+enum class ObjectCharacterRecognitionArchitecture(
+    val value: String,
+) {
+    PaddleOCR("PaddleOCR"),
 }
 
 @Serializable
@@ -23,7 +25,7 @@ class ObjectCharacterRecognitionBundleMetadata(
 ) {
     fun isValid() =
         metadata.all { it.directory.isNotEmpty() } &&
-        modules.isNotEmpty()
+            modules.isNotEmpty()
 }
 
 /**

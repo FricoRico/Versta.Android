@@ -13,7 +13,9 @@ class LiveGlRenderer : AutoCloseable {
     private var _handle: Long = construct()
 
     private external fun construct(): Long
+
     private external fun destroy(handle: Long)
+
     private external fun renderCameraNative(
         handle: Long,
         textureId: Int,
@@ -45,13 +47,17 @@ class LiveGlRenderer : AutoCloseable {
         uvMatrix: FloatArray,
     ): Boolean
 
-
     /**
      * Draws the camera frame fullscreen. [uvMatrix] is a row-major 3×3 over
      * display-normalized top-left-origin coordinates (see
      * `CameraFrameTransform.displayUvMatrix`).
      */
-    fun renderCamera(textureId: Int, surfaceWidth: Int, surfaceHeight: Int, uvMatrix: FloatArray): Boolean {
+    fun renderCamera(
+        textureId: Int,
+        surfaceWidth: Int,
+        surfaceHeight: Int,
+        uvMatrix: FloatArray,
+    ): Boolean {
         check(_handle != 0L) { "LiveGlRenderer is closed" }
         check(uvMatrix.size == 9) { "uvMatrix must hold 9 floats" }
         return renderCameraNative(_handle, textureId, surfaceWidth, surfaceHeight, uvMatrix)
@@ -63,7 +69,13 @@ class LiveGlRenderer : AutoCloseable {
      * bytes, position 0): memory-order R,G,B,A, first row = display top —
      * the layout the OCR engine's live pipeline consumes with rotation 0.
      */
-    fun readbackRgba(textureId: Int, outWidth: Int, outHeight: Int, uvMatrix: FloatArray, out: ByteBuffer): Boolean {
+    fun readbackRgba(
+        textureId: Int,
+        outWidth: Int,
+        outHeight: Int,
+        uvMatrix: FloatArray,
+        out: ByteBuffer,
+    ): Boolean {
         check(_handle != 0L) { "LiveGlRenderer is closed" }
         check(uvMatrix.size == 9) { "uvMatrix must hold 9 floats" }
         check(out.isDirect) { "readback target must be a direct ByteBuffer" }
@@ -75,7 +87,11 @@ class LiveGlRenderer : AutoCloseable {
      * R,G,B,A over the full canonical frame). Content-change cadence only —
      * never per frame.
      */
-    fun setOverlayRgba(width: Int, height: Int, rgba: ByteArray): Boolean {
+    fun setOverlayRgba(
+        width: Int,
+        height: Int,
+        rgba: ByteArray,
+    ): Boolean {
         check(_handle != 0L) { "LiveGlRenderer is closed" }
         check(rgba.size >= width * height * 4) { "overlay payload too small" }
         return setOverlayRgbaNative(_handle, width, height, rgba)
@@ -86,7 +102,11 @@ class LiveGlRenderer : AutoCloseable {
      * frame's overlay UV (display → canonical texels, genuinely projective —
      * see `CameraFrameTransform.overlayUvMatrix`). False without an upload.
      */
-    fun renderOverlay(surfaceWidth: Int, surfaceHeight: Int, uvMatrix: FloatArray): Boolean {
+    fun renderOverlay(
+        surfaceWidth: Int,
+        surfaceHeight: Int,
+        uvMatrix: FloatArray,
+    ): Boolean {
         check(_handle != 0L) { "LiveGlRenderer is closed" }
         check(uvMatrix.size == 9) { "uvMatrix must hold 9 floats" }
         return renderOverlayNative(_handle, surfaceWidth, surfaceHeight, uvMatrix)

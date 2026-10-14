@@ -11,9 +11,11 @@ package app.versta.translate.core.entity
  * Reference: translator-render/image_render.rs cum_em_at_byte — the whole
  * block is shaped once at em scale and px widths read off as em × size.
  */
-class OcrTextMeasure(text: String, measureReference: (String) -> Float) {
-
-    private val ends: IntArray      // token boundary indices, ascending; ends[0] = 0
+class OcrTextMeasure(
+    text: String,
+    measureReference: (String) -> Float,
+) {
+    private val ends: IntArray // token boundary indices, ascending; ends[0] = 0
     private val refWidths: FloatArray // refWidths[k] = cumulative ref width up to ends[k]
 
     init {
@@ -29,7 +31,11 @@ class OcrTextMeasure(text: String, measureReference: (String) -> Float) {
                     // One token per space run: the wrap consumes the whole run.
                     while (i < text.length && text[i] == ' ') i++
                 }
-                OcrBlockLayout.isCjkBreakable(cp) -> i += Character.charCount(cp)
+
+                OcrBlockLayout.isCjkBreakable(cp) -> {
+                    i += Character.charCount(cp)
+                }
+
                 else -> {
                     while (i < text.length) {
                         val nextCp = text.codePointAt(i)
@@ -57,7 +63,11 @@ class OcrTextMeasure(text: String, measureReference: (String) -> Float) {
      * occur on boundaries; an unaligned index floors to the previous one
      * (slight underestimate, harmless for a fit estimate).
      */
-    fun measure(from: Int, until: Int, size: Float): Float {
+    fun measure(
+        from: Int,
+        until: Int,
+        size: Float,
+    ): Float {
         if (until <= from) return 0f
         val ref = refWidths[bisect(until)] - refWidths[bisect(from)]
         return ref * size / REFERENCE_SIZE

@@ -21,5 +21,5 @@ enum class ObjectCharacterRecognitionModule {
     Aligner,
 
     @SerialName("glyphmatte")
-    GlyphMatte
+    GlyphMatte,
 }

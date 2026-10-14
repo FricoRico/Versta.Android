@@ -15,21 +15,25 @@ import kotlin.io.path.deleteRecursively
 import java.app.versta.translate.database.sqldelight.OcrModuleModel as OcrModuleDatabaseModel
 
 class ObjectCharacterRecognitionRepositoryDatabaseRepository(
-    private val database: DatabaseContainer
+    private val database: DatabaseContainer,
 ) : ObjectCharacterRecognitionRepository {
-    override fun getModule(id: String): ObjectCharacterRecognitionModuleWithFiles? {
-        return mapObjectCharacterRecognitionModuleDatabaseModelToObjectCharacterRecognitionModuleFiles(
-            database.ocrModules.getModuleById(id).executeAsOneOrNull()
+    override fun getModule(id: String): ObjectCharacterRecognitionModuleWithFiles? =
+        mapObjectCharacterRecognitionModuleDatabaseModelToObjectCharacterRecognitionModuleFiles(
+            database.ocrModules.getModuleById(id).executeAsOneOrNull(),
         )
-    }
 
     override fun getModules() =
-        database.ocrModules.getAllModules().executeAsListFlow()
+        database.ocrModules
+            .getAllModules()
+            .executeAsListFlow()
             .map { it.mapNotNull { module -> mapObjectCharacterRecognitionModuleDatabaseModelToObjectCharacterRecognitionModuleFiles(module) } }
 
     override fun getCompleteBundle(): ObjectCharacterRecognitionBundleWithFiles? {
-        val modules = database.ocrModules.getAllModules().executeAsList()
-            .mapNotNull { mapObjectCharacterRecognitionModuleDatabaseModelToObjectCharacterRecognitionModuleFiles(it) }
+        val modules =
+            database.ocrModules
+                .getAllModules()
+                .executeAsList()
+                .mapNotNull { mapObjectCharacterRecognitionModuleDatabaseModelToObjectCharacterRecognitionModuleFiles(it) }
 
         return modules
             .groupBy { it.bundleId }
@@ -38,28 +42,32 @@ class ObjectCharacterRecognitionRepositoryDatabaseRepository(
                 ObjectCharacterRecognitionBundleWithFiles.load(
                     id = bundleModules.first().bundleId,
                     path = bundleModules.first().path.parent ?: return@mapNotNull null,
-                    modules = bundleModules
+                    modules = bundleModules,
                 )
-            }
-            .firstOrNull { it.isComplete }
+            }.firstOrNull { it.isComplete }
     }
 
-    override fun getRecognizerForLanguage(language: Language): ObjectCharacterRecognitionModuleWithFiles? {
-        return getCompleteBundle()?.recognizerForLanguage(language.isoCode)
-    }
+    override fun getRecognizerForLanguage(language: Language): ObjectCharacterRecognitionModuleWithFiles? = getCompleteBundle()?.recognizerForLanguage(language.isoCode)
 
     override fun upsertModule(metadata: ObjectCharacterRecognitionModuleModel) {
         upsertObjectCharacterRecognitionModule(
             mapObjectCharacterRecognitionModuleMetadataToObjectCharacterRecognitionModuleDatabaseModel(
-                data = metadata
-            )
+                data = metadata,
+            ),
         )
     }
 
     @OptIn(ExperimentalPathApi::class)
     override fun deleteBundle(id: String) {
-        database.ocrModules.getModulesByBundleId(id).executeAsList()
-            .mapNotNull { it.path.toPath().toNioPath().parent }.distinct()
+        database.ocrModules
+            .getModulesByBundleId(id)
+            .executeAsList()
+            .mapNotNull {
+                it.path
+                    .toPath()
+                    .toNioPath()
+                    .parent
+            }.distinct()
             .forEach { it.deleteRecursively() }
 
         database.ocrModules.deleteModulesByBundleId(bundleId = id)
@@ -73,23 +81,22 @@ class ObjectCharacterRecognitionRepositoryDatabaseRepository(
             directory = data.directory,
             languages = data.languages,
             path = data.path,
-            version = data.version
+            version = data.version,
         )
     }
 
     private fun mapObjectCharacterRecognitionModuleMetadataToObjectCharacterRecognitionModuleDatabaseModel(
-        data: ObjectCharacterRecognitionModuleModel
-    ): OcrModuleDatabaseModel {
-        return OcrModuleDatabaseModel(
+        data: ObjectCharacterRecognitionModuleModel,
+    ): OcrModuleDatabaseModel =
+        OcrModuleDatabaseModel(
             id = data.id,
             bundleId = data.bundle.id,
             module = data.model.module.name,
             directory = data.directory,
             languages = data.model.languages,
             path = data.root?.absolutePathString() ?: "",
-            version = data.bundle.version
+            version = data.bundle.version,
         )
-    }
 
     private fun mapObjectCharacterRecognitionModuleDatabaseModelToObjectCharacterRecognitionModuleFiles(data: OcrModuleDatabaseModel?): ObjectCharacterRecognitionModuleWithFiles? {
         if (data == null) {
@@ -103,7 +110,7 @@ class ObjectCharacterRecognitionRepositoryDatabaseRepository(
                 id = data.id,
                 bundleId = data.bundleId,
                 version = data.version,
-                path = path
+                path = path,
             )
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Failed to load OCR module files: ${data.id}")

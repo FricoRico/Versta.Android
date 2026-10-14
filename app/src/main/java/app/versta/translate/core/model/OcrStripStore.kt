@@ -18,8 +18,10 @@ import java.nio.ByteBuffer
  * anchor (built once, warped per frame), refresh ticks re-pose geometry.
  */
 class OcrStripStore {
-
-    private class Entry(val bitmap: Bitmap, var points: List<PointF>)
+    private class Entry(
+        val bitmap: Bitmap,
+        var points: List<PointF>,
+    )
 
     private val entries = LinkedHashMap<String, Entry>()
 
@@ -31,7 +33,10 @@ class OcrStripStore {
      * [blockId] + slot index). Returns one render payload per line, or null
      * where the line has no strip.
      */
-    fun accept(blockId: Int, lines: List<ObjectCharacterRecogniserResult>): List<OcrRenderStrip?> {
+    fun accept(
+        blockId: Int,
+        lines: List<ObjectCharacterRecogniserResult>,
+    ): List<OcrRenderStrip?> {
         val out = ArrayList<OcrRenderStrip?>(lines.size)
         for ((index, line) in lines.withIndex()) {
             val key = "$blockId#$index"
@@ -42,6 +47,7 @@ class OcrStripStore {
                     entries.remove(key)
                     out += null
                 }
+
                 strip.bytes != null -> {
                     val bitmap = Bitmap.createBitmap(strip.width, strip.height, Bitmap.Config.ARGB_8888)
                     bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(strip.bytes))
@@ -49,6 +55,7 @@ class OcrStripStore {
                     entries[key] = entry
                     out += OcrRenderStrip(entry.bitmap, entry.points)
                 }
+
                 else -> {
                     val entry = entries[key]
                     if (entry == null || entry.bitmap.width != strip.width || entry.bitmap.height != strip.height) {

@@ -27,7 +27,6 @@ package app.versta.translate.utils
  * out = M₂ × (M₁ × p).
  */
 object CameraFrameTransform {
-
     fun displayUvMatrix(
         bufferW: Int,
         bufferH: Int,
@@ -40,16 +39,20 @@ object CameraFrameTransform {
         // Display-normalized (cropped) → buffer-normalized. Buffer content is
         // stored rotated q·90° CW from upright; the maps below are the inverse
         // lookups (display point → buffer texel).
-        val rotate = when (((rotationQuadrant % 4) + 4) % 4) {
-            // u = x,        v = y
-            0 -> affine3x3(1f, 0f, 0f, 0f, 1f, 0f)
-            // u = 1 - y,    v = x
-            1 -> affine3x3(0f, -1f, 1f, 1f, 0f, 0f)
-            // u = 1 - x,    v = 1 - y
-            2 -> affine3x3(-1f, 0f, 1f, 0f, -1f, 1f)
-            // u = y,        v = 1 - x
-            else -> affine3x3(0f, 1f, 0f, -1f, 0f, 1f)
-        }
+        val rotate =
+            when (((rotationQuadrant % 4) + 4) % 4) {
+                // u = x,        v = y
+                0 -> affine3x3(1f, 0f, 0f, 0f, 1f, 0f)
+
+                // u = 1 - y,    v = x
+                1 -> affine3x3(0f, -1f, 1f, 1f, 0f, 0f)
+
+                // u = 1 - x,    v = 1 - y
+                2 -> affine3x3(-1f, 0f, 1f, 0f, -1f, 1f)
+
+                // u = y,        v = 1 - x
+                else -> affine3x3(0f, 1f, 0f, -1f, 0f, 1f)
+            }
 
         return multiply3(rotate, crop)
     }
@@ -82,11 +85,12 @@ object CameraFrameTransform {
         }
 
         val q = ((rotationQuadrant % 4) + 4) % 4
-        val displayAspectOfBuffer = if (q == 1 || q == 3) {
-            bufferH.toFloat() / bufferW
-        } else {
-            bufferW.toFloat() / bufferH
-        }
+        val displayAspectOfBuffer =
+            if (q == 1 || q == 3) {
+                bufferH.toFloat() / bufferW
+            } else {
+                bufferW.toFloat() / bufferH
+            }
         val viewAspect = surfaceW.toFloat() / surfaceH
 
         return if (displayAspectOfBuffer > viewAspect) {
@@ -127,32 +131,55 @@ object CameraFrameTransform {
 
     /** Row-major 3×3 inverse; null when the matrix is singular. */
     fun invert3(m: FloatArray): FloatArray? {
-        val a = m[0]; val b = m[1]; val c = m[2]
-        val d = m[3]; val e = m[4]; val f = m[5]
-        val g = m[6]; val h = m[7]; val i = m[8]
-        val A = e * i - f * h
-        val B = c * h - b * i
-        val C = b * f - c * e
-        val det = a * A + d * B + g * C
+        val a = m[0]
+        val b = m[1]
+        val c = m[2]
+        val d = m[3]
+        val e = m[4]
+        val f = m[5]
+        val g = m[6]
+        val h = m[7]
+        val i = m[8]
+        val cofA = e * i - f * h
+        val cofB = c * h - b * i
+        val cofC = b * f - c * e
+        val det = a * cofA + d * cofB + g * cofC
         if (kotlin.math.abs(det) < 1e-12f) return null
         val s = 1f / det
         return floatArrayOf(
-            A * s, B * s, C * s,
-            (f * g - d * i) * s, (a * i - c * g) * s, (c * d - a * f) * s,
-            (d * h - e * g) * s, (b * g - a * h) * s, (a * e - b * d) * s,
+            cofA * s,
+            cofB * s,
+            cofC * s,
+            (f * g - d * i) * s,
+            (a * i - c * g) * s,
+            (c * d - a * f) * s,
+            (d * h - e * g) * s,
+            (b * g - a * h) * s,
+            (a * e - b * d) * s,
         )
     }
 
-    private fun affine3x3(a: Float, b: Float, tx: Float, c: Float, d: Float, ty: Float) =
-        floatArrayOf(a, b, tx, c, d, ty, 0f, 0f, 1f)
+    private fun affine3x3(
+        a: Float,
+        b: Float,
+        tx: Float,
+        c: Float,
+        d: Float,
+        ty: Float,
+    ) = floatArrayOf(a, b, tx, c, d, ty, 0f, 0f, 1f)
 
     /** Row-major 3×3 multiply: `a × b` (applies b first). */
-    private fun multiply3(a: FloatArray, b: FloatArray): FloatArray {
+    private fun multiply3(
+        a: FloatArray,
+        b: FloatArray,
+    ): FloatArray {
         val out = FloatArray(9)
-        for (r in 0..2) for (col in 0..2) {
-            var sum = 0f
-            for (k in 0..2) sum += a[r * 3 + k] * b[k * 3 + col]
-            out[r * 3 + col] = sum
+        for (r in 0..2) {
+            for (col in 0..2) {
+                var sum = 0f
+                for (k in 0..2) sum += a[r * 3 + k] * b[k * 3 + col]
+                out[r * 3 + col] = sum
+            }
         }
         return out
     }

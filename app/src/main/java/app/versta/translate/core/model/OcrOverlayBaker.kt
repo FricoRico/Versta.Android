@@ -7,9 +7,9 @@ import androidx.compose.ui.graphics.toArgb
 import app.versta.translate.core.entity.BakedOverlay
 import app.versta.translate.core.entity.CameraTranslationResult
 import app.versta.translate.core.entity.FontWeight
+import app.versta.translate.core.entity.OCR_TEXT_HORIZONTAL_INSET
 import app.versta.translate.core.entity.OcrBlockLayoutCache
 import app.versta.translate.core.entity.OcrBlockRender
-import app.versta.translate.core.entity.OCR_TEXT_HORIZONTAL_INSET
 import app.versta.translate.core.entity.lineQuadOf
 import app.versta.translate.utils.mapPoints
 import app.versta.translate.utils.mapToArray
@@ -30,7 +30,6 @@ import java.nio.ByteBuffer
  * Called on the GL viewfinder thread only.
  */
 class OcrOverlayBaker {
-
     private val _layoutCache = OcrBlockLayoutCache()
     private val _stripPaint = OcrBlockRender.stripPaint()
 
@@ -47,12 +46,14 @@ class OcrOverlayBaker {
         val bitmap = Bitmap.createBitmap(frameWidth, frameHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        val blockQuads = blocks.mapNotNull { block ->
-            val quads = block.lines.mapNotNull { line ->
-                lineQuadOf(toCanonical.mapPoints(line.points.asList()))?.let { line to it }
+        val blockQuads =
+            blocks.mapNotNull { block ->
+                val quads =
+                    block.lines.mapNotNull { line ->
+                        lineQuadOf(toCanonical.mapPoints(line.points.asList()))?.let { line to it }
+                    }
+                if (quads.isEmpty()) null else block to quads
             }
-            if (quads.isEmpty()) null else block to quads
-        }
 
         // Background pass first, text pass second, across ALL blocks: strips
         // carry tall pads that overlap neighbouring blocks, and interleaving
@@ -70,17 +71,19 @@ class OcrOverlayBaker {
             val translated = (translations[block.source] ?: "").trim()
             if (translated.isEmpty()) return@forEach
 
-            val paint = OcrBlockRender.blockTextPaint(
-                bold = quads.any { it.first.fontWeight == FontWeight.BOLD }
-            )
+            val paint =
+                OcrBlockRender.blockTextPaint(
+                    bold = quads.any { it.first.fontWeight == FontWeight.BOLD },
+                )
             // Lazily shape-once: a layout-cache hit never measures at all.
             val measurer = lazy { OcrBlockRender.measureAtReference(paint, translated) }
-            val layout = _layoutCache.layout(
-                text = translated,
-                lineWidths = OcrBlockRender.blockLineWidths(quads.map { it.second }),
-                startSize = OcrBlockRender.blockStartSize(quads.map { it.second }),
-                measure = { from, until, size -> measurer.value.measure(from, until, size) },
-            ) ?: return@forEach
+            val layout =
+                _layoutCache.layout(
+                    text = translated,
+                    lineWidths = OcrBlockRender.blockLineWidths(quads.map { it.second }),
+                    startSize = OcrBlockRender.blockStartSize(quads.map { it.second }),
+                    measure = { from, until, size -> measurer.value.measure(from, until, size) },
+                ) ?: return@forEach
 
             paint.textSize = layout.textSize
             quads.forEachIndexed { index, (line, quad) ->
@@ -90,8 +93,12 @@ class OcrOverlayBaker {
                 paint.color = line.colors.foreground.toArgb()
                 canvas.save()
                 canvas.concat(OcrBlockRender.textMatrix(quad))
-                canvas.drawText(segment, OCR_TEXT_HORIZONTAL_INSET,
-                    OcrBlockRender.centeredBaselineY(paint, quad.bandHeight), paint)
+                canvas.drawText(
+                    segment,
+                    OCR_TEXT_HORIZONTAL_INSET,
+                    OcrBlockRender.centeredBaselineY(paint, quad.bandHeight),
+                    paint,
+                )
                 canvas.restore()
             }
         }

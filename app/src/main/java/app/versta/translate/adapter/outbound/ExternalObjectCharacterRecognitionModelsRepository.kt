@@ -23,7 +23,6 @@ interface ExternalObjectCharacterRecognitionModelsRepository {
      * OCR models. These definitions are filtered by the state of the imported OCR models.
      */
     fun getDefinitionsByState(
-        importedModules: Flow<List<ObjectCharacterRecognitionModuleWithFiles>>
+        importedModules: Flow<List<ObjectCharacterRecognitionModuleWithFiles>>,
     ): Flow<ExternalObjectCharacterRecognitionModels>
 }
-

@@ -20,17 +20,25 @@ data class ObjectCharacterRecognitionModuleWithFiles(
     val size: Long = 0,
     val files: List<ObjectCharacterRecognitionModuleFile>,
 ) {
-    fun isValid() = files.isNotEmpty() && files.all {
-        path.resolve(it.inference).exists() && (it.vocab == null || path.resolve(it.vocab).exists())
-    }
+    fun isValid() =
+        files.isNotEmpty() &&
+            files.all {
+                path.resolve(it.inference).exists() && (it.vocab == null || path.resolve(it.vocab).exists())
+            }
 
     fun inferencePath(file: ObjectCharacterRecognitionModuleFile): Path = path.resolve(file.inference)
+
     fun vocabPath(file: ObjectCharacterRecognitionModuleFile): Path? = file.vocab?.let { path.resolve(it) }
 
     companion object {
         private val serializer = Json { ignoreUnknownKeys = true }
 
-        fun load(id: String, bundleId: String, version: String, path: Path): ObjectCharacterRecognitionModuleWithFiles {
+        fun load(
+            id: String,
+            bundleId: String,
+            version: String,
+            path: Path,
+        ): ObjectCharacterRecognitionModuleWithFiles {
             val metadataFile = File(path.toFile(), "metadata.json")
             if (!metadataFile.exists()) {
                 throw IllegalArgumentException("OCR module metadata file not found: ${metadataFile.absolutePath}")
@@ -39,16 +47,17 @@ data class ObjectCharacterRecognitionModuleWithFiles(
             val metadata =
                 serializer.decodeFromString<ObjectCharacterRecognitionModuleMetadata>(metadataFile.readText())
 
-            val module = ObjectCharacterRecognitionModuleWithFiles(
-                id = id,
-                bundleId = bundleId,
-                path = path,
-                module = metadata.module,
-                languages = metadata.languages,
-                version = version,
-                size = path.directorySize(),
-                files = metadata.files
-            )
+            val module =
+                ObjectCharacterRecognitionModuleWithFiles(
+                    id = id,
+                    bundleId = bundleId,
+                    path = path,
+                    module = metadata.module,
+                    languages = metadata.languages,
+                    version = version,
+                    size = path.directorySize(),
+                    files = metadata.files,
+                )
 
             if (!module.isValid()) {
                 throw IllegalArgumentException("OCR module files are not complete and valid: $module")
@@ -80,17 +89,29 @@ data class ObjectCharacterRecognitionBundleWithFiles(
      * Best recognizer module for a language: exact iso-code match preferred,
      * generation-preferred (PP-OCRv6 directories outrank v5).
      */
-    fun recognizerForLanguage(isoCode: String): ObjectCharacterRecognitionModuleWithFiles? {
-        return recognizers()
+    fun recognizerForLanguage(isoCode: String): ObjectCharacterRecognitionModuleWithFiles? =
+        recognizers()
             .filter { it.languages.contains(isoCode) || it.languages.contains("*") }
-            .maxByOrNull { if (it.path.fileName.toString().contains("PP-OCRv6")) 1 else 0 }
-    }
+            .maxByOrNull {
+                if (it.path.fileName
+                        .toString()
+                        .contains("PP-OCRv6")
+                ) {
+                    1
+                } else {
+                    0
+                }
+            }
 
     val isComplete: Boolean
         get() = module(ObjectCharacterRecognitionModule.Detector) != null && recognizers().isNotEmpty()
 
     companion object {
-        fun load(id: String, path: Path, modules: List<ObjectCharacterRecognitionModuleWithFiles>): ObjectCharacterRecognitionBundleWithFiles? {
+        fun load(
+            id: String,
+            path: Path,
+            modules: List<ObjectCharacterRecognitionModuleWithFiles>,
+        ): ObjectCharacterRecognitionBundleWithFiles? {
             val bundleMetadataFile = File(path.toFile(), "metadata.json")
             if (!bundleMetadataFile.exists()) {
                 return null
@@ -104,7 +125,7 @@ data class ObjectCharacterRecognitionBundleWithFiles(
                 path = path,
                 version = metadata.version,
                 languages = metadata.languages,
-                modules = modules
+                modules = modules,
             )
         }
     }

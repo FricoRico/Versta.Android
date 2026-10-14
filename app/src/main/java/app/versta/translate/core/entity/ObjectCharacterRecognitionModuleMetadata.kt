@@ -8,7 +8,7 @@ import kotlin.io.path.exists
 data class ObjectCharacterRecognitionModuleFile(
     val inference: String,
     val priority: Int = 1,
-    val vocab: String? = null
+    val vocab: String? = null,
 )
 
 @Serializable
@@ -23,9 +23,8 @@ data class ObjectCharacterRecognitionModuleMetadata(
      * The best file on disk for this module. Higher priority wins; a file
      * only counts when it (and its vocab, for recognizers) exists.
      */
-    fun bestFile(path: Path): ObjectCharacterRecognitionModuleFile? {
-        return files
+    fun bestFile(path: Path): ObjectCharacterRecognitionModuleFile? =
+        files
             .filter { path.resolve(it.inference).exists() && (it.vocab == null || path.resolve(it.vocab).exists()) }
             .maxByOrNull { it.priority }
-    }
 }

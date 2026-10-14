@@ -13,17 +13,16 @@ import kotlin.math.abs
  * Keyed by the translated text: anchor re-acquisitions keep the same cache.
  */
 class OcrBlockLayoutCache {
-
     private class Stored(
         val segments: List<String>,
         val textSize: Float,
         val widths: List<Float>,
     )
 
-    private val entries = object : LinkedHashMap<String, Stored>(MAX_ENTRIES, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Stored>?) =
-            size > MAX_ENTRIES
-    }
+    private val entries =
+        object : LinkedHashMap<String, Stored>(MAX_ENTRIES, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Stored>?) = size > MAX_ENTRIES
+        }
 
     fun layout(
         text: String,
@@ -37,13 +36,15 @@ class OcrBlockLayoutCache {
         val stored = entries[key]
 
         if (stored != null) {
-            val sameWidths = lineWidths.zip(stored.widths).all { (now, was) ->
-                abs(now - was) <= was * WIDTH_TOLERANCE
-            }
+            val sameWidths =
+                lineWidths.zip(stored.widths).all { (now, was) ->
+                    abs(now - was) <= was * WIDTH_TOLERANCE
+                }
             if (sameWidths) return OcrBlockLayout.Result(stored.segments, stored.textSize)
 
-            val capacityGrew = lineWidths.sum() >
-                stored.widths.sum() * (1 + WIDTH_TOLERANCE)
+            val capacityGrew =
+                lineWidths.sum() >
+                    stored.widths.sum() * (1 + WIDTH_TOLERANCE)
             val start = if (capacityGrew) startSize else minOf(stored.textSize, startSize)
             val fresh = OcrBlockLayout.layout(text, lineWidths, start, measure)
             if (fresh != null) {

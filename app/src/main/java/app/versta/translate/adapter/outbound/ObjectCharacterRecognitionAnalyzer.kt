@@ -2,10 +2,10 @@ package app.versta.translate.adapter.outbound
 
 import android.os.SystemClock
 import app.versta.translate.core.entity.FontWeight
-import app.versta.translate.core.entity.OcrAnalysisResult
-import app.versta.translate.core.entity.OcrLineResult
 import app.versta.translate.core.entity.ObjectCharacterRecogniserColors
 import app.versta.translate.core.entity.ObjectCharacterRecogniserResult
+import app.versta.translate.core.entity.OcrAnalysisResult
+import app.versta.translate.core.entity.OcrLineResult
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,8 +13,8 @@ import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 
 /** Shared line mapping used by the live analyzer and the stills pipeline. */
-fun mapOcrLineResult(line: OcrLineResult): ObjectCharacterRecogniserResult {
-    return ObjectCharacterRecogniserResult(
+fun mapOcrLineResult(line: OcrLineResult): ObjectCharacterRecogniserResult =
+    ObjectCharacterRecogniserResult(
         points = line.box.points,
         score = line.score,
         text = line.text,
@@ -23,7 +23,6 @@ fun mapOcrLineResult(line: OcrLineResult): ObjectCharacterRecogniserResult {
         blockId = line.blockId,
         strip = line.strip,
     )
-}
 
 /**
  * Live-frame OCR pump, driven once per camera frame by the GL preview loop
@@ -48,14 +47,18 @@ class ObjectCharacterRecognitionAnalyzer(
     private val forcedRecognizer: () -> String? = { null },
     private val onFrameProcessed: (List<ObjectCharacterRecogniserResult>, Int, Int) -> Unit,
 ) {
-
-    private class PendingAcquire(val result: OcrAnalysisResult, val epoch: Int)
+    private class PendingAcquire(
+        val result: OcrAnalysisResult,
+        val epoch: Int,
+    )
 
     /** Whether the native tracker holds a live anchor (tracked lines or a
      *  completed acquire). Starts false: the very first frames acquire
      *  instead of probing empty tracks. */
     private var _anchored = false
+
     @Volatile private var _acquireInFlight = false
+
     @Volatile private var _pendingAcquire: PendingAcquire? = null
     private var _acquireEpoch = 0
     private var _lastAcquireAt = 0L
@@ -94,7 +97,11 @@ class ObjectCharacterRecognitionAnalyzer(
      * canonical→current homography (9 floats) for the GL overlay composite,
      * or null when nothing is drawable.
      */
-    fun process(input: ByteBuffer, width: Int, height: Int): FloatArray? {
+    fun process(
+        input: ByteBuffer,
+        width: Int,
+        height: Int,
+    ): FloatArray? {
         // 1) A finished acquire lands here: publish its content (fresh strip
         //    epoch → rebake downstream), then keep going — the current frame
         //    still wants its own ticked pose.
@@ -154,7 +161,11 @@ class ObjectCharacterRecognitionAnalyzer(
      * is implicit in the single in-flight flag — a dropped snapshot is never
      * more than one camera frame stale on the next dispatch.
      */
-    private fun dispatchAcquire(input: ByteBuffer, width: Int, height: Int) {
+    private fun dispatchAcquire(
+        input: ByteBuffer,
+        width: Int,
+        height: Int,
+    ) {
         val nowMs = SystemClock.elapsedRealtime()
         if (_acquireInFlight || nowMs - _lastAcquireAt < _acquireBackoffMs) return
         _lastAcquireAt = nowMs
@@ -166,8 +177,9 @@ class ObjectCharacterRecognitionAnalyzer(
         // size changed (allocating a throwaway direct buffer per dispatch to
         // learn the size churned direct memory on the acquire path).
         val needed = width * height * 4
-        val snap = _snapshot?.takeIf { it.capacity() == needed }
-            ?: ByteBuffer.allocateDirect(needed)
+        val snap =
+            _snapshot?.takeIf { it.capacity() == needed }
+                ?: ByteBuffer.allocateDirect(needed)
         _snapshot = snap
         snap.clear()
         val src = input.duplicate()
@@ -177,9 +189,10 @@ class ObjectCharacterRecognitionAnalyzer(
 
         val forced = forcedRecognizer()
         scope.launch(acquireDispatcher) {
-            val result = runCatching {
-                objectCharacterRecognitionInference.analyzeLive(snap, width, height, forced)
-            }.getOrNull()
+            val result =
+                runCatching {
+                    objectCharacterRecognitionInference.analyzeLive(snap, width, height, forced)
+                }.getOrNull()
             // Epoch guards against a reset between dispatch and completion.
             if (result != null && epoch == _acquireEpoch) {
                 _pendingAcquire = PendingAcquire(result, epoch)
@@ -191,16 +204,17 @@ class ObjectCharacterRecognitionAnalyzer(
     /** The loss-hide grace + present hop (reference LOSS_HIDE_AFTER_FRAMES). */
     private fun present(result: OcrAnalysisResult) {
         val results = result.lines.map(::mapOcrLineResult)
-        val present = if (results.isEmpty() && _graceResults.isNotEmpty() && _graceFrames < GRACE_FRAMES) {
-            _graceFrames++
-            _graceResults
-        } else {
-            if (results.isNotEmpty()) {
-                _graceResults = results
-                _graceFrames = 0
+        val present =
+            if (results.isEmpty() && _graceResults.isNotEmpty() && _graceFrames < GRACE_FRAMES) {
+                _graceFrames++
+                _graceResults
+            } else {
+                if (results.isNotEmpty()) {
+                    _graceResults = results
+                    _graceFrames = 0
+                }
+                results
             }
-            results
-        }
         // Presented synchronously on the GL thread: every async hop on this
         // path is a display frame of overlay lag.
         onFrameProcessed(present, result.width, result.height)

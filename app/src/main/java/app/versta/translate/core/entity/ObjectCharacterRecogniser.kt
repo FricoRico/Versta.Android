@@ -5,14 +5,15 @@ import androidx.compose.ui.graphics.Color
 
 class ObjectCharacterRecogniserColors(
     val background: Color,
-    val foreground: Color
+    val foreground: Color,
 ) {
     companion object {
         /** Shared default when a line carries no matte-derived colors. */
-        val DEFAULT = ObjectCharacterRecogniserColors(
-            background = Color.White,
-            foreground = Color.Black
-        )
+        val DEFAULT =
+            ObjectCharacterRecogniserColors(
+                background = Color.White,
+                foreground = Color.Black,
+            )
     }
 }
 
@@ -32,7 +33,7 @@ class ObjectCharacterRecogniserResult(
  */
 data class OcrTextBox(
     val points: Array<PointF>,
-    val score: Float = 0f
+    val score: Float = 0f,
 )
 
 /**

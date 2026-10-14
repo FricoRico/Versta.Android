@@ -19,22 +19,24 @@ import kotlinx.coroutines.launch
 class ObjectCharacterRecognitionViewModel(
     context: Context,
     private val objectCharacterRecognitionRepository: ObjectCharacterRecognitionRepository,
-    private val externalObjectCharacterRecognitionModelsRepository: ExternalObjectCharacterRecognitionModelsRepository
+    private val externalObjectCharacterRecognitionModelsRepository: ExternalObjectCharacterRecognitionModelsRepository,
 ) : ViewModel() {
-
     val ocrModels = externalObjectCharacterRecognitionModelsRepository.getDefinitions().distinctUntilChanged()
 
     private val importedModules = objectCharacterRecognitionRepository.getModules().distinctUntilChanged()
 
-    val ocrModelsByState = externalObjectCharacterRecognitionModelsRepository.getDefinitionsByState(
-        importedModules
-    ).distinctUntilChanged()
+    val ocrModelsByState =
+        externalObjectCharacterRecognitionModelsRepository
+            .getDefinitionsByState(
+                importedModules,
+            ).distinctUntilChanged()
 
-    private val downloadManager = DownloadManager<ExternalObjectCharacterRecognitionDownloadTask>(
-        context = context,
-        statusIntentAction = DOWNLOAD_OBJECT_CHARACTER_RECOGNITION_STATUS_INTENT,
-        workerClass = DownloadObjectCharacterRecognitionWorker::class.java
-    )
+    private val downloadManager =
+        DownloadManager<ExternalObjectCharacterRecognitionDownloadTask>(
+            context = context,
+            statusIntentAction = DOWNLOAD_OBJECT_CHARACTER_RECOGNITION_STATUS_INTENT,
+            workerClass = DownloadObjectCharacterRecognitionWorker::class.java,
+        )
     val downloadTasks: StateFlow<List<ExternalObjectCharacterRecognitionDownloadTask>> =
         downloadManager.downloadTasks.asStateFlow()
 
@@ -42,18 +44,17 @@ class ObjectCharacterRecognitionViewModel(
      * Returns a flow of [ExternalObjectCharacterRecognitionModelDefinition] that contains the definitions of the
      * external OCR model for the given [id].
      */
-    fun getOcrModelDefinition(id: String): Flow<ExternalObjectCharacterRecognitionModelDefinition> {
-        return externalObjectCharacterRecognitionModelsRepository.getDefinition(id).distinctUntilChanged()
-    }
+    fun getOcrModelDefinition(id: String): Flow<ExternalObjectCharacterRecognitionModelDefinition> = externalObjectCharacterRecognitionModelsRepository.getDefinition(id).distinctUntilChanged()
 
     /**
      * Queues a download for the given OCR model.
      */
     fun queueDownload(model: ExternalObjectCharacterRecognitionModelDefinition) {
-        val task = ExternalObjectCharacterRecognitionDownloadTask(
-            model = model,
-            status = DownloadStatus.Queued
-        )
+        val task =
+            ExternalObjectCharacterRecognitionDownloadTask(
+                model = model,
+                status = DownloadStatus.Queued,
+            )
         downloadManager.queueDownload(task)
     }
 
@@ -82,4 +83,3 @@ class ObjectCharacterRecognitionViewModel(
         downloadManager.unregister()
     }
 }
-

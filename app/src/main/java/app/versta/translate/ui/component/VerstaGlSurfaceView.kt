@@ -3,12 +3,12 @@ package app.versta.translate.ui.component
 import android.content.Context
 import android.graphics.SurfaceTexture
 import android.opengl.EGL14
-import android.opengl.GLUtils
 import android.opengl.EGLConfig
 import android.opengl.EGLContext
 import android.opengl.EGLSurface
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
+import android.opengl.GLUtils
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -28,8 +28,10 @@ import java.util.concurrent.Executor
  * and its overlays can never drift apart, which is what makes the overlay
  * read as grounded on the scene.
  */
-class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolder.Callback {
-
+class VerstaGlSurfaceView(
+    context: Context,
+) : SurfaceView(context),
+    SurfaceHolder.Callback {
     /** Sensor mount rotation in 90° quadrants (from
      *  `CameraInfo.sensorRotationDegrees`); updated by the caller. The
      *  sampling map applies its inverse — see [CameraFrameTransform]. */
@@ -60,7 +62,10 @@ class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolde
         holder.addCallback(this)
     }
 
-    fun setSurfaceRequest(request: SurfaceRequest, executor: Executor) {
+    fun setSurfaceRequest(
+        request: SurfaceRequest,
+        executor: Executor,
+    ) {
         synchronized(reconciliationLock) {
             // Recomposition re-invokes us with the same request: providing and
             // re-listening pile duplicate cancellation listeners onto one
@@ -81,7 +86,10 @@ class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolde
         }
     }
 
-    private fun provide(request: SurfaceRequest, surface: Surface) {
+    private fun provide(
+        request: SurfaceRequest,
+        surface: Surface,
+    ) {
         glThread?.setCameraBufferSize(request.resolution.width, request.resolution.height)
 
         runCatching {
@@ -97,7 +105,12 @@ class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolde
         glThread = GlThread(holder.surface).also { it.start() }
     }
 
-    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+    override fun surfaceChanged(
+        holder: SurfaceHolder,
+        format: Int,
+        width: Int,
+        height: Int,
+    ) {
         glThread?.resize(width, height)
     }
 
@@ -122,11 +135,17 @@ class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolde
         }
     }
 
-    private inner class GlThread(private val windowSurface: Surface) : Thread("versta-gl") {
+    private inner class GlThread(
+        private val windowSurface: Surface,
+    ) : Thread("versta-gl") {
         @Volatile private var running = true
+
         @Volatile private var surfaceW = 0
+
         @Volatile private var surfaceH = 0
+
         @Volatile private var bufferW = 0
+
         @Volatile private var bufferH = 0
 
         private val frameLock = Object()
@@ -143,12 +162,20 @@ class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolde
          *  overlay before it can composite (see render loop). */
         private var acceptedEpoch = -1L
 
-        fun resize(w: Int, h: Int) {
-            surfaceW = w; surfaceH = h
+        fun resize(
+            w: Int,
+            h: Int,
+        ) {
+            surfaceW = w
+            surfaceH = h
         }
 
-        fun setCameraBufferSize(w: Int, h: Int) {
-            bufferW = w; bufferH = h
+        fun setCameraBufferSize(
+            w: Int,
+            h: Int,
+        ) {
+            bufferW = w
+            bufferH = h
             surfaceTexture?.setDefaultBufferSize(w, h)
         }
 
@@ -183,8 +210,10 @@ class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolde
                 renderer = null
                 if (eglDisplay != EGL14.EGL_NO_DISPLAY) {
                     EGL14.eglMakeCurrent(
-                        eglDisplay, EGL14.EGL_NO_SURFACE,
-                        EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT,
+                        eglDisplay,
+                        EGL14.EGL_NO_SURFACE,
+                        EGL14.EGL_NO_SURFACE,
+                        EGL14.EGL_NO_CONTEXT,
                     )
                     if (eglSurface != EGL14.EGL_NO_SURFACE) EGL14.eglDestroySurface(eglDisplay, eglSurface)
                     if (eglContext != EGL14.EGL_NO_CONTEXT) EGL14.eglDestroyContext(eglDisplay, eglContext)
@@ -206,13 +235,22 @@ class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolde
                     Timber.tag(TAG).e("eglInitialize failed")
                     return false
                 }
-                val attribs = intArrayOf(
-                    EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
-                    EGL14.EGL_SURFACE_TYPE, EGL14.EGL_WINDOW_BIT,
-                    EGL14.EGL_RED_SIZE, 8, EGL14.EGL_GREEN_SIZE, 8,
-                    EGL14.EGL_BLUE_SIZE, 8, EGL14.EGL_ALPHA_SIZE, 0,
-                    EGL14.EGL_NONE,
-                )
+                val attribs =
+                    intArrayOf(
+                        EGL14.EGL_RENDERABLE_TYPE,
+                        EGL14.EGL_OPENGL_ES2_BIT,
+                        EGL14.EGL_SURFACE_TYPE,
+                        EGL14.EGL_WINDOW_BIT,
+                        EGL14.EGL_RED_SIZE,
+                        8,
+                        EGL14.EGL_GREEN_SIZE,
+                        8,
+                        EGL14.EGL_BLUE_SIZE,
+                        8,
+                        EGL14.EGL_ALPHA_SIZE,
+                        0,
+                        EGL14.EGL_NONE,
+                    )
                 val configs = arrayOfNulls<EGLConfig>(1)
                 val numConfigs = IntArray(1)
                 EGL14.eglChooseConfig(eglDisplay, attribs, 0, configs, 0, 1, numConfigs, 0)
@@ -221,10 +259,14 @@ class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolde
                     Timber.tag(TAG).e("no EGL config for GLES2 window surface")
                     return false
                 }
-                eglContext = EGL14.eglCreateContext(
-                    eglDisplay, config, EGL14.EGL_NO_CONTEXT,
-                    intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE), 0,
-                )
+                eglContext =
+                    EGL14.eglCreateContext(
+                        eglDisplay,
+                        config,
+                        EGL14.EGL_NO_CONTEXT,
+                        intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE),
+                        0,
+                    )
                 if (eglContext == EGL14.EGL_NO_CONTEXT) {
                     Timber.tag(TAG).e("eglCreateContext failed: %s", GLUtils.getEGLErrorString(EGL14.eglGetError()))
                     return false
@@ -247,16 +289,24 @@ class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolde
                 cameraTexId = texIds[0]
                 GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, cameraTexId)
                 GLES20.glTexParameteri(
-                    GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR,
+                    GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+                    GLES20.GL_TEXTURE_MIN_FILTER,
+                    GLES20.GL_LINEAR,
                 )
                 GLES20.glTexParameteri(
-                    GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR,
+                    GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+                    GLES20.GL_TEXTURE_MAG_FILTER,
+                    GLES20.GL_LINEAR,
                 )
                 GLES20.glTexParameteri(
-                    GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE,
+                    GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+                    GLES20.GL_TEXTURE_WRAP_S,
+                    GLES20.GL_CLAMP_TO_EDGE,
                 )
                 GLES20.glTexParameteri(
-                    GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE,
+                    GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+                    GLES20.GL_TEXTURE_WRAP_T,
+                    GLES20.GL_CLAMP_TO_EDGE,
                 )
                 val st = SurfaceTexture(cameraTexId)
                 st.setOnFrameAvailableListener {
@@ -268,7 +318,10 @@ class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolde
                 return st
             }
 
-            if (!setupEgl()) { teardown(); return }
+            if (!setupEgl()) {
+                teardown()
+                return
+            }
             val st = setupCameraTexture()
             surfaceTexture = st
             publishCameraSurface(Surface(st))
@@ -301,9 +354,11 @@ class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolde
                     val rbW: Int
                     val rbH: Int
                     if (undoQuadrant % 2 == 1) {
-                        rbW = bh; rbH = bw
+                        rbW = bh
+                        rbH = bw
                     } else {
-                        rbW = bw; rbH = bh
+                        rbW = bw
+                        rbH = bh
                     }
                     val scale = (TRACK_LONG_SIDE.toFloat() / maxOf(rbW, rbH)).coerceAtMost(1f)
                     val outW = (rbW * scale).toInt().coerceAtLeast(2)
@@ -317,9 +372,14 @@ class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolde
                     buf.clear()
                     // Aspect-matched full frame: no display crop applies, so
                     // the analysis image carries all upright content.
-                    val uvFull = CameraFrameTransform.displayUvMatrix(
-                        bw, bh, outW, outH, undoQuadrant,
-                    )
+                    val uvFull =
+                        CameraFrameTransform.displayUvMatrix(
+                            bw,
+                            bh,
+                            outW,
+                            outH,
+                            undoQuadrant,
+                        )
                     if (r.readbackRgba(cameraTexId, outW, outH, uvFull, buf)) {
                         tick = sink(buf, outW, outH)
                     }
@@ -362,11 +422,17 @@ class VerstaGlSurfaceView(context: Context) : SurfaceView(context), SurfaceHolde
                     // Tracker space is the UPRIGHT frame; the camera matrix
                     // would wrongly chain the buffer's sensor rotation in.
                     val contentUv = CameraFrameTransform.contentUvMatrix(bw, bh, sw, sh, undoQuadrant)
-                    CameraFrameTransform.overlayUvMatrix(
-                        contentUv, readbackW, readbackH, homography, overlayW, overlayH,
-                    )?.let { overlayUv ->
-                        r.renderOverlay(sw, sh, overlayUv)
-                    }
+                    CameraFrameTransform
+                        .overlayUvMatrix(
+                            contentUv,
+                            readbackW,
+                            readbackH,
+                            homography,
+                            overlayW,
+                            overlayH,
+                        )?.let { overlayUv ->
+                            r.renderOverlay(sw, sh, overlayUv)
+                        }
                 }
                 EGL14.eglSwapBuffers(eglDisplay, eglSurface)
             }

@@ -33,18 +33,20 @@ object Migration8 : Migration {
         val paths = mutableListOf<Path>()
         for (table in listOf("ObjectCharacterRecognitionDetectorModel", "ObjectCharacterRecognitionRecognizerModel")) {
             try {
-                database.driver.executeQuery(
-                    null,
-                    "SELECT path FROM $table",
-                    { cursor ->
-                        val result = mutableListOf<String>()
-                        while (cursor.next().value) {
-                            result.add(cursor.getString(0) ?: continue)
-                        }
-                        QueryResult.Value(result)
-                    },
-                    0
-                ).value.forEach { paths.add(it.toPath().toNioPath()) }
+                database.driver
+                    .executeQuery(
+                        null,
+                        "SELECT path FROM $table",
+                        { cursor ->
+                            val result = mutableListOf<String>()
+                            while (cursor.next().value) {
+                                result.add(cursor.getString(0) ?: continue)
+                            }
+                            QueryResult.Value(result)
+                        },
+                        0,
+                    ).value
+                    .forEach { paths.add(it.toPath().toNioPath()) }
             } catch (e: Exception) {
                 Timber.tag(TAG).w(e, "Could not read old OCR table $table (already gone?)")
             }

@@ -30,10 +30,11 @@ fun lineQuadOf(points: List<PointF>): OcrLineQuad? {
     val endY = (tr.y + br.y) / 2f
 
     val width = hypot(endX - startX, endY - startY)
-    val bandH = maxOf(
-        hypot(bl.x - tl.x, bl.y - tl.y),
-        hypot(br.x - tr.x, br.y - tr.y)
-    )
+    val bandH =
+        maxOf(
+            hypot(bl.x - tl.x, bl.y - tl.y),
+            hypot(br.x - tr.x, br.y - tr.y),
+        )
     if (width <= 1f || bandH <= 1f) return null
 
     return OcrLineQuad(points = points, width = width, bandHeight = bandH)
