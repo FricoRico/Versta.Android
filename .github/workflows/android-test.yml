@@ -43,7 +43,7 @@ env:
 
 jobs:
   connected-check:
-    name: connected-check (arm64-v8a, API ${{ env.API_LEVEL }})
+    name: connected-check (arm64-v8a, API 34)
     runs-on: macos-14
     timeout-minutes: 90
     steps:
