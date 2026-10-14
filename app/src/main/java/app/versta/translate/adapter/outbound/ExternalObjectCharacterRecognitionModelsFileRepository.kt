@@ -7,6 +7,7 @@ import app.versta.translate.core.entity.ObjectCharacterRecognitionDetectorModel
 import app.versta.translate.core.entity.ObjectCharacterRecognitionDetectorWithFiles
 import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerModel
 import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerWithFiles
+import app.versta.translate.utils.compareVersions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -75,7 +76,7 @@ class ExternalObjectCharacterRecognitionModelsFileRepository(
                             val recognizer = recognizers.find { it.id == model.id }
 
                             if (detector != null && recognizer != null &&
-                                (detector.version < model.version || recognizer.version < model.version)
+                                isOutdated(model, detector, recognizer)
                             ) {
                                 ExternalObjectCharacterRecognitionModelWithState(
                                     definition = model,
@@ -94,6 +95,14 @@ class ExternalObjectCharacterRecognitionModelsFileRepository(
                             },
                 )
             }
+
+    private fun isOutdated(
+        model: ExternalObjectCharacterRecognitionModelDefinition,
+        detector: ObjectCharacterRecognitionDetectorWithFiles,
+        recognizer: ObjectCharacterRecognitionRecognizerWithFiles,
+    ): Boolean =
+        compareVersions(detector.version, model.version) < 0 ||
+            compareVersions(recognizer.version, model.version) < 0
 
     private fun calculateExtractedSize(
         detector: ObjectCharacterRecognitionDetectorWithFiles,
