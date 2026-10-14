@@ -1,4 +1,4 @@
-package app.versta.translate.database.migrations
+package app.versta.translate.utils
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

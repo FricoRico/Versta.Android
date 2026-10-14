@@ -1,4 +1,4 @@
-package app.versta.translate.database.migrations
+package app.versta.translate.utils
 
 /**
  * Compares model version strings of the form `vMAJOR.MINOR.PATCH` numerically,
