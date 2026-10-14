@@ -13,6 +13,7 @@ import androidx.work.workDataOf
 import app.versta.translate.R
 import app.versta.translate.adapter.inbound.DownloadWorker
 import app.versta.translate.core.entity.DownloadStatus
+import app.versta.translate.core.entity.IncompatibleModelBundleException
 import kotlinx.coroutines.flow.MutableStateFlow
 import okhttp3.internal.platform.PlatformRegistry.applicationContext
 import java.net.SocketException
@@ -136,6 +137,28 @@ class DownloadManager<T : DownloadTask>(
             is DownloadStatus.Error -> {
                 when (status.exception) {
                     is CancellationException -> {}
+
+                    is IncompatibleModelBundleException -> {
+                        val message =
+                            when (status.exception.reason) {
+                                IncompatibleModelBundleException.Reason.AppOutdated -> {
+                                    R.string.download_error_incompatible_bundle_app_outdated
+                                }
+
+                                IncompatibleModelBundleException.Reason.BundleOutdated,
+                                IncompatibleModelBundleException.Reason.BundleUndeclared,
+                                -> {
+                                    R.string.download_error_incompatible_bundle_outdated
+                                }
+                            }
+
+                        Toast
+                            .makeText(
+                                context,
+                                context.getString(message),
+                                Toast.LENGTH_LONG,
+                            ).show()
+                    }
 
                     is SocketException,
                     is SocketTimeoutException,

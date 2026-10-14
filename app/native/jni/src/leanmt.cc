@@ -226,4 +226,21 @@ Java_app_versta_translate_bridge_leanmt_Leanmt_translate(
     return targets;
 }
 
+
+// ---------------------------------------------------------------------------
+// LeanmtVersion
+// ---------------------------------------------------------------------------
+
+
+JNIEXPORT jlong JNICALL
+Java_app_versta_translate_bridge_leanmt_LeanmtVersion_query(
+        JNIEnv *,
+        jobject
+) {
+    // Bundles declare leanmt_binary_version in their manifest (Versta.Models
+    // "leanmt handshake"); the app gates installs against this constant, so it
+    // is surfaced from the compiled library instead of a hard-coded mirror.
+    return static_cast<jlong>(leanmt::kBinaryFileVersion);
+}
+
 }  // extern "C"
