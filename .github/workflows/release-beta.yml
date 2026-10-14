@@ -9,14 +9,15 @@ name: Release (beta)
 # policy iam.disableServiceAccountKeyCreation blocks JSON keys — there is no
 # long-lived Play credential in this repo, only WIF identifiers).
 #
-# Before the first run (see RELEASE.md § One-time setup for the script):
+# Before the first run, the one-time wiring must exist (runbook: document
+# `play-ci-setup-runbook` on issue NEU-7; deliberately not stored in the repo):
 #   Repo variables:  PLAY_WIF_PROVIDER            projects/<n>/locations/global/workloadIdentityPools/github-actions/providers/github-oidc
 #                    PLAY_SERVICE_ACCOUNT_EMAIL   versta-play-publisher@<project>.iam.gserviceaccount.com
 #   Repo secrets:    VERSTA_UPLOAD_KEYSTORE_BASE64  base64 of versta.keystore (the upload key)
 #                    VERSTA_UPLOAD_STORE_PASSWORD   keystore store password
 #                    VERSTA_UPLOAD_KEY_PASSWORD     key password for alias "versta"
-# The preflight job fails fast with those same instructions if any are
-# missing, so a misconfigured run never burns a 45-minute native build.
+# The preflight job fails fast if any are missing, so a misconfigured run
+# never burns a 45-minute native build.
 
 on:
   workflow_dispatch:
@@ -69,7 +70,7 @@ jobs:
           if [ "${#missing[@]}" -gt 0 ]; then
             echo "::error::Missing repo config: ${missing[*]}"
             echo "::error::Variables under Settings -> Secrets and variables -> Actions -> Variables; secrets on the Secrets tab."
-            echo "::error::Full instructions: RELEASE.md section 'One-time setup'."
+            echo "::error::Setup runbook: document 'play-ci-setup-runbook' on issue NEU-7."
             exit 1
           fi
           echo "$WIF_PROVIDER" | grep -qE '^projects/[0-9]+/locations/global/workloadIdentityPools/[^/]+/providers/[^/]+$' \

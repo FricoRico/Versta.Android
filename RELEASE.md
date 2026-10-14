@@ -3,61 +3,16 @@
 Owner: QA & release engineering. This is the boring path from `develop` to a
 Play testing track. If a step needs judgement, stop and ask.
 
-## One-time setup (founder, ~15 min, keyless)
+## Prerequisites
 
-Without these every `Release (beta)` run fails fast at the `preflight` job.
-Auth uses Workload Identity Federation: no service-account JSON key exists
-anywhere (the GCP org policy `iam.disableServiceAccountKeyCreation` blocks
-them, and nothing weaker should be minted). Values live only in GitHub repo
-settings — never in the repo, issues, or chat.
-
-1. **GCP + Play plumbing — one copy-paste script.**
-   Open https://shell.cloud.google.com, select the GCP project that holds
-   (or will hold) the Android Publisher API, paste:
-
-   ```bash
-   PROJECT_ID="$(gcloud config get-value project)"   # or set explicitly
-   REPO="FricoRico/Versta.Android"
-   SA="versta-play-publisher"
-   POOL="github-actions"
-
-   gcloud services enable androidpublisher.googleapis.com
-   gcloud iam service-accounts create "$SA" --display-name="Versta Play publisher (CI)"
-   gcloud iam workload-identity-pools create "$POOL" --location=global \
-     --display-name="GitHub Actions"
-   gcloud iam workload-identity-pools providers create-oidc github-oidc \
-     --location=global --workload-identity-pool="$POOL" \
-     --display-name="GitHub OIDC" \
-     --issuer-uri="https://token.actions.githubusercontent.com" \
-     --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
-     --attribute-condition="assertion.repository=='$REPO'"
-   NUM="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
-   gcloud iam service-accounts add-iam-policy-binding \
-     "$SA@$PROJECT_ID.iam.gserviceaccount.com" \
-     --role="roles/iam.workloadIdentityUser" \
-     --member="principalSet://iam.googleapis.com/projects/$NUM/locations/global/workloadIdentityPools/$POOL/attribute.repository/$REPO"
-   echo "WIF: projects/$NUM/locations/global/workloadIdentityPools/$POOL/providers/github-oidc"
-   echo "SA:  $SA@$PROJECT_ID.iam.gserviceaccount.com"
-   ```
-
-   The provider's attribute-condition pins auth to this exact repo — no
-   other GitHub repo can impersonate the publisher account.
-2. **Play Console invite.** *Users and permissions* → invite the printed SA
-   email → app access `app.versta.translate` → permissions: *View app
-   information* + *Create, edit and delete draft releases* + **Release to
-   testing tracks**. No production access.
-3. **Keystore check (2 min).** Play Console → *Setup → App signing* → the
-   *Upload key certificate* SHA-256 must match
-   `keytool -list -v -keystore versta.keystore -alias versta | grep SHA256`.
-   Match = correct upload key. Mismatch = stop and say so; do a one-time key
-   upgrade instead of guessing.
-4. **GitHub repo settings** → *Secrets and variables → Actions*:
-   - Variables tab: `PLAY_WIF_PROVIDER` = the printed WIF line;
-     `PLAY_SERVICE_ACCOUNT_EMAIL` = the printed SA line.
-   - Secrets tab: `VERSTA_UPLOAD_KEYSTORE_BASE64` =
-     `openssl base64 -A -in versta.keystore`;
-     `VERSTA_UPLOAD_STORE_PASSWORD` / `VERSTA_UPLOAD_KEY_PASSWORD` from the
-     existing local `keystore.properties`.
+One-time wiring (GCP Workload Identity Federation, Play Console invite,
+repo variables/secrets) lives on the NEU-7 issue as the
+`play-ci-setup-runbook` document — one-time setup is deliberately not kept
+in this repo. Until it's done, every `Release (beta)` run fails fast at the
+`preflight` job with a pointer there. Auth is keyless by design: no
+service-account JSON key exists anywhere (the GCP org policy
+`iam.disableServiceAccountKeyCreation` blocks them, and nothing weaker
+should be minted).
 
 ## Quality gates (agreed, do not widen mid-flight)
 
