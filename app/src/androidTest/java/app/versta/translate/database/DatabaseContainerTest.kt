@@ -4,7 +4,6 @@ import android.content.Context
 import android.database.DatabaseUtils
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.platform.app.InstrumentationRegistry
-import app.versta.translate.core.entity.Supertonic3
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -233,18 +232,18 @@ class DatabaseContainerTest {
         )
     }
 
-    private fun assertSupertonic3VoicesRegistered(container: DatabaseContainer) {
-        val voices = container.voices.getAll().executeAsList()
-
-        assertEquals(62, voices.size)
-        assertTrue(voices.all { it.modelId == Supertonic3.ID })
-        assertEquals(
-            Supertonic3.LANGUAGES,
-            voices.map { it.language }.toSet(),
-        )
-        assertEquals(
-            Supertonic3.LANGUAGES.size * 2,
-            voices.map { "${it.language}:${it.gender}" }.distinct().size,
+    /**
+     * Migrations never register Supertonic 3 voice rows: the bundle-install
+     * transaction owns them so they stay parented to their model row under
+     * foreign-key enforcement (NEU-65). Install-path registration is covered
+     * by `VoiceDatabaseRepositoryTest`.
+     */
+    private fun assertNoVoiceRowsRemained(container: DatabaseContainer) {
+        assertTrue(
+            container.voices
+                .getAll()
+                .executeAsList()
+                .isEmpty(),
         )
     }
 
@@ -300,7 +299,7 @@ class DatabaseContainerTest {
     }
 
     @Test
-    fun v3Database_chainEndsWithKokoroPurgedAndSupertonic3Registered() {
+    fun v3Database_chainEndsWithLegacyVoiceModelsPurged() {
         databaseV3()
         SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
             insertVoiceModel(database, "voice-surviving", "v1.4.0")
@@ -320,7 +319,7 @@ class DatabaseContainerTest {
         assertFalse(voiceModelsRoot.resolve("voice-legacy").exists())
         assertFalse(voiceModelsRoot.resolve("voice-surviving").exists())
 
-        assertSupertonic3VoicesRegistered(container)
+        assertNoVoiceRowsRemained(container)
     }
 
     @Test
@@ -345,15 +344,13 @@ class DatabaseContainerTest {
         assertFalse(voiceModelsRoot.resolve("voice-legacy").exists())
         assertFalse(voiceModelsRoot.resolve("voice-future").exists())
 
-        val voices = container.voices.getAll().executeAsList()
-        assertTrue(voices.none { it.modelId == "voice-current" })
-        assertSupertonic3VoicesRegistered(container)
+        assertNoVoiceRowsRemained(container)
 
         assertFalse(externalData.exists())
     }
 
     @Test
-    fun v6Database_removesTextToSpeechDataAndRegistersSupertonic3Once() {
+    fun v6Database_removesTextToSpeechDataWithoutRegisteringVoices() {
         databaseV6()
         SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
             insertTextToSpeechData(database)
@@ -368,23 +365,23 @@ class DatabaseContainerTest {
                 .isEmpty(),
         )
         assertFalse(textToSpeechData.exists())
-        assertSupertonic3VoicesRegistered(container)
+        assertNoVoiceRowsRemained(container)
 
         container.driver.close()
         containers.remove(container)
 
-        // Reopening the migrated database runs no migration again; the
-        // inserted voice mappings stay exactly sixty-two.
-        assertSupertonic3VoicesRegistered(container())
+        // Reopening the migrated database runs no migration again; no voice
+        // rows appear outside the bundle-install transaction.
+        assertNoVoiceRowsRemained(container())
     }
 
     @Test
-    fun v1Database_registersSupertonic3VoicesThroughFullUpgrade() {
+    fun v1Database_purgesVoiceRowsThroughFullUpgrade() {
         databaseV1()
 
         val container = container()
 
-        assertSupertonic3VoicesRegistered(container)
+        assertNoVoiceRowsRemained(container)
     }
 
     @Test
@@ -409,7 +406,7 @@ class DatabaseContainerTest {
         // not deleted twice — Migration7 removes it exactly once, with files.
         assertNull(container.voiceModels.getById("voice-legacy").executeAsOneOrNull())
         assertFalse(voiceModelsRoot.resolve("voice-legacy").exists())
-        assertSupertonic3VoicesRegistered(container)
+        assertNoVoiceRowsRemained(container)
     }
 
     @Test

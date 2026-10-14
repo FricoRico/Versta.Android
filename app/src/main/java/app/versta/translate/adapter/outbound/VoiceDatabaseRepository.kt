@@ -52,7 +52,11 @@ class VoiceDatabaseRepository(
     }
 
     /**
-     * Inserts or updates the voice model in the repository.
+     * Inserts or updates the voice model in the repository, registering its
+     * voices in the same transaction — the bundle install is the only place
+     * `Voice` rows come into existence, which keeps them parented to their
+     * model row under foreign-key enforcement (NEU-65). `insertOrIgnore` keeps
+     * a reinstall idempotent.
      * @param metadata The metadata to insert or update.
      */
     override fun upsertVoiceModel(metadata: VoiceModel) {
@@ -60,8 +64,10 @@ class VoiceDatabaseRepository(
             mapVoiceMetadataToVoiceModelDatabaseModel(metadata.id, metadata.model)
         val voices = mapVoiceMetadataToVoiceDatabaseModel(metadata.id, metadata.model)
 
-        upsertVoiceDatabaseModel(data = voiceModel)
-        insertOrIgnoreVoices(data = voices)
+        database.transaction {
+            upsertVoiceDatabaseModel(data = voiceModel)
+            insertOrIgnoreVoices(data = voices)
+        }
     }
 
     /**
@@ -95,18 +101,17 @@ class VoiceDatabaseRepository(
     }
 
     /**
-     * Inserts a list of [VoiceDatabaseModel] into the repository, ignoring if it already exists.
+     * Inserts a list of [VoiceDatabaseModel] into the repository, ignoring if it
+     * already exists. Runs inside the caller's transaction.
      * @param data The data to insert.
      */
     private fun insertOrIgnoreVoices(data: List<VoiceDatabaseModel>) {
-        database.voices.transaction {
-            data.forEach {
-                database.voices.insertOrIgnore(
-                    modelId = it.modelId,
-                    language = it.language,
-                    gender = it.gender,
-                )
-            }
+        data.forEach {
+            database.voices.insertOrIgnore(
+                modelId = it.modelId,
+                language = it.language,
+                gender = it.gender,
+            )
         }
     }
 
