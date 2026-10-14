@@ -9,7 +9,6 @@ import app.versta.translate.adapter.outbound.TextToSpeechPreferenceRepository
 import app.versta.translate.adapter.outbound.TextToSpeechTokenizer
 import app.versta.translate.adapter.outbound.VoiceRepository
 import app.versta.translate.core.entity.Language
-import app.versta.translate.core.entity.Supertonic3
 import app.versta.translate.core.entity.TextToSpeechSynthesisState
 import app.versta.translate.core.entity.VoiceGender
 import app.versta.translate.core.entity.VoiceWithModelFiles
@@ -149,7 +148,7 @@ class TextToSpeechViewModel(
     private fun play(audio: FloatArray) {
         try {
             _speechProgress.value = TextToSpeechSynthesisState.Synthesizing
-            audioPlayer.play(audio, Supertonic3.SAMPLE_RATE)
+            audioPlayer.play(audio, model.sampleRate)
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Failed to play audio")
             setTextToSpeechError(e)

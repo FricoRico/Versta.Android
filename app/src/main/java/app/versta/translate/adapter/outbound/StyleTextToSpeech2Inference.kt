@@ -20,6 +20,7 @@ import kotlin.math.min
 internal const val MIN_SPEED = 0.7f
 internal const val MAX_SPEED = 1.4f
 internal const val OFFSET_SPEED = 0.9f
+internal const val SAMPLE_RATE = 24_000
 const val MAX_TOKEN_LENGTH = 509
 const val STYLE_DIM = 256
 
@@ -28,6 +29,8 @@ class StyleTextToSpeechInference(
 ) : TextToSpeechInference {
     private var session: OrtSession? = null
     private var voice: FloatArray? = null
+
+    override val sampleRate: Int = SAMPLE_RATE
 
     override fun synthesize(
         tokens: LongArray,

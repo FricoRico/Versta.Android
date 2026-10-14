@@ -43,6 +43,11 @@ interface Supertonic3Engine {
 class Supertonic3Inference(
     private val engine: Supertonic3Engine? = null,
 ) : TextToSpeechInference {
+    // The engine's getter (read from the bundle's `tts.json`) is the source of
+    // truth once bound; the published rate stands in until then.
+    override val sampleRate: Int
+        get() = engine?.sampleRate ?: Supertonic3.SAMPLE_RATE
+
     override fun synthesize(
         tokens: LongArray,
         speed: Float,
