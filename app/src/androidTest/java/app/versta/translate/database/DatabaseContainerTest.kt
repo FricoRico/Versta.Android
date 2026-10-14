@@ -340,7 +340,7 @@ class DatabaseContainerTest {
     }
 
     @Test
-    fun v8Database_runsNoMigrationsAcrossColdStarts() {
+    fun currentDatabase_runsNoMigrationsAcrossColdStarts() {
         val first = container()
         val installed = writeVoiceModelFixtures("voice-legacy")
         first.voiceModels.upsert(
