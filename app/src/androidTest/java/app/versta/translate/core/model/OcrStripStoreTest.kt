@@ -10,11 +10,10 @@ import org.junit.Assert.assertSame
 import org.junit.Test
 
 class OcrStripStoreTest {
-    private fun line(strip: OcrErasedStrip?) =
-        ObjectCharacterRecogniserResult(
-            text = "line",
-            strip = strip,
-        )
+    private fun line(
+        strip: OcrErasedStrip?,
+        text: String = "line",
+    ) = ObjectCharacterRecogniserResult(text = text, strip = strip)
 
     private fun strip(
         x: Float,
@@ -100,5 +99,59 @@ class OcrStripStoreTest {
         val attached = store.accept(3, listOf(line(strip(0f))))
 
         assertNull(attached[0])
+    }
+
+    @Test
+    fun frameEdgeCullKeepsShiftedPatches() {
+        // Regression: keying patches by the line's position inside the block
+        // meant one culled frame-edge line shifted every index below it, and
+        // those lines rendered without their erased background for the rest
+        // of the anchor's life.
+        val store = OcrStripStore()
+        store.reset()
+        val acquired =
+            store.accept(
+                1,
+                listOf(
+                    line(strip(0f, ByteArray(16) { 1 }), "top"),
+                    line(strip(20f, ByteArray(16) { 2 }), "mid"),
+                    line(strip(40f, ByteArray(16) { 3 }), "low"),
+                ),
+            )
+
+        // "top" leaves the frame: the survivors arrive one position earlier.
+        val tracked =
+            store.accept(
+                1,
+                listOf(
+                    line(strip(21f), "mid"),
+                    line(strip(41f), "low"),
+                ),
+            )
+
+        assertSame(acquired[1]?.bitmap, tracked[0]?.bitmap)
+        assertSame(acquired[2]?.bitmap, tracked[1]?.bitmap)
+        assertEquals(21f, tracked[0]?.points?.get(0)?.x)
+        assertEquals(41f, tracked[1]?.points?.get(0)?.x)
+    }
+
+    @Test
+    fun sameTextLinesInOneBlockKeepSeparatePatches() {
+        val store = OcrStripStore()
+        store.reset()
+        val acquired =
+            store.accept(
+                1,
+                listOf(
+                    line(strip(0f, ByteArray(16) { 1 }), "total"),
+                    line(strip(20f, ByteArray(16) { 2 }), "total"),
+                ),
+            )
+
+        val tracked = store.accept(1, listOf(line(strip(1f), "total"), line(strip(21f), "total")))
+
+        assertSame(acquired[0]?.bitmap, tracked[0]?.bitmap)
+        assertSame(acquired[1]?.bitmap, tracked[1]?.bitmap)
+        assertNotSame(tracked[0]?.bitmap, tracked[1]?.bitmap)
     }
 }

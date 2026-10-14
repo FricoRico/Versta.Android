@@ -1,12 +1,11 @@
 package app.versta.translate.database
 
 import android.content.Context
-import androidx.sqlite.db.SupportSQLiteDatabase
+import android.database.DatabaseUtils
+import android.database.sqlite.SQLiteDatabase
 import app.cash.sqldelight.ColumnAdapter
 import app.cash.sqldelight.TransactionWithReturn
 import app.cash.sqldelight.TransactionWithoutReturn
-import app.cash.sqldelight.db.AfterVersion
-import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import app.versta.translate.database.migrations.Migration3
 import app.versta.translate.database.migrations.Migration4
@@ -18,11 +17,31 @@ import java.app.versta.translate.database.sqldelight.OcrModuleModel
 import java.app.versta.translate.database.sqldelight.SpeechRecognitionModel
 import java.app.versta.translate.database.sqldelight.VoiceModel
 
+/**
+ * A manual post-schema data migration. Runs at most once per database, only
+ * when the database being upgraded has not crossed [afterVersion] yet. The
+ * `.sqm` schema migrations themselves are applied by the driver on first open;
+ * these classes hold the data transforms that accompany them.
+ */
 interface Migration {
-    /** Schema version this migration's hook applies after (see `AfterVersion`). */
-    val afterVersion: Int
+    /**
+     * Schema version boundary this migration belongs to, mirroring the
+     * `AfterVersion(N)` the data transform was attached to. Runs only when the
+     * on-disk database version is at or below this value.
+     */
+    val afterVersion: Long
 
-    fun migrate(database: DatabaseContainer)
+    /**
+     * Runs the data migration. Exceptions propagate: a failed migration crashes
+     * the app instead of leaving silently half-migrated data behind.
+     *
+     * @param database database container holding the driver and queries.
+     * @param context application context for file access.
+     */
+    fun migrate(
+        database: DatabaseContainer,
+        context: Context,
+    )
 }
 
 class DatabaseContainer(
@@ -34,44 +53,9 @@ class DatabaseContainer(
         const val DB_FILE = "versta.db"
     }
 
-    private val _migrations =
-        listOf(
-            Migration3,
-            Migration4,
-            Migration6,
-            Migration8,
-        )
+    private val appContext: Context = context.applicationContext
 
-    // The AfterVersion hooks must ride the driver's own open path: the default
-    // callback migrates an old database during the first open, before any
-    // init-time PRAGMA check could observe the pre-migration version — so a
-    // post-hoc runner never fires the data repairs (old OCR tables and files
-    // would linger forever).
-    private inner class MigrationCallback :
-        AndroidSqliteDriver.Callback(
-            Database.Schema,
-            *_migrations
-                .map { migration ->
-                    AfterVersion(migration.afterVersion.toLong()) { migration.migrate(this@DatabaseContainer) }
-                }.toTypedArray(),
-        ) {
-        override fun onUpgrade(
-            db: SupportSQLiteDatabase,
-            oldVersion: Int,
-            newVersion: Int,
-        ) {
-            Timber.tag(TAG).i("Migrating database from $oldVersion to $newVersion")
-            super.onUpgrade(db, oldVersion, newVersion)
-        }
-    }
-
-    val driver =
-        AndroidSqliteDriver(
-            Database.Schema,
-            context,
-            DB_FILE,
-            callback = MigrationCallback(),
-        )
+    val driver = AndroidSqliteDriver(Database.Schema, context, DB_FILE)
 
     private val _database =
         Database(
@@ -90,6 +74,14 @@ class DatabaseContainer(
                 ),
         )
 
+    private val _migrations =
+        listOf(
+            Migration3,
+            Migration4,
+            Migration6,
+            Migration8,
+        )
+
     val data = _database.dataQueries
     val languages = _database.languageQueries
     val languageModels = _database.languageModelQueries
@@ -102,16 +94,52 @@ class DatabaseContainer(
 
     fun <T> transactionForResult(body: TransactionWithReturn<T>.() -> T) = _database.transactionWithResult { body() }
 
+    /**
+     * Runs each pending manual migration exactly once. A migration applies when
+     * the on-disk database version is at or below its [Migration.afterVersion]
+     * boundary; databases already past it skip straight through, so nothing
+     * re-runs on cold starts. Failures crash the app: continuing past a failed
+     * migration previously hid a data-loss bug.
+     */
+    private fun runMigrations() {
+        val version = storedDatabaseVersion()
+
+        _migrations.forEach { migration ->
+            if (version > migration.afterVersion) {
+                return@forEach
+            }
+
+            Timber.tag(TAG).i("Running ${migration::class.java.simpleName} on database version $version")
+
+            try {
+                migration.migrate(this, appContext)
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Database migration failed: ${migration::class.java.simpleName}")
+                throw e
+            }
+        }
+    }
+
+    /**
+     * Reads the on-disk schema version before the driver opens the database —
+     * the first driver access applies the `.sqm` migrations and bumps
+     * `user_version`, after which the stored version no longer says which data
+     * migrations still need to run. A fresh install is created straight at the
+     * current version, so no data migrations apply.
+     */
+    private fun storedDatabaseVersion(): Long {
+        val file = appContext.getDatabasePath(DB_FILE)
+        if (!file.exists()) {
+            return Database.Schema.version
+        }
+
+        return SQLiteDatabase.openDatabase(file.absolutePath, null, SQLiteDatabase.OPEN_READONLY).use { database ->
+            DatabaseUtils.longForQuery(database, "PRAGMA user_version", null)
+        }
+    }
+
     init {
-        // Open eagerly: migration hooks delete and repair model files on disk,
-        // which must happen deterministically at startup, not at first query.
-        driver
-            .executeQuery(
-                null,
-                "PRAGMA user_version",
-                { cursor -> QueryResult.Value(if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L) },
-                0,
-            ).value
+        runMigrations()
     }
 }
 

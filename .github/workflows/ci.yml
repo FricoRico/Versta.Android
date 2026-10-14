@@ -149,7 +149,18 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: false
+          # Validated in the dedicated step below, which can allow-list
+          # wrapper JARs vendored inside submodules.
           validate-wrappers: false
+
+      # The MNN submodule vendors a wrapper JAR inside
+      # 3rd_party/flatbuffers/samples/android whose checksum is not in the
+      # known list. It is a sample project that is never executed here;
+      # allow-list its SHA-256 (pinned by the submodule gitlink).
+      - name: Validate Gradle wrappers
+        uses: gradle/actions/wrapper-validation@v4
+        with:
+          allow-checksums: ee3739525a995bcb5601621a6e2daec1f183bbefc375743acc235cec33547e04
 
       - name: Assemble debug (arm64-v8a)
         run: ./gradlew :app:assembleArm64-v8aDebug --console=plain

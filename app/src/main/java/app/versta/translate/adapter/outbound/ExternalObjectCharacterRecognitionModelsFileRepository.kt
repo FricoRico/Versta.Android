@@ -4,6 +4,7 @@ import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModelD
 import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModelWithState
 import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModels
 import app.versta.translate.core.entity.ObjectCharacterRecognitionModuleWithFiles
+import app.versta.translate.utils.compareVersions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -50,7 +51,7 @@ class ExternalObjectCharacterRecognitionModelsFileRepository(
                 installed =
                     models.mapNotNull { model ->
                         val versions = installedVersions[model.id]
-                        if (versions != null && versions.all { it == model.version }) {
+                        if (versions != null && versions.all { compareVersions(it, model.version) == 0 }) {
                             ExternalObjectCharacterRecognitionModelWithState(definition = model)
                         } else {
                             null
@@ -59,7 +60,7 @@ class ExternalObjectCharacterRecognitionModelsFileRepository(
                 updates =
                     models.mapNotNull { model ->
                         val versions = installedVersions[model.id]
-                        if (versions != null && versions.any { it < model.version }) {
+                        if (versions != null && versions.any { compareVersions(it, model.version) < 0 }) {
                             ExternalObjectCharacterRecognitionModelWithState(definition = model)
                         } else {
                             null

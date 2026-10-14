@@ -8,6 +8,7 @@ import app.versta.translate.core.entity.DataWithFiles
 import app.versta.translate.core.entity.ExternalData
 import app.versta.translate.core.entity.ExternalDataDefinition
 import app.versta.translate.core.entity.ExternalDataDefinitions
+import app.versta.translate.utils.compareVersions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -78,7 +79,7 @@ class ExternalDataFileRepository(
                     model.filter { speech ->
                         existing
                             .find {
-                                speech.id == it.id && it.version < speech.version
+                                speech.id == it.id && compareVersions(it.version, speech.version) < 0
                             }?.let {
                                 speech.apply {
                                     extracted = it.size
