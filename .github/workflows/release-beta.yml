@@ -1,0 +1,146 @@
+name: Release (beta)
+
+# One-click beta lane: builds the universal release AAB (all four ABIs),
+# signs it with the upload keystore and publishes it to a Google Play testing
+# track. Manual-only trigger — this workflow is never a per-commit gate.
+#
+# Before the first run, the repo needs four secrets (see RELEASE.md § Setup):
+#   ANDROID_PUBLISHER_CREDENTIALS  Google Play service-account JSON contents
+#   VERSTA_UPLOAD_KEYSTORE_BASE64  base64 of versta.keystore (the upload key)
+#   VERSTA_UPLOAD_STORE_PASSWORD   keystore store password
+#   VERSTA_UPLOAD_KEY_PASSWORD     key password for alias "versta"
+# The preflight job fails fast with those same instructions if any are
+# missing, so a misconfigured run never burns a 45-minute native build.
+
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: "Play track to publish to"
+        required: true
+        default: internal
+        type: choice
+        options:
+          - internal
+          - alpha
+          - beta
+      release_name:
+        description: "Release name in Play Console (default: versionName + short SHA)"
+        required: false
+        type: string
+
+# A publish in flight must run to completion; never auto-cancel it.
+concurrency:
+  group: release-beta
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: "17"
+
+jobs:
+  preflight:
+    name: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify release secrets are configured
+        env:
+          PLAY_CREDS: ${{ secrets.ANDROID_PUBLISHER_CREDENTIALS }}
+          KS_B64: ${{ secrets.VERSTA_UPLOAD_KEYSTORE_BASE64 }}
+          KS_STORE_PW: ${{ secrets.VERSTA_UPLOAD_STORE_PASSWORD }}
+          KS_KEY_PW: ${{ secrets.VERSTA_UPLOAD_KEY_PASSWORD }}
+        run: |
+          missing=()
+          [ -z "$PLAY_CREDS" ]   && missing+=("ANDROID_PUBLISHER_CREDENTIALS")
+          [ -z "$KS_B64" ]       && missing+=("VERSTA_UPLOAD_KEYSTORE_BASE64")
+          [ -z "$KS_STORE_PW" ]  && missing+=("VERSTA_UPLOAD_STORE_PASSWORD")
+          [ -z "$KS_KEY_PW" ]    && missing+=("VERSTA_UPLOAD_KEY_PASSWORD")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing repo secrets: ${missing[*]}"
+            echo "::error::Add them under Settings -> Secrets and variables -> Actions."
+            echo "::error::Full instructions: RELEASE.md section 'One-time setup'."
+            exit 1
+          fi
+          echo "$PLAY_CREDS" | python3 -c 'import json,sys; json.load(sys.stdin)' \
+            || { echo "::error::ANDROID_PUBLISHER_CREDENTIALS is not valid JSON."; exit 1; }
+          echo "$KS_B64" | base64 -d > /dev/null \
+            || { echo "::error::VERSTA_UPLOAD_KEYSTORE_BASE64 is not valid base64."; exit 1; }
+          echo "All four release secrets present and well-formed."
+
+  publish:
+    name: publish (${{ inputs.track }})
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      ANDROID_PUBLISHER_CREDENTIALS: ${{ secrets.ANDROID_PUBLISHER_CREDENTIALS }}
+      VERSTA_UPLOAD_KEYSTORE_BASE64: ${{ secrets.VERSTA_UPLOAD_KEYSTORE_BASE64 }}
+      VERSTA_UPLOAD_STORE_PASSWORD: ${{ secrets.VERSTA_UPLOAD_STORE_PASSWORD }}
+      VERSTA_UPLOAD_KEY_PASSWORD: ${{ secrets.VERSTA_UPLOAD_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      # setup-android v3 defaults to the removed legacy `tools` package; skip
+      # it and install exact versions explicitly (same as ci.yml).
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ""
+
+      - name: Install NDK, CMake, platform and build-tools
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
+
+      - name: Materialise signing config from secrets
+        run: |
+          echo "$VERSTA_UPLOAD_KEYSTORE_BASE64" | base64 -d > versta.keystore
+          printf 'storePassword=%s\nkeyPassword=%s\n' \
+            "$VERSTA_UPLOAD_STORE_PASSWORD" "$VERSTA_UPLOAD_KEY_PASSWORD" \
+            > keystore.properties
+          chmod 600 versta.keystore keystore.properties
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Resolve release name
+        id: meta
+        run: |
+          if [ -n "${{ inputs.release_name }}" ]; then
+            echo "name=${{ inputs.release_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)+${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build and publish universal release bundle
+        run: >
+          ./gradlew :app:publishUniversalReleaseBundle
+          --console=plain
+          --track "${{ inputs.track }}"
+          --release-name "${{ steps.meta.outputs.name }}"
+
+      - name: Upload AAB for the build record
+        uses: actions/upload-artifact@v4
+        with:
+          name: versta-${{ inputs.track }}-${{ steps.meta.outputs.name }}
+          path: app/build/outputs/bundle/universalRelease/*.aab
+          retention-days: 30
+
+      - name: Upload Play publish output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-failure-reports
+          path: "**/build/reports/**"
+          if-no-files-found: ignore

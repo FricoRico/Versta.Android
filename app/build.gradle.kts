@@ -23,6 +23,7 @@ plugins {
     alias(libs.plugins.gradle.crypto.checksum)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.triplet.play)
 }
 
 sqldelight {
@@ -53,8 +54,8 @@ android {
         applicationId = "app.versta.translate"
         minSdk = 28
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.3.1"
+        versionCode = 13
+        versionName = "1.3.2-beta.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -88,6 +89,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            ndk {
+                // Embed native symbol tables in the AAB so Play Android Vitals
+                // can symbolicate C++ (LeanMT/Whisper/espeak) crashes for the
+                // beta. SYMBOL_TABLE only: FULL debug info would bloat the
+                // bundle past Play's upload-size comfort zone.
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -179,6 +187,12 @@ android {
                 abiFilters += "x86_64"
             }
         }
+        // Release lane only: one AAB carrying every ABI for Play upload (Play
+        // accepts a single bundle per release). Per-ABI flavours stay the fast
+        // path for local/debug work; nothing debuggable should use this.
+        create("universal") {
+            dimension = "abi"
+        }
     }
 //
 //    splits {
@@ -217,6 +231,29 @@ detekt {
     // Pre-existing findings live in detekt-baseline.xml so CI only fails on
     // new debt. Regenerate deliberately with `./gradlew :app:detektBaseline`.
     baseline = rootProject.file("detekt-baseline.xml")
+}
+
+// Play release automation (see .github/workflows/release-beta.yml and
+// RELEASE.md). Credentials come from the ANDROID_PUBLISHER_CREDENTIALS env
+// var (service-account JSON contents) — never commit the key to the repo.
+// Without the env var, publish tasks fail at execution time; local/debug
+// builds are unaffected because publishing is disabled for every variant
+// except universalRelease below.
+play {
+    track.set("internal")
+    defaultToAppBundles.set(true)
+    // Repeated beta uploads reuse the same configured versionCode; AUTO bumps
+    // past whatever Play already has instead of failing the run.
+    resolutionStrategy.set(com.github.triplet.gradle.androidpublisher.ResolutionStrategy.AUTO)
+    enabled.set(false)
+}
+
+android {
+    playConfigs {
+        register("universalRelease") {
+            enabled.set(true)
+        }
+    }
 }
 
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
