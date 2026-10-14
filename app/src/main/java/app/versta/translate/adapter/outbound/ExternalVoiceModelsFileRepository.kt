@@ -4,6 +4,7 @@ import app.versta.translate.core.entity.ExternalVoiceModelDefinition
 import app.versta.translate.core.entity.ExternalVoiceModelDefinitions
 import app.versta.translate.core.entity.ExternalVoiceModels
 import app.versta.translate.core.entity.VoiceWithModelFiles
+import app.versta.translate.utils.compareVersions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -59,7 +60,7 @@ class ExternalVoiceModelsFileRepository(
                     model.filter { speech ->
                         existing
                             .find {
-                                speech.id == it.id && it.version < speech.version
+                                speech.id == it.id && compareVersions(it.version, speech.version) < 0
                             }?.let {
                                 speech.apply {
                                     extracted = it.size

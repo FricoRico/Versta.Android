@@ -55,6 +55,23 @@ class ExternalSpeechRecognitionModelsFileRepositoryTest {
 
     private fun repository(json: String = definitionsJson()): ExternalSpeechRecognitionModelsFileRepository = ExternalSpeechRecognitionModelsFileRepository(ByteArrayInputStream(json.toByteArray()))
 
+    private fun doubleDigitDefinitionsJson(catalogVersion: String): String =
+        """
+        [
+            {
+                "id": "whisper-double-digit",
+                "name": "Whisper Double Digit",
+                "base_model": "openai/whisper-base.en",
+                "architectures": ["Whisper"],
+                "languages": ["en"],
+                "size": 75497594,
+                "version": "$catalogVersion",
+                "bundle": "https://mock.versta.app/whisper-double-digit-bundle.tar.gz",
+                "checksum": "https://mock.versta.app/whisper-double-digit-bundle.tar.gz.sha256"
+            }
+        ]
+        """.trimIndent()
+
     private fun importedModel(
         id: String,
         version: String,
@@ -171,5 +188,42 @@ class ExternalSpeechRecognitionModelsFileRepositoryTest {
         assertEquals(listOf("whisper-base-en"), result.installed.map { it.definition.id })
         assertEquals(listOf("whisper-large"), result.updates.map { it.definition.id })
         assertEquals(listOf("whisper-tiny"), result.available.map { it.definition.id })
+    }
+
+    @Test
+    fun getDefinitionsByState_doubleDigitCatalogVersion_marksUpdate() {
+        // NEU-17: lexicographic ordering treats "v1.2.0" as newer than "v1.10.0"
+        // and would skip this update.
+        val repo = repository(doubleDigitDefinitionsJson("v1.10.0"))
+        awaitDefinitions(repo)
+        val imported = listOf(importedModel("whisper-double-digit", "v1.2.0", size = 42L))
+
+        val result =
+            runBlocking {
+                repo.getDefinitionsByState(flowOf(imported)).first { it.updates.isNotEmpty() }
+            }
+
+        assertEquals(1, result.updates.size)
+        assertEquals(listOf("whisper-double-digit"), result.updates.map { it.definition.id })
+        assertTrue(result.installed.isEmpty())
+    }
+
+    @Test
+    fun getDefinitionsByState_newerImportedDoubleDigitVersion_marksNoUpdate() {
+        // NEU-17: lexicographic ordering treats the installed "v1.10.0" as older
+        // than the catalog's "v1.2.0" and would offer a phantom update.
+        val repo = repository(doubleDigitDefinitionsJson("v1.2.0"))
+        awaitDefinitions(repo)
+        val imported = listOf(importedModel("whisper-double-digit", "v1.10.0", size = 42L))
+
+        // Catalog is already loaded, so the first emission is the terminal state.
+        val result =
+            runBlocking {
+                repo.getDefinitionsByState(flowOf(imported)).first()
+            }
+
+        assertTrue(result.updates.isEmpty())
+        assertTrue(result.installed.isEmpty())
+        assertTrue(result.available.isEmpty())
     }
 }
