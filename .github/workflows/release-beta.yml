@@ -4,11 +4,17 @@ name: Release (beta)
 # signs it with the upload keystore and publishes it to a Google Play testing
 # track. Manual-only trigger — this workflow is never a per-commit gate.
 #
-# Before the first run, the repo needs four secrets (see RELEASE.md § Setup):
-#   ANDROID_PUBLISHER_CREDENTIALS  Google Play service-account JSON contents
-#   VERSTA_UPLOAD_KEYSTORE_BASE64  base64 of versta.keystore (the upload key)
-#   VERSTA_UPLOAD_STORE_PASSWORD   keystore store password
-#   VERSTA_UPLOAD_KEY_PASSWORD     key password for alias "versta"
+# Play auth is keyless: the runner exchanges its GitHub OIDC token for a
+# short-lived Google credential via Workload Identity Federation (the GCP org
+# policy iam.disableServiceAccountKeyCreation blocks JSON keys — there is no
+# long-lived Play credential in this repo, only WIF identifiers).
+#
+# Before the first run (see RELEASE.md § One-time setup for the script):
+#   Repo variables:  PLAY_WIF_PROVIDER            projects/<n>/locations/global/workloadIdentityPools/github-actions/providers/github-oidc
+#                    PLAY_SERVICE_ACCOUNT_EMAIL   versta-play-publisher@<project>.iam.gserviceaccount.com
+#   Repo secrets:    VERSTA_UPLOAD_KEYSTORE_BASE64  base64 of versta.keystore (the upload key)
+#                    VERSTA_UPLOAD_STORE_PASSWORD   keystore store password
+#                    VERSTA_UPLOAD_KEY_PASSWORD     key password for alias "versta"
 # The preflight job fails fast with those same instructions if any are
 # missing, so a misconfigured run never burns a 45-minute native build.
 
@@ -46,37 +52,41 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Verify release secrets are configured
+      - name: Verify release variables and secrets are configured
         env:
-          PLAY_CREDS: ${{ secrets.ANDROID_PUBLISHER_CREDENTIALS }}
+          WIF_PROVIDER: ${{ vars.PLAY_WIF_PROVIDER }}
+          WIF_SA: ${{ vars.PLAY_SERVICE_ACCOUNT_EMAIL }}
           KS_B64: ${{ secrets.VERSTA_UPLOAD_KEYSTORE_BASE64 }}
           KS_STORE_PW: ${{ secrets.VERSTA_UPLOAD_STORE_PASSWORD }}
           KS_KEY_PW: ${{ secrets.VERSTA_UPLOAD_KEY_PASSWORD }}
         run: |
           missing=()
-          [ -z "$PLAY_CREDS" ]   && missing+=("ANDROID_PUBLISHER_CREDENTIALS")
-          [ -z "$KS_B64" ]       && missing+=("VERSTA_UPLOAD_KEYSTORE_BASE64")
-          [ -z "$KS_STORE_PW" ]  && missing+=("VERSTA_UPLOAD_STORE_PASSWORD")
-          [ -z "$KS_KEY_PW" ]    && missing+=("VERSTA_UPLOAD_KEY_PASSWORD")
+          [ -z "$WIF_PROVIDER" ] && missing+=("variable PLAY_WIF_PROVIDER")
+          [ -z "$WIF_SA" ]       && missing+=("variable PLAY_SERVICE_ACCOUNT_EMAIL")
+          [ -z "$KS_B64" ]       && missing+=("secret VERSTA_UPLOAD_KEYSTORE_BASE64")
+          [ -z "$KS_STORE_PW" ]  && missing+=("secret VERSTA_UPLOAD_STORE_PASSWORD")
+          [ -z "$KS_KEY_PW" ]    && missing+=("secret VERSTA_UPLOAD_KEY_PASSWORD")
           if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::error::Missing repo secrets: ${missing[*]}"
-            echo "::error::Add them under Settings -> Secrets and variables -> Actions."
+            echo "::error::Missing repo config: ${missing[*]}"
+            echo "::error::Variables under Settings -> Secrets and variables -> Actions -> Variables; secrets on the Secrets tab."
             echo "::error::Full instructions: RELEASE.md section 'One-time setup'."
             exit 1
           fi
-          echo "$PLAY_CREDS" | python3 -c 'import json,sys; json.load(sys.stdin)' \
-            || { echo "::error::ANDROID_PUBLISHER_CREDENTIALS is not valid JSON."; exit 1; }
+          echo "$WIF_PROVIDER" | grep -qE '^projects/[0-9]+/locations/global/workloadIdentityPools/[^/]+/providers/[^/]+$' \
+            || { echo "::error::PLAY_WIF_PROVIDER does not look like a full WIF provider resource name."; exit 1; }
           echo "$KS_B64" | base64 -d > /dev/null \
             || { echo "::error::VERSTA_UPLOAD_KEYSTORE_BASE64 is not valid base64."; exit 1; }
-          echo "All four release secrets present and well-formed."
+          echo "WIF identifiers present and well-formed; signing secrets present."
 
   publish:
     name: publish (${{ inputs.track }})
     needs: preflight
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    permissions:
+      contents: read
+      id-token: write # mint the GitHub OIDC token that WIF exchanges
     env:
-      ANDROID_PUBLISHER_CREDENTIALS: ${{ secrets.ANDROID_PUBLISHER_CREDENTIALS }}
       VERSTA_UPLOAD_KEYSTORE_BASE64: ${{ secrets.VERSTA_UPLOAD_KEYSTORE_BASE64 }}
       VERSTA_UPLOAD_STORE_PASSWORD: ${{ secrets.VERSTA_UPLOAD_STORE_PASSWORD }}
       VERSTA_UPLOAD_KEY_PASSWORD: ${{ secrets.VERSTA_UPLOAD_KEY_PASSWORD }}
@@ -100,6 +110,15 @@ jobs:
 
       - name: Install NDK, CMake, platform and build-tools
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
+
+      # Keyless Play auth: exchange the GitHub OIDC token via WIF, then
+      # impersonate the Play-publisher service account. Writes ADC to
+      # GOOGLE_APPLICATION_CREDENTIALS for Gradle Play Publisher.
+      - name: Authenticate to Google Play via Workload Identity Federation
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.PLAY_WIF_PROVIDER }}
+          service_account: ${{ vars.PLAY_SERVICE_ACCOUNT_EMAIL }}
 
       - name: Materialise signing config from secrets
         run: |

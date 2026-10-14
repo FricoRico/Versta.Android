@@ -234,12 +234,15 @@ detekt {
 }
 
 // Play release automation (see .github/workflows/release-beta.yml and
-// RELEASE.md). Credentials come from the ANDROID_PUBLISHER_CREDENTIALS env
-// var (service-account JSON contents) — never commit the key to the repo.
-// Without the env var, publish tasks fail at execution time; local/debug
-// builds are unaffected because publishing is disabled for every variant
-// except universalRelease below.
+// RELEASE.md). Auth is keyless: CI mints an OIDC token, exchanges it via
+// Workload Identity Federation, and GPP picks it up as Application Default
+// Credentials (google-github-actions/auth writes GOOGLE_APPLICATION_CREDENTIALS).
+// No service-account JSON key exists anywhere — the GCP org policy
+// iam.disableServiceAccountKeyCreation blocks them. Publish tasks only run
+// where ADC exists; local/debug builds are unaffected because publishing is
+// disabled for every variant except universalRelease below.
 play {
+    useApplicationDefaultCredentials = true
     track.set("internal")
     defaultToAppBundles.set(true)
     // Repeated beta uploads reuse the same configured versionCode; AUTO bumps
