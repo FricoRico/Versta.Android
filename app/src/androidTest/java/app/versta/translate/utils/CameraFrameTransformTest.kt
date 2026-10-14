@@ -4,8 +4,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class CameraFrameTransformTest {
-
-    private fun apply(m: FloatArray, x: Float, y: Float): Pair<Float, Float> {
+    private fun apply(
+        m: FloatArray,
+        x: Float,
+        y: Float,
+    ): Pair<Float, Float> {
         val w = m[6] * x + m[7] * y + m[8]
         return Pair(
             (m[0] * x + m[1] * y + m[2]) / w,

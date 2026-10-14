@@ -16,16 +16,21 @@ import kotlin.io.path.writeText
 
 @OptIn(kotlin.io.path.ExperimentalPathApi::class)
 class ObjectCharacterRecognitionBundleWithFilesTest {
-
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     private lateinit var bundleRoot: Path
 
     @Before
     fun setUp() {
-        bundleRoot = context.cacheDir.toPath()
-            .resolve("ocr-bundle-test")
-            .resolve(java.util.UUID.randomUUID().toString())
+        bundleRoot =
+            context.cacheDir
+                .toPath()
+                .resolve("ocr-bundle-test")
+                .resolve(
+                    java.util.UUID
+                        .randomUUID()
+                        .toString(),
+                )
         bundleRoot.createDirectories()
     }
 
@@ -46,24 +51,31 @@ class ObjectCharacterRecognitionBundleWithFilesTest {
                 "languages": ["en", "zh"],
                 "metadata": []
             }
-            """.trimIndent()
+            """.trimIndent(),
         )
     }
 
-    private fun writeModule(directory: String, module: String, languages: List<String>, inference: String, vocab: String? = null) {
+    private fun writeModule(
+        directory: String,
+        module: String,
+        languages: List<String>,
+        inference: String,
+        vocab: String? = null,
+    ) {
         val dir = bundleRoot.resolve(directory)
         dir.createDirectories()
         dir.resolve(inference).writeText("fake-weights")
         vocab?.let { dir.resolve(it).writeText("line1\nline2\n") }
 
-        val filesEntry = if (vocab != null) {
-            """[{"inference": "$inference", "priority": 1, "vocab": "$vocab"}]"""
-        } else {
-            """[{"inference": "$inference", "priority": 1}]"""
-        }
+        val filesEntry =
+            if (vocab != null) {
+                """[{"inference": "$inference", "priority": 1, "vocab": "$vocab"}]"""
+            } else {
+                """[{"inference": "$inference", "priority": 1}]"""
+            }
         val langs = languages.joinToString(",") { "\"$it\"" }
         dir.resolve("metadata.json").writeText(
-            """{"module": "$module", "languages": [$langs], "files": $filesEntry}"""
+            """{"module": "$module", "languages": [$langs], "files": $filesEntry}""",
         )
     }
 
@@ -74,46 +86,68 @@ class ObjectCharacterRecognitionBundleWithFilesTest {
         writeModule("latin_PP-OCRv5_mobile_rec", "recognizer", listOf("en"), "rec.mnn", "vocab.txt")
         writeModule("PP-OCRv6_tiny_rec", "recognizer", listOf("en", "fr"), "rec6.mnn", "vocab6.txt")
 
-        val bundle = ObjectCharacterRecognitionBundleWithFiles.load(
-            id = "paddle-ocr",
-            path = bundleRoot,
-            modules = listOf(
-                ObjectCharacterRecognitionModuleWithFiles.load(
-                    "paddle-ocr:PP-OCRv6_tiny_det", "paddle-ocr", "v2.0.0", bundleRoot.resolve("PP-OCRv6_tiny_det")
-                ),
-                ObjectCharacterRecognitionModuleWithFiles.load(
-                    "paddle-ocr:latin_PP-OCRv5_mobile_rec", "paddle-ocr", "v2.0.0", bundleRoot.resolve("latin_PP-OCRv5_mobile_rec")
-                ),
-                ObjectCharacterRecognitionModuleWithFiles.load(
-                    "paddle-ocr:PP-OCRv6_tiny_rec", "paddle-ocr", "v2.0.0", bundleRoot.resolve("PP-OCRv6_tiny_rec")
-                ),
+        val bundle =
+            ObjectCharacterRecognitionBundleWithFiles.load(
+                id = "paddle-ocr",
+                path = bundleRoot,
+                modules =
+                    listOf(
+                        ObjectCharacterRecognitionModuleWithFiles.load(
+                            "paddle-ocr:PP-OCRv6_tiny_det",
+                            "paddle-ocr",
+                            "v2.0.0",
+                            bundleRoot.resolve("PP-OCRv6_tiny_det"),
+                        ),
+                        ObjectCharacterRecognitionModuleWithFiles.load(
+                            "paddle-ocr:latin_PP-OCRv5_mobile_rec",
+                            "paddle-ocr",
+                            "v2.0.0",
+                            bundleRoot.resolve("latin_PP-OCRv5_mobile_rec"),
+                        ),
+                        ObjectCharacterRecognitionModuleWithFiles.load(
+                            "paddle-ocr:PP-OCRv6_tiny_rec",
+                            "paddle-ocr",
+                            "v2.0.0",
+                            bundleRoot.resolve("PP-OCRv6_tiny_rec"),
+                        ),
+                    ),
             )
-        )
 
         assertNotNull(bundle)
         assertTrue(bundle!!.isComplete)
-        assertEquals("PP-OCRv6_tiny_rec", bundle.recognizerForLanguage("en")?.path?.fileName.toString().let {
-            bundle.recognizerForLanguage("en")!!.path.fileName.toString()
-        })
+        assertEquals(
+            "PP-OCRv6_tiny_rec",
+            bundle.recognizerForLanguage("en")?.path?.fileName.toString().let {
+                bundle
+                    .recognizerForLanguage("en")!!
+                    .path.fileName
+                    .toString()
+            },
+        )
     }
 
     @Test
     fun incompleteWithoutDetector() {
         writeModule("PP-OCRv6_tiny_rec", "recognizer", listOf("en"), "rec6.mnn", "vocab6.txt")
 
-        val modules = listOf(
-            ObjectCharacterRecognitionModuleWithFiles.load(
-                "paddle-ocr:PP-OCRv6_tiny_rec", "paddle-ocr", "v2.0.0", bundleRoot.resolve("PP-OCRv6_tiny_rec")
+        val modules =
+            listOf(
+                ObjectCharacterRecognitionModuleWithFiles.load(
+                    "paddle-ocr:PP-OCRv6_tiny_rec",
+                    "paddle-ocr",
+                    "v2.0.0",
+                    bundleRoot.resolve("PP-OCRv6_tiny_rec"),
+                ),
             )
-        )
 
-        val bundle = ObjectCharacterRecognitionBundleWithFiles(
-            id = "paddle-ocr",
-            path = bundleRoot,
-            version = "v2.0.0",
-            languages = listOf("en"),
-            modules = modules
-        )
+        val bundle =
+            ObjectCharacterRecognitionBundleWithFiles(
+                id = "paddle-ocr",
+                path = bundleRoot,
+                version = "v2.0.0",
+                languages = listOf("en"),
+                modules = modules,
+            )
         assertFalse(bundle.isComplete)
         assertNull(bundle.module(ObjectCharacterRecognitionModule.Detector))
     }
@@ -123,7 +157,7 @@ class ObjectCharacterRecognitionBundleWithFilesTest {
         val dir = bundleRoot.resolve("empty")
         dir.createDirectories()
         dir.resolve("metadata.json").writeText(
-            """{"module": "detector", "languages": ["*"], "files": [{"inference": "missing.mnn", "priority": 1}]}"""
+            """{"module": "detector", "languages": ["*"], "files": [{"inference": "missing.mnn", "priority": 1}]}""",
         )
 
         try {

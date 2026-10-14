@@ -4,11 +4,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class OcrTextMeasureTest {
-
     /** Monospace reference measure: every character takes half an em. */
-    private fun measurer(text: String) = OcrTextMeasure(text) { token ->
-        token.length * 0.5f * OcrTextMeasure.REFERENCE_SIZE
-    }
+    private fun measurer(text: String) =
+        OcrTextMeasure(text) { token ->
+            token.length * 0.5f * OcrTextMeasure.REFERENCE_SIZE
+        }
 
     @Test
     fun wholeTextMeasuresLikeSummedTokens() {
@@ -17,7 +17,7 @@ class OcrTextMeasureTest {
         assertEquals(
             5.5f * OcrTextMeasure.REFERENCE_SIZE,
             measure.measure(0, "hello world".length, OcrTextMeasure.REFERENCE_SIZE),
-            0.001f
+            0.001f,
         )
     }
 
@@ -64,12 +64,13 @@ class OcrTextMeasureTest {
         val text = "the quick brown fox jumps"
         val measure = measurer(text)
 
-        val layout = OcrBlockLayout.layout(
-            text = text,
-            lineWidths = listOf(45f, 75f),
-            startSize = 20f,
-            measure = { from, until, size -> measure.measure(from, until, size) },
-        )
+        val layout =
+            OcrBlockLayout.layout(
+                text = text,
+                lineWidths = listOf(45f, 75f),
+                startSize = 20f,
+                measure = { from, until, size -> measure.measure(from, until, size) },
+            )
 
         assertEquals(listOf("the quick", "brown fox jumps"), layout!!.segments)
         assertEquals(9.6f, layout.textSize, 0.01f)

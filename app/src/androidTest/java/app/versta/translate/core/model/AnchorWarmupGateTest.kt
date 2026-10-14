@@ -11,7 +11,6 @@ import org.junit.Test
  * opening ticks, which reads as one frame of the old overlay flashing back.
  */
 class AnchorWarmupGateTest {
-
     private val ticks = 4
 
     @Test

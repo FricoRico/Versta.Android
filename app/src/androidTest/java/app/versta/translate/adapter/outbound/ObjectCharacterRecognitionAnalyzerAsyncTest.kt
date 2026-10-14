@@ -2,10 +2,10 @@ package app.versta.translate.adapter.outbound
 
 import android.graphics.PointF
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionInference.LiveTick
+import app.versta.translate.core.entity.ObjectCharacterRecognitionBundleWithFiles
 import app.versta.translate.core.entity.OcrAnalysisResult
 import app.versta.translate.core.entity.OcrLineResult
 import app.versta.translate.core.entity.OcrTextBox
-import app.versta.translate.core.entity.ObjectCharacterRecognitionBundleWithFiles
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -23,24 +23,29 @@ import java.nio.ByteBuffer
  * measured GL-frame budget breakers on-device).
  */
 class ObjectCharacterRecognitionAnalyzerAsyncTest {
-
-    private val quad = arrayOf(
-        PointF(0f, 0f), PointF(50f, 0f), PointF(50f, 20f), PointF(0f, 20f)
-    )
+    private val quad =
+        arrayOf(
+            PointF(0f, 0f),
+            PointF(50f, 0f),
+            PointF(50f, 20f),
+            PointF(0f, 20f),
+        )
     private val pose = floatArrayOf(1f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f)
 
-    private fun line(text: String) = OcrLineResult(
-        box = OcrTextBox(points = quad, score = 0.9f),
-        text = text,
-        score = 0.9f,
-        blockId = 1,
-    )
+    private fun line(text: String) =
+        OcrLineResult(
+            box = OcrTextBox(points = quad, score = 0.9f),
+            text = text,
+            score = 0.9f,
+            blockId = 1,
+        )
 
-    private fun result(lines: List<OcrLineResult>) =
-        OcrAnalysisResult(lines = lines, width = 2, height = 2)
+    private fun result(lines: List<OcrLineResult>) = OcrAnalysisResult(lines = lines, width = 2, height = 2)
 
-    private fun tick(version: Int = 1, epoch: Int = 1) =
-        LiveTick(homography = pose.copyOf(), anchorEpoch = epoch, contentVersion = version)
+    private fun tick(
+        version: Int = 1,
+        epoch: Int = 1,
+    ) = LiveTick(homography = pose.copyOf(), anchorEpoch = epoch, contentVersion = version)
 
     private class FakeOcr : ObjectCharacterRecognitionInference {
         var analyzeCalls = 0
@@ -51,25 +56,56 @@ class ObjectCharacterRecognitionAnalyzerAsyncTest {
         var tickResult: LiveTick? = null
         var pullResult: OcrAnalysisResult? = null
 
-        override fun load(bundle: ObjectCharacterRecognitionBundleWithFiles, threads: Int) {}
-        override fun analyzeLive(input: ByteBuffer, width: Int, height: Int, forcedRecognizer: String?): OcrAnalysisResult {
+        override fun load(
+            bundle: ObjectCharacterRecognitionBundleWithFiles,
+            threads: Int,
+        ) {}
+
+        override fun analyzeLive(
+            input: ByteBuffer,
+            width: Int,
+            height: Int,
+            forcedRecognizer: String?,
+        ): OcrAnalysisResult {
             analyzeCalls++
             return analyzeResult
         }
-        override fun tickLive(input: ByteBuffer, width: Int, height: Int): LiveTick? {
+
+        override fun tickLive(
+            input: ByteBuffer,
+            width: Int,
+            height: Int,
+        ): LiveTick? {
             tickCalls++
             return tickResult
         }
-        override fun pullLiveContent(width: Int, height: Int): OcrAnalysisResult? {
+
+        override fun pullLiveContent(
+            width: Int,
+            height: Int,
+        ): OcrAnalysisResult? {
             pullCalls++
             return pullResult ?: OcrAnalysisResult(emptyList(), width, height)
         }
-        override fun probeLive(input: ByteBuffer, width: Int, height: Int) {
+
+        override fun probeLive(
+            input: ByteBuffer,
+            width: Int,
+            height: Int,
+        ) {
             probeCalls++
         }
-        override fun analyzeStill(input: ByteBuffer, width: Int, height: Int, rotationDegrees: Int, forcedRecognizer: String?): OcrAnalysisResult =
-            OcrAnalysisResult(emptyList(), width, height)
+
+        override fun analyzeStill(
+            input: ByteBuffer,
+            width: Int,
+            height: Int,
+            rotationDegrees: Int,
+            forcedRecognizer: String?,
+        ): OcrAnalysisResult = OcrAnalysisResult(emptyList(), width, height)
+
         override fun cancel() {}
+
         override fun close() {}
     }
 

@@ -5,7 +5,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OcrBlockLayoutCacheTest {
-
     /** Monospace measure: every character takes half an em. */
     private val monospace: (Int, Int, Float) -> Float = { from, until, size ->
         (until - from) * 0.5f * size

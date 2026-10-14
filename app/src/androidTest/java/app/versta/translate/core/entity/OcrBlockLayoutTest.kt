@@ -6,7 +6,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OcrBlockLayoutTest {
-
     /** Monospace measure: every character takes half an em. */
     private val monospace: (Int, Int, Float) -> Float = { from, until, size ->
         (until - from) * 0.5f * size
@@ -14,12 +13,13 @@ class OcrBlockLayoutTest {
 
     @Test
     fun fittingTextKeepsStartSize() {
-        val layout = OcrBlockLayout.layout(
-            text = "hello",
-            lineWidths = listOf(1000f),
-            startSize = 20f,
-            measure = monospace
-        )
+        val layout =
+            OcrBlockLayout.layout(
+                text = "hello",
+                lineWidths = listOf(1000f),
+                startSize = 20f,
+                measure = monospace,
+            )
 
         assertNotNull(layout)
         assertEquals(listOf("hello"), layout!!.segments)
@@ -28,12 +28,13 @@ class OcrBlockLayoutTest {
 
     @Test
     fun wrapsOntoSecondLineAtSpaceRun() {
-        val layout = OcrBlockLayout.layout(
-            text = "hello world",
-            lineWidths = listOf(50f, 50f),
-            startSize = 20f,
-            measure = monospace
-        )
+        val layout =
+            OcrBlockLayout.layout(
+                text = "hello world",
+                lineWidths = listOf(50f, 50f),
+                startSize = 20f,
+                measure = monospace,
+            )
 
         assertNotNull(layout)
         assertEquals(listOf("hello", "world"), layout!!.segments)
@@ -42,12 +43,13 @@ class OcrBlockLayoutTest {
 
     @Test
     fun spaceRunsAreConsumedByTheBreak() {
-        val layout = OcrBlockLayout.layout(
-            text = "a  b",
-            lineWidths = listOf(10f, 10f),
-            startSize = 20f,
-            measure = monospace
-        )
+        val layout =
+            OcrBlockLayout.layout(
+                text = "a  b",
+                lineWidths = listOf(10f, 10f),
+                startSize = 20f,
+                measure = monospace,
+            )
 
         assertEquals(listOf("a", "b"), layout!!.segments)
     }
@@ -55,12 +57,13 @@ class OcrBlockLayoutTest {
     @Test
     fun shrinksUntilTheParagraphFits() {
         // 0.5em monospace: 25 chars × 0.5em × 20px = 250px vs 45+75 capacity.
-        val layout = OcrBlockLayout.layout(
-            text = "the quick brown fox jumps",
-            lineWidths = listOf(45f, 75f),
-            startSize = 20f,
-            measure = monospace
-        )
+        val layout =
+            OcrBlockLayout.layout(
+                text = "the quick brown fox jumps",
+                lineWidths = listOf(45f, 75f),
+                startSize = 20f,
+                measure = monospace,
+            )
 
         assertNotNull(layout)
         assertEquals(listOf("the quick", "brown fox jumps"), layout!!.segments)
@@ -73,12 +76,13 @@ class OcrBlockLayoutTest {
     fun cjkBreaksBetweenCharactersUnderKinsoku() {
         // "。" may not open a line: it stays attached to the previous line.
         // 0.5em monospace: 5 chars are exactly 50px at size 20.
-        val layout = OcrBlockLayout.layout(
-            text = "そうです。今日",
-            lineWidths = listOf(50f, 50f),
-            startSize = 20f,
-            measure = monospace
-        )
+        val layout =
+            OcrBlockLayout.layout(
+                text = "そうです。今日",
+                lineWidths = listOf(50f, 50f),
+                startSize = 20f,
+                measure = monospace,
+            )
 
         assertNotNull(layout)
         assertEquals(listOf("そうです。", "今日"), layout!!.segments)
@@ -88,12 +92,13 @@ class OcrBlockLayoutTest {
     fun unsplittableTextIsCrammedAtFloorSize() {
         // One long token: no break opportunities exist, so the floor keeps the
         // text on the last line (overflowing beats dropping it).
-        val layout = OcrBlockLayout.layout(
-            text = "aaaaaaaaaa",
-            lineWidths = listOf(10f, 20f),
-            startSize = 20f,
-            measure = monospace
-        )
+        val layout =
+            OcrBlockLayout.layout(
+                text = "aaaaaaaaaa",
+                lineWidths = listOf(10f, 20f),
+                startSize = 20f,
+                measure = monospace,
+            )
 
         assertNotNull(layout)
         assertEquals(2, layout!!.segments.size)

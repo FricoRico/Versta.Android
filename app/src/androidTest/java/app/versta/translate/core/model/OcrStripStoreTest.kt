@@ -10,18 +10,25 @@ import org.junit.Assert.assertSame
 import org.junit.Test
 
 class OcrStripStoreTest {
+    private fun line(strip: OcrErasedStrip?) =
+        ObjectCharacterRecogniserResult(
+            text = "line",
+            strip = strip,
+        )
 
-    private fun line(strip: OcrErasedStrip?) = ObjectCharacterRecogniserResult(
-        text = "line",
-        strip = strip,
-    )
-
-    private fun strip(x: Float, bytes: ByteArray? = null) = OcrErasedStrip(
+    private fun strip(
+        x: Float,
+        bytes: ByteArray? = null,
+    ) = OcrErasedStrip(
         width = 2,
         height = 2,
-        points = arrayOf(
-            PointF(x, 0f), PointF(x + 2f, 0f), PointF(x + 2f, 2f), PointF(x, 2f)
-        ),
+        points =
+            arrayOf(
+                PointF(x, 0f),
+                PointF(x + 2f, 0f),
+                PointF(x + 2f, 2f),
+                PointF(x, 2f),
+            ),
         bytes = bytes,
     )
 
@@ -67,8 +74,9 @@ class OcrStripStoreTest {
         store.accept(1, listOf(line(strip(0f, ByteArray(16) { 127 }))))
         store.accept(2, listOf(line(strip(10f, ByteArray(16) { 200.toByte() }))))
 
-        val tracked = store.accept(1, listOf(line(strip(1f)))) +
-            store.accept(2, listOf(line(strip(11f))))
+        val tracked =
+            store.accept(1, listOf(line(strip(1f)))) +
+                store.accept(2, listOf(line(strip(11f))))
 
         assertEquals(1f, tracked[0]?.points?.get(0)?.x)
         assertEquals(11f, tracked[1]?.points?.get(0)?.x)
