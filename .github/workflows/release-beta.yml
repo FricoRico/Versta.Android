@@ -1,0 +1,166 @@
+name: Release (beta)
+
+# One-click beta lane: builds the universal release AAB (all four ABIs),
+# signs it with the upload keystore and publishes it to a Google Play testing
+# track. Manual-only trigger — this workflow is never a per-commit gate.
+#
+# Play auth is keyless: the runner exchanges its GitHub OIDC token for a
+# short-lived Google credential via Workload Identity Federation (the GCP org
+# policy iam.disableServiceAccountKeyCreation blocks JSON keys — there is no
+# long-lived Play credential in this repo, only WIF identifiers).
+#
+# Before the first run, the one-time wiring must exist (runbook: document
+# `play-ci-setup-runbook` on issue NEU-7; deliberately not stored in the repo):
+#   Repo variables:  PLAY_WIF_PROVIDER            projects/<n>/locations/global/workloadIdentityPools/github-actions/providers/github-oidc
+#                    PLAY_SERVICE_ACCOUNT_EMAIL   versta-play-publisher@<project>.iam.gserviceaccount.com
+#   Repo secrets:    VERSTA_UPLOAD_KEYSTORE_BASE64  base64 of versta.keystore (the upload key)
+#                    VERSTA_UPLOAD_STORE_PASSWORD   keystore store password
+#                    VERSTA_UPLOAD_KEY_PASSWORD     key password for alias "versta"
+# The preflight job fails fast if any are missing, so a misconfigured run
+# never burns a 45-minute native build.
+
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: "Play track to publish to"
+        required: true
+        default: internal
+        type: choice
+        options:
+          - internal
+          - alpha
+          - beta
+      release_name:
+        description: "Release name in Play Console (default: versionName + short SHA)"
+        required: false
+        type: string
+
+# A publish in flight must run to completion; never auto-cancel it.
+concurrency:
+  group: release-beta
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: "17"
+
+jobs:
+  preflight:
+    name: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify release variables and secrets are configured
+        env:
+          WIF_PROVIDER: ${{ vars.PLAY_WIF_PROVIDER }}
+          WIF_SA: ${{ vars.PLAY_SERVICE_ACCOUNT_EMAIL }}
+          KS_B64: ${{ secrets.VERSTA_UPLOAD_KEYSTORE_BASE64 }}
+          KS_STORE_PW: ${{ secrets.VERSTA_UPLOAD_STORE_PASSWORD }}
+          KS_KEY_PW: ${{ secrets.VERSTA_UPLOAD_KEY_PASSWORD }}
+        run: |
+          missing=()
+          [ -z "$WIF_PROVIDER" ] && missing+=("variable PLAY_WIF_PROVIDER")
+          [ -z "$WIF_SA" ]       && missing+=("variable PLAY_SERVICE_ACCOUNT_EMAIL")
+          [ -z "$KS_B64" ]       && missing+=("secret VERSTA_UPLOAD_KEYSTORE_BASE64")
+          [ -z "$KS_STORE_PW" ]  && missing+=("secret VERSTA_UPLOAD_STORE_PASSWORD")
+          [ -z "$KS_KEY_PW" ]    && missing+=("secret VERSTA_UPLOAD_KEY_PASSWORD")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing repo config: ${missing[*]}"
+            echo "::error::Variables under Settings -> Secrets and variables -> Actions -> Variables; secrets on the Secrets tab."
+            echo "::error::Setup runbook: document 'play-ci-setup-runbook' on issue NEU-7."
+            exit 1
+          fi
+          echo "$WIF_PROVIDER" | grep -qE '^projects/[0-9]+/locations/global/workloadIdentityPools/[^/]+/providers/[^/]+$' \
+            || { echo "::error::PLAY_WIF_PROVIDER does not look like a full WIF provider resource name."; exit 1; }
+          echo "$KS_B64" | base64 -d > /dev/null \
+            || { echo "::error::VERSTA_UPLOAD_KEYSTORE_BASE64 is not valid base64."; exit 1; }
+          echo "WIF identifiers present and well-formed; signing secrets present."
+
+  publish:
+    name: publish (${{ inputs.track }})
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      id-token: write # mint the GitHub OIDC token that WIF exchanges
+    env:
+      VERSTA_UPLOAD_KEYSTORE_BASE64: ${{ secrets.VERSTA_UPLOAD_KEYSTORE_BASE64 }}
+      VERSTA_UPLOAD_STORE_PASSWORD: ${{ secrets.VERSTA_UPLOAD_STORE_PASSWORD }}
+      VERSTA_UPLOAD_KEY_PASSWORD: ${{ secrets.VERSTA_UPLOAD_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      # setup-android v3 defaults to the removed legacy `tools` package; skip
+      # it and install exact versions explicitly (same as ci.yml).
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ""
+
+      - name: Install NDK, CMake, platform and build-tools
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
+
+      # Keyless Play auth: exchange the GitHub OIDC token via WIF, then
+      # impersonate the Play-publisher service account. Writes ADC to
+      # GOOGLE_APPLICATION_CREDENTIALS for Gradle Play Publisher.
+      - name: Authenticate to Google Play via Workload Identity Federation
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.PLAY_WIF_PROVIDER }}
+          service_account: ${{ vars.PLAY_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Materialise signing config from secrets
+        run: |
+          echo "$VERSTA_UPLOAD_KEYSTORE_BASE64" | base64 -d > versta.keystore
+          printf 'storePassword=%s\nkeyPassword=%s\n' \
+            "$VERSTA_UPLOAD_STORE_PASSWORD" "$VERSTA_UPLOAD_KEY_PASSWORD" \
+            > keystore.properties
+          chmod 600 versta.keystore keystore.properties
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Resolve release name
+        id: meta
+        run: |
+          if [ -n "${{ inputs.release_name }}" ]; then
+            echo "name=${{ inputs.release_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)+${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build and publish universal release bundle
+        run: >
+          ./gradlew :app:publishUniversalReleaseBundle
+          --console=plain
+          --track "${{ inputs.track }}"
+          --release-name "${{ steps.meta.outputs.name }}"
+
+      - name: Upload AAB for the build record
+        uses: actions/upload-artifact@v4
+        with:
+          name: versta-${{ inputs.track }}-${{ steps.meta.outputs.name }}
+          path: app/build/outputs/bundle/universalRelease/*.aab
+          retention-days: 30
+
+      - name: Upload Play publish output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-failure-reports
+          path: "**/build/reports/**"
+          if-no-files-found: ignore

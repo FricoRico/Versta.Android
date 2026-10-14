@@ -34,8 +34,13 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
 
       # AGP needs SDK location even for pure Kotlin checks.
+      # setup-android v3 defaults to installing the legacy `tools` package,
+      # which Google has removed from the SDK repository manifests; skip it
+      # (packages: "") and install exactly what we need in the next step.
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: ""
 
       - name: Install platform and build-tools
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
@@ -75,6 +80,8 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: ""
 
       - name: Install platform and build-tools
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
@@ -96,8 +103,10 @@ jobs:
           if-no-files-found: ignore
 
   # Proves the full toolchain (Kotlin + CMake native build) compiles.
-  # Heavy (~20+ min cold): the native inference bridge is built from the
-  # git submodules. Kept as a gate so broken native builds never reach develop.
+  # Heavy (~20+ min cold): the native inference bridge is built from the git
+  # submodules. The per-flavour abiFilters in app/build.gradle.kts scope this
+  # to one architecture; without it every assemble builds all four ABIs.
+  # Kept as a gate so broken native builds never reach develop.
   assemble:
     name: assemble
     runs-on: ubuntu-latest
@@ -115,6 +124,8 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: ""
 
       - name: Install NDK, CMake, platform and build-tools
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
