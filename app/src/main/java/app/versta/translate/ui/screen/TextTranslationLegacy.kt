@@ -60,8 +60,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.AudioMockPlayer
-import app.versta.translate.adapter.outbound.DataMemoryRepository
-import app.versta.translate.adapter.outbound.ExternalDataMemoryRepository
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
@@ -71,8 +69,6 @@ import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryReposit
 import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
-import app.versta.translate.bridge.speech.ESpeakNG
-import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.entity.AutoDetectLanguage
 import app.versta.translate.core.entity.TextToSpeechSynthesisState
 import app.versta.translate.core.entity.WritingDirection
@@ -693,17 +689,12 @@ fun TextTranslationLegacyPreview() {
         translationViewModel = translationViewModel,
         textToSpeechViewModel =
             TextToSpeechViewModel(
-                context = LocalContext.current,
-                espeakNG = ESpeakNG(),
-                openJTalk = OpenJTalk(),
                 tokenizer = TextToSpeechMockTokenizer(),
                 model = TextToSpeechMockInference(),
                 audioPlayer = AudioMockPlayer(),
-                dataRepository = DataMemoryRepository(),
                 voiceRepository = VoiceMemoryRepository(),
                 textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
                 languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-                externalDataRepository = ExternalDataMemoryRepository(),
             ),
     )
 }

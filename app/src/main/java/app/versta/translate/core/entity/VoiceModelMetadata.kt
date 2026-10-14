@@ -10,6 +10,7 @@ enum class VoiceModelArchitecture(
 ) {
     Kokoro("Kokoro"),
     StyleTTS2("StyleTTS2"),
+    Supertonic3("Supertonic3"),
 }
 
 @Serializable
@@ -20,7 +21,12 @@ class VoiceModelMetadata(
     val files: VoiceModelFilesMetadata,
     var root: Path? = null,
 ) {
-    fun isValid() = baseModel.isNotBlank() && architectures.isNotEmpty() && (root != null && files.isValid(root!!)) && root?.isAbsolute == true
+    fun isValid() =
+        baseModel.isNotBlank() &&
+            architectures.isNotEmpty() &&
+            (root != null && files.isValid(root!!)) &&
+            root?.isAbsolute == true &&
+            (!architectures.contains(VoiceModelArchitecture.Supertonic3) || files.inference.models.keys == Supertonic3.MODEL_STAGES)
 
     fun setRootPath(path: Path): VoiceModelMetadata {
         root = path
@@ -42,18 +48,39 @@ data class VoiceModelFilesMetadata(
             }
 }
 
+/**
+ * Inference files of a voice model bundle. Two shapes share the JSON object:
+ * the legacy single-ONNX shape (`model`) and the Supertonic 3 four-model set
+ * (`models` keyed by stage, plus the `tts.json` engine [config]).
+ */
 @Serializable
 data class VoiceInferenceFilesMetadata(
-    val model: String,
+    val model: String = "",
+    val models: Map<String, String> = emptyMap(),
+    val config: String = "",
 ) {
-    fun isValid(path: Path) = path.resolve(model).exists()
+    fun isValid(path: Path) =
+        if (models.isEmpty()) {
+            model.isNotBlank() && path.resolve(model).exists()
+        } else {
+            config.isNotBlank() &&
+                path.resolve(config).exists() &&
+                models.values.all { path.resolve(it).exists() }
+        }
 }
 
+/**
+ * Tokenizer files of a voice model bundle. `vocabulary` is the legacy
+ * phonemizer vocabulary; Supertonic 3 bundles carry [unicodeIndexer] instead.
+ */
 @Serializable
 data class VoiceTokenizerFilesMetadata(
-    val vocabulary: String,
+    val vocabulary: String = "",
+    @SerialName("unicode_indexer") val unicodeIndexer: String = "",
 ) {
-    fun isValid(path: Path) = path.resolve(vocabulary).exists()
+    fun isValid(path: Path) =
+        (vocabulary.isNotBlank() && path.resolve(vocabulary).exists()) ||
+            (unicodeIndexer.isNotBlank() && path.resolve(unicodeIndexer).exists())
 }
 
 @Serializable
