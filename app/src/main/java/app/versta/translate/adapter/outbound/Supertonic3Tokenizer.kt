@@ -11,7 +11,9 @@ import java.text.Normalizer
  * chunker (https://github.com/supertone-inc/supertonic, `java/Helper.java`).
  * Normalizes raw text (NFKD, emoji and symbol cleanup, `<lang>` tag wrap),
  * splits it into speakable chunks, and maps every chunk's code points through
- * the bundle's `unicode_indexer.json` to model input ids.
+ * the bundle's `unicode_indexer.json` to model input ids. Code points with no
+ * model input id stay in the sequence as `-1` (the frozen NEU-69 contract has
+ * the native engine wrap them at the ONNX gather).
  *
  * The pairing of text ids with their length mask and the model pipeline itself
  * live behind the native engine; this class only produces per-chunk id
@@ -41,10 +43,12 @@ class Supertonic3Tokenizer : TextToSpeechTokenizer {
 
         return chunk(text, language, splitSentences)
             .map { chunk ->
-                // Maps the tagged code points through the indexer; code points
-                // beyond the indexer table have no model input id and drop out.
+                // Maps the tagged code points through the indexer. Code points
+                // beyond the indexer table map to -1 and stay in the sequence:
+                // the native engine resolves them with the ONNX-gather wrap
+                // (frozen NEU-69 contract), so the ids must keep their positions.
                 codePoints(preprocess(chunk, language.isoCode))
-                    .mapNotNull { if (it < indexer.size) indexer[it] else null }
+                    .map { if (it < indexer.size) indexer[it] else -1L }
                     .toLongArray()
             }.filter { it.isNotEmpty() }
     }
@@ -180,7 +184,11 @@ class Supertonic3Tokenizer : TextToSpeechTokenizer {
                 continue
             }
 
-            if (current.isNotEmpty() && current.length + part.length + 2 > maxLength) {
+            // The reference packs comma parts on a `+ 1` check while the join
+            // itself adds ", ", so a chunk here may reach maxLength + 1 chars.
+            // Mirrored verbatim: chunk boundaries must match the reference per
+            // chunk for the NEU-68 vector comparisons.
+            if (current.isNotEmpty() && current.length + part.length + 1 > maxLength) {
                 chunks.add(current)
                 current = ""
             }

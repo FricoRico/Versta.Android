@@ -104,11 +104,41 @@ class Supertonic3TokenizerTest {
     }
 
     @Test
-    fun tokenizeDropsCodePointsOutsideTheIndexer() {
-        // The fixture table ends at U+4FFF; U+5000 has no id.
+    fun tokenizeKeepsUnknownCodePointsAsMinusOneSentinels() {
+        // The fixture table ends at U+4FFF; U+5000 maps to -1 and stays in the
+        // sequence: the native engine wraps those ids at the ONNX gather, so
+        // positions must be preserved (frozen NEU-69 contract).
         val tokens = tokenizer().tokenize("a\u5000b", english)
 
-        assertEquals(listOf("<en>ab.</en>"), tokens.map(::decode))
+        assertEquals(listOf(idSequence("<en>a\u5000b.</en>")), tokens.map { it.toList() })
+    }
+
+    @Test
+    fun tokenizePacksCommaPartsLikeTheReference() {
+        // Reference chunkText packs comma-separated parts on a `+ 1` check
+        // while the join adds ", ": 150 + 149 + 1 fits 300 exactly, so both
+        // parts share one 301-character chunk instead of two.
+        val first = "a".repeat(150)
+        val second = "b".repeat(149)
+        val tokens = tokenizer().tokenize("$first, $second", english)
+
+        assertEquals(1, tokens.size)
+        assertEquals(listOf("<en>$first, $second.</en>"), tokens.map(::decode))
+    }
+
+    /**
+     * Expected id sequence for [text] under the identity fixture: code points
+     * up to the table end map to themselves, everything beyond to -1.
+     */
+    private fun idSequence(text: String): List<Long> {
+        val ids = mutableListOf<Long>()
+        var i = 0
+        while (i < text.length) {
+            val point = text.codePointAt(i)
+            ids.add(if (point <= 0x4FFF) point.toLong() else -1L)
+            i += Character.charCount(point)
+        }
+        return ids
     }
 
     @Test
