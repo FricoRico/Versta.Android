@@ -10,6 +10,8 @@
 #include <array>
 #include <atomic>
 #include <cstdio>
+#include <memory>
+#include <mutex>
 #include <numeric>
 #include <sys/auxv.h>
 #include <unordered_map>
@@ -517,35 +519,54 @@ std::vector<TextLine> Engine::runFullPipeline(const cv::Mat& upright, Profile pr
 // ---------------------------------------------------------------------------
 
 namespace {
-std::unordered_map<jlong, std::unique_ptr<ocr::Engine>> engineInstances;
+std::mutex engineRegistryMutex;
+std::unordered_map<jlong, std::shared_ptr<ocr::Engine>> engineInstances;
 jlong engineInstanceCounter = 0;
 } // namespace
 
 extern "C" {
 
 // Guarded handle lookup; unlike map::operator[], never grows the table on
-// garbage handles.
-static ocr::Engine* engineFor(jlong handle) {
+// garbage handles. The shared_ptr copy is the lifetime contract: the GL loop
+// ticks and the acquire worker analyzes while bundle swaps call close() from
+// a coroutine, so an erased handle must keep its Engine alive until the
+// in-flight call returns — destruction then runs on the LAST ref's thread,
+// never under a member call still executing.
+static std::shared_ptr<ocr::Engine> engineFor(jlong handle) {
+    std::lock_guard<std::mutex> lock(engineRegistryMutex);
     auto it = engineInstances.find(handle);
-    return it == engineInstances.end() ? nullptr : it->second.get();
+    return it == engineInstances.end() ? nullptr : it->second;
 }
 
 JNIEXPORT jlong JNICALL
 Java_app_versta_translate_bridge_inference_OcrEngine_construct(JNIEnv*, jobject) {
+    auto engine = std::make_shared<ocr::Engine>();
+    std::lock_guard<std::mutex> lock(engineRegistryMutex);
     jlong handle = ++engineInstanceCounter;
-    engineInstances[handle] = std::make_unique<ocr::Engine>();
+    engineInstances[handle] = std::move(engine);
     return handle;
 }
 
 JNIEXPORT jboolean JNICALL
 Java_app_versta_translate_bridge_inference_OcrEngine_close(JNIEnv*, jobject, jlong handle) {
-    return engineInstances.erase(handle) > 0 ? JNI_TRUE : JNI_FALSE;
+    std::shared_ptr<ocr::Engine> engine;
+    {
+        std::lock_guard<std::mutex> lock(engineRegistryMutex);
+        auto it = engineInstances.find(handle);
+        if (it == engineInstances.end()) return JNI_FALSE;
+        engine = std::move(it->second);
+        engineInstances.erase(it);
+    }
+    // Destroys here unless an in-flight call still holds a ref (its
+    // reloc-thread join may take a tick) — later lookups already miss.
+    engine.reset();
+    return JNI_TRUE;
 }
 
 JNIEXPORT jboolean JNICALL
 Java_app_versta_translate_bridge_inference_OcrEngine_setDetector(
         JNIEnv* env, jobject, jlong handle, jstring modelPath, jint threads) {
-    auto* engine = engineFor(handle);
+    auto engine = engineFor(handle);
     if (!engine) return JNI_FALSE;
 
     const char* chars = env->GetStringUTFChars(modelPath, nullptr);
@@ -557,7 +578,7 @@ Java_app_versta_translate_bridge_inference_OcrEngine_setDetector(
 JNIEXPORT jboolean JNICALL
 Java_app_versta_translate_bridge_inference_OcrEngine_setScriptClassifier(
         JNIEnv* env, jobject, jlong handle, jstring modelPath, jobjectArray routes) {
-    auto* engine = engineFor(handle);
+    auto engine = engineFor(handle);
     if (!engine) return JNI_FALSE;
 
     std::vector<std::string> routeKeys;
@@ -580,7 +601,7 @@ Java_app_versta_translate_bridge_inference_OcrEngine_setScriptClassifier(
 JNIEXPORT jboolean JNICALL
 Java_app_versta_translate_bridge_inference_OcrEngine_setGlyphMatte(
         JNIEnv* env, jobject, jlong handle, jstring modelPath) {
-    auto* engine = engineFor(handle);
+    auto engine = engineFor(handle);
     if (!engine) return JNI_FALSE;
 
     const char* chars = env->GetStringUTFChars(modelPath, nullptr);
@@ -592,7 +613,7 @@ Java_app_versta_translate_bridge_inference_OcrEngine_setGlyphMatte(
 JNIEXPORT jboolean JNICALL
 Java_app_versta_translate_bridge_inference_OcrEngine_setAligner(
         JNIEnv* env, jobject, jlong handle, jstring modelPath) {
-    auto* engine = engineFor(handle);
+    auto engine = engineFor(handle);
     if (!engine) return JNI_FALSE;
 
     const char* chars = env->GetStringUTFChars(modelPath, nullptr);
@@ -604,7 +625,7 @@ Java_app_versta_translate_bridge_inference_OcrEngine_setAligner(
 JNIEXPORT jboolean JNICALL
 Java_app_versta_translate_bridge_inference_OcrEngine_addRecognizer(
         JNIEnv* env, jobject, jlong handle, jstring key, jstring modelPath, jstring vocabPath) {
-    auto* engine = engineFor(handle);
+    auto engine = engineFor(handle);
     if (!engine) return JNI_FALSE;
 
     const char* keyChars = env->GetStringUTFChars(key, nullptr);
@@ -701,7 +722,7 @@ Java_app_versta_translate_bridge_inference_OcrEngine_analyze(
         JNIEnv* env, jobject, jlong handle, jobject input,
         jint inputWidth, jint inputHeight, jint rotationDegrees, jint profile,
         jstring forcedRecognizer) {
-    auto* engine = engineFor(handle);
+    auto engine = engineFor(handle);
     if (!engine) return nullptr;
 
     auto* data = static_cast<uint8_t*>(env->GetDirectBufferAddress(input));
@@ -729,7 +750,7 @@ JNIEXPORT jfloatArray JNICALL
 Java_app_versta_translate_bridge_inference_OcrEngine_tick(
         JNIEnv* env, jobject, jlong handle, jobject input,
         jint inputWidth, jint inputHeight, jint rotationDegrees) {
-    auto* engine = engineFor(handle);
+    auto engine = engineFor(handle);
     if (!engine) return nullptr;
 
     auto* data = static_cast<uint8_t*>(env->GetDirectBufferAddress(input));
@@ -757,7 +778,7 @@ Java_app_versta_translate_bridge_inference_OcrEngine_tick(
 JNIEXPORT jobjectArray JNICALL
 Java_app_versta_translate_bridge_inference_OcrEngine_liveContent(
         JNIEnv* env, jobject, jlong handle) {
-    auto* engine = engineFor(handle);
+    auto engine = engineFor(handle);
     if (!engine) return nullptr;
 
     // Strip bytes ride only with the epoch that built them (locked ticks
@@ -769,7 +790,7 @@ JNIEXPORT jboolean JNICALL
 Java_app_versta_translate_bridge_inference_OcrEngine_probeLive(
         JNIEnv* env, jobject, jlong handle, jobject input,
         jint inputWidth, jint inputHeight, jint rotationDegrees) {
-    auto* engine = engineFor(handle);
+    auto engine = engineFor(handle);
     if (!engine) return JNI_FALSE;
 
     auto* data = static_cast<uint8_t*>(env->GetDirectBufferAddress(input));

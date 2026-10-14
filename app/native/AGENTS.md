@@ -45,6 +45,7 @@ This file describes conventions for the C++/JNI bridge library
 ## OCR pipeline (MNN)
 
 - Inference runs on MNN (vendored static, CPU-only build; converter/tools/protobuf/train all OFF, `MNN_USE_SSE=OFF` on 32-bit x86). Detection strides must be probed on a throwaway interpreter — never on the live session.
+- The `OcrEngine` registry is the exception to the unique_ptr handle map: entries are `shared_ptr` behind a registry mutex. The GL loop ticks and the acquire worker analyzes while bundle swaps call `close()` from a coroutine, so an erased handle keeps its `Engine` alive until the in-flight call returns (deferred destruction on the last ref's thread, never mid-call).
 - Never cache MNN `Tensor*` across `resizeSession`; refetch session input/output inside every run. Never `assign(t.shape().begin(), t.shape().end())` — MNN `shape()` returns a fresh vector per call and the double-temporary iterator pair corrupts. Copy the whole `shape()` result instead.
 - PP-OCR CTC has blank at class 0; dictionary index is `argmax - 1` and blank-separated repeated characters survive the collapse.
 - PP-OCR's DB detector outputs its *kernel* — the x-height core of a line, not the full glyph band. Strips must dewarp the band p05–p95 spine spread inflated ×2.4 with a descender slice below the baseline (see `dewarpContour`), or the recognizer sees 12px glyph-core slivers and hallucinates case-confused text. Bands/strips are dewarped once per box per pass and shared by duel/routing/recognize/matte (`DewarpedStrip` cache built in `runFullPipeline`).

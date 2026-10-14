@@ -123,7 +123,10 @@ class OcrEngine : AutoCloseable {
         rotationDegrees: Int,
         profile: Int,
         forcedRecognizer: String?,
-    ): Array<OcrDetectedLine>? = analyze(_handle, input, inputWidth, inputHeight, rotationDegrees, profile, forcedRecognizer)
+    ): Array<OcrDetectedLine>? {
+        if (_handle == 0L) return null
+        return analyze(_handle, input, inputWidth, inputHeight, rotationDegrees, profile, forcedRecognizer)
+    }
 
     fun tick(
         input: Buffer,
