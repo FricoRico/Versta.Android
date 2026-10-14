@@ -10,6 +10,7 @@ import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import app.versta.translate.database.migrations.Migration3
 import app.versta.translate.database.migrations.Migration4
 import app.versta.translate.database.migrations.Migration6
+import app.versta.translate.database.migrations.Migration7
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.app.versta.translate.database.sqldelight.ObjectCharacterRecognitionDetectorModel
@@ -83,6 +84,7 @@ class DatabaseContainer(
             Migration3,
             Migration4,
             Migration6,
+            Migration7,
         )
 
     val data = _database.dataQueries
