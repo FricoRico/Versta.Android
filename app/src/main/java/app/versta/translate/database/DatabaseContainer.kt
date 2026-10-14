@@ -3,6 +3,7 @@ package app.versta.translate.database
 import android.content.Context
 import android.database.DatabaseUtils
 import android.database.sqlite.SQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import app.cash.sqldelight.ColumnAdapter
 import app.cash.sqldelight.TransactionWithReturn
 import app.cash.sqldelight.TransactionWithoutReturn
@@ -59,7 +60,29 @@ class DatabaseContainer(
 
     private val appContext: Context = context.applicationContext
 
-    val driver = AndroidSqliteDriver(Database.Schema, context, DB_FILE)
+    /**
+     * Driver with foreign-key enforcement on. `setForeignKeyConstraintsEnabled`
+     * belongs in `onConfigure`: the support library invokes it while
+     * configuring every connection, before `onCreate`/`onUpgrade`/`onOpen`, so
+     * the pragma holds for schema migrations, manual data migrations, and all
+     * queries alike. With constraints enforced, `ON DELETE CASCADE` on `Voice`
+     * and `LanguageModel` is live, and inserting a child row without a parent
+     * fails instead of creating an orphan. The one-time sweep (Migration8)
+     * clears historical orphans before this ships.
+     */
+    val driver =
+        AndroidSqliteDriver(
+            schema = Database.Schema,
+            context = context,
+            name = DB_FILE,
+            callback =
+                object : AndroidSqliteDriver.Callback(Database.Schema) {
+                    override fun onConfigure(db: SupportSQLiteDatabase) {
+                        super.onConfigure(db)
+                        db.setForeignKeyConstraintsEnabled(true)
+                    }
+                },
+        )
 
     private val _database =
         Database(
