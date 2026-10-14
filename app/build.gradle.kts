@@ -220,6 +220,13 @@ tasks.configureEach {
 tasks.apply {
     register("getRemoteData") {
         doLast {
+            // Clean checkouts have no res/raw dir (git tracks no empty dirs);
+            // File.outputStream() does not create parent directories.
+            layout.projectDirectory
+                .dir("src/main/res/raw")
+                .asFile
+                .mkdirs()
+
             URI("https://models.versta.app/data/data.json")
                 .toURL()
                 .openStream()
