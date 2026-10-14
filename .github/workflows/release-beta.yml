@@ -146,6 +146,7 @@ jobs:
       - name: Build and publish universal release bundle
         run: >
           ./gradlew :app:publishUniversalReleaseBundle
+          -Pversta.play.publish=true
           --console=plain
           --track "${{ inputs.track }}"
           --release-name "${{ steps.meta.outputs.name }}"
