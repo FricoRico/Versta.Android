@@ -33,7 +33,6 @@ import app.versta.translate.core.entity.CameraTranslationBlockLine
 import app.versta.translate.core.entity.CameraTranslationResult
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.LiveOverlayTick
-import app.versta.translate.core.entity.OcrRenderStrip
 
 import app.versta.translate.core.entity.ObjectCharacterRecognitionBundleWithFiles
 import androidx.compose.runtime.getValue
@@ -59,9 +58,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
-import kotlin.math.abs
-import kotlin.math.exp
-import kotlin.math.ln
 import android.graphics.Bitmap
 import android.os.SystemClock
 import androidx.camera.core.ImageCapture
@@ -399,6 +395,10 @@ class CameraTranslationViewModel(
             // exits back to the viewfinder with the restart button.
             _liveTrackingActive.value = false
             _translating.value = false
+            // Fence: bump the epoch so a live frame captured before the still
+            // cannot publish over the still's lines (the publish gate compares
+            // against the last GL sink epoch, which is frozen now).
+            _analysisEpoch++
             onAnalyzerFrame(mapped, result.width, result.height)
         } finally {
             _stillBusy.value = false
