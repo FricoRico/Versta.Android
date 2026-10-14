@@ -19,9 +19,33 @@ data class VoiceWithModelFiles(
     val tokenizer: VoiceModelTokenizerFiles,
     val voices: VoiceModelVoiceFiles,
 ) {
+    val isSupertonic3: Boolean
+        get() = architectures.contains(VoiceModelArchitecture.Supertonic3)
+
     fun isValid() =
         inference.isValid() &&
+            tokenizer.isValid() &&
             voices.isValid()
+
+    /**
+     * Resolves the voice file for [language] and [gender]. Supertonic 3 voices
+     * resolve to the fixed default style of the language; legacy bundles match
+     * on Kokoro file naming.
+     */
+    fun getVoice(
+        language: Language,
+        gender: VoiceGender = VoiceGender.Female,
+    ): Path? =
+        if (isSupertonic3) {
+            if (!Supertonic3.supports(language)) {
+                return null
+            }
+
+            val style = path.resolve(Supertonic3.styleFileName(Supertonic3.defaultStyle(language, gender)))
+            voices.find { it == style }
+        } else {
+            voices.getVoiceByLanguage(language, gender)
+        }
 
     companion object {
         private val serializer = Json { ignoreUnknownKeys = true }
@@ -48,11 +72,28 @@ data class VoiceWithModelFiles(
                     size = path.parent.directorySize(),
                     inference =
                         VoiceModelInferenceFiles(
-                            model = path.resolve(metadata.files.inference.model),
+                            model =
+                                metadata.files.inference.model
+                                    .takeIf { it.isNotBlank() }
+                                    ?.let { path.resolve(it) },
+                            models =
+                                metadata.files.inference.models
+                                    .mapValues { path.resolve(it.value) },
+                            config =
+                                metadata.files.inference.config
+                                    .takeIf { it.isNotBlank() }
+                                    ?.let { path.resolve(it) },
                         ),
                     tokenizer =
                         VoiceModelTokenizerFiles(
-                            vocabulary = path.resolve(metadata.files.tokenizer.vocabulary),
+                            vocabulary =
+                                metadata.files.tokenizer.vocabulary
+                                    .takeIf { it.isNotBlank() }
+                                    ?.let { path.resolve(it) },
+                            unicodeIndexer =
+                                metadata.files.tokenizer.unicodeIndexer
+                                    .takeIf { it.isNotBlank() }
+                                    ?.let { path.resolve(it) },
                         ),
                     voices =
                         VoiceModelVoiceFiles().apply {
@@ -75,16 +116,24 @@ data class VoiceWithModelFiles(
 
 @Serializable
 data class VoiceModelInferenceFiles(
-    val model: Path,
+    val model: Path? = null,
+    val models: Map<String, Path> = emptyMap(),
+    val config: Path? = null,
 ) {
-    fun isValid() = model.exists()
+    fun isValid() =
+        if (models.isEmpty()) {
+            model?.exists() == true
+        } else {
+            config?.exists() == true && models.values.all { it.exists() }
+        }
 }
 
 @Serializable
 data class VoiceModelTokenizerFiles(
-    val vocabulary: Path,
+    val vocabulary: Path? = null,
+    val unicodeIndexer: Path? = null,
 ) {
-    fun isValid() = vocabulary.exists()
+    fun isValid() = vocabulary?.exists() == true || unicodeIndexer?.exists() == true
 }
 
 @Serializable
