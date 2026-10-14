@@ -99,7 +99,11 @@ jobs:
           arch: ${{ env.ARCH }}
           profile: ${{ env.PROFILE }}
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu host -noaudio -no-boot-anim -camera-back virtualscene -camera-front emulated
+          # -gpu host dies on macos-14 with Vulkan/MoltenVK
+          # VK_ERROR_OUT_OF_DEVICE_MEMORY (staging buffer alloc); SwiftShader
+          # (software GL/Vulkan) is the reliable headless mode on CI and is
+          # plenty for the virtualscene camera feed these tests use.
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back virtualscene -camera-front emulated
           disable-animations: true
           # connectedAndroidTest uninstalls the APK when it finishes, so the
           # launch smoke reinstalls it. The suite result always wins the exit
