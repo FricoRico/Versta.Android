@@ -66,21 +66,24 @@ fun LanguageSettings(
 ) {
     Timber.tag("LanguageSettings").d("Showing Language Settings screen")
     val languageModels by languageViewModel.languageModelsByState.collectAsStateWithLifecycle(
-        ExternalLanguageModels()
+        ExternalLanguageModels(),
     )
     val downloadTasks by languageViewModel.downloadTasks.collectAsStateWithLifecycle()
 
     var languageToBeDeleted by remember { mutableStateOf<LanguagePair?>(null) }
 
-    val queuedTasks = (languageModels.updates + languageModels.available).filter { model ->
-        downloadTasks.any { it.model == model }
-    }
-    val filteredUpdates = languageModels.updates.filterNot { model ->
-        downloadTasks.any { it.model == model }
-    }
-    val filteredAvailable = languageModels.available.filterNot { model ->
-        downloadTasks.any { it.model == model }
-    }
+    val queuedTasks =
+        (languageModels.updates + languageModels.available).filter { model ->
+            downloadTasks.any { it.model == model }
+        }
+    val filteredUpdates =
+        languageModels.updates.filterNot { model ->
+            downloadTasks.any { it.model == model }
+        }
+    val filteredAvailable =
+        languageModels.available.filterNot { model ->
+            downloadTasks.any { it.model == model }
+        }
 
     val layoutDirection = LocalLayoutDirection.current
 
@@ -109,17 +112,19 @@ fun LanguageSettings(
             ScaffoldCompactBarEmptyActions()
         },
         actionsContentKey = "ScaffoldCompactBarEmptyActions",
-        wrapContent = true
+        wrapContent = true,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            )
+            modifier =
+                Modifier
+                    .fillMaxSize(),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
         ) {
             Languages(
                 languages = queuedTasks,
@@ -127,7 +132,8 @@ fun LanguageSettings(
                 header = { size ->
                     SettingsHeaderItem(
                         content = stringResource(R.string.downloading),
-                        groupSize = size + 1, index = 0
+                        groupSize = size + 1,
+                        index = 0,
                     )
                 },
                 onDownload = {
@@ -141,7 +147,7 @@ fun LanguageSettings(
                 },
                 onSwipeToDelete = { language ->
                     languageToBeDeleted = language
-                }
+                },
             )
 
             Languages(
@@ -150,7 +156,8 @@ fun LanguageSettings(
                 header = { size ->
                     SettingsHeaderItem(
                         content = stringResource(R.string.installed_headline),
-                        groupSize = size + 1, index = 0
+                        groupSize = size + 1,
+                        index = 0,
                     )
                 },
                 onClick = {
@@ -158,7 +165,7 @@ fun LanguageSettings(
                 },
                 onSwipeToDelete = { language ->
                     languageToBeDeleted = language
-                }
+                },
             )
 
             Languages(
@@ -167,7 +174,8 @@ fun LanguageSettings(
                 header = { size ->
                     SettingsHeaderItem(
                         content = stringResource(R.string.updates_headline),
-                        groupSize = size + 1, index = 0
+                        groupSize = size + 1,
+                        index = 0,
                     )
                 },
                 onDownload = {
@@ -181,7 +189,7 @@ fun LanguageSettings(
                 },
                 onSwipeToDelete = { language ->
                     languageToBeDeleted = language
-                }
+                },
             )
 
             Languages(
@@ -190,7 +198,8 @@ fun LanguageSettings(
                 header = { size ->
                     SettingsHeaderItem(
                         content = stringResource(R.string.available_headline),
-                        groupSize = size + 1, index = 0
+                        groupSize = size + 1,
+                        index = 0,
                     )
                 },
                 onDownload = {
@@ -201,7 +210,7 @@ fun LanguageSettings(
                 },
                 onClick = {
                     onClick(it)
-                }
+                },
             )
         }
 
@@ -213,7 +222,8 @@ fun LanguageSettings(
             },
             onDismissRequest = {
                 languageToBeDeleted = null
-            })
+            },
+        )
     }
 }
 
@@ -239,7 +249,7 @@ private fun LazyListScope.Languages(
 
     items(
         count = languages.size,
-        key = { languages[it].pair.uniqueId() }
+        key = { languages[it].pair.uniqueId() },
     ) { it ->
         val model = remember { languages[it] }
         val task = downloadTasks.firstOrNull { it.model == model }
@@ -250,11 +260,12 @@ private fun LazyListScope.Languages(
         val score = model.metadata.map { it.score }.average()
         val rating = max(min((score / LANGUAGE_RATING_THRESHOLD) * 5, 5.0), 1.0)
 
-        val size = if (onDownload != null) {
-            model.size / 1e6
-        } else {
-            (model.extracted ?: model.size) / 1e6
-        }
+        val size =
+            if (onDownload != null) {
+                model.size / 1e6
+            } else {
+                (model.extracted ?: model.size) / 1e6
+            }
 
         SettingsButtonItem(
             index = it + 1,
@@ -266,17 +277,17 @@ private fun LazyListScope.Languages(
                 Row(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                    modifier = Modifier.padding(top = MaterialTheme.spacing.extraSmall)
+                    modifier = Modifier.padding(top = MaterialTheme.spacing.extraSmall),
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             ImageVector.vectorResource(R.drawable.round_star_rate_24),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.requiredSize(MaterialTheme.spacing.medium)
+                            modifier = Modifier.requiredSize(MaterialTheme.spacing.medium),
                         )
                         Text(
                             text = ratingFormat.format(rating),
@@ -288,13 +299,13 @@ private fun LazyListScope.Languages(
 
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             if (onDownload != null) ImageVector.vectorResource(R.drawable.round_cloud_download_24) else ImageVector.vectorResource(R.drawable.round_save_24),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.requiredSize(MaterialTheme.spacing.medium)
+                            modifier = Modifier.requiredSize(MaterialTheme.spacing.medium),
                         )
                         Text(
                             text = "${sizeFormat.format(size)} MB",
@@ -325,11 +336,13 @@ private fun LazyListScope.Languages(
                     )
                 }
             },
-            onSwipeToDelete = if (onSwipeToDelete != null) {
-                { onSwipeToDelete(model.pair) }
-            } else {
-                null
-            })
+            onSwipeToDelete =
+                if (onSwipeToDelete != null) {
+                    { onSwipeToDelete(model.pair) }
+                } else {
+                    null
+                },
+        )
     }
 
     ListDivider()
@@ -342,15 +355,17 @@ private fun PreviewLanguageSettings() {
 
     LanguageSettings(
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
-        languageViewModel = LanguageViewModel(
-            context = LocalContext.current,
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-        ),
+        languageViewModel =
+            LanguageViewModel(
+                context = LocalContext.current,
+                languageRepository = LanguageMemoryRepository(),
+                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+                externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+            ),
     )
 }

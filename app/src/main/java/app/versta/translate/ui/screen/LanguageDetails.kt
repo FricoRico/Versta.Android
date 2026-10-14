@@ -68,7 +68,7 @@ fun LanguageDetails(
     val pair = LanguagePair.fromId(id)
     val model by languageViewModel.getLanguageDefinition(pair).collectAsStateWithLifecycle(null)
     val importedLanguagePairs by languageViewModel.importedLanguagePairs.collectAsStateWithLifecycle(
-        emptyList()
+        emptyList(),
     )
 
     var languageToBeDeleted by remember { mutableStateOf<LanguagePair?>(null) }
@@ -86,7 +86,7 @@ fun LanguageDetails(
         navigationIconContentKey = "ScaffoldCompactBarBackNavigationIcon",
         actions = {
             if (importedLanguagePairs.contains(
-                    pair
+                    pair,
                 )
             ) {
                 IconButton(onClick = {
@@ -94,34 +94,35 @@ fun LanguageDetails(
                 }) {
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.round_delete_forever_24),
-                        contentDescription = stringResource(R.string.delete)
+                        contentDescription = stringResource(R.string.delete),
                     )
                 }
             }
         },
-        wrapContent = true
+        wrapContent = true,
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            )
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
         ) {
             if (model == null) {
                 return@LazyColumn
             }
 
             Details(
-                definition = model!!
+                definition = model!!,
             )
 
             ListDivider()
 
             Metadata(
-                metadata = model!!.metadata
+                metadata = model!!.metadata,
             )
         }
 
@@ -137,7 +138,7 @@ fun LanguageDetails(
 }
 
 fun LazyListScope.Details(
-    definition: ExternalLanguagePairDefinition
+    definition: ExternalLanguagePairDefinition,
 ) {
     val sizeFormat = DecimalFormat("#.##")
     val size = definition.size / 1e6
@@ -147,20 +148,20 @@ fun LazyListScope.Details(
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainer,
             contentColor = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.clip(MaterialTheme.shapes.extraLarge)
+            modifier = Modifier.clip(MaterialTheme.shapes.extraLarge),
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                modifier = Modifier
-                    .padding(
-                        vertical = MaterialTheme.spacing.medium,
-                        horizontal = MaterialTheme.spacing.large,
-                    )
-                    .fillMaxWidth()
+                modifier =
+                    Modifier
+                        .padding(
+                            vertical = MaterialTheme.spacing.medium,
+                            horizontal = MaterialTheme.spacing.large,
+                        ).fillMaxWidth(),
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraLarge),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     LanguageDetailsData(
                         label = stringResource(R.string.language_details_download_size_label),
@@ -177,11 +178,12 @@ fun LazyListScope.Details(
 
                 LanguageDetailsData(
                     label = stringResource(R.string.language_details_bidirectional_label),
-                    value = if (definition.bidirectional) {
-                        stringResource(R.string.yes)
-                    } else {
-                        stringResource(R.string.no)
-                    },
+                    value =
+                        if (definition.bidirectional) {
+                            stringResource(R.string.yes)
+                        } else {
+                            stringResource(R.string.no)
+                        },
                 )
 
                 LanguageDetailsData(
@@ -194,40 +196,44 @@ fun LazyListScope.Details(
 }
 
 fun LazyListScope.Metadata(
-    metadata: List<ExternalLanguageMetadata>
+    metadata: List<ExternalLanguageMetadata>,
+) = items(
+    count = metadata.size,
+    key = { "${metadata[it].source}-${metadata[it].target}" },
 ) {
-    return items(
-        count = metadata.size,
-        key = { "${metadata[it].source}-${metadata[it].target}" },
-    ) {
-        val data = metadata[it]
-        val first = it == 0
-        val last = it == metadata.size - 1
+    val data = metadata[it]
+    val first = it == 0
+    val last = it == metadata.size - 1
 
-        val pair = LanguagePair(
-            source = data.source, target = data.target
+    val pair =
+        LanguagePair(
+            source = data.source,
+            target = data.target,
         )
 
-        val scoreFormat = DecimalFormat("#.#")
-        val ratingFormat = DecimalFormat("#.#")
-        val rating = max(min((data.score / LANGUAGE_RATING_THRESHOLD) * 5, 5.0), 1.0)
+    val scoreFormat = DecimalFormat("#.#")
+    val ratingFormat = DecimalFormat("#.#")
+    val rating = max(min((data.score / LANGUAGE_RATING_THRESHOLD) * 5, 5.0), 1.0)
 
-        val topRounding = if (first) {
+    val topRounding =
+        if (first) {
             MaterialTheme.spacing.extraLarge
         } else {
             MaterialTheme.spacing.medium
         }
 
-        val bottomRounding = if (last) {
+    val bottomRounding =
+        if (last) {
             MaterialTheme.spacing.extraLarge
         } else {
             MaterialTheme.spacing.medium
         }
 
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        modifier =
+            Modifier
                 .padding(bottom = MaterialTheme.spacing.extraSmall)
                 .clip(
                     RoundedCornerShape(
@@ -235,59 +241,59 @@ fun LazyListScope.Metadata(
                         topEnd = topRounding,
                         bottomStart = bottomRounding,
                         bottomEnd = bottomRounding,
-                    )
-                )
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                modifier = Modifier
+                    ),
+                ),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+            modifier =
+                Modifier
                     .padding(
                         vertical = MaterialTheme.spacing.medium,
                         horizontal = MaterialTheme.spacing.large,
-                    )
-                    .fillMaxWidth()
+                    ).fillMaxWidth(),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = MaterialTheme.spacing.small),
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = MaterialTheme.spacing.small)
-                ) {
-                    LanguagePairBadge(
-                        pair = pair, bidirectional = false
-                    )
-
-                    Text(
-                        text = "${data.source.name} - ${data.target.name}",
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraLarge),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    LanguageDetailsData(
-                        label = stringResource(R.string.language_details_rating_label),
-                        value = ratingFormat.format(rating),
-                        icon = ImageVector.vectorResource(R.drawable.round_star_rate_24)
-                    )
-
-                    LanguageDetailsData(
-                        label = stringResource(R.string.language_details_blue_score_label),
-                        value = scoreFormat.format(data.score),
-                    )
-                }
-
-                LanguageDetailsData(
-                    label = stringResource(R.string.language_details_base_model_label),
-                    value = data.baseModel,
+                LanguagePairBadge(
+                    pair = pair,
+                    bidirectional = false,
                 )
 
-                LanguageDetailsData(
-                    label = stringResource(R.string.language_details_architecture_label),
-                    value = data.architectures.joinToString(", ") { architecture -> architecture.name },
+                Text(
+                    text = "${data.source.name} - ${data.target.name}",
+                    style = MaterialTheme.typography.titleLarge,
                 )
             }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraLarge),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                LanguageDetailsData(
+                    label = stringResource(R.string.language_details_rating_label),
+                    value = ratingFormat.format(rating),
+                    icon = ImageVector.vectorResource(R.drawable.round_star_rate_24),
+                )
+
+                LanguageDetailsData(
+                    label = stringResource(R.string.language_details_blue_score_label),
+                    value = scoreFormat.format(data.score),
+                )
+            }
+
+            LanguageDetailsData(
+                label = stringResource(R.string.language_details_base_model_label),
+                value = data.baseModel,
+            )
+
+            LanguageDetailsData(
+                label = stringResource(R.string.language_details_architecture_label),
+                value = data.architectures.joinToString(", ") { architecture -> architecture.name },
+            )
         }
     }
 }
@@ -299,35 +305,36 @@ fun LanguageDetailsData(
     icon: ImageVector? = null,
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.hairline)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.hairline),
     ) {
         Text(
-            text = label, style = MaterialTheme.typography.labelLarge
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
         )
 
         if (icon != null) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     icon,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.requiredSize(MaterialTheme.spacing.medium)
+                    modifier = Modifier.requiredSize(MaterialTheme.spacing.medium),
                 )
 
                 Text(
                     text = value,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -341,15 +348,17 @@ fun LanguageDetailsPreview() {
     LanguageDetails(
         id = "en-nl",
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
-        languageViewModel = LanguageViewModel(
-            context = LocalContext.current,
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-        )
+        languageViewModel =
+            LanguageViewModel(
+                context = LocalContext.current,
+                languageRepository = LanguageMemoryRepository(),
+                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+                externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+            ),
     )
 }

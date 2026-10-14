@@ -1,8 +1,8 @@
 package app.versta.translate.adapter.outbound
 
-import app.versta.translate.bridge.whisper.WhisperModel
-import app.versta.translate.bridge.whisper.Whisper
 import app.versta.translate.bridge.whisper.SpeechRecognitionEngine
+import app.versta.translate.bridge.whisper.Whisper
+import app.versta.translate.bridge.whisper.WhisperModel
 import app.versta.translate.bridge.whisper.WhisperSegmentCallback
 import app.versta.translate.core.entity.SpeechRecognitionInferenceFiles
 import app.versta.translate.core.entity.SpeechRecognitionSegment
@@ -25,9 +25,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.nio.file.Path
 import kotlin.coroutines.cancellation.CancellationException
-import timber.log.Timber
 
 /**
  * whisper.cpp-backed speech recognition, transcribing whole utterances
@@ -72,7 +72,8 @@ class WhisperSpeechRecognition(
     },
     private val captureFactory: (recognizer: SpeechRecognitionEngine) -> AudioCapture = { MicrophoneCapture(it) },
     private val processDispatcher: CoroutineDispatcher = Dispatchers.Default,
-) : SpeechRecognitionInference, AutoCloseable {
+) : SpeechRecognitionInference,
+    AutoCloseable {
     private var sourceLanguageIsoCode: String? = null
 
     override fun setSourceLanguage(isoCode: String?) {
@@ -82,6 +83,7 @@ class WhisperSpeechRecognition(
     private var _model: AutoCloseable? = null
     private var _recognizer: SpeechRecognitionEngine? = null
     private var _capture: AudioCapture? = null
+
     // Cached identity of the currently loaded native model+language pair, so
     // repeated start toggles within a screen visit skip the 75-811 MB mmap +
     // KleidiAI repack. Language alone changing (e.g. swapping source/target
@@ -115,9 +117,10 @@ class WhisperSpeechRecognition(
     private val _captureFlow = MutableStateFlow<AudioCapture?>(null)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override val spectrum: Flow<FloatArray> = _captureFlow.flatMapLatest {
-        it?.spectrum ?: flowOf(SILENT_SPECTRUM)
-    }
+    override val spectrum: Flow<FloatArray> =
+        _captureFlow.flatMapLatest {
+            it?.spectrum ?: flowOf(SILENT_SPECTRUM)
+        }
 
     // Set by stop() to keep the process loop alive after the microphone is
     // cut, so audio already buffered is still committed instead of discarded.
@@ -137,7 +140,10 @@ class WhisperSpeechRecognition(
     // makes the new process wait for the old call to return.
     private val processMutex = Mutex()
 
-    override fun load(files: SpeechRecognitionInferenceFiles, threads: Int) {
+    override fun load(
+        files: SpeechRecognitionInferenceFiles,
+        threads: Int,
+    ) {
         val modelPath = files.model.toString()
         val modelChanged = _model == null || _loadedModelPath != modelPath
         val languageChanged = _loadedLanguage != sourceLanguageIsoCode
@@ -159,32 +165,34 @@ class WhisperSpeechRecognition(
             teardownSession(closeModel = false)
         }
 
-        val model = _model ?: modelFactory(files.model, files.vad, threads).also {
-            Timber.tag(TAG).d("load: model=${files.model} vad=${files.vad} threads=$threads")
-            _model = it
-            _loadedModelPath = modelPath
-        }
+        val model =
+            _model ?: modelFactory(files.model, files.vad, threads).also {
+                Timber.tag(TAG).d("load: model=${files.model} vad=${files.vad} threads=$threads")
+                _model = it
+                _loadedModelPath = modelPath
+            }
 
-        val callback = object : WhisperSegmentCallback {
-            override fun onSegment(
-                text: String,
-                startMs: Long,
-                endMs: Long,
-                contextTokenIds: IntArray,
-            ) {
-                val trimmed = text.trim()
-                // contextTokenIds is non-empty only when the native quality
-                // gate passed; record() already no-ops on an empty array, so
-                // this is unconditional regardless of the degenerate check
-                // below — the two gates judge different things (decode
-                // confidence vs. display-worthy text) and should not be
-                // conflated.
-                _contextStore.record(sourceLanguageIsoCode, contextTokenIds)
-                if (!isDegenerate(trimmed)) {
-                    _segments.value = _segments.value + SpeechRecognitionSegment(trimmed, startMs, endMs)
+        val callback =
+            object : WhisperSegmentCallback {
+                override fun onSegment(
+                    text: String,
+                    startMs: Long,
+                    endMs: Long,
+                    contextTokenIds: IntArray,
+                ) {
+                    val trimmed = text.trim()
+                    // contextTokenIds is non-empty only when the native quality
+                    // gate passed; record() already no-ops on an empty array, so
+                    // this is unconditional regardless of the degenerate check
+                    // below — the two gates judge different things (decode
+                    // confidence vs. display-worthy text) and should not be
+                    // conflated.
+                    _contextStore.record(sourceLanguageIsoCode, contextTokenIds)
+                    if (!isDegenerate(trimmed)) {
+                        _segments.value = _segments.value + SpeechRecognitionSegment(trimmed, startMs, endMs)
+                    }
                 }
             }
-        }
         val recognizer = recognizerFactory(model, callback, sourceLanguageIsoCode)
 
         _recognizer = recognizer
@@ -228,101 +236,113 @@ class WhisperSpeechRecognition(
 
         Timber.tag(TAG).d("start: listening=true")
 
-        _processJob = scope.launch(processDispatcher) {
-            var drainStartNs = 0L
-            var lastMetricsLogNs = 0L
-            try {
-                while (isActive && (_listening.value || _draining)) {
-                    val draining = _draining
-                    if (draining && drainStartNs == 0L) {
-                        drainStartNs = System.nanoTime()
-                    }
-                    val consumed = processMutex.withLock { recognizer.process() }
+        _processJob =
+            scope.launch(processDispatcher) {
+                var drainStartNs = 0L
+                var lastMetricsLogNs = 0L
+                try {
+                    while (isActive && (_listening.value || _draining)) {
+                        val draining = _draining
+                        if (draining && drainStartNs == 0L) {
+                            drainStartNs = System.nanoTime()
+                        }
+                        val consumed = processMutex.withLock { recognizer.process() }
 
-                    // Throttled native-metrics log + RTF update: surface the
-                    // full per-session + last-pass snapshot once per second.
-                    // RTF is read from the native side (m.rtf) rather than
-                    // computed here — it already counts only actually-decoded
-                    // audio against decode-only compute (see
-                    // transcribe_utterance in whisper.cc); a Kotlin-side copy
-                    // that charged every poll's wall-clock time also counted
-                    // dropped/VAD-trimmed audio, which inflated RTF exactly
-                    // when the pipeline was dropping the most.
-                    val nowNs = System.nanoTime()
-                    if (nowNs - lastMetricsLogNs >= 1_000_000_000L) {
-                        lastMetricsLogNs = nowNs
-                        val m = recognizer.metrics()
-                        if (m != null) {
-                            _rtf.value = m.rtf.toFloat()
-                            Timber.tag(TAG).d(
-                                "metrics: pass=%d abort=%d vadSkip=%d audioSec=%.3f " +
+                        // Throttled native-metrics log + RTF update: surface the
+                        // full per-session + last-pass snapshot once per second.
+                        // RTF is read from the native side (m.rtf) rather than
+                        // computed here — it already counts only actually-decoded
+                        // audio against decode-only compute (see
+                        // transcribe_utterance in whisper.cc); a Kotlin-side copy
+                        // that charged every poll's wall-clock time also counted
+                        // dropped/VAD-trimmed audio, which inflated RTF exactly
+                        // when the pipeline was dropping the most.
+                        val nowNs = System.nanoTime()
+                        if (nowNs - lastMetricsLogNs >= 1_000_000_000L) {
+                            lastMetricsLogNs = nowNs
+                            val m = recognizer.metrics()
+                            if (m != null) {
+                                _rtf.value = m.rtf.toFloat()
+                                Timber.tag(TAG).d(
+                                    "metrics: pass=%d abort=%d vadSkip=%d audioSec=%.3f " +
                                         "computeMs=%.0f rtf=%.2f lastMs=%d lastWinMs=%d " +
                                         "lastCtx=%d lastTokens=%d budgetMs=%d lastRet=%d " +
                                         "lastFlush=%s encMs=%.1f decMs=%.1f " +
                                         "batMs=%.1f nEnc=%d nDec=%d nBat=%d",
-                                m.passCount, m.abortCount, m.vadSkipCount,
-                                m.processedAudioSec, m.commitComputeMs, m.rtf,
-                                m.lastPassElapsedMs, m.lastPassWindowMs,
-                                m.lastPassAudioCtx, m.lastPassMaxTokens,
-                                m.lastPassBudgetMs, m.lastPassResult,
-                                m.lastPassWasFlush, m.lastPassEncodeMs,
-                                m.lastPassDecodeMs, m.lastPassBatchdMs,
-                                m.lastPassNEncode, m.lastPassNDecode, m.lastPassNBatchd
-                            )
+                                    m.passCount,
+                                    m.abortCount,
+                                    m.vadSkipCount,
+                                    m.processedAudioSec,
+                                    m.commitComputeMs,
+                                    m.rtf,
+                                    m.lastPassElapsedMs,
+                                    m.lastPassWindowMs,
+                                    m.lastPassAudioCtx,
+                                    m.lastPassMaxTokens,
+                                    m.lastPassBudgetMs,
+                                    m.lastPassResult,
+                                    m.lastPassWasFlush,
+                                    m.lastPassEncodeMs,
+                                    m.lastPassDecodeMs,
+                                    m.lastPassBatchdMs,
+                                    m.lastPassNEncode,
+                                    m.lastPassNDecode,
+                                    m.lastPassNBatchd,
+                                )
+                            }
                         }
-                    }
 
-                    if (draining) {
-                        // process() returning 0 means no utterance is ready —
-                        // the flush in the finally block handles whatever
-                        // remains buffered.
-                        if (consumed == 0L) {
-                            Timber.tag(TAG).d("drain: buffered audio exhausted, flushing remainder")
-                            break
+                        if (draining) {
+                            // process() returning 0 means no utterance is ready —
+                            // the flush in the finally block handles whatever
+                            // remains buffered.
+                            if (consumed == 0L) {
+                                Timber.tag(TAG).d("drain: buffered audio exhausted, flushing remainder")
+                                break
+                            }
+                            val drainMs = (System.nanoTime() - drainStartNs) / 1_000_000L
+                            if (drainMs >= MAX_DRAIN_MS) {
+                                Timber.tag(TAG).w("drain: exceeded ${MAX_DRAIN_MS}ms, flushing remainder early")
+                                break
+                            }
+                            // No poll delay: get the user their final text as fast as
+                            // the device allows.
+                            continue
                         }
-                        val drainMs = (System.nanoTime() - drainStartNs) / 1_000_000L
-                        if (drainMs >= MAX_DRAIN_MS) {
-                            Timber.tag(TAG).w("drain: exceeded ${MAX_DRAIN_MS}ms, flushing remainder early")
-                            break
-                        }
-                        // No poll delay: get the user their final text as fast as
-                        // the device allows.
-                        continue
-                    }
 
-                    delay(RECOGNITION_POLL_MS)
-                }
-            } catch (_: CancellationException) {
-                // expected on close()
-            } finally {
-                // NonCancellable because on the close() path this runs inside an
-                // already-cancelled coroutine: a contended (therefore suspending)
-                // mutex acquisition would throw straight back out, skipping the
-                // reset and leaving the next session on stale recognizer state.
-                withContext(NonCancellable) {
-                    try {
-                        // Flush whatever remains buffered (there is no seam
-                        // tail to carry — an utterance is either fully
-                        // decoded or not decoded at all) so the user's last
-                        // words are emitted, then reset for the next session.
-                        // Held under the same Mutex as process() so a start()
-                        // racing the teardown cannot run whisper_full
-                        // concurrently or reset under an in-flight call.
-                        processMutex.withLock {
-                            recognizer.flush()
-                            recognizer.reset()
+                        delay(RECOGNITION_POLL_MS)
+                    }
+                } catch (_: CancellationException) {
+                    // expected on close()
+                } finally {
+                    // NonCancellable because on the close() path this runs inside an
+                    // already-cancelled coroutine: a contended (therefore suspending)
+                    // mutex acquisition would throw straight back out, skipping the
+                    // reset and leaving the next session on stale recognizer state.
+                    withContext(NonCancellable) {
+                        try {
+                            // Flush whatever remains buffered (there is no seam
+                            // tail to carry — an utterance is either fully
+                            // decoded or not decoded at all) so the user's last
+                            // words are emitted, then reset for the next session.
+                            // Held under the same Mutex as process() so a start()
+                            // racing the teardown cannot run whisper_full
+                            // concurrently or reset under an in-flight call.
+                            processMutex.withLock {
+                                recognizer.flush()
+                                recognizer.reset()
+                            }
+                        } finally {
+                            // Must run even if the flush failed, or the UI is stuck
+                            // in `finalizing` with no job left alive to clear it.
+                            _draining = false
+                            _finalizing.value = false
+                            _listening.value = false
+                            Timber.tag(TAG).d("finalize: done (segments collected=${_segments.value.size})")
                         }
-                    } finally {
-                        // Must run even if the flush failed, or the UI is stuck
-                        // in `finalizing` with no job left alive to clear it.
-                        _draining = false
-                        _finalizing.value = false
-                        _listening.value = false
-                        Timber.tag(TAG).d("finalize: done (segments collected=${_segments.value.size})")
                     }
                 }
             }
-        }
     }
 
     override fun stop() {

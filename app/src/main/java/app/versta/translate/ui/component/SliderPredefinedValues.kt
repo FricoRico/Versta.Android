@@ -6,12 +6,11 @@ import androidx.compose.ui.Modifier
 import kotlin.math.roundToInt
 
 @Composable
-fun <T>SliderPredefinedValues(
+fun <T> SliderPredefinedValues(
     value: T,
     options: List<T>,
     onValueChange: (T) -> Unit,
     modifier: Modifier = Modifier,
-
 ) {
     var index = options.indexOfFirst { it == value }
 

@@ -1,0 +1,62 @@
+# detekt configuration
+#
+# Ownership split across the quality gates:
+#   ktlint       -> formatting and style (see .editorconfig)
+#   detekt       -> code smells, correctness defects awaiting refactors
+#   Android lint -> Android-specific checks (see lint.xml)
+#
+# Everything not listed below inherits detekt's default config
+# (buildUponDefaultConfig = true). Pre-existing findings are pinned in
+# detekt-baseline.xml so CI fails on new debt only; regenerate deliberately
+# with `./gradlew :app:detektBaseline`, never silently.
+
+config:
+  validation: true
+
+naming:
+  FunctionNaming:
+    # @Composable builders are PascalCase by convention.
+    ignoreAnnotated: ['Composable', 'Preview']
+
+complexity:
+  LongParameterList:
+    # Composables legitimately take many parameters (Modifier, callbacks, state).
+    ignoreAnnotated: ['Composable']
+  CyclomaticComplexMethod:
+    # Keep the default threshold; existing offenders are baselined.
+    active: true
+
+style:
+  MagicNumber:
+    # UI dp/weight/alpha values are self-describing in Compose layouts, and
+    # DSP code carries numeric constants by nature. Naming each adds noise.
+    active: false
+  MaxLineLength:
+    # Formatting (including line length) is owned by ktlint.
+    active: false
+  UnusedImports:
+    # Owned by ktlint's no-unused-imports rule.
+    active: false
+  MayBeConst:
+    active: true
+  UnusedPrivateMember:
+    # Catches dead code; existing offenders are baselined.
+    active: true
+
+potential-bugs:
+  active: true
+
+exceptions:
+  active: true
+
+coroutines:
+  active: true
+
+comments:
+  # The repo intentionally does not require KDoc.
+  UndocumentedPublicClass:
+    active: false
+  UndocumentedPublicFunction:
+    active: false
+  UndocumentedPublicProperty:
+    active: false

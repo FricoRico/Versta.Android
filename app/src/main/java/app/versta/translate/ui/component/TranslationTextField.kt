@@ -43,23 +43,25 @@ fun TranslationTextField(
     val input by textTranslationViewModel.input.collectAsStateWithLifecycle()
 
     Box(
-        modifier = Modifier
-            .then(modifier)
+        modifier =
+            Modifier
+                .then(modifier),
     ) {
         Column(
-            modifier = Modifier
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    shape = MaterialTheme.shapes.extraLarge
-                )
-                .fillMaxWidth()
+            modifier =
+                Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = MaterialTheme.shapes.extraLarge,
+                    ).fillMaxWidth(),
         ) {
             TextField(
                 placeholder = stringResource(R.string.text_translation_placeholder),
-                modifier = Modifier
-                    .padding(top = MaterialTheme.spacing.small)
-                    .padding(horizontal = MaterialTheme.spacing.small)
-                    .defaultMinSize(minHeight = 192.dp),
+                modifier =
+                    Modifier
+                        .padding(top = MaterialTheme.spacing.small)
+                        .padding(horizontal = MaterialTheme.spacing.small)
+                        .defaultMinSize(minHeight = 192.dp),
                 value = input,
                 onValueChange = {
                     textTranslationViewModel.setInput(it)
@@ -68,17 +70,18 @@ fun TranslationTextField(
                     onSubmit(input)
                 },
                 maxLines = 8,
-                colors = TextFieldDefaults.colorsTransparent()
+                colors = TextFieldDefaults.colorsTransparent(),
             )
             Row(
-                modifier = Modifier
-                    .padding(horizontal = MaterialTheme.spacing.small)
-                    .padding(bottom = MaterialTheme.spacing.small)
-                    .fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .padding(horizontal = MaterialTheme.spacing.small)
+                        .padding(bottom = MaterialTheme.spacing.small)
+                        .fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall)
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
                 ) {
                     FilledIconButton(
                         onClick = {
@@ -89,7 +92,7 @@ fun TranslationTextField(
                     ) {
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.rounded_close_small_24),
-                            contentDescription = stringResource(R.string.clear)
+                            contentDescription = stringResource(R.string.clear),
                         )
                     }
                 }
@@ -101,38 +104,40 @@ fun TranslationTextField(
                 ) {
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.rounded_arrow_forward_24),
-                        contentDescription = stringResource(R.string.translate)
+                        contentDescription = stringResource(R.string.translate),
                     )
                 }
             }
         }
-
     }
 }
 
 @Composable
 @Preview(showBackground = true)
 fun TranslationTextFieldMinimalPreview() {
-    val languageViewModel = LanguageViewModel(
-        context = LocalContext.current,
-        languageRepository = LanguageMemoryRepository(),
-        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-    )
+    val languageViewModel =
+        LanguageViewModel(
+            context = LocalContext.current,
+            languageRepository = LanguageMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+        )
 
     val translationMockInference = TranslationMockInference()
 
     TranslationTextField(
-        textTranslationViewModel = TextTranslationViewModel(
-            languageViewModel = languageViewModel,
-            translationViewModel = TranslationViewModel(
-                intermediateModel = translationMockInference,
-                outputModel = translationMockInference,
-                translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
-                languageViewModel = languageViewModel
-            )
-        ),
+        textTranslationViewModel =
+            TextTranslationViewModel(
+                languageViewModel = languageViewModel,
+                translationViewModel =
+                    TranslationViewModel(
+                        intermediateModel = translationMockInference,
+                        outputModel = translationMockInference,
+                        translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+                        languageViewModel = languageViewModel,
+                    ),
+            ),
         onSubmit = {},
-        onClear = {}
+        onClear = {},
     )
 }

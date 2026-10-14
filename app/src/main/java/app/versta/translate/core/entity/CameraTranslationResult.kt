@@ -11,5 +11,5 @@ class CameraTranslationResult(
     var colors: ObjectCharacterRecogniserColors,
     val fontSize: Float = 16.dp.value,
     val lineHeight: Float = 16.dp.value,
-    val fontWeight: FontWeight = FontWeight.REGULAR
+    val fontWeight: FontWeight = FontWeight.REGULAR,
 )

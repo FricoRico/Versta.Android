@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.LicenseMemoryRepository
@@ -44,7 +45,6 @@ import app.versta.translate.ui.theme.ButtonDefaults
 import app.versta.translate.ui.theme.spacing
 import app.versta.translate.utils.annotateSentence
 import kotlinx.coroutines.launch
-import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,11 +58,12 @@ fun TrialLicenseDrawer(
     val drawerState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val drawerScope = rememberCoroutineScope()
 
-    val onBuyLicense = Intent(
-        Intent.ACTION_VIEW,
-        stringResource(R.string.license_url, stringResource(R.string.site_url)).toUri()
-    )
-    
+    val onBuyLicense =
+        Intent(
+            Intent.ACTION_VIEW,
+            stringResource(R.string.license_url, stringResource(R.string.site_url)).toUri(),
+        )
+
     fun onConfirmLicense() {
         drawerScope.launch {
             licenseViewModel.setLicense(true)
@@ -81,24 +82,26 @@ fun TrialLicenseDrawer(
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(MaterialTheme.spacing.small)
-                .padding(bottom = MaterialTheme.spacing.large)
-                .then(modifier)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(MaterialTheme.spacing.small)
+                    .padding(bottom = MaterialTheme.spacing.large)
+                    .then(modifier),
         ) {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-                contentPadding = PaddingValues(
-                    horizontal = MaterialTheme.spacing.medium,
-                )
+                contentPadding =
+                    PaddingValues(
+                        horizontal = MaterialTheme.spacing.medium,
+                    ),
             ) {
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                         Text(
                             text = stringResource(R.string.license_upgrade_title),
                             style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.padding(bottom = MaterialTheme.spacing.large)
+                            modifier = Modifier.padding(bottom = MaterialTheme.spacing.large),
                         )
                     }
                 }
@@ -111,28 +114,31 @@ fun TrialLicenseDrawer(
 
                 item {
                     Text(
-                        text = stringResource(R.string.license_upgrade_explanation)
+                        text = stringResource(R.string.license_upgrade_explanation),
                     )
                 }
 
                 item {
                     Text(
-                        text = annotateSentence(
-                            sentence = stringResource(R.string.license_upgrade_hint),
-                            annotation = stringResource(R.string.license_upgrade_hint_highlight),
-                            style = SpanStyle(
-                                fontWeight = FontWeight.Light,
-                                fontStyle = FontStyle.Italic
-                            )
-                        )
+                        text =
+                            annotateSentence(
+                                sentence = stringResource(R.string.license_upgrade_hint),
+                                annotation = stringResource(R.string.license_upgrade_hint_highlight),
+                                style =
+                                    SpanStyle(
+                                        fontWeight = FontWeight.Light,
+                                        fontStyle = FontStyle.Italic,
+                                    ),
+                            ),
                     )
                 }
 
                 item {
                     Column(
-                        modifier = Modifier
-                            .padding(top = MaterialTheme.spacing.large)
-                            .fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .padding(top = MaterialTheme.spacing.large)
+                                .fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
                     ) {
@@ -141,7 +147,7 @@ fun TrialLicenseDrawer(
                             shape = MaterialTheme.shapes.large,
                             contentPadding = PaddingValues(MaterialTheme.spacing.medium),
                             colors = ButtonDefaults.transparentButtonColors(),
-                            onClick = { onConfirmLicense() }
+                            onClick = { onConfirmLicense() },
                         ) {
                             Text(
                                 text = stringResource(R.string.license_upgrade_has_license),
@@ -154,13 +160,14 @@ fun TrialLicenseDrawer(
                             contentPadding = PaddingValues(MaterialTheme.spacing.medium),
                             onClick = {
                                 context.startActivity(onBuyLicense)
-                            }
+                            },
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(
-                                    MaterialTheme.spacing.small
-                                ),
+                                horizontalArrangement =
+                                    Arrangement.spacedBy(
+                                        MaterialTheme.spacing.small,
+                                    ),
                             ) {
                                 Text(
                                     text = stringResource(R.string.license_upgrade_buy_license),
@@ -168,7 +175,7 @@ fun TrialLicenseDrawer(
                                 Icon(
                                     ImageVector.vectorResource(R.drawable.rounded_open_in_browser_24),
                                     contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(18.dp),
                                 )
                             }
                         }
@@ -184,9 +191,9 @@ fun TrialLicenseDrawer(
 private fun TrialLicenseDrawerPreview() {
     TrialLicenseDrawer(
         LicenseViewModel(
-            licenseRepository = LicenseMemoryRepository()
+            licenseRepository = LicenseMemoryRepository(),
         ).apply {
             setLicenseDialogState(DialogState.Open)
-        }
+        },
     )
 }

@@ -16,22 +16,22 @@ class DataMemoryRepository : DataRepository {
      * external data files. These definitions are filtered by the state of the imported
      * data.
      */
-    override fun getDataByType(type: DataType): Flow<List<DataWithFiles>> {
-        return flowOf(
+    override fun getDataByType(type: DataType): Flow<List<DataWithFiles>> =
+        flowOf(
             listOf(
                 DataWithFiles(
                     id = "versta-tts-data",
                     version = "v1.0.0",
                     path = _mockPath,
                     size = 42120130,
-                    files = TextToSpeechDataFiles(
-                        espeak = _mockPath,
-                        openJTalk = _mockPath
-                    )
-                )
-            )
+                    files =
+                        TextToSpeechDataFiles(
+                            espeak = _mockPath,
+                            openJTalk = _mockPath,
+                        ),
+                ),
+            ),
         )
-    }
 
     /**
      * Inserts or updates the external data in the repository.

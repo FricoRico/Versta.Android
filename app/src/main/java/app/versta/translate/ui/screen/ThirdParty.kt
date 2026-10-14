@@ -45,24 +45,28 @@ fun ThirdParty(
             ScaffoldCompactBarEmptyActions()
         },
         actionsContentKey = "ScaffoldCompactBarEmptyActions",
-        wrapContent = true
+        wrapContent = true,
     ) {
         LibrariesContainer(
-            padding = LibraryDefaults.libraryPadding(
-                licensePadding = chipPadding(
-                    containerPadding = PaddingValues(top = MaterialTheme.spacing.small),
-                )
-            ),
-            colors = LibraryDefaults.libraryColors(
-                libraryBackgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-            ),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            ),
-            libraries = libraries
+            padding =
+                LibraryDefaults.libraryPadding(
+                    licensePadding =
+                        chipPadding(
+                            containerPadding = PaddingValues(top = MaterialTheme.spacing.small),
+                        ),
+                ),
+            colors =
+                LibraryDefaults.libraryColors(
+                    libraryBackgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                ),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
+            libraries = libraries,
         )
     }
 }
@@ -73,9 +77,10 @@ fun ThirdPartyPreview() {
     val navigationViewModel = NavigationViewModel(Screens.TextTranslation)
     ThirdParty(
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
     )
 }

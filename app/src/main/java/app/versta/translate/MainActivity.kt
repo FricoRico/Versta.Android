@@ -40,10 +40,10 @@ open class MainActivity : ComponentActivity() {
         factoryProducer = {
             viewModelFactory {
                 LicenseViewModel(
-                    licenseRepository = MainApplication.module.licenseRepository
+                    licenseRepository = MainApplication.module.licenseRepository,
                 )
             }
-        }
+        },
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,7 +62,7 @@ open class MainActivity : ComponentActivity() {
         setEdgeToEdgeConfig()
         setContent {
             TranslateTheme(
-                customThemeViewModel = MainApplication.module.customThemeViewModel
+                customThemeViewModel = MainApplication.module.customThemeViewModel,
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -85,25 +85,25 @@ open class MainActivity : ComponentActivity() {
                             voiceViewModel = MainApplication.module.voiceViewModel,
                             objectCharacterRecognitionViewModel = MainApplication.module.objectCharacterRecognitionViewModel,
                             speechRecognitionViewModel = MainApplication.module.speechRecognitionViewModel,
-                            loggingViewModel = MainApplication.module.loggingViewModel
+                            loggingViewModel = MainApplication.module.loggingViewModel,
                         )
 
                         ModelLoadingProgressDialog(
                             translationViewModel = MainApplication.module.translationViewModel,
                             textTranslationViewModel = MainApplication.module.textTranslationViewModel,
-                            textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
+                            textToSpeechViewModel = MainApplication.module.textToSpeechViewModel,
                         )
 
                         ErrorAlertDialog(
                             translationViewModel = MainApplication.module.translationViewModel,
-                            textToSpeechViewModel = MainApplication.module.textToSpeechViewModel
+                            textToSpeechViewModel = MainApplication.module.textToSpeechViewModel,
                         )
 
                         TrialLicenseDrawer(
-                            licenseViewModel = _licenseViewModel
+                            licenseViewModel = _licenseViewModel,
                         )
                         TrialLicenseConfirmationDialog(
-                            licenseViewModel = _licenseViewModel
+                            licenseViewModel = _licenseViewModel,
                         )
 
                         LanguageSelectionDrawer(languageViewModel = MainApplication.module.languageViewModel)

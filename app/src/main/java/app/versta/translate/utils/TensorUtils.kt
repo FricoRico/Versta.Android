@@ -28,7 +28,7 @@ class TensorUtils {
 
         fun createIntTensor(
             env: OrtEnvironment,
-            data: IntArray
+            data: IntArray,
         ): OnnxTensor {
             val shape = determineShape(data)
             return createIntTensor(env, data, shape)
@@ -37,14 +37,12 @@ class TensorUtils {
         fun createIntTensor(
             env: OrtEnvironment,
             data: IntArray,
-            shape: LongArray
-        ): OnnxTensor {
-            return OnnxTensor.createTensor(env, IntBuffer.wrap(data), shape)
-        }
+            shape: LongArray,
+        ): OnnxTensor = OnnxTensor.createTensor(env, IntBuffer.wrap(data), shape)
 
         fun createFloatTensor(
             env: OrtEnvironment,
-            data: FloatArray
+            data: FloatArray,
         ): OnnxTensor {
             val shape = determineShape(data)
             return createFloatTensor(env, data, shape)
@@ -53,14 +51,12 @@ class TensorUtils {
         fun createFloatTensor(
             ortEnvironment: OrtEnvironment,
             data: FloatArray,
-            shape: LongArray
-        ): OnnxTensor {
-            return OnnxTensor.createTensor(ortEnvironment, FloatBuffer.wrap(data), shape)
-        }
+            shape: LongArray,
+        ): OnnxTensor = OnnxTensor.createTensor(ortEnvironment, FloatBuffer.wrap(data), shape)
 
         fun createLongTensor(
             ortEnvironment: OrtEnvironment,
-            data: LongArray
+            data: LongArray,
         ): OnnxTensor {
             val shape = determineShape(data)
             return createLongTensor(ortEnvironment, data, shape)
@@ -69,10 +65,8 @@ class TensorUtils {
         fun createLongTensor(
             ortEnvironment: OrtEnvironment,
             data: LongArray,
-            shape: LongArray
-        ): OnnxTensor {
-            return OnnxTensor.createTensor(ortEnvironment, LongBuffer.wrap(data), shape)
-        }
+            shape: LongArray,
+        ): OnnxTensor = OnnxTensor.createTensor(ortEnvironment, LongBuffer.wrap(data), shape)
 
         private fun determineShape(data: Any): LongArray {
             if (!data.javaClass.isArray) {

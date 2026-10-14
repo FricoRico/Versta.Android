@@ -34,7 +34,7 @@ fun Settings(
     innerPadding: PaddingValues,
     scaffoldViewModel: ScaffoldViewModel,
     navigationViewModel: NavigationViewModel,
-    licenseViewModel: LicenseViewModel
+    licenseViewModel: LicenseViewModel,
 ) {
     val hasLicense by licenseViewModel.hasLicense.collectAsStateWithLifecycle(false)
 
@@ -53,16 +53,17 @@ fun Settings(
             ScaffoldCompactBarEmptyActions()
         },
         actionsContentKey = "ScaffoldCompactBarEmptyActions",
-        wrapContent = true
+        wrapContent = true,
     ) {
         LazyColumn(
             modifier = Modifier,
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            )
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
         ) {
             item {
                 SettingsButtonItem(
@@ -78,7 +79,7 @@ fun Settings(
                         )
                     },
                     index = 0,
-                    groupSize = 4
+                    groupSize = 4,
                 )
             }
 
@@ -89,7 +90,7 @@ fun Settings(
                     onClick = {
                         navigationViewModel.navigate(
                             Screens.VoiceSettings,
-                            Screens.Settings
+                            Screens.Settings,
                         )
                     },
                     leadingContent = {
@@ -99,7 +100,7 @@ fun Settings(
                         )
                     },
                     index = 1,
-                    groupSize = 4
+                    groupSize = 4,
                 )
             }
 
@@ -110,7 +111,7 @@ fun Settings(
                     onClick = {
                         navigationViewModel.navigate(
                             Screens.ObjectCharacterRecognitionSettings,
-                            Screens.Settings
+                            Screens.Settings,
                         )
                     },
                     leadingContent = {
@@ -120,7 +121,7 @@ fun Settings(
                         )
                     },
                     index = 2,
-                    groupSize = 4
+                    groupSize = 4,
                 )
             }
 
@@ -131,7 +132,7 @@ fun Settings(
                     onClick = {
                         navigationViewModel.navigate(
                             Screens.SpeechRecognitionSettings,
-                            Screens.Settings
+                            Screens.Settings,
                         )
                     },
                     leadingContent = {
@@ -141,7 +142,7 @@ fun Settings(
                         )
                     },
                     index = 3,
-                    groupSize = 4
+                    groupSize = 4,
                 )
             }
 
@@ -162,7 +163,7 @@ fun Settings(
                     onClick = {
                         navigationViewModel.navigate(
                             Screens.TranslationSettings,
-                            Screens.Settings
+                            Screens.Settings,
                         )
                     },
                     leadingContent = {
@@ -172,7 +173,7 @@ fun Settings(
                         )
                     },
                     index = 0,
-                    groupSize = 2
+                    groupSize = 2,
                 )
             }
 
@@ -183,7 +184,7 @@ fun Settings(
                     onClick = {
                         navigationViewModel.navigate(
                             Screens.TextToSpeechSettings,
-                            Screens.Settings
+                            Screens.Settings,
                         )
                     },
                     leadingContent = {
@@ -193,7 +194,7 @@ fun Settings(
                         )
                     },
                     index = 1,
-                    groupSize = 2
+                    groupSize = 2,
                 )
             }
 
@@ -207,7 +208,7 @@ fun Settings(
                         navigationViewModel.navigate(Screens.About, Screens.Settings)
                     },
                     index = 0,
-                    groupSize = 2
+                    groupSize = 2,
                 )
             }
 
@@ -218,11 +219,11 @@ fun Settings(
                     onClick = {
                         navigationViewModel.navigate(
                             Screens.Troubleshooting,
-                            Screens.Settings
+                            Screens.Settings,
                         )
                     },
                     index = 1,
-                    groupSize = 2
+                    groupSize = 2,
                 )
             }
         }
@@ -236,12 +237,14 @@ fun SettingsPreview() {
 
     return Settings(
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
-        licenseViewModel = LicenseViewModel(
-            licenseRepository = LicenseMemoryRepository()
-        )
+        licenseViewModel =
+            LicenseViewModel(
+                licenseRepository = LicenseMemoryRepository(),
+            ),
     )
 }

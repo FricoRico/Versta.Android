@@ -54,7 +54,7 @@ class ScaffoldViewModel(
     private val defaultNavigationIcon: ScaffoldComponentMetadata = ScaffoldNavigationIconComponent(null),
     private val defaultActions: ScaffoldRowScopeComponentMetadata = ScaffoldActionsComponent(null),
     private val defaultBottomBar: ScaffoldComponentMetadata = ScaffoldBottomBarComponent(null),
-    private val defaultWrapContent: Boolean = false
+    private val defaultWrapContent: Boolean = false,
 ) : ViewModel() {
     private val _routeScaffoldComponents: MutableMap<NavKey, ScaffoldComponents> = mutableMapOf()
 
@@ -82,20 +82,21 @@ class ScaffoldViewModel(
         navigationIcon: ScaffoldComponentMetadata? = null,
         actions: ScaffoldRowScopeComponentMetadata? = null,
         bottomBar: ScaffoldComponentMetadata? = null,
-        wrapContent: Boolean = false
+        wrapContent: Boolean = false,
     ) {
         val currentRoute = navigationViewModel.navigationBackStack.lastOrNull()
         if (currentRoute == null) {
             return
         }
 
-        val components = ScaffoldComponents(
-            title = title ?: defaultTitle,
-            navigationIcon = navigationIcon ?: defaultNavigationIcon,
-            actions = actions ?: defaultActions,
-            bottomBar = bottomBar ?: defaultBottomBar,
-            wrapContent = wrapContent
-        )
+        val components =
+            ScaffoldComponents(
+                title = title ?: defaultTitle,
+                navigationIcon = navigationIcon ?: defaultNavigationIcon,
+                actions = actions ?: defaultActions,
+                bottomBar = bottomBar ?: defaultBottomBar,
+                wrapContent = wrapContent,
+            )
 
         _routeScaffoldComponents[currentRoute] = components
         updateActiveComponents(currentRoute)

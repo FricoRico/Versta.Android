@@ -5,9 +5,11 @@ import kotlinx.serialization.Serializable
 import java.nio.file.Path
 import kotlin.io.path.exists
 
-enum class VoiceModelArchitecture(val value: String) {
+enum class VoiceModelArchitecture(
+    val value: String,
+) {
     Kokoro("Kokoro"),
-    StyleTTS2("StyleTTS2")
+    StyleTTS2("StyleTTS2"),
 }
 
 @Serializable
@@ -31,12 +33,13 @@ class VoiceModelMetadata(
 data class VoiceModelFilesMetadata(
     val inference: VoiceInferenceFilesMetadata,
     val tokenizer: VoiceTokenizerFilesMetadata,
-    val voices: List<String> = emptyList()
+    val voices: List<String> = emptyList(),
 ) {
     fun isValid(path: Path) =
-        inference.isValid(path) && tokenizer.isValid(path) && voices.all {
-            path.resolve(it).exists()
-        }
+        inference.isValid(path) && tokenizer.isValid(path) &&
+            voices.all {
+                path.resolve(it).exists()
+            }
 }
 
 @Serializable
@@ -70,7 +73,7 @@ class VoiceBundleMetadata(
 @Serializable
 data class VoiceModel(
     val bundle: VoiceBundleMetadata,
-    val model: VoiceModelMetadata
+    val model: VoiceModelMetadata,
 ) {
     val id: String
         get() = bundle.id

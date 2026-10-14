@@ -19,46 +19,49 @@ object Migration3 : Migration {
                     val path = data.path.toPath().toNioPath()
 
                     val model = VoiceWithModelFiles.load(data.id, path)
-                    val voices = model?.voices?.map {
-                        val file = it.fileName.toString()
+                    val voices =
+                        model?.voices?.map {
+                            val file = it.fileName.toString()
 
-                        val language = when {
-                            file.startsWith("a") -> "en"
-                            file.startsWith("b") -> "en"
-                            file.startsWith("j") -> "ja"
-                            file.startsWith("f") -> "fr"
-                            file.startsWith("e") -> "es"
-                            file.startsWith("h") -> "hi"
-                            file.startsWith("i") -> "it"
-                            file.startsWith("z") -> "zh"
-                            file.startsWith("p") -> "pt"
-                            else -> throw Exception("Determining language from file name: $it")
+                            val language =
+                                when {
+                                    file.startsWith("a") -> "en"
+                                    file.startsWith("b") -> "en"
+                                    file.startsWith("j") -> "ja"
+                                    file.startsWith("f") -> "fr"
+                                    file.startsWith("e") -> "es"
+                                    file.startsWith("h") -> "hi"
+                                    file.startsWith("i") -> "it"
+                                    file.startsWith("z") -> "zh"
+                                    file.startsWith("p") -> "pt"
+                                    else -> throw Exception("Determining language from file name: $it")
+                                }
+
+                            val gender =
+                                when {
+                                    file.startsWith("f", 1) -> "female"
+                                    file.startsWith("m", 1) -> "male"
+                                    else -> throw Exception("Determining gender from file name: $it")
+                                }
+
+                            Voice(
+                                modelId = data.id,
+                                language = language,
+                                gender = gender,
+                            )
                         }
-
-                        val gender = when {
-                            file.startsWith("f", 1) -> "female"
-                            file.startsWith("m", 1) -> "male"
-                            else -> throw Exception("Determining gender from file name: $it")
-                        }
-
-                        Voice(
-                            modelId = data.id,
-                            language = language,
-                            gender = gender
-                        )
-                    }
 
                     database.voices.transaction {
                         voices?.forEach {
                             database.voices.insertOrIgnore(
                                 modelId = it.modelId,
                                 language = it.language,
-                                gender = it.gender
+                                gender = it.gender,
                             )
                         }
                     }
                 }
-            }
+            },
         )
     }
 }

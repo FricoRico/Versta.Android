@@ -26,7 +26,9 @@ class DataDatabaseRepository(
      * data.
      */
     override fun getDataByType(type: DataType) =
-        database.data.getByType(type.value).executeAsListFlow()
+        database.data
+            .getByType(type.value)
+            .executeAsListFlow()
             .map { it.mapNotNull { data -> mapDataDatabaseModelToDataWithFiles(data) } }
 
     /**
@@ -43,8 +45,11 @@ class DataDatabaseRepository(
      * @param type The type of the external data to delete.
      */
     override fun deleteDataByType(type: DataType) {
-        database.data.getByType(type.value).executeAsList()
-            .map { it.path.toPath().toNioPath() }.distinct()
+        database.data
+            .getByType(type.value)
+            .executeAsList()
+            .map { it.path.toPath().toNioPath() }
+            .distinct()
             .forEach { it.deleteRecursively() }
 
         database.data.deleteByType(type.value)
@@ -68,14 +73,13 @@ class DataDatabaseRepository(
      * @param data The data to map.
      * @return The mapped data.
      */
-    private fun mapDataModelToDataDatabaseModel(data: DataModel): DataDatabaseModel {
-        return DataDatabaseModel(
+    private fun mapDataModelToDataDatabaseModel(data: DataModel): DataDatabaseModel =
+        DataDatabaseModel(
             id = data.id,
             type = data.contents.type,
             path = data.contents.root?.absolutePathString() ?: "",
             version = data.contents.version,
         )
-    }
 
     /**
      * Maps the [DataDatabaseModel] to the [DataWithFiles].

@@ -9,19 +9,27 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale.getDefault
 
-class FileLoggingTree(directory: File?) : Timber.Tree() {
+class FileLoggingTree(
+    directory: File?,
+) : Timber.Tree() {
     private val logFile = File(directory, "app.log")
 
-    override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
+    override fun log(
+        priority: Int,
+        tag: String?,
+        message: String,
+        t: Throwable?,
+    ) {
         try {
-            val logMessage: String = java.lang.String.format(
-                getDefault(),
-                "%s %s/%s: %s\n",
-                DATE_FORMAT.format(Date()),
-                logLevel(priority),
-                tag,
-                message
-            )
+            val logMessage: String =
+                java.lang.String.format(
+                    getDefault(),
+                    "%s %s/%s: %s\n",
+                    DATE_FORMAT.format(Date()),
+                    logLevel(priority),
+                    tag,
+                    message,
+                )
 
             synchronized(this) {
                 val writer = FileWriter(logFile, true)
@@ -33,8 +41,8 @@ class FileLoggingTree(directory: File?) : Timber.Tree() {
         }
     }
 
-    private fun logLevel(priority: Int): String {
-        return when (priority) {
+    private fun logLevel(priority: Int): String =
+        when (priority) {
             Log.VERBOSE -> "V"
             Log.DEBUG -> "D"
             Log.INFO -> "I"
@@ -43,7 +51,6 @@ class FileLoggingTree(directory: File?) : Timber.Tree() {
             Log.ASSERT -> "A"
             else -> "?"
         }
-    }
 
     companion object {
         private val TAG: String = FileLoggingTree::class.java.simpleName

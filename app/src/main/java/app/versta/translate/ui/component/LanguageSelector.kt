@@ -84,19 +84,21 @@ fun LanguageSelector(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(modifier),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .then(modifier),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .widthIn(max = 480.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = MaterialTheme.shapes.extraLarge,
-                )
+            modifier =
+                Modifier
+                    .align(Alignment.Center)
+                    .widthIn(max = 480.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        shape = MaterialTheme.shapes.extraLarge,
+                    ),
         ) {
             LanguageSelectorButton(
                 context = context,
@@ -105,18 +107,20 @@ fun LanguageSelector(
                 text = stringResource(R.string.select_language),
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Source) },
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(
-                    start = MaterialTheme.spacing.large,
-                    top = MaterialTheme.spacing.medium,
-                    end = MaterialTheme.spacing.extraLarge,
-                    bottom = MaterialTheme.spacing.medium
-                ),
-                shape = RoundedCornerShape(
-                    topStart = MaterialTheme.shapes.extraLarge.topStart,
-                    topEnd = CornerSize(0.dp),
-                    bottomStart = MaterialTheme.shapes.extraLarge.bottomStart,
-                    bottomEnd = CornerSize(0.dp),
-                )
+                contentPadding =
+                    PaddingValues(
+                        start = MaterialTheme.spacing.large,
+                        top = MaterialTheme.spacing.medium,
+                        end = MaterialTheme.spacing.extraLarge,
+                        bottom = MaterialTheme.spacing.medium,
+                    ),
+                shape =
+                    RoundedCornerShape(
+                        topStart = MaterialTheme.shapes.extraLarge.topStart,
+                        topEnd = CornerSize(0.dp),
+                        bottomStart = MaterialTheme.shapes.extraLarge.bottomStart,
+                        bottomEnd = CornerSize(0.dp),
+                    ),
             )
 
             LanguageSelectorButton(
@@ -126,35 +130,40 @@ fun LanguageSelector(
                 text = stringResource(R.string.select_language),
                 onClick = { languageViewModel.setLanguageSelectionState(LanguageType.Target) },
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(
-                    start = MaterialTheme.spacing.extraLarge,
-                    top = MaterialTheme.spacing.medium,
-                    end = MaterialTheme.spacing.large,
-                    bottom = MaterialTheme.spacing.medium
-                ),
-                shape = RoundedCornerShape(
-                    topStart = CornerSize(0.dp),
-                    topEnd = MaterialTheme.shapes.extraLarge.topEnd,
-                    bottomStart = CornerSize(0.dp),
-                    bottomEnd = MaterialTheme.shapes.extraLarge.bottomEnd,
-                )
+                contentPadding =
+                    PaddingValues(
+                        start = MaterialTheme.spacing.extraLarge,
+                        top = MaterialTheme.spacing.medium,
+                        end = MaterialTheme.spacing.large,
+                        bottom = MaterialTheme.spacing.medium,
+                    ),
+                shape =
+                    RoundedCornerShape(
+                        topStart = CornerSize(0.dp),
+                        topEnd = MaterialTheme.shapes.extraLarge.topEnd,
+                        bottomStart = CornerSize(0.dp),
+                        bottomEnd = MaterialTheme.shapes.extraLarge.bottomEnd,
+                    ),
             )
         }
 
         Box(
-            modifier = Modifier
-                .matchParentSize(),
+            modifier =
+                Modifier
+                    .matchParentSize(),
         ) {
-            val dividerColor = if (canSwapLanguages) {
-                MaterialTheme.colorScheme.surface
-            } else {
-                MaterialTheme.colorScheme.surfaceContainerHighest
-            }
+            val dividerColor =
+                if (canSwapLanguages) {
+                    MaterialTheme.colorScheme.surface
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHighest
+                }
 
             VerticalDivider(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(MaterialTheme.spacing.small),
+                modifier =
+                    Modifier
+                        .align(Alignment.Center)
+                        .padding(MaterialTheme.spacing.small),
                 color = dividerColor,
             )
             FilledIconButton(
@@ -165,14 +174,16 @@ fun LanguageSelector(
                     }
                 },
                 modifier = Modifier.align(Alignment.Center),
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(
-                        alpha = 1f
+                colors =
+                    IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        disabledContainerColor =
+                            MaterialTheme.colorScheme.surfaceContainerHighest.copy(
+                                alpha = 1f,
+                            ),
+                        disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .3f),
                     ),
-                    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .3f),
-                ),
             ) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.rounded_sync_alt_24),
@@ -191,61 +202,68 @@ fun LanguageSelectorButton(
     autoDetectLanguage: Language?,
     text: String,
     onClick: () -> Unit,
-    contentPadding: PaddingValues = PaddingValues(
-        MaterialTheme.spacing.large,
-        MaterialTheme.spacing.medium
-    ),
-    shape: CornerBasedShape = MaterialTheme.shapes.extraLarge
+    contentPadding: PaddingValues =
+        PaddingValues(
+            MaterialTheme.spacing.large,
+            MaterialTheme.spacing.medium,
+        ),
+    shape: CornerBasedShape = MaterialTheme.shapes.extraLarge,
 ) {
     Button(
         onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-        ),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
         shape = shape,
         contentPadding = contentPadding,
-        modifier = Modifier
-            .height(intrinsicSize = IntrinsicSize.Min)
-            .then(modifier),
+        modifier =
+            Modifier
+                .height(intrinsicSize = IntrinsicSize.Min)
+                .then(modifier),
     ) {
         Column {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             ) {
                 when (language) {
                     is AutoDetectLanguage -> {
                         Box(
-                            modifier = Modifier
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceContainerHighest,
-                                    MaterialTheme.shapes.extraLarge
-                                )
-                                .requiredSize(MaterialTheme.spacing.large)
-                                .clip(MaterialTheme.shapes.large)
+                            modifier =
+                                Modifier
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        MaterialTheme.shapes.extraLarge,
+                                    ).requiredSize(MaterialTheme.spacing.large)
+                                    .clip(MaterialTheme.shapes.large),
                         ) {
                             if (autoDetectLanguage != null) {
                                 val flagDrawable = autoDetectLanguage.getFlagDrawable(context)
 
                                 Image(
                                     painter = painterResource(flagDrawable),
-                                    contentDescription = stringResource(
-                                        R.string.flag, autoDetectLanguage.name
-                                    ),
-                                    modifier = Modifier
-                                        .alpha(0.4f)
-                                        .fillMaxSize()
+                                    contentDescription =
+                                        stringResource(
+                                            R.string.flag,
+                                            autoDetectLanguage.name,
+                                        ),
+                                    modifier =
+                                        Modifier
+                                            .alpha(0.4f)
+                                            .fillMaxSize(),
                                 )
                             }
 
                             Icon(
                                 imageVector = ImageVector.vectorResource(R.drawable.rounded_wand_stars_24),
                                 contentDescription = stringResource(R.string.detect_language),
-                                modifier = Modifier
-                                    .requiredSize(16.dp)
-                                    .align(Alignment.Center)
+                                modifier =
+                                    Modifier
+                                        .requiredSize(16.dp)
+                                        .align(Alignment.Center),
                             )
                         }
                     }
@@ -255,12 +273,15 @@ fun LanguageSelectorButton(
 
                         Image(
                             painter = painterResource(flagDrawable),
-                            contentDescription = stringResource(
-                                R.string.flag, language.name
-                            ),
-                            modifier = Modifier
-                                .requiredSize(MaterialTheme.spacing.large)
-                                .clip(MaterialTheme.shapes.large)
+                            contentDescription =
+                                stringResource(
+                                    R.string.flag,
+                                    language.name,
+                                ),
+                            modifier =
+                                Modifier
+                                    .requiredSize(MaterialTheme.spacing.large)
+                                    .clip(MaterialTheme.shapes.large),
                         )
                     }
 
@@ -280,13 +301,13 @@ fun LanguageSelectorButton(
 
 @Composable
 @Preview(showBackground = true)
-fun LanguageSelectorPreview() {
-    return LanguageSelector(
-        languageViewModel = LanguageViewModel(
-            context = LocalContext.current,
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-        ),
+fun LanguageSelectorPreview() =
+    LanguageSelector(
+        languageViewModel =
+            LanguageViewModel(
+                context = LocalContext.current,
+                languageRepository = LanguageMemoryRepository(),
+                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+                externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+            ),
     )
-}

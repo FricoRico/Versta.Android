@@ -7,121 +7,131 @@ class MosesPunctuationNormalizer(
     normNumbers: Boolean = true,
     perlParity: Boolean = false,
     private val preReplaceUnicodePunctuation: Boolean = false,
-    private val postRemoveControlChars: Boolean = false
+    private val postRemoveControlChars: Boolean = false,
 ) {
-    private val extraWhitespace = listOf(
-        "\\r" to "",
-        "\\(" to " (",
-        "\\)" to ") ",
-        " +" to " ",
-        "\\) ([.!:?;,])" to ")$1",
-        "\\( " to "(",
-        " \\)" to ")",
-        "(\\d) %" to "$1%",
-        " :" to ":",
-        " ;" to ";"
-    )
+    private val extraWhitespace =
+        listOf(
+            "\\r" to "",
+            "\\(" to " (",
+            "\\)" to ") ",
+            " +" to " ",
+            "\\) ([.!:?;,])" to ")$1",
+            "\\( " to "(",
+            " \\)" to ")",
+            "(\\d) %" to "$1%",
+            " :" to ":",
+            " ;" to ";",
+        )
 
-    private val normalizeUnicodeIfNotPenn = listOf(
-        "`" to "'",
-        "''" to " \" "
-    )
+    private val normalizeUnicodeIfNotPenn =
+        listOf(
+            "`" to "'",
+            "''" to " \" ",
+        )
 
-    private val normalizeUnicode = mutableListOf(
-        "„" to "\"",
-        "“" to "\"",
-        "”" to "\"",
-        "–" to "-",
-        "—" to " - ",
-        " +" to " ",
-        "´" to "'",
-        "([a-zA-Z])‘([a-zA-Z])" to "$1'$2",
-        "([a-zA-Z])’([a-zA-Z])" to "$1'$2",
-        "‘" to "'",
-        "‚" to "'",
-        "’" to "'",
-        "''" to "\"",
-        "´´" to "\"",
-        "…" to "..."
-    )
+    private val normalizeUnicode =
+        mutableListOf(
+            "„" to "\"",
+            "“" to "\"",
+            "”" to "\"",
+            "–" to "-",
+            "—" to " - ",
+            " +" to " ",
+            "´" to "'",
+            "([a-zA-Z])‘([a-zA-Z])" to "$1'$2",
+            "([a-zA-Z])’([a-zA-Z])" to "$1'$2",
+            "‘" to "'",
+            "‚" to "'",
+            "’" to "'",
+            "''" to "\"",
+            "´´" to "\"",
+            "…" to "...",
+        )
 
-    private val frenchQuotes = mutableListOf(
-        "\u00A0«\u00A0" to "\"",
-        "«\u00A0" to "\"",
-        "«" to "\"",
-        "\u00A0»\u00A0" to "\"",
-        "\u00A0»" to "\"",
-        "»" to "\""
-    )
+    private val frenchQuotes =
+        mutableListOf(
+            "\u00A0«\u00A0" to "\"",
+            "«\u00A0" to "\"",
+            "«" to "\"",
+            "\u00A0»\u00A0" to "\"",
+            "\u00A0»" to "\"",
+            "»" to "\"",
+        )
 
-    private val handlePseudoSpaces = listOf(
-        "\u00A0%" to "%",
-        "nº\u00A0" to "nº ",
-        "\u00A0:" to ":",
-        "\u00A0ºC" to " ºC",
-        "\u00A0cm" to " cm",
-        "\u00A0\\?" to "?",
-        "\u00A0\\!" to "!",
-        "\u00A0;" to ";",
-        ",\u00A0" to ", ",
-        " +" to " "
-    )
+    private val handlePseudoSpaces =
+        listOf(
+            "\u00A0%" to "%",
+            "nº\u00A0" to "nº ",
+            "\u00A0:" to ":",
+            "\u00A0ºC" to " ºC",
+            "\u00A0cm" to " cm",
+            "\u00A0\\?" to "?",
+            "\u00A0\\!" to "!",
+            "\u00A0;" to ";",
+            ",\u00A0" to ", ",
+            " +" to " ",
+        )
 
-    private val enQuotationFollowedByComma = listOf(
-        "\"([,.]+)" to "$1\""
-    )
+    private val enQuotationFollowedByComma =
+        listOf(
+            "\"([,.]+)" to "$1\"",
+        )
 
-    private val deEsFrQuotationFollowedByComma = listOf(
-        ",\"" to "\",",
-        "(\\.+)\"(\\s*[^<])" to "\"$1$2" // don't fix period at end of sentence
-    )
+    private val deEsFrQuotationFollowedByComma =
+        listOf(
+            ",\"" to "\",",
+            "(\\.+)\"(\\s*[^<])" to "\"$1$2", // don't fix period at end of sentence
+        )
 
-    private val deEsCzCsFr = listOf(
-        "(\\d)\u00A0(\\d)" to "$1,$2"
-    )
+    private val deEsCzCsFr =
+        listOf(
+            "(\\d)\u00A0(\\d)" to "$1,$2",
+        )
 
-    private val other = listOf(
-        "(\\d)\u00A0(\\d)" to "$1.$2"
-    )
+    private val other =
+        listOf(
+            "(\\d)\u00A0(\\d)" to "$1.$2",
+        )
 
-    private val replaceUnicodePunctuation = listOf(
-        "，" to ",",
-        "。\\s*" to ". ",
-        "、" to ",",
-        "”" to "\"",
-        "“" to "\"",
-        "∶" to ":",
-        "：" to ":",
-        "？" to "?",
-        "《" to "\"",
-        "》" to "\"",
-        "）" to ")",
-        "！" to "!",
-        "（" to "(",
-        "；" to ";",
-        "」" to "\"",
-        "「" to "\"",
-        "０" to "0",
-        "１" to "1",
-        "２" to "2",
-        "３" to "3",
-        "４" to "4",
-        "５" to "5",
-        "６" to "6",
-        "７" to "7",
-        "８" to "8",
-        "９" to "9",
-        "．\\s*" to ". ",
-        "～" to "~",
-        "’" to "'",
-        "…" to "...",
-        "━" to "-",
-        "〈" to "<",
-        "〉" to ">",
-        "【" to "[",
-        "】" to "]",
-        "％" to "%"
-    )
+    private val replaceUnicodePunctuation =
+        listOf(
+            "，" to ",",
+            "。\\s*" to ". ",
+            "、" to ",",
+            "”" to "\"",
+            "“" to "\"",
+            "∶" to ":",
+            "：" to ":",
+            "？" to "?",
+            "《" to "\"",
+            "》" to "\"",
+            "）" to ")",
+            "！" to "!",
+            "（" to "(",
+            "；" to ";",
+            "」" to "\"",
+            "「" to "\"",
+            "０" to "0",
+            "１" to "1",
+            "２" to "2",
+            "３" to "3",
+            "４" to "4",
+            "５" to "5",
+            "６" to "6",
+            "７" to "7",
+            "８" to "8",
+            "９" to "9",
+            "．\\s*" to ". ",
+            "～" to "~",
+            "’" to "'",
+            "…" to "...",
+            "━" to "-",
+            "〈" to "<",
+            "〉" to ">",
+            "【" to "[",
+            "】" to "]",
+            "％" to "%",
+        )
 
     private val substitutions: List<Pair<String, String>>
 
@@ -185,7 +195,5 @@ class MosesPunctuationNormalizer(
         return replacedText
     }
 
-    private fun removeControlCharacters(text: String): String {
-        return Regex("\\p{C}").replace(text, "")
-    }
+    private fun removeControlCharacters(text: String): String = Regex("\\p{C}").replace(text, "")
 }

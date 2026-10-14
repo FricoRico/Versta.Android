@@ -10,13 +10,20 @@ import app.versta.translate.core.entity.RecognizeResult
 interface ObjectCharacterRecognitionInference {
     fun detect(input: ImageProxy): DetectResult
 
-    fun recognize(input: ImageProxy, detectResult: DetectResult): RecognizeResult
+    fun recognize(
+        input: ImageProxy,
+        detectResult: DetectResult,
+    ): RecognizeResult
 
     fun run(input: ImageProxy): CombinedOcrResult
 
     fun cancel()
 
-    fun load(detect: ObjectCharacterRecognitionDetectorWithFiles, recognize: ObjectCharacterRecognitionRecognizerWithFiles, threads: Int)
+    fun load(
+        detect: ObjectCharacterRecognitionDetectorWithFiles,
+        recognize: ObjectCharacterRecognitionRecognizerWithFiles,
+        threads: Int,
+    )
 
     fun close()
 }

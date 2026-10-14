@@ -9,16 +9,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class TextToSpeechPreferenceDataStoreRepository(
-    private val dataStore: DataStore<Preferences>
+    private val dataStore: DataStore<Preferences>,
 ) : TextToSpeechPreferenceRepository {
     /**
      * Gets whether text-to-speech is enabled.
      */
-    override fun getTextToSpeechEnabled(): Flow<Boolean> {
-        return dataStore.data.map { preferences ->
+    override fun getTextToSpeechEnabled(): Flow<Boolean> =
+        dataStore.data.map { preferences ->
             preferences[SPEECH_ENABLED_KEY].toBoolean()
         }
-    }
 
     /**
      * Sets whether text-to-speech is enabled.
@@ -30,15 +29,13 @@ class TextToSpeechPreferenceDataStoreRepository(
         }
     }
 
-
     /**
      * Gets the speed of the speech.
      */
-    override fun getSpeed(): Flow<Float> {
-        return dataStore.data.map { preferences ->
+    override fun getSpeed(): Flow<Float> =
+        dataStore.data.map { preferences ->
             preferences[SPEED_KEY]?.toFloat() ?: DEFAULT_SPEED
         }
-    }
 
     /**
      * Sets the speed of the speech.
@@ -53,16 +50,15 @@ class TextToSpeechPreferenceDataStoreRepository(
     /**
      * Gets the preferred gender of the voice.
      */
-    override fun getGender(): Flow<VoiceGender> {
-        return dataStore.data.map { preferences ->
+    override fun getGender(): Flow<VoiceGender> =
+        dataStore.data.map { preferences ->
             enumValues<VoiceGender>().find {
                 it.name.equals(
                     preferences[VOICE_GENDER_KEY],
-                    ignoreCase = true
+                    ignoreCase = true,
                 )
             } ?: DEFAULT_VOICE_GENDER
         }
-    }
 
     /**
      * Sets the preferred voice gender for synthesis.
@@ -77,11 +73,10 @@ class TextToSpeechPreferenceDataStoreRepository(
     /**
      * Gets the thread count.
      */
-    override fun getThreadCount(): Flow<Int> {
-        return dataStore.data.map { preferences ->
+    override fun getThreadCount(): Flow<Int> =
+        dataStore.data.map { preferences ->
             preferences[THREAD_COUNT_KEY]?.toInt() ?: Runtime.getRuntime().availableProcessors()
         }
-    }
 
     /**
      * Sets the thread count.

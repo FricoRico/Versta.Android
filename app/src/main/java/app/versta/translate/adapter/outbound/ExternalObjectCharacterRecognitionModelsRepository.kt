@@ -27,7 +27,6 @@ interface ExternalObjectCharacterRecognitionModelsRepository {
      */
     fun getDefinitionsByState(
         importedDetectors: Flow<List<ObjectCharacterRecognitionDetectorWithFiles>>,
-        importedRecognizers: Flow<List<ObjectCharacterRecognitionRecognizerWithFiles>>
+        importedRecognizers: Flow<List<ObjectCharacterRecognitionRecognizerWithFiles>>,
     ): Flow<ExternalObjectCharacterRecognitionModels>
 }
-

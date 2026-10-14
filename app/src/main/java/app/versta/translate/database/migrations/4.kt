@@ -22,7 +22,12 @@ object Migration4 : Migration {
                 database.voiceModels.getAll().executeAsList().forEach { data ->
                     if (data.version < "v1.2.0") {
                         database.voiceModels.deleteById(data.id)
-                        removeOldVoiceModels(data.path.toPath().toNioPath().parent)
+                        removeOldVoiceModels(
+                            data.path
+                                .toPath()
+                                .toNioPath()
+                                .parent,
+                        )
 
                         return@forEach
                     }
@@ -32,12 +37,12 @@ object Migration4 : Migration {
                         path = data.path,
                         version = data.version,
                         baseModel = data.baseModel,
-                        architectures = listOf(VoiceModelArchitecture.StyleTTS2.toString())
+                        architectures = listOf(VoiceModelArchitecture.StyleTTS2.toString()),
                     )
                 }
 
                 removeOldExternalData(MainApplication.context)
-            }
+            },
         )
     }
 

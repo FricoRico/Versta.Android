@@ -15,7 +15,6 @@ import kotlin.io.path.writeText
 
 @OptIn(kotlin.io.path.ExperimentalPathApi::class)
 class SpeechRecognitionWithFilesTest {
-
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     private lateinit var testRoot: Path
@@ -23,9 +22,15 @@ class SpeechRecognitionWithFilesTest {
 
     @Before
     fun setUp() {
-        testRoot = context.cacheDir.toPath()
-            .resolve("speech-recognition-with-files-test")
-            .resolve(java.util.UUID.randomUUID().toString())
+        testRoot =
+            context.cacheDir
+                .toPath()
+                .resolve("speech-recognition-with-files-test")
+                .resolve(
+                    java.util.UUID
+                        .randomUUID()
+                        .toString(),
+                )
         modelDir = testRoot.resolve("whisper-base-en")
         modelDir.createDirectories()
     }
@@ -39,23 +44,22 @@ class SpeechRecognitionWithFilesTest {
         modelDir.resolve("metadata.json").writeText(json)
     }
 
-    private fun validMetadataJson(): String {
-        return """
-            {
-                "id": "whisper-base-en",
-                "version": "v1.0.0",
-                "base_model": "openai/whisper-base.en",
-                "languages": ["en"],
-                "architectures": ["Whisper"],
-                "files": {
-                    "inference": {
-                        "model": "model.bin",
-                        "vad": "vad.bin"
-                    }
+    private fun validMetadataJson(): String =
+        """
+        {
+            "id": "whisper-base-en",
+            "version": "v1.0.0",
+            "base_model": "openai/whisper-base.en",
+            "languages": ["en"],
+            "architectures": ["Whisper"],
+            "files": {
+                "inference": {
+                    "model": "model.bin",
+                    "vad": "vad.bin"
                 }
             }
+        }
         """.trimIndent()
-    }
 
     private fun createModelFiles() {
         modelDir.resolve("model.bin").writeText("fake-model-bytes")
@@ -63,11 +67,12 @@ class SpeechRecognitionWithFilesTest {
     }
 
     private fun expectedSize(): Long {
-        val files = listOf(
-            modelDir.resolve("metadata.json"),
-            modelDir.resolve("model.bin"),
-            modelDir.resolve("vad.bin"),
-        )
+        val files =
+            listOf(
+                modelDir.resolve("metadata.json"),
+                modelDir.resolve("model.bin"),
+                modelDir.resolve("vad.bin"),
+            )
         return files.sumOf { Files.size(it) }
     }
 
@@ -126,10 +131,11 @@ class SpeechRecognitionWithFilesTest {
 
     @Test
     fun inferenceFilesIsValid_missingModel_returnsFalse() {
-        val files = SpeechRecognitionInferenceFiles(
-            model = modelDir.resolve("model.bin"),
-            vad = modelDir.resolve("vad.bin"),
-        )
+        val files =
+            SpeechRecognitionInferenceFiles(
+                model = modelDir.resolve("model.bin"),
+                vad = modelDir.resolve("vad.bin"),
+            )
 
         assertEquals(false, files.isValid())
     }
@@ -137,10 +143,11 @@ class SpeechRecognitionWithFilesTest {
     @Test
     fun inferenceFilesIsValid_allPresent_returnsTrue() {
         createModelFiles()
-        val files = SpeechRecognitionInferenceFiles(
-            model = modelDir.resolve("model.bin"),
-            vad = modelDir.resolve("vad.bin"),
-        )
+        val files =
+            SpeechRecognitionInferenceFiles(
+                model = modelDir.resolve("model.bin"),
+                vad = modelDir.resolve("vad.bin"),
+            )
 
         assertTrue(files.isValid())
     }

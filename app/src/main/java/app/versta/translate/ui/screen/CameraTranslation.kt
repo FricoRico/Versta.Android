@@ -74,8 +74,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
 import app.versta.translate.core.entity.FontWeight
-import app.versta.translate.core.model.NavigationViewModel
 import app.versta.translate.core.model.CameraTranslationViewModel
+import app.versta.translate.core.model.NavigationViewModel
 import app.versta.translate.core.model.ScaffoldViewModel
 import app.versta.translate.ui.component.ScaffoldComponentProvider
 import app.versta.translate.ui.theme.spacing
@@ -102,9 +102,10 @@ fun CameraTranslation(
     cameraTranslationViewModel: CameraTranslationViewModel,
     navigationViewModel: NavigationViewModel, // Unused, but kept for future use
 ) {
-    val cameraPermissionState = rememberPermissionState(
-        Manifest.permission.CAMERA
-    )
+    val cameraPermissionState =
+        rememberPermissionState(
+            Manifest.permission.CAMERA,
+        )
 
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
@@ -135,7 +136,7 @@ fun CameraTranslation(
             scope.launch {
                 cameraTranslationViewModel.capture(
                     context.applicationContext,
-                    lifecycleOwner
+                    lifecycleOwner,
                 )
             }
             return
@@ -144,118 +145,128 @@ fun CameraTranslation(
         scope.launch {
             cameraTranslationViewModel.viewfinder(
                 context.applicationContext,
-                lifecycleOwner
+                lifecycleOwner,
             )
         }
     }
 
     ScaffoldComponentProvider(
-        scaffoldViewModel = scaffoldViewModel
+        scaffoldViewModel = scaffoldViewModel,
     ) {
         Box(
-            modifier = Modifier
-                .padding(innerPadding)
+            modifier =
+                Modifier
+                    .padding(innerPadding),
         ) {
             AnimatedVisibility(
                 visible = ready && cameraPermissionState.status is PermissionStatus.Granted,
                 enter = scaleIn(initialScale = 0.6f) + fadeIn(),
-                exit = ExitTransition.None
+                exit = ExitTransition.None,
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(
-                            top = MaterialTheme.spacing.medium,
-                            start = MaterialTheme.spacing.medium,
-                            end = MaterialTheme.spacing.medium,
-                            bottom = MaterialTheme.spacing.extraLarge
-                        )
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(
+                                top = MaterialTheme.spacing.medium,
+                                start = MaterialTheme.spacing.medium,
+                                end = MaterialTheme.spacing.medium,
+                                bottom = MaterialTheme.spacing.extraLarge,
+                            ),
                 ) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .weight(1f)
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .weight(1f),
                     ) {
                         CameraViewFinder(
                             cameraTranslationViewModel = cameraTranslationViewModel,
                             lifecycleOwner = lifecycleOwner,
-                            modifier = Modifier
-                                .fillMaxSize()
+                            modifier =
+                                Modifier
+                                    .fillMaxSize(),
                         )
 
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(MaterialTheme.spacing.small),
-                            horizontalArrangement = Arrangement.End
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(MaterialTheme.spacing.small),
+                            horizontalArrangement = Arrangement.End,
                         ) {
 //                            ZoomSelector(previewViewModel = previewViewModel)
                             FilledIconButton(
                                 onClick = {
                                     toggleTorch()
-                                }
+                                },
                             ) {
                                 Icon(
-                                    imageVector = if (torchEnabled)
-                                        ImageVector.vectorResource(R.drawable.baseline_lightbulb_24)
-                                    else
-                                        ImageVector.vectorResource(R.drawable.baseline_lightbulb_outline_24),
+                                    imageVector =
+                                        if (torchEnabled) {
+                                            ImageVector.vectorResource(R.drawable.baseline_lightbulb_24)
+                                        } else {
+                                            ImageVector.vectorResource(R.drawable.baseline_lightbulb_outline_24)
+                                        },
                                     contentDescription = "Torch",
                                 )
                             }
                         }
                     }
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = MaterialTheme.spacing.large),
-                        horizontalArrangement = Arrangement.Center
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(top = MaterialTheme.spacing.large),
+                        horizontalArrangement = Arrangement.Center,
                     ) {
                         Button(
                             enabled = !translating,
-                            modifier = Modifier
-                                .size(MaterialTheme.spacing.extraExtraLarge),
+                            modifier =
+                                Modifier
+                                    .size(MaterialTheme.spacing.extraExtraLarge),
                             shape = MaterialTheme.shapes.extraExtraLarge,
-                            border = BorderStroke(
-                                width = MaterialTheme.spacing.extraSmall,
-                                color = MaterialTheme.colorScheme.surfaceContainerHighest
-                            ),
+                            border =
+                                BorderStroke(
+                                    width = MaterialTheme.spacing.extraSmall,
+                                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                ),
                             onClick = {
                                 toggleCameraAnalysis()
-                            }
+                            },
                         ) {
                             Box {
                                 this@Button.AnimatedVisibility(
                                     visible = translating,
                                     enter = fadeIn(),
-                                    exit = fadeOut()
+                                    exit = fadeOut(),
                                 ) {
                                     CircularProgressIndicator(
-                                        modifier = Modifier.requiredSize(MaterialTheme.spacing.extraLarge)
+                                        modifier = Modifier.requiredSize(MaterialTheme.spacing.extraLarge),
                                     )
                                 }
 
                                 this@Button.AnimatedVisibility(
                                     visible = !translating && viewFinderMode,
                                     enter = fadeIn(),
-                                    exit = fadeOut()
+                                    exit = fadeOut(),
                                 ) {
                                     Icon(
                                         imageVector = ImageVector.vectorResource(R.drawable.rounded_translate_24),
                                         contentDescription = "Translate",
-                                        modifier = Modifier.requiredSize(MaterialTheme.spacing.extraLarge)
+                                        modifier = Modifier.requiredSize(MaterialTheme.spacing.extraLarge),
                                     )
                                 }
 
                                 this@Button.AnimatedVisibility(
                                     visible = !translating && !viewFinderMode,
                                     enter = fadeIn(),
-                                    exit = fadeOut()
+                                    exit = fadeOut(),
                                 ) {
                                     Icon(
                                         imageVector = ImageVector.vectorResource(R.drawable.round_replay_24),
                                         contentDescription = "Restart",
-                                        modifier = Modifier.requiredSize(MaterialTheme.spacing.extraLarge)
+                                        modifier = Modifier.requiredSize(MaterialTheme.spacing.extraLarge),
                                     )
                                 }
                             }
@@ -267,7 +278,7 @@ fun CameraTranslation(
             AnimatedVisibility(
                 visible = cameraPermissionState.status is PermissionStatus.Denied,
                 enter = EnterTransition.None,
-                exit = fadeOut()
+                exit = fadeOut(),
             ) {
                 CameraPermissionDenied(cameraPermissionState)
             }
@@ -318,20 +329,22 @@ fun ZoomSelector(
     Column(modifier = modifier.fillMaxWidth()) {
         Text(text = String.format(Locale.US, "%.2fx", current))
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+            contentAlignment = Alignment.Center,
         ) {
             // Moving track and stripes
             val horizontalPadding = 24.dp
             var trackWidthPx by remember { mutableStateOf(0f) }
 
             Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = horizontalPadding)
-                    .onSizeChanged { trackWidthPx = it.width.toFloat() }
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = horizontalPadding)
+                        .onSizeChanged { trackWidthPx = it.width.toFloat() },
             ) {
                 val trackWidth = size.width
                 val trackHeight = size.height
@@ -349,7 +362,7 @@ fun ZoomSelector(
                         color = Color.Red,
                         start = Offset(xPos, 0f),
                         end = Offset(xPos, trackHeight),
-                        strokeWidth = 2f
+                        strokeWidth = 2f,
                     )
 
                     // Draw 4 blue stripes between this preset and the next
@@ -368,7 +381,7 @@ fun ZoomSelector(
                                 color = Color.Blue,
                                 start = Offset(stripeX, 0f),
                                 end = Offset(stripeX, trackHeight),
-                                strokeWidth = 1f
+                                strokeWidth = 1f,
                             )
                         }
                     }
@@ -377,50 +390,34 @@ fun ZoomSelector(
 
             // Fixed thumb in the center
             Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
-                    .align(Alignment.Center)
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                        .align(Alignment.Center),
             )
 
             // Invisible touch overlay that handles taps and horizontal drags
             // Matches the same horizontal padding as the Canvas so positions line up
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = horizontalPadding)
-                    .pointerInput(presets, trackWidthPx, layoutDirection) {
-                        if (trackWidthPx <= 0f) return@pointerInput
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = horizontalPadding)
+                        .pointerInput(presets, trackWidthPx, layoutDirection) {
+                            if (trackWidthPx <= 0f) return@pointerInput
 
-                        detectTapGestures { offset ->
-                            if (trackWidthPx <= 0f) return@detectTapGestures
-                            val raw = (offset.x / trackWidthPx).coerceIn(0f, 1f)
-                            // For LTR: left->right should map 0->1 (raw). For RTL: mirror it.
-                            val pos = if (layoutDirection == LayoutDirection.Ltr) raw else 1f - raw
-                            sliderPos = pos
-                            val ratio = cameraTranslationViewModel.sliderPositionToRatio(pos)
-                            cameraTranslationViewModel.setZoomRatio(ratio)
+                            detectTapGestures { offset ->
+                                if (trackWidthPx <= 0f) return@detectTapGestures
+                                val raw = (offset.x / trackWidthPx).coerceIn(0f, 1f)
+                                // For LTR: left->right should map 0->1 (raw). For RTL: mirror it.
+                                val pos = if (layoutDirection == LayoutDirection.Ltr) raw else 1f - raw
+                                sliderPos = pos
+                                val ratio = cameraTranslationViewModel.sliderPositionToRatio(pos)
+                                cameraTranslationViewModel.setZoomRatio(ratio)
 
-                            // Snap if close to a preset
-                            val snap = cameraTranslationViewModel.nearestPresetForPosition(sliderPos)
-                            if (snap != null) {
-                                val (presetRatio, presetPos) = snap
-                                val distance = abs(presetPos - sliderPos)
-                                if (distance <= SNAP_THRESHOLD) {
-                                    sliderPos = presetPos
-                                    cameraTranslationViewModel.setZoomRatio(presetRatio)
-                                }
-                            }
-                        }
-                    }
-                    .pointerInput(presets, trackWidthPx, layoutDirection) {
-                        if (trackWidthPx <= 0f) return@pointerInput
-
-                        detectHorizontalDragGestures(
-                            onDragStart = { /* start */ },
-                            onDragEnd = {
-                                // Snap to nearest preset on release
+                                // Snap if close to a preset
                                 val snap = cameraTranslationViewModel.nearestPresetForPosition(sliderPos)
                                 if (snap != null) {
                                     val (presetRatio, presetPos) = snap
@@ -430,28 +427,45 @@ fun ZoomSelector(
                                         cameraTranslationViewModel.setZoomRatio(presetRatio)
                                     }
                                 }
-                            },
-                            onDragCancel = { /* cancelled */ },
-                            onHorizontalDrag = { change, dragAmount ->
-                                if (trackWidthPx <= 0f) return@detectHorizontalDragGestures
-                                // consume the change so other gestures don't also handle it
-                                try {
-                                    change.consume()
-                                } catch (_: Exception) {
-                                    // consume may not be needed; ignore safely
-                                }
-
-                                val deltaPosRaw = dragAmount / trackWidthPx
-                                // For LTR dragging right should increase sliderPos, so use deltaPosRaw directly.
-                                // For RTL, flip sign.
-                                val deltaPos =
-                                    if (layoutDirection == LayoutDirection.Ltr) deltaPosRaw else -deltaPosRaw
-                                sliderPos = (sliderPos + deltaPos).coerceIn(0f, 1f)
-                                val ratio = cameraTranslationViewModel.sliderPositionToRatio(sliderPos)
-                                cameraTranslationViewModel.setZoomRatio(ratio)
                             }
-                        )
-                    }
+                        }.pointerInput(presets, trackWidthPx, layoutDirection) {
+                            if (trackWidthPx <= 0f) return@pointerInput
+
+                            detectHorizontalDragGestures(
+                                onDragStart = { /* start */ },
+                                onDragEnd = {
+                                    // Snap to nearest preset on release
+                                    val snap = cameraTranslationViewModel.nearestPresetForPosition(sliderPos)
+                                    if (snap != null) {
+                                        val (presetRatio, presetPos) = snap
+                                        val distance = abs(presetPos - sliderPos)
+                                        if (distance <= SNAP_THRESHOLD) {
+                                            sliderPos = presetPos
+                                            cameraTranslationViewModel.setZoomRatio(presetRatio)
+                                        }
+                                    }
+                                },
+                                onDragCancel = { /* cancelled */ },
+                                onHorizontalDrag = { change, dragAmount ->
+                                    if (trackWidthPx <= 0f) return@detectHorizontalDragGestures
+                                    // consume the change so other gestures don't also handle it
+                                    try {
+                                        change.consume()
+                                    } catch (_: Exception) {
+                                        // consume may not be needed; ignore safely
+                                    }
+
+                                    val deltaPosRaw = dragAmount / trackWidthPx
+                                    // For LTR dragging right should increase sliderPos, so use deltaPosRaw directly.
+                                    // For RTL, flip sign.
+                                    val deltaPos =
+                                        if (layoutDirection == LayoutDirection.Ltr) deltaPosRaw else -deltaPosRaw
+                                    sliderPos = (sliderPos + deltaPos).coerceIn(0f, 1f)
+                                    val ratio = cameraTranslationViewModel.sliderPositionToRatio(sliderPos)
+                                    cameraTranslationViewModel.setZoomRatio(ratio)
+                                },
+                            )
+                        },
             )
         }
     }
@@ -473,7 +487,7 @@ fun CameraViewFinder(
 
     Surface(
         modifier = Modifier.then(modifier),
-        shape = MaterialTheme.shapes.extraLarge
+        shape = MaterialTheme.shapes.extraLarge,
     ) {
         currentSurfaceRequest?.let { surfaceRequest ->
             val coordinateTransformer = remember { MutableCoordinateTransformer() }
@@ -482,28 +496,28 @@ fun CameraViewFinder(
                 CameraXViewfinder(
                     surfaceRequest = surfaceRequest,
                     implementationMode = ImplementationMode.EXTERNAL,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .pointerInput(Unit) {
-                            detectTransformGestures { _, _, zoom, _ ->
-                                // zoom is a scale factor relative to previous gesture
-                                // apply directly via ViewModel
-                                if (!zoom.isFinite()) return@detectTransformGestures
-                                cameraTranslationViewModel.applyZoomDelta(zoom)
-                            }
-                        }
-                        .pointerInput(Unit) {
-                            detectTapGestures {
-                                with(coordinateTransformer) {
-                                    val surfaceCoords = it.transform()
-                                    cameraTranslationViewModel.focusOnPoint(
-                                        surfaceRequest.resolution,
-                                        surfaceCoords.x,
-                                        surfaceCoords.y,
-                                    )
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                detectTransformGestures { _, _, zoom, _ ->
+                                    // zoom is a scale factor relative to previous gesture
+                                    // apply directly via ViewModel
+                                    if (!zoom.isFinite()) return@detectTransformGestures
+                                    cameraTranslationViewModel.applyZoomDelta(zoom)
                                 }
-                            }
-                        },
+                            }.pointerInput(Unit) {
+                                detectTapGestures {
+                                    with(coordinateTransformer) {
+                                        val surfaceCoords = it.transform()
+                                        cameraTranslationViewModel.focusOnPoint(
+                                            surfaceRequest.resolution,
+                                            surfaceCoords.x,
+                                            surfaceCoords.y,
+                                        )
+                                    }
+                                }
+                            },
                     coordinateTransformer = coordinateTransformer,
                 )
 
@@ -518,10 +532,11 @@ fun CameraViewFinder(
                         val scaledHeight = inferenceRect.height() * scale
                         val dx = (size.width - scaledWidth) / 2f
                         val dy = (size.height - scaledHeight) / 2f
-                        val outputToScreenMatrix = Matrix().apply {
-                            postScale(scale, scale)
-                            postTranslate(dx, dy)
-                        }
+                        val outputToScreenMatrix =
+                            Matrix().apply {
+                                postScale(scale, scale)
+                                postTranslate(dx, dy)
+                            }
 
                         results.forEach { result ->
                             val points = result.points
@@ -530,26 +545,28 @@ fun CameraViewFinder(
                             val fontSize = result.fontSize
                             val lineHeight = result.lineHeight
 
-                            val mappedPoints = points.map { point ->
-                                val mapped = floatArrayOf(point.x, point.y)
-                                outputToScreenMatrix.mapPoints(mapped)
-                                Offset(mapped[0], mapped[1])
-                            }
-
-                            val path = Path().apply {
-                                moveTo(mappedPoints.first().x, mappedPoints.first().y)
-                                mappedPoints.drop(1).forEach { p ->
-                                    lineTo(p.x, p.y)
+                            val mappedPoints =
+                                points.map { point ->
+                                    val mapped = floatArrayOf(point.x, point.y)
+                                    outputToScreenMatrix.mapPoints(mapped)
+                                    Offset(mapped[0], mapped[1])
                                 }
-                                close()
-                            }
+
+                            val path =
+                                Path().apply {
+                                    moveTo(mappedPoints.first().x, mappedPoints.first().y)
+                                    mappedPoints.drop(1).forEach { p ->
+                                        lineTo(p.x, p.y)
+                                    }
+                                    close()
+                                }
 
                             val backgroundColor = colors.background
                             val foregroundColor = colors.foreground
 
                             drawPath(
                                 path = path,
-                                color = backgroundColor
+                                color = backgroundColor,
                             )
 
                             val minX = mappedPoints.minOf { it.x }
@@ -558,39 +575,43 @@ fun CameraViewFinder(
 
                             val availableWidth = maxX - minX
 
-                            val textPaint = TextPaint().apply {
-                                isAntiAlias = true
-                                color = foregroundColor.toArgb()
+                            val textPaint =
+                                TextPaint().apply {
+                                    isAntiAlias = true
+                                    color = foregroundColor.toArgb()
 
-                                textSize = fontSize * scale
+                                    textSize = fontSize * scale
 
-                                typeface = if (result.fontWeight == FontWeight.BOLD) {
-                                    Typeface.create(
-                                        Typeface.DEFAULT,
-                                        Typeface.BOLD
-                                    )
-                                } else {
-                                    Typeface.DEFAULT
+                                    typeface =
+                                        if (result.fontWeight == FontWeight.BOLD) {
+                                            Typeface.create(
+                                                Typeface.DEFAULT,
+                                                Typeface.BOLD,
+                                            )
+                                        } else {
+                                            Typeface.DEFAULT
+                                        }
                                 }
-                            }
 
-                            val layout = StaticLayout.Builder.obtain(
-                                text,
-                                0,
-                                text.length,
-                                textPaint,
-                                availableWidth.toInt()
-                            ).build()
+                            val layout =
+                                StaticLayout.Builder
+                                    .obtain(
+                                        text,
+                                        0,
+                                        text.length,
+                                        textPaint,
+                                        availableWidth.toInt(),
+                                    ).build()
 
                             drawContext.canvas.nativeCanvas.save()
                             drawContext.canvas.nativeCanvas.translate(
                                 minX,
-                                minY
+                                minY,
                             )
                             layout.draw(drawContext.canvas.nativeCanvas)
                             drawContext.canvas.nativeCanvas.restore()
                         }
-                    }
+                    },
                 )
             }
         }

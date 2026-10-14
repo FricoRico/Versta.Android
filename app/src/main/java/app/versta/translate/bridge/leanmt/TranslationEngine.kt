@@ -13,7 +13,10 @@ interface TranslationEngine : AutoCloseable {
      * Loads the model described by [pkg] with architecture [config], replacing
      * any previously loaded model. The translation cache survives the swap.
      */
-    fun loadModel(pkg: LeanmtPackage, config: LeanmtModelConfig)
+    fun loadModel(
+        pkg: LeanmtPackage,
+        config: LeanmtModelConfig,
+    )
 
     /**
      * Translates each element of [texts] as one unit and returns the

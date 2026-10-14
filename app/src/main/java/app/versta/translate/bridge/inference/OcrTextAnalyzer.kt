@@ -14,8 +14,8 @@ import java.nio.ByteBuffer
 data class OcrTextMetrics(
     val colors: ObjectCharacterRecogniserColors,
     val fontSize: Float,
-    val lineHeight: Float,  // NEW: Line height for better text layout
-    val fontWeight: FontWeight
+    val lineHeight: Float, // NEW: Line height for better text layout
+    val fontWeight: FontWeight,
 )
 
 /**
@@ -27,7 +27,7 @@ data class OcrTextMetrics(
  */
 class OcrTextAnalyzer(
     threads: Int = 4,
-    private var boldThreshold: Float = 0.20f
+    private var boldThreshold: Float = 0.20f,
 ) : AutoCloseable {
     private var _handle: Long
 
@@ -38,10 +38,20 @@ class OcrTextAnalyzer(
         }
     }
 
-    private external fun construct(threads: Int, boldThreshold: Float): Long
+    private external fun construct(
+        threads: Int,
+        boldThreshold: Float,
+    ): Long
+
     private external fun close(handle: Long): Boolean
-    private external fun setBoldThreshold(handle: Long, threshold: Float)
+
+    private external fun setBoldThreshold(
+        handle: Long,
+        threshold: Float,
+    )
+
     private external fun getBoldThreshold(handle: Long): Float
+
     private external fun analyzeTextRegions(
         handle: Long,
         imageBuffer: Buffer,
@@ -49,7 +59,7 @@ class OcrTextAnalyzer(
         imageWidth: Int,
         imageHeight: Int,
         rotation: Int,
-        recognizeSize: Int
+        recognizeSize: Int,
     ): IntArray
 
     /**
@@ -66,10 +76,7 @@ class OcrTextAnalyzer(
     /**
      * Get the current bold detection threshold
      */
-    fun getBoldThreshold(): Float {
-        return getBoldThreshold(_handle)
-    }
-
+    fun getBoldThreshold(): Float = getBoldThreshold(_handle)
 
     /**
      * Analyze text regions from ImageProxy and return metrics
@@ -82,18 +89,19 @@ class OcrTextAnalyzer(
     fun analyzeTextRegions(
         imageProxy: ImageProxy,
         boxesBuffer: ByteBuffer,
-        recognizeSize: Int
+        recognizeSize: Int,
     ): List<OcrTextMetrics> {
         val imageBuffer = imageProxy.planes[0].buffer
-        val results = analyzeTextRegions(
-            handle = _handle,
-            imageBuffer = imageBuffer,
-            boxesBuffer = boxesBuffer,
-            imageWidth = imageProxy.width,
-            imageHeight = imageProxy.height,
-            rotation = imageProxy.imageInfo.rotationDegrees,
-            recognizeSize = recognizeSize
-        )
+        val results =
+            analyzeTextRegions(
+                handle = _handle,
+                imageBuffer = imageBuffer,
+                boxesBuffer = boxesBuffer,
+                imageWidth = imageProxy.width,
+                imageHeight = imageProxy.height,
+                rotation = imageProxy.imageInfo.rotationDegrees,
+                recognizeSize = recognizeSize,
+            )
 
         return parseResults(results)
     }
@@ -117,7 +125,7 @@ class OcrTextAnalyzer(
                 val bgColor = Color(results[i])
                 val txtColor = Color(results[i + 1])
                 val fontSize = results[i + 2] / 100f
-                val lineHeight = results[i + 3] / 100f  // NEW: Parse line height
+                val lineHeight = results[i + 3] / 100f // NEW: Parse line height
                 val fontWeightInt = results[i + 4]
                 val fontWeight = FontWeight.fromInt(fontWeightInt)
 
@@ -125,9 +133,9 @@ class OcrTextAnalyzer(
                     OcrTextMetrics(
                         colors = ObjectCharacterRecogniserColors(bgColor, txtColor),
                         fontSize = if (fontSize > 0f) fontSize else 0f, // Ensure positive font size
-                        lineHeight = if (lineHeight > 0f) lineHeight else 0f,  // NEW: Include line height
-                        fontWeight = fontWeight
-                    )
+                        lineHeight = if (lineHeight > 0f) lineHeight else 0f, // NEW: Include line height
+                        fontWeight = fontWeight,
+                    ),
                 )
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Error parsing metrics at index $i")
@@ -158,4 +166,3 @@ class OcrTextAnalyzer(
         }
     }
 }
-

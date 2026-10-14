@@ -22,18 +22,19 @@ package app.versta.translate.core.entity
  * against.
  */
 internal object SpeechRecognitionInitialPrompts {
-    private val prompts = mapOf(
-        "en" to "The museum's clock tower chimed at 9:15, and by 9:30 a small " +
-            "crowd had gathered near the fountain. Tickets for the afternoon " +
-            "tour cost 25 euros, though the tour hadn't actually started yet. " +
-            "Was it running late, one visitor wondered, or had the rain " +
-            "simply held everyone up?",
-        "nl" to "De klokkentoren van het museum sloeg om 9:15 uur, en om 9:30 " +
-            "uur had zich al een kleine groep verzameld bij de fontein. " +
-            "Kaarten voor de middagrondleiding kostten 25 euro, hoewel de " +
-            "rondleiding nog niet was begonnen. Liep het uit, vroeg een " +
-            "bezoeker zich af, of had de regen gewoon iedereen opgehouden?",
-    )
+    private val prompts =
+        mapOf(
+            "en" to "The museum's clock tower chimed at 9:15, and by 9:30 a small " +
+                "crowd had gathered near the fountain. Tickets for the afternoon " +
+                "tour cost 25 euros, though the tour hadn't actually started yet. " +
+                "Was it running late, one visitor wondered, or had the rain " +
+                "simply held everyone up?",
+            "nl" to "De klokkentoren van het museum sloeg om 9:15 uur, en om 9:30 " +
+                "uur had zich al een kleine groep verzameld bij de fontein. " +
+                "Kaarten voor de middagrondleiding kostten 25 euro, hoewel de " +
+                "rondleiding nog niet was begonnen. Liep het uit, vroeg een " +
+                "bezoeker zich af, of had de regen gewoon iedereen opgehouden?",
+        )
 
     /**
      * Returns the priming prompt for [isoCode], or null if none is defined

@@ -16,4 +16,3 @@ interface OcrPostProcessor {
      */
     fun process(context: OcrPostProcessorContext): OcrPostProcessorContext
 }
-

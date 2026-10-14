@@ -17,8 +17,10 @@ import java.util.UUID
 
 const val DOWNLOAD_OBJECT_CHARACTER_RECOGNITION_STATUS_INTENT = "DOWNLOAD_OBJECT_CHARACTER_RECOGNITION_STATUS_UPDATE"
 
-class DownloadObjectCharacterRecognitionWorker(context: Context, parameters: WorkerParameters) :
-    DownloadWorker(context, parameters) {
+class DownloadObjectCharacterRecognitionWorker(
+    context: Context,
+    parameters: WorkerParameters,
+) : DownloadWorker(context, parameters) {
     override val downloadStatusIntent = Intent(DOWNLOAD_OBJECT_CHARACTER_RECOGNITION_STATUS_INTENT)
 
     private val _extractionDirectory = context.filesDir
@@ -29,14 +31,18 @@ class DownloadObjectCharacterRecognitionWorker(context: Context, parameters: Wor
     /**
      * Extracts the downloaded OCR model.
      */
-    override fun extractDownload(taskId: UUID, file: File) {
+    override fun extractDownload(
+        taskId: UUID,
+        file: File,
+    ) {
         var output: File? = null
 
         try {
-            output = _ocrExtractor.extract(
-                file = file,
-                outputDir = _extractionDirectory,
-            )
+            output =
+                _ocrExtractor.extract(
+                    file = file,
+                    outputDir = _extractionDirectory,
+                )
 
             if (!file.delete()) {
                 Timber.tag(TAG).e("Deleting file ${file.absolutePath}")
@@ -72,39 +78,45 @@ class DownloadObjectCharacterRecognitionWorker(context: Context, parameters: Wor
             throw Exception("Invalid bundle metadata file")
         }
 
-        val detectorModels = bundleMetadata.metadata
-            .filter { it.module == ObjectCharacterRecognitionModule.Detector }
-            .map { detectorMetadataFile ->
-                val detectorMetadataPath = File(output.resolve(detectorMetadataFile.directory), "metadata.json")
-                val detectorMetadata = _serializer.decodeFromString<ObjectCharacterRecognitionDetectorMetadata>(detectorMetadataPath.readText())
-                    .setRootPath(output.resolve(detectorMetadataFile.directory).toPath())
+        val detectorModels =
+            bundleMetadata.metadata
+                .filter { it.module == ObjectCharacterRecognitionModule.Detector }
+                .map { detectorMetadataFile ->
+                    val detectorMetadataPath = File(output.resolve(detectorMetadataFile.directory), "metadata.json")
+                    val detectorMetadata =
+                        _serializer
+                            .decodeFromString<ObjectCharacterRecognitionDetectorMetadata>(detectorMetadataPath.readText())
+                            .setRootPath(output.resolve(detectorMetadataFile.directory).toPath())
 
-                if (!detectorMetadata.isValid()) {
-                    throw Exception("Invalid detector metadata file at ${detectorMetadataFile.directory}")
+                    if (!detectorMetadata.isValid()) {
+                        throw Exception("Invalid detector metadata file at ${detectorMetadataFile.directory}")
+                    }
+
+                    ObjectCharacterRecognitionDetectorModel(
+                        bundle = bundleMetadata,
+                        model = detectorMetadata,
+                    )
                 }
 
-                ObjectCharacterRecognitionDetectorModel(
-                    bundle = bundleMetadata,
-                    model = detectorMetadata
-                )
-            }
+        val recognizerModels =
+            bundleMetadata.metadata
+                .filter { it.module == ObjectCharacterRecognitionModule.Recognizer }
+                .map { recognizerMetadataFile ->
+                    val recognizerMetadataPath = File(output.resolve(recognizerMetadataFile.directory), "metadata.json")
+                    val recognizerMetadata =
+                        _serializer
+                            .decodeFromString<ObjectCharacterRecognitionRecognizerMetadata>(recognizerMetadataPath.readText())
+                            .setRootPath(output.resolve(recognizerMetadataFile.directory).toPath())
 
-        val recognizerModels = bundleMetadata.metadata
-            .filter { it.module == ObjectCharacterRecognitionModule.Recognizer }
-            .map { recognizerMetadataFile ->
-                val recognizerMetadataPath = File(output.resolve(recognizerMetadataFile.directory), "metadata.json")
-                val recognizerMetadata = _serializer.decodeFromString<ObjectCharacterRecognitionRecognizerMetadata>(recognizerMetadataPath.readText())
-                    .setRootPath(output.resolve(recognizerMetadataFile.directory).toPath())
+                    if (!recognizerMetadata.isValid()) {
+                        throw Exception("Invalid recognizer metadata file at ${recognizerMetadataFile.directory}")
+                    }
 
-                if (!recognizerMetadata.isValid()) {
-                    throw Exception("Invalid recognizer metadata file at ${recognizerMetadataFile.directory}")
+                    ObjectCharacterRecognitionRecognizerModel(
+                        bundle = bundleMetadata,
+                        model = recognizerMetadata,
+                    )
                 }
-
-                ObjectCharacterRecognitionRecognizerModel(
-                    bundle = bundleMetadata,
-                    model = recognizerMetadata
-                )
-            }
 
         return Pair(detectorModels, recognizerModels)
     }
@@ -113,4 +125,3 @@ class DownloadObjectCharacterRecognitionWorker(context: Context, parameters: Wor
         private val TAG = DownloadObjectCharacterRecognitionWorker::class.java.simpleName
     }
 }
-

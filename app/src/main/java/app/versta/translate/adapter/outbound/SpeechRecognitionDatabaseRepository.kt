@@ -14,29 +14,35 @@ import kotlin.io.path.deleteRecursively
 import java.app.versta.translate.database.sqldelight.SpeechRecognitionModel as SpeechRecognitionDatabaseModel
 
 class SpeechRecognitionDatabaseRepository(
-    private val database: DatabaseContainer
+    private val database: DatabaseContainer,
 ) : SpeechRecognitionRepository {
-    override fun getSpeechRecognitionModel(id: String): SpeechRecognitionWithFiles? {
-        return mapSpeechRecognitionDatabaseModelToSpeechRecognitionFiles(
-            database.speechRecognitionModels.getById(id).executeAsOneOrNull()
+    override fun getSpeechRecognitionModel(id: String): SpeechRecognitionWithFiles? =
+        mapSpeechRecognitionDatabaseModelToSpeechRecognitionFiles(
+            database.speechRecognitionModels.getById(id).executeAsOneOrNull(),
         )
-    }
 
-    override fun getSpeechRecognitionModels() = database.speechRecognitionModels.getAll().executeAsListFlow()
-        .map { it.mapNotNull { model -> mapSpeechRecognitionDatabaseModelToSpeechRecognitionFiles(model) } }
+    override fun getSpeechRecognitionModels() =
+        database.speechRecognitionModels
+            .getAll()
+            .executeAsListFlow()
+            .map { it.mapNotNull { model -> mapSpeechRecognitionDatabaseModelToSpeechRecognitionFiles(model) } }
 
     override fun upsertSpeechRecognitionModel(metadata: SpeechRecognitionModel) {
-        val data = mapSpeechRecognitionMetadataToSpeechRecognitionDatabaseModel(
-            data = metadata.model
-        )
+        val data =
+            mapSpeechRecognitionMetadataToSpeechRecognitionDatabaseModel(
+                data = metadata.model,
+            )
 
         upsertSpeechRecognitionModel(data)
     }
 
     @OptIn(ExperimentalPathApi::class)
     override fun deleteSpeechRecognitionModel(id: String) {
-        database.speechRecognitionModels.getById(id = id).executeAsList()
-            .map { it.path.toPath().toNioPath() }.distinct()
+        database.speechRecognitionModels
+            .getById(id = id)
+            .executeAsList()
+            .map { it.path.toPath().toNioPath() }
+            .distinct()
             .forEach { it.deleteRecursively() }
 
         database.speechRecognitionModels.deleteById(id = id)
@@ -48,21 +54,20 @@ class SpeechRecognitionDatabaseRepository(
             baseModel = data.baseModel,
             architectures = data.architectures,
             path = data.path,
-            version = data.version
+            version = data.version,
         )
     }
 
     private fun mapSpeechRecognitionMetadataToSpeechRecognitionDatabaseModel(
-        data: SpeechRecognitionMetadata
-    ): SpeechRecognitionDatabaseModel {
-        return SpeechRecognitionDatabaseModel(
+        data: SpeechRecognitionMetadata,
+    ): SpeechRecognitionDatabaseModel =
+        SpeechRecognitionDatabaseModel(
             id = data.id,
             baseModel = data.baseModel,
             architectures = data.architectures.map { it.value },
             path = data.root?.absolutePathString() ?: "",
-            version = data.version
+            version = data.version,
         )
-    }
 
     private fun mapSpeechRecognitionDatabaseModelToSpeechRecognitionFiles(data: SpeechRecognitionDatabaseModel?): SpeechRecognitionWithFiles? {
         if (data == null) {

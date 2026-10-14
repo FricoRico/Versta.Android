@@ -110,14 +110,14 @@ fun TextTranslationLegacy(
 
     val input by textTranslationViewModel.input.collectAsStateWithLifecycle("")
     val inputTransliteration by textTranslationViewModel.inputTransliteration.collectAsStateWithLifecycle(
-        ""
+        "",
     )
 
     val intermediate by textTranslationViewModel.intermediate.collectAsStateWithLifecycle("")
 
     val translated by textTranslationViewModel.translated.collectAsStateWithLifecycle("")
     val translatedTransliteration by textTranslationViewModel.translatedTransliteration.collectAsStateWithLifecycle(
-        ""
+        "",
     )
 
     val languageReadyState by translationViewModel.languageReadyState.collectAsStateWithLifecycle()
@@ -125,19 +125,19 @@ fun TextTranslationLegacy(
         languageReadyState == ReadyState.Ready || sourceLanguage is AutoDetectLanguage
 
     val textToSpeechSynthesisState by textToSpeechViewModel.speechProgressState.collectAsStateWithLifecycle(
-        TextToSpeechSynthesisState.Idle
+        TextToSpeechSynthesisState.Idle,
     )
 
     val textToSpeechAvailable by textToSpeechViewModel.textToSpeechReady.collectAsStateWithLifecycle(false)
     val textToSpeechVoiceAvailable by textToSpeechViewModel.voiceAvailable.collectAsStateWithLifecycle(
-        false
+        false,
     )
 
     val translationInProgress by translationViewModel.translationInProgress.collectAsStateWithLifecycle(
-        false
+        false,
     )
     val translateOnInput by textTranslationViewModel.translateOnInput.collectAsStateWithLifecycle(
-        false
+        false,
     )
 
     val languageOptions by languageViewModel.languageOptions.collectAsStateWithLifecycle(null)
@@ -145,15 +145,17 @@ fun TextTranslationLegacy(
     val targetLanguage by languageViewModel.targetLanguage.collectAsStateWithLifecycle(null)
 
     val sheetScope = rememberCoroutineScope()
-    val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(
-            skipHiddenState = false,
-            initialValue = SheetValue.Hidden,
-            confirmValueChange = {
-                it != SheetValue.Hidden
-            }
+    val scaffoldState =
+        rememberBottomSheetScaffoldState(
+            bottomSheetState =
+                rememberStandardBottomSheetState(
+                    skipHiddenState = false,
+                    initialValue = SheetValue.Hidden,
+                    confirmValueChange = {
+                        it != SheetValue.Hidden
+                    },
+                ),
         )
-    )
 
     var bottomBarHeight by remember { mutableIntStateOf(0) }
     val translationBottomPadding = with(LocalDensity.current) { bottomBarHeight.toDp() }
@@ -218,7 +220,7 @@ fun TextTranslationLegacy(
         textToSpeechScope.launch {
             textToSpeechViewModel.synthesize(
                 text = translated,
-                language = targetLanguage!!
+                language = targetLanguage!!,
             )
         }
     }
@@ -278,13 +280,13 @@ fun TextTranslationLegacy(
                     }) {
                         Icon(
                             ImageVector.vectorResource(R.drawable.rounded_arrow_back_24),
-                            stringResource(R.string.back)
+                            stringResource(R.string.back),
                         )
                     }
                 },
                 title = {
                     Text(
-                        text = stringResource(R.string.translator)
+                        text = stringResource(R.string.translator),
                     )
                 },
             )
@@ -292,13 +294,14 @@ fun TextTranslationLegacy(
         content = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = MaterialTheme.spacing.small)
-                    .padding(
-                        top = MaterialTheme.spacing.small,
-                        bottom = MaterialTheme.spacing.medium
-                    )
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = MaterialTheme.spacing.small)
+                        .padding(
+                            top = MaterialTheme.spacing.small,
+                            bottom = MaterialTheme.spacing.medium,
+                        ),
             ) {
                 LanguageSelector(
                     languageViewModel = languageViewModel,
@@ -308,21 +311,22 @@ fun TextTranslationLegacy(
                 )
                 Column(
                     verticalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     TextTranslationInputField(
                         input = input,
                         transliteration = inputTransliteration,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(top = MaterialTheme.spacing.small)
-                            .padding(start = MaterialTheme.spacing.medium),
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .padding(top = MaterialTheme.spacing.small)
+                                .padding(start = MaterialTheme.spacing.medium),
                         onValueChange = {
                             setInput(it)
                         },
                         onSubmit = {
                             onSubmit(input)
-                        }
+                        },
                     )
 
                     TextTranslationInputButtonRow(
@@ -339,35 +343,46 @@ fun TextTranslationLegacy(
             }
         },
         scaffoldState = scaffoldState,
-        sheetPeekHeight = BottomSheetDefaults.SheetPeekHeight + WindowInsets.navigationBars.asPaddingValues()
-            .calculateBottomPadding(),
+        sheetPeekHeight =
+            BottomSheetDefaults.SheetPeekHeight +
+                WindowInsets.navigationBars
+                    .asPaddingValues()
+                    .calculateBottomPadding(),
         sheetContent = {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                contentPadding = PaddingValues(
-                    start = MaterialTheme.spacing.small,
-                    end = MaterialTheme.spacing.small,
-                ),
-                modifier = Modifier
-                    .padding(
-                        bottom = WindowInsets.navigationBars
-                            .asPaddingValues()
-                            .calculateBottomPadding() + translationBottomPadding
-                    )
+                contentPadding =
+                    PaddingValues(
+                        start = MaterialTheme.spacing.small,
+                        end = MaterialTheme.spacing.small,
+                    ),
+                modifier =
+                    Modifier
+                        .padding(
+                            bottom =
+                                WindowInsets.navigationBars
+                                    .asPaddingValues()
+                                    .calculateBottomPadding() + translationBottomPadding,
+                        ),
             ) {
                 item {
                     TextTranslationOutput(
-                        modifier = Modifier
-                            .padding(horizontal = MaterialTheme.spacing.large)
-                            .padding(
-                                top = MaterialTheme.spacing.medium + WindowInsets.navigationBars.asPaddingValues()
-                                    .calculateBottomPadding()
-                            ),
+                        modifier =
+                            Modifier
+                                .padding(horizontal = MaterialTheme.spacing.large)
+                                .padding(
+                                    top =
+                                        MaterialTheme.spacing.medium +
+                                            WindowInsets.navigationBars
+                                                .asPaddingValues()
+                                                .calculateBottomPadding(),
+                                ),
                         intermediate = intermediate,
                         translation = translated,
                         transliteration = translatedTransliteration,
-                        writingDirection = targetLanguage?.getWritingDirection()
-                            ?: WritingDirection.LTR
+                        writingDirection =
+                            targetLanguage?.getWritingDirection()
+                                ?: WritingDirection.LTR,
                     )
                 }
             }
@@ -378,12 +393,12 @@ fun TextTranslationLegacy(
                 textToSpeechSynthesisState = textToSpeechSynthesisState,
                 textToSpeechAvailable = textToSpeechAvailable,
                 textToSpeechVoiceAvailable = textToSpeechVoiceAvailable,
-                modifier = Modifier
-                    .onGloballyPositioned {
-                        bottomBarHeight = it.size.height
-                    }
-                    .padding(horizontal = MaterialTheme.spacing.small)
-                    .padding(bottom = MaterialTheme.spacing.medium),
+                modifier =
+                    Modifier
+                        .onGloballyPositioned {
+                            bottomBarHeight = it.size.height
+                        }.padding(horizontal = MaterialTheme.spacing.small)
+                        .padding(bottom = MaterialTheme.spacing.medium),
                 onTextToSpeech = {
                     onTextToSpeech()
                 },
@@ -400,7 +415,7 @@ fun TextTranslationLegacy(
                     onShare()
                 },
             )
-        }
+        },
     )
 }
 
@@ -410,32 +425,34 @@ fun TextTranslationInputField(
     input: String,
     transliteration: String,
     onValueChange: (String) -> Unit = {},
-    onSubmit: (String) -> Unit = {}
+    onSubmit: (String) -> Unit = {},
 ) {
     val textStyle = LocalTextStyle.current.copy(textDirection = TextDirection.ContentOrLtr)
 
     Column(
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-        modifier = modifier
+        modifier = modifier,
     ) {
         TextField(
             placeholder = stringResource(R.string.text_translation_placeholder),
-            modifier = Modifier
-                .fillMaxWidth()
-                .defaultMinSize(minHeight = 192.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = 192.dp),
             value = input,
             textStyle = textStyle,
             onValueChange = onValueChange,
             onSubmit = { onSubmit(input) },
-            colors = TextFieldDefaults.colorsTransparent()
+            colors = TextFieldDefaults.colorsTransparent(),
         )
 
         if (transliteration.isNotEmpty()) {
             Text(
                 text = transliteration,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = MaterialTheme.spacing.medium),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = MaterialTheme.spacing.medium),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,
             )
@@ -452,9 +469,10 @@ fun TextTranslationInputButtonRow(
     onClear: () -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(modifier),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .then(modifier),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(
@@ -467,7 +485,7 @@ fun TextTranslationInputButtonRow(
             ) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.rounded_close_small_24),
-                    contentDescription = stringResource(R.string.clear)
+                    contentDescription = stringResource(R.string.clear),
                 )
             }
         }
@@ -479,7 +497,7 @@ fun TextTranslationInputButtonRow(
         ) {
             Icon(
                 imageVector = ImageVector.vectorResource(R.drawable.rounded_translate_24),
-                contentDescription = stringResource(R.string.translate)
+                contentDescription = stringResource(R.string.translate),
             )
         }
     }
@@ -491,7 +509,7 @@ fun TextTranslationOutput(
     intermediate: String,
     translation: String,
     transliteration: String,
-    writingDirection: WritingDirection
+    writingDirection: WritingDirection,
 ) {
     var displayedText by remember { mutableStateOf(intermediate) }
 
@@ -499,55 +517,61 @@ fun TextTranslationOutput(
     val intermediateStyle = SpanStyle(color = MaterialTheme.colorScheme.surfaceContainerHighest)
 
     LaunchedEffect(translation, intermediate) {
-        val placeholder = intermediate
-            .reversed()
-            .take(max(0, intermediate.length - translation.length))
-            .reversed()
+        val placeholder =
+            intermediate
+                .reversed()
+                .take(max(0, intermediate.length - translation.length))
+                .reversed()
 
         displayedText = translation + placeholder
     }
 
-    val annotatedString = buildAnnotatedString {
-        displayedText.forEachIndexed { index, char ->
-            if (index <= translation.length - 1) {
-                withStyle(translatedStyle) {
-                    append(char)
+    val annotatedString =
+        buildAnnotatedString {
+            displayedText.forEachIndexed { index, char ->
+                if (index <= translation.length - 1) {
+                    withStyle(translatedStyle) {
+                        append(char)
+                    }
+
+                    return@forEachIndexed
                 }
 
-                return@forEachIndexed
-            }
-
-            withStyle(intermediateStyle) {
-                append(char)
+                withStyle(intermediateStyle) {
+                    append(char)
+                }
             }
         }
-    }
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = MaterialTheme.spacing.large)
-            .then(modifier),
-        verticalArrangement = Arrangement.spacedBy(
-            MaterialTheme.spacing.large,
-            Alignment.Bottom
-        )
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(bottom = MaterialTheme.spacing.large)
+                .then(modifier),
+        verticalArrangement =
+            Arrangement.spacedBy(
+                MaterialTheme.spacing.large,
+                Alignment.Bottom,
+            ),
     ) {
         Text(
             text = annotatedString,
             modifier = Modifier.fillMaxWidth(),
-            textAlign = if (writingDirection == WritingDirection.RTL) {
-                TextAlign.End
-            } else {
-                TextAlign.Start
-            },
+            textAlign =
+                if (writingDirection == WritingDirection.RTL) {
+                    TextAlign.End
+                } else {
+                    TextAlign.Start
+                },
         )
 
         if (transliteration.isNotEmpty()) {
             Text(
                 text = transliteration,
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth(),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodySmall,
             )
@@ -566,12 +590,13 @@ fun TextTranslationOutputButtonRow(
     onCancelTextToSpeech: () -> Unit,
     onCancel: () -> Unit,
     onCopy: () -> Unit,
-    onShare: () -> Unit
+    onShare: () -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(modifier),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .then(modifier),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(
@@ -589,12 +614,14 @@ fun TextTranslationOutputButtonRow(
             AnimatedVisibility(
                 visible = translationInProgress,
                 enter = fadeIn(),
-                exit = fadeOut(
-                    animationSpec = tween(
-                        durationMillis = DefaultDurationMillis * 2,
-                        delayMillis = DefaultDurationMillis
-                    )
-                ),
+                exit =
+                    fadeOut(
+                        animationSpec =
+                            tween(
+                                durationMillis = DefaultDurationMillis * 2,
+                                delayMillis = DefaultDurationMillis,
+                            ),
+                    ),
             ) {
                 FilledIconButton(
                     onClick = onCancel,
@@ -602,7 +629,7 @@ fun TextTranslationOutputButtonRow(
                 ) {
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.rounded_stop_24),
-                        contentDescription = stringResource(R.string.cancel)
+                        contentDescription = stringResource(R.string.cancel),
                     )
                 }
             }
@@ -617,7 +644,7 @@ fun TextTranslationOutputButtonRow(
             ) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.rounded_content_copy_24),
-                    contentDescription = stringResource(R.string.copy)
+                    contentDescription = stringResource(R.string.copy),
                 )
             }
 
@@ -626,8 +653,8 @@ fun TextTranslationOutputButtonRow(
                 colors = FilledIconButtonDefaults.surfaceIconButtonColors(),
             ) {
                 Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.rounded_ios_share_24    ),
-                    contentDescription = stringResource(R.string.share)
+                    imageVector = ImageVector.vectorResource(R.drawable.rounded_ios_share_24),
+                    contentDescription = stringResource(R.string.share),
                 )
             }
         }
@@ -637,42 +664,46 @@ fun TextTranslationOutputButtonRow(
 @Composable
 @Preview(showBackground = true)
 fun TextTranslationLegacyPreview() {
-    val languageViewModel = LanguageViewModel(
-        context = LocalContext.current,
-        languageRepository = LanguageMemoryRepository(),
-        languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-        externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-    )
+    val languageViewModel =
+        LanguageViewModel(
+            context = LocalContext.current,
+            languageRepository = LanguageMemoryRepository(),
+            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+        )
 
     val translationMockInference = TranslationMockInference()
 
-    val translationViewModel = TranslationViewModel(
-        intermediateModel = translationMockInference,
-        outputModel = translationMockInference,
-        translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
-        languageViewModel = languageViewModel
-    )
+    val translationViewModel =
+        TranslationViewModel(
+            intermediateModel = translationMockInference,
+            outputModel = translationMockInference,
+            translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
+            languageViewModel = languageViewModel,
+        )
 
     TextTranslationLegacy(
         navigationViewModel = NavigationViewModel(Screens.TextTranslation),
-        textTranslationViewModel = TextTranslationViewModel(
-            translationViewModel = translationViewModel,
-            languageViewModel = languageViewModel
-        ),
+        textTranslationViewModel =
+            TextTranslationViewModel(
+                translationViewModel = translationViewModel,
+                languageViewModel = languageViewModel,
+            ),
         languageViewModel = languageViewModel,
         translationViewModel = translationViewModel,
-        textToSpeechViewModel = TextToSpeechViewModel(
-            context = LocalContext.current,
-            espeakNG = ESpeakNG(),
-            openJTalk = OpenJTalk(),
-            tokenizer = TextToSpeechMockTokenizer(),
-            model = TextToSpeechMockInference(),
-            audioPlayer = AudioMockPlayer(),
-            dataRepository = DataMemoryRepository(),
-            voiceRepository = VoiceMemoryRepository(),
-            textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalDataRepository = ExternalDataMemoryRepository(),
-        )
+        textToSpeechViewModel =
+            TextToSpeechViewModel(
+                context = LocalContext.current,
+                espeakNG = ESpeakNG(),
+                openJTalk = OpenJTalk(),
+                tokenizer = TextToSpeechMockTokenizer(),
+                model = TextToSpeechMockInference(),
+                audioPlayer = AudioMockPlayer(),
+                dataRepository = DataMemoryRepository(),
+                voiceRepository = VoiceMemoryRepository(),
+                textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
+                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+                externalDataRepository = ExternalDataMemoryRepository(),
+            ),
     )
 }

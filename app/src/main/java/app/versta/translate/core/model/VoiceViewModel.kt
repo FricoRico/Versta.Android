@@ -19,18 +19,18 @@ import kotlinx.coroutines.launch
 class VoiceViewModel(
     context: Context,
     private val voiceRepository: VoiceRepository,
-    private val externalVoiceModelsRepository: ExternalVoiceModelsRepository
+    private val externalVoiceModelsRepository: ExternalVoiceModelsRepository,
 ) : ViewModel() {
-
     val voiceModels = externalVoiceModelsRepository.getDefinitions().distinctUntilChanged()
     val importedVoices = voiceRepository.getVoiceModels().distinctUntilChanged()
     val voiceByState = externalVoiceModelsRepository.getDefinitionsByState(importedVoices)
 
-    private val downloadManager = DownloadManager<ExternalVoiceDownloadTask>(
-        context = context,
-        statusIntentAction = DOWNLOAD_VOICE_STATUS_INTENT,
-        workerClass = DownloadVoiceWorker::class.java
-    )
+    private val downloadManager =
+        DownloadManager<ExternalVoiceDownloadTask>(
+            context = context,
+            statusIntentAction = DOWNLOAD_VOICE_STATUS_INTENT,
+            workerClass = DownloadVoiceWorker::class.java,
+        )
     val downloadTasks: StateFlow<List<ExternalVoiceDownloadTask>> =
         downloadManager.downloadTasks.asStateFlow()
 
@@ -38,18 +38,17 @@ class VoiceViewModel(
      * Returns a flow of [ExternalVoiceModelDefinition] that contains the definitions of the
      * external voice model for the given [id].
      */
-    fun getVoiceModelDefinition(id: String): Flow<ExternalVoiceModelDefinition> {
-        return externalVoiceModelsRepository.getDefinition(id).distinctUntilChanged()
-    }
+    fun getVoiceModelDefinition(id: String): Flow<ExternalVoiceModelDefinition> = externalVoiceModelsRepository.getDefinition(id).distinctUntilChanged()
 
     /**
      * Queues a download for the given voice model.
      */
     fun queueDownload(model: ExternalVoiceModelDefinition) {
-        val task = ExternalVoiceDownloadTask(
-            model = model,
-            status = DownloadStatus.Queued
-        )
+        val task =
+            ExternalVoiceDownloadTask(
+                model = model,
+                status = DownloadStatus.Queued,
+            )
         downloadManager.queueDownload(task)
     }
 

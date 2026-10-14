@@ -15,7 +15,9 @@ import timber.log.Timber
 import java.io.File
 import java.io.FileInputStream
 
-class LoggingViewModel(directory: File?) : ViewModel() {
+class LoggingViewModel(
+    directory: File?,
+) : ViewModel() {
     private var _file: File = File(directory, "app.log")
     private lateinit var observer: FileObserver
 
@@ -39,7 +41,10 @@ class LoggingViewModel(directory: File?) : ViewModel() {
     /**
      * Saves the content of the log file.
      */
-    fun saveLogs(context: Context, uri: Uri) {
+    fun saveLogs(
+        context: Context,
+        uri: Uri,
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 FileInputStream(_file).use { fis ->
@@ -79,13 +84,17 @@ class LoggingViewModel(directory: File?) : ViewModel() {
             return
         }
 
-        observer = object : FileObserver(_file, MODIFY or DELETE) {
-            override fun onEvent(event: Int, path: String?) {
-                if (event and (MODIFY or DELETE) != 0) {
-                    readLogs()
+        observer =
+            object : FileObserver(_file, MODIFY or DELETE) {
+                override fun onEvent(
+                    event: Int,
+                    path: String?,
+                ) {
+                    if (event and (MODIFY or DELETE) != 0) {
+                        readLogs()
+                    }
                 }
             }
-        }
 
         observer.startWatching()
     }

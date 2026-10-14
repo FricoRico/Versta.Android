@@ -95,43 +95,46 @@ fun LanguageSuggestionDrawer(
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(MaterialTheme.spacing.small)
-                .padding(horizontal = MaterialTheme.spacing.large)
-                .padding(bottom = MaterialTheme.spacing.large)
-                .then(modifier)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(MaterialTheme.spacing.small)
+                    .padding(horizontal = MaterialTheme.spacing.large)
+                    .padding(bottom = MaterialTheme.spacing.large)
+                    .then(modifier),
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
             ) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     LanguagePairBadge(
                         pair = language.pair,
-                        bidirectional = language.bidirectional
+                        bidirectional = language.bidirectional,
                     )
                 }
 
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     Text(
-                        text = stringResource(
-                            R.string.language_suggestion_title,
-                            autoDetectLanguage?.name ?: "",
-                        ),
+                        text =
+                            stringResource(
+                                R.string.language_suggestion_title,
+                                autoDetectLanguage?.name ?: "",
+                            ),
                         style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(bottom = MaterialTheme.spacing.large)
+                        modifier = Modifier.padding(bottom = MaterialTheme.spacing.large),
                     )
                 }
 
                 Text(
-                    text = stringResource(
-                        R.string.language_suggestion_description,
-                        autoDetectLanguage?.name ?: "",
-                    ),
+                    text =
+                        stringResource(
+                            R.string.language_suggestion_description,
+                            autoDetectLanguage?.name ?: "",
+                        ),
                 )
 
                 Text(
-                    text = stringResource(R.string.language_suggestion_call_to_action)
+                    text = stringResource(R.string.language_suggestion_call_to_action),
                 )
 
                 LanguageSuggestionDownloadButton(
@@ -142,9 +145,10 @@ fun LanguageSuggestionDrawer(
                     onCancel = {
                         onCancel()
                     },
-                    modifier = Modifier
-                        .padding(top = MaterialTheme.spacing.large)
-                        .align(Alignment.CenterHorizontally)
+                    modifier =
+                        Modifier
+                            .padding(top = MaterialTheme.spacing.large)
+                            .align(Alignment.CenterHorizontally),
                 )
             }
         }
@@ -158,35 +162,37 @@ fun LanguageSuggestionDownloadButton(
     onClick: () -> Unit,
     onCancel: () -> Unit = {},
 ) {
-    Button (
+    Button(
         onClick = {
             when (status) {
                 is DownloadStatus.Idle,
-                is DownloadStatus.Error -> onClick()
+                is DownloadStatus.Error,
+                -> onClick()
 
                 else -> onCancel()
             }
         },
         enabled = !(status is DownloadStatus.Queued || status is DownloadStatus.Completed),
-        modifier = Modifier.then(modifier)
+        modifier = Modifier.then(modifier),
     ) {
         Box(
-            modifier = Modifier.animateContentSize(
-                alignment = Alignment.Center
-            )
+            modifier =
+                Modifier.animateContentSize(
+                    alignment = Alignment.Center,
+                ),
         ) {
             this@Button.AnimatedVisibility(
                 visible = status is DownloadStatus.Idle,
                 enter = fadeIn(),
                 exit = fadeOut(),
-                modifier = Modifier.align(Alignment.Center)
+                modifier = Modifier.align(Alignment.Center),
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Download"
+                        text = "Download",
                     )
                     Icon(
                         ImageVector.vectorResource(R.drawable.rounded_download_24),
@@ -199,14 +205,14 @@ fun LanguageSuggestionDownloadButton(
                 visible = status is DownloadStatus.Queued,
                 enter = fadeIn(),
                 exit = fadeOut(),
-                modifier = Modifier.align(Alignment.Center)
+                modifier = Modifier.align(Alignment.Center),
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Queued"
+                        text = "Queued",
                     )
                     Icon(
                         ImageVector.vectorResource(R.drawable.round_hourglass_empty_24),
@@ -215,14 +221,14 @@ fun LanguageSuggestionDownloadButton(
                 }
             }
 
-
             this@Button.AnimatedVisibility(
                 visible = status is DownloadStatus.Progress || status is DownloadStatus.Processing,
                 enter = fadeIn(),
                 exit = fadeOut(),
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .requiredSize(MaterialTheme.spacing.medium)
+                modifier =
+                    Modifier
+                        .align(Alignment.Center)
+                        .requiredSize(MaterialTheme.spacing.medium),
             ) {
                 Icon(
                     ImageVector.vectorResource(R.drawable.rounded_stop_24),
@@ -234,7 +240,7 @@ fun LanguageSuggestionDownloadButton(
                 visible = status is DownloadStatus.Progress,
                 enter = fadeIn(),
                 exit = fadeOut(),
-                modifier = Modifier.align(Alignment.Center)
+                modifier = Modifier.align(Alignment.Center),
             ) {
                 if (status !is DownloadStatus.Progress) return@AnimatedVisibility
                 val progress = status.downloaded.toFloat() / status.total.toFloat()
@@ -251,7 +257,7 @@ fun LanguageSuggestionDownloadButton(
                 visible = status is DownloadStatus.Processing,
                 enter = fadeIn(),
                 exit = fadeOut(),
-                modifier = Modifier.align(Alignment.Center)
+                modifier = Modifier.align(Alignment.Center),
             ) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
@@ -264,18 +270,18 @@ fun LanguageSuggestionDownloadButton(
                 visible = status is DownloadStatus.Completed,
                 enter = fadeIn(),
                 exit = fadeOut(),
-                modifier = Modifier.align(Alignment.Center)
+                modifier = Modifier.align(Alignment.Center),
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         ImageVector.vectorResource(R.drawable.rounded_check_small_24),
                         contentDescription = null,
                     )
                     Text(
-                        text = "Done"
+                        text = "Done",
                     )
                 }
             }
@@ -284,14 +290,14 @@ fun LanguageSuggestionDownloadButton(
                 visible = status is DownloadStatus.Error,
                 enter = fadeIn(),
                 exit = fadeOut(),
-                modifier = Modifier.align(Alignment.Center)
+                modifier = Modifier.align(Alignment.Center),
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Retry"
+                        text = "Retry",
                     )
                     Icon(
                         ImageVector.vectorResource(R.drawable.round_replay_24),
@@ -307,13 +313,14 @@ fun LanguageSuggestionDownloadButton(
 @Preview(showBackground = true)
 fun LanguageSuggestionDrawerPreview() {
     LanguageSuggestionDrawer(
-        languageViewModel = LanguageViewModel(
-            context = LocalContext.current,
-            languageRepository = LanguageMemoryRepository(),
-            languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-            externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository()
-        ).apply {
-            setLanguageSuggestionState(true)
-        }
+        languageViewModel =
+            LanguageViewModel(
+                context = LocalContext.current,
+                languageRepository = LanguageMemoryRepository(),
+                languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
+                externalLanguageModelsRepository = ExternalLanguageModelsMemoryRepository(),
+            ).apply {
+                setLanguageSuggestionState(true)
+            },
     )
 }

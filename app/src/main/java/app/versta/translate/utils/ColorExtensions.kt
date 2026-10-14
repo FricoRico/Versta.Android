@@ -36,7 +36,11 @@ fun Color.lighten(factor: Float): Color {
     return hslToColor(a, hsl)
 }
 
-fun Color.shift(hueOffset: Float = 0f, saturationFactor: Float = 1f, lightnessFactor: Float = 1f): Color {
+fun Color.shift(
+    hueOffset: Float = 0f,
+    saturationFactor: Float = 1f,
+    lightnessFactor: Float = 1f,
+): Color {
     val argb = this.toArgb()
     val a = (argb shr 24) and 0xFF
     val r = (argb shr 16) and 0xFF
@@ -84,7 +88,12 @@ fun Color.complementary(): Color {
     return hslToColor(a, hsl)
 }
 
-private fun rgbToHsl(r: Int, g: Int, b: Int, outHsl: FloatArray) {
+private fun rgbToHsl(
+    r: Int,
+    g: Int,
+    b: Int,
+    outHsl: FloatArray,
+) {
     val rf = r / 255f
     val gf = g / 255f
     val bf = b / 255f
@@ -99,12 +108,13 @@ private fun rgbToHsl(r: Int, g: Int, b: Int, outHsl: FloatArray) {
 
     if (max != min) {
         s = if (l < 0.5f) delta / (max + min) else delta / (2f - max - min)
-        h = when (max) {
-            rf -> (gf - bf) / delta + if (gf < bf) 6 else 0
-            gf -> (bf - rf) / delta + 2
-            bf -> (rf - gf) / delta + 4
-            else -> h
-        }
+        h =
+            when (max) {
+                rf -> (gf - bf) / delta + if (gf < bf) 6 else 0
+                gf -> (bf - rf) / delta + 2
+                bf -> (rf - gf) / delta + 4
+                else -> h
+            }
         h /= 6f
     }
 
@@ -113,7 +123,10 @@ private fun rgbToHsl(r: Int, g: Int, b: Int, outHsl: FloatArray) {
     outHsl[2] = l
 }
 
-private fun hslToColor(alpha: Int, hsl: FloatArray): Color {
+private fun hslToColor(
+    alpha: Int,
+    hsl: FloatArray,
+): Color {
     val h = hsl[0]
     val s = hsl[1]
     val l = hsl[2]
@@ -122,19 +135,20 @@ private fun hslToColor(alpha: Int, hsl: FloatArray): Color {
     val m = l - 0.5f * c
     val x = c * (1f - kotlin.math.abs(h / 60f % 2f - 1f))
 
-    val (r, g, b) = when {
-        h < 60 -> Triple(c, x, 0f)
-        h < 120 -> Triple(x, c, 0f)
-        h < 180 -> Triple(0f, c, x)
-        h < 240 -> Triple(0f, x, c)
-        h < 300 -> Triple(x, 0f, c)
-        else -> Triple(c, 0f, x)
-    }
+    val (r, g, b) =
+        when {
+            h < 60 -> Triple(c, x, 0f)
+            h < 120 -> Triple(x, c, 0f)
+            h < 180 -> Triple(0f, c, x)
+            h < 240 -> Triple(0f, x, c)
+            h < 300 -> Triple(x, 0f, c)
+            else -> Triple(c, 0f, x)
+        }
 
     return Color(
         red = ((r + m) * 255f).roundToInt(),
         green = ((g + m) * 255f).roundToInt(),
         blue = ((b + m) * 255f).roundToInt(),
-        alpha = alpha
+        alpha = alpha,
     )
 }

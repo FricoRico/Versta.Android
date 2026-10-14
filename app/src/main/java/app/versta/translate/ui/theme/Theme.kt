@@ -28,7 +28,8 @@ import app.versta.translate.core.model.CustomThemeViewModel
 import app.versta.translate.utils.lightness
 
 enum class StatusBarStyle {
-    Dark, Light
+    Dark,
+    Light,
 }
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -37,7 +38,7 @@ fun TranslateTheme(
     customThemeViewModel: CustomThemeViewModel,
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val windowAdaptiveInfo = currentWindowAdaptiveInfo()
     val context = LocalContext.current
@@ -59,7 +60,7 @@ fun TranslateTheme(
     SetStatusBarColorForColorScheme(colorScheme, darkTheme)
     CompositionLocalProvider(
         LocalSpacing provides spacing,
-        LocalEasing provides easing
+        LocalEasing provides easing,
     ) {
         MaterialExpressiveTheme(
             motionScheme = MotionScheme.expressive(),
@@ -94,14 +95,10 @@ private fun SetStatusBarColorForColorScheme(
 
 private fun isLAppearanceLight(
     themeStatusBarStyle: StatusBarStyle,
-    colorStatusBarStyle: StatusBarStyle
-): Boolean {
-    return themeStatusBarStyle == StatusBarStyle.Light && colorStatusBarStyle == StatusBarStyle.Light
-}
+    colorStatusBarStyle: StatusBarStyle,
+): Boolean = themeStatusBarStyle == StatusBarStyle.Light && colorStatusBarStyle == StatusBarStyle.Light
 
-private fun statusBarStyleForSystemTheme(darkTheme: Boolean): StatusBarStyle {
-    return if (darkTheme) StatusBarStyle.Dark else StatusBarStyle.Light
-}
+private fun statusBarStyleForSystemTheme(darkTheme: Boolean): StatusBarStyle = if (darkTheme) StatusBarStyle.Dark else StatusBarStyle.Light
 
 private fun statusBarStyleForColorScheme(colorScheme: ColorScheme): StatusBarStyle {
     val darkTheme = colorScheme.contentColorFor(colorScheme.background).lightness() > 0.5
@@ -172,43 +169,56 @@ internal data class AnimatedColors(
 private fun animatedPrimaryColors(transition: Transition<ColorScheme>): AnimatedColors {
     val primary by transition.animateColor(
         label = "primary",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.primary }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.primary }
     val onPrimary by transition.animateColor(
         label = "onPrimary",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.onPrimary }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.onPrimary }
     val primaryContainer by transition.animateColor(
         label = "primaryContainer",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.primaryContainer }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.primaryContainer }
     val onPrimaryContainer by transition.animateColor(
         label = "onPrimaryContainer",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.onPrimaryContainer }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.onPrimaryContainer }
     val inversePrimary by transition.animateColor(
         label = "inversePrimary",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.inversePrimary }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.inversePrimary }
     val secondary by transition.animateColor(
         label = "secondary",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.secondary }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.secondary }
     val onSecondary by transition.animateColor(
         label = "onSecondary",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.onSecondary }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.onSecondary }
     val secondaryContainer by transition.animateColor(
         label = "secondaryContainer",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.secondaryContainer }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.secondaryContainer }
     val onSecondaryContainer by transition.animateColor(
         label = "onSecondaryContainer",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.onSecondaryContainer }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.onSecondaryContainer }
     val tertiary by transition.animateColor(
         label = "tertiary",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.tertiary }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.tertiary }
     val onTertiary by transition.animateColor(
         label = "onTertiary",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.onTertiary }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.onTertiary }
     val tertiaryContainer by transition.animateColor(
         label = "tertiaryContainer",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.tertiaryContainer }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.tertiaryContainer }
     val onTertiaryContainer by transition.animateColor(
         label = "onTertiaryContainer",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.onTertiaryContainer }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.onTertiaryContainer }
 
     return AnimatedColors(
         primary = primary,
@@ -236,10 +246,12 @@ internal data class AnimatedBackgroundColors(
 private fun animatedBackgroundColors(transition: Transition<ColorScheme>): AnimatedBackgroundColors {
     val background by transition.animateColor(
         label = "background",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.background }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.background }
     val onBackground by transition.animateColor(
         label = "onBackground",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.onBackground }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.onBackground }
 
     return AnimatedBackgroundColors(
         background = background,
@@ -268,46 +280,60 @@ internal data class AnimatedSurfaceColors(
 private fun animatedSurfaceColors(transition: Transition<ColorScheme>): AnimatedSurfaceColors {
     val surface by transition.animateColor(
         label = "surface",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.surface }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.surface }
     val onSurface by transition.animateColor(
         label = "onSurface",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.onSurface }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.onSurface }
     val surfaceVariant by transition.animateColor(
         label = "surfaceVariant",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.surfaceVariant }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.surfaceVariant }
     val onSurfaceVariant by transition.animateColor(
         label = "onSurfaceVariant",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.onSurfaceVariant }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.onSurfaceVariant }
     val surfaceTint by transition.animateColor(
         label = "surfaceTint",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.surfaceTint }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.surfaceTint }
     val inverseSurface by transition.animateColor(
         label = "inverseSurface",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.inverseSurface }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.inverseSurface }
     val inverseOnSurface by transition.animateColor(
         label = "inverseOnSurface",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.inverseOnSurface }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.inverseOnSurface }
     val surfaceBright by transition.animateColor(
         label = "surfaceBright",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.surfaceBright }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.surfaceBright }
     val surfaceDim by transition.animateColor(
         label = "surfaceDim",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.surfaceDim }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.surfaceDim }
     val surfaceContainer by transition.animateColor(
         label = "surfaceContainer",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.surfaceContainer }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.surfaceContainer }
     val surfaceContainerHigh by transition.animateColor(
         label = "surfaceContainerHigh",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.surfaceContainerHigh }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.surfaceContainerHigh }
     val surfaceContainerHighest by transition.animateColor(
         label = "surfaceContainerHighest",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.surfaceContainerHighest }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.surfaceContainerHighest }
     val surfaceContainerLow by transition.animateColor(
         label = "surfaceContainerLow",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.surfaceContainerLow }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.surfaceContainerLow }
     val surfaceContainerLowest by transition.animateColor(
         label = "surfaceContainerLowest",
-        transitionSpec = { defaultColorTransitionSpec() }) { it.surfaceContainerLowest }
+        transitionSpec = { defaultColorTransitionSpec() },
+    ) { it.surfaceContainerLowest }
 
     return AnimatedSurfaceColors(
         surface = surface,

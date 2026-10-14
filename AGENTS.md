@@ -69,6 +69,11 @@ Manual, constructor-based. No Hilt/Koin.
   - `./gradlew :app:assemble<Flavor>Debug` — full debug build including the native library.
   - `./gradlew :app:lint<Flavor>Debug` — Android lint.
   - `./gradlew :app:connected<Flavor>DebugAndroidTest` — tests (device/emulator required; tests live in `app/src/androidTest`).
+- Quality gates (also enforced by `.github/workflows/ci.yml` on every push to `develop`/`main` and on every pull request):
+  - `./gradlew :app:ktlintCheck` — formatting (ktlint 1.8.0, rules in `.editorconfig`). Auto-fix with `./gradlew :app:ktlintFormat`.
+  - `./gradlew :app:detekt` — static analysis (config `detekt.yml`; pre-existing findings pinned in `detekt-baseline.xml`, new findings fail).
+  - `./gradlew :app:lintArm64-v8aDebug` — Android lint (config `lint.xml`; pre-existing findings pinned in `lint-baseline.xml`, new findings fail).
+  - Baseline refresh is an explicit act only: `./gradlew :app:detektBaseline` / `./gradlew :app:updateLintBaseline`. Never rebaseline to hide new debt.
 - `keystore.properties` (gitignored) provides signing credentials; `keystore.properties.example` documents the keys. Never commit secrets.
 - Local toolchain paths on this machine (not on PATH in sandboxed shells): JDK `~/.local/lib/jdk17`, adb `~/Android/Sdk/platform-tools`, graphify `~/.local/bin/graphify`.
 - The `getRemoteData` Gradle task fetches the model-metadata JSON files into `app/src/main/res/raw/` and runs as a `preBuild` dependency. It needs network access.

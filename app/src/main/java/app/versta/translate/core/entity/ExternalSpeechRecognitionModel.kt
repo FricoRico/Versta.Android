@@ -20,17 +20,19 @@ data class ExternalSpeechRecognitionModelDefinition(
     private val checksum: String,
 ) {
     fun bundleUri() = URI(bundle)
+
     fun checksumUri() = URI(checksum)
 
-    fun isValid() = id.isNotBlank()
-            && name.isNotBlank()
-            && baseModel.isNotBlank()
-            && bundle.isNotBlank()
-            && checksum.isNotBlank()
-            && size > 0
-            && version.isNotBlank()
-            && languages.isNotEmpty()
-            && architectures.isNotEmpty()
+    fun isValid() =
+        id.isNotBlank() &&
+            name.isNotBlank() &&
+            baseModel.isNotBlank() &&
+            bundle.isNotBlank() &&
+            checksum.isNotBlank() &&
+            size > 0 &&
+            version.isNotBlank() &&
+            languages.isNotEmpty() &&
+            architectures.isNotEmpty()
 }
 
 data class ExternalSpeechRecognitionModelWithState(
@@ -50,23 +52,17 @@ data class ExternalSpeechRecognitionDownloadTask(
     override val status: DownloadStatus,
     val onComplete: (ExternalSpeechRecognitionModelDefinition) -> Unit = {},
 ) : DownloadTask {
+    override fun copyWithStatus(status: DownloadStatus): DownloadTask = copy(status = status)
 
-    override fun copyWithStatus(status: DownloadStatus): DownloadTask {
-        return copy(status = status)
-    }
-
-    override fun getWorkData(): Map<String, Any> {
-        return mapOf(
+    override fun getWorkData(): Map<String, Any> =
+        mapOf(
             "taskId" to id.toString(),
             "name" to model.name,
             "uri" to model.bundleUri().toString(),
             "checksum" to model.checksumUri().toString(),
         )
-    }
 
-    override fun getName(): String {
-        return model.name
-    }
+    override fun getName(): String = model.name
 
     override fun onComplete() {
         onComplete(model)

@@ -51,7 +51,6 @@ interface LanguagePreferenceRepository {
      */
     suspend fun swapLanguages()
 
-
     /**
      * Clears the source language in the data store.
      */

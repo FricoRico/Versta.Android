@@ -2,11 +2,11 @@ package app.versta.translate.adapter.outbound
 
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.VoiceModel
-import app.versta.translate.core.entity.VoiceModelInferenceFiles
 import app.versta.translate.core.entity.VoiceModelArchitecture
+import app.versta.translate.core.entity.VoiceModelInferenceFiles
 import app.versta.translate.core.entity.VoiceModelTokenizerFiles
-import app.versta.translate.core.entity.VoiceWithModelFiles
 import app.versta.translate.core.entity.VoiceModelVoiceFiles
+import app.versta.translate.core.entity.VoiceWithModelFiles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlin.io.path.Path
@@ -26,22 +26,26 @@ class VoiceMemoryRepository : VoiceRepository {
 //        )
 //    )
 
-    private val _voiceModels = mutableMapOf(
-        "kokoro" to VoiceWithModelFiles(
-            id = "kokoro",
-            baseModel = "hexgrad/Kokoro-82M",
-            path = _mockPath,
-            architectures = listOf(VoiceModelArchitecture.StyleTTS2),
-            version = "v1.0.0",
-            inference = VoiceModelInferenceFiles(
-                model = _mockPath
-            ),
-            tokenizer = VoiceModelTokenizerFiles(
-                vocabulary = _mockPath
-            ),
-            voices = VoiceModelVoiceFiles(),
+    private val _voiceModels =
+        mutableMapOf(
+            "kokoro" to
+                VoiceWithModelFiles(
+                    id = "kokoro",
+                    baseModel = "hexgrad/Kokoro-82M",
+                    path = _mockPath,
+                    architectures = listOf(VoiceModelArchitecture.StyleTTS2),
+                    version = "v1.0.0",
+                    inference =
+                        VoiceModelInferenceFiles(
+                            model = _mockPath,
+                        ),
+                    tokenizer =
+                        VoiceModelTokenizerFiles(
+                            vocabulary = _mockPath,
+                        ),
+                    voices = VoiceModelVoiceFiles(),
+                ),
         )
-    )
 
     /**
      * Gets the voice model available in the repository.
@@ -51,9 +55,7 @@ class VoiceMemoryRepository : VoiceRepository {
     /**
      * Gets the voice models available in the repository.
      */
-    override fun getVoiceModels(): Flow<List<VoiceWithModelFiles>> {
-        return flowOf(_voiceModels.values.toList())
-    }
+    override fun getVoiceModels(): Flow<List<VoiceWithModelFiles>> = flowOf(_voiceModels.values.toList())
 
 //    /**
 //     * Gets the text to speech data available in the repository.

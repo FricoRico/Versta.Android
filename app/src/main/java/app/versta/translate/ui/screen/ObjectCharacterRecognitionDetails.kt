@@ -54,21 +54,26 @@ fun ObjectCharacterRecognitionDetails(
     innerPadding: PaddingValues,
     scaffoldViewModel: ScaffoldViewModel,
     navigationViewModel: NavigationViewModel,
-    objectCharacterRecognitionViewModel: ObjectCharacterRecognitionViewModel
+    objectCharacterRecognitionViewModel: ObjectCharacterRecognitionViewModel,
 ) {
-    val model by objectCharacterRecognitionViewModel.getOcrModelDefinition(id)
+    val model by objectCharacterRecognitionViewModel
+        .getOcrModelDefinition(id)
         .collectAsStateWithLifecycle(null)
     val importedModels by objectCharacterRecognitionViewModel.ocrModelsByState.collectAsStateWithLifecycle(
-        app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModels()
+        app.versta.translate.core.entity
+            .ExternalObjectCharacterRecognitionModels(),
     )
 
     if (model == null) {
         return
     }
 
-    val languages = model!!.languages.map { Language.fromIsoCode(it) }
-        .distinctBy { it.isoCode }
-        .sortedBy { it.name }
+    val languages =
+        model!!
+            .languages
+            .map { Language.fromIsoCode(it) }
+            .distinctBy { it.isoCode }
+            .sortedBy { it.name }
 
     var ocrToBeDeleted by remember { mutableStateOf<String?>(null) }
 
@@ -93,32 +98,34 @@ fun ObjectCharacterRecognitionDetails(
                 }) {
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.round_delete_forever_24),
-                        contentDescription = stringResource(R.string.delete)
+                        contentDescription = stringResource(R.string.delete),
                     )
                 }
             }
         },
-        wrapContent = true
+        wrapContent = true,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
-                top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
-                bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
-            )
+            modifier =
+                Modifier
+                    .fillMaxSize(),
+            contentPadding =
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    end = innerPadding.calculateEndPadding(layoutDirection) + MaterialTheme.spacing.medium,
+                    top = innerPadding.calculateTopPadding() + MaterialTheme.spacing.large,
+                    bottom = innerPadding.calculateBottomPadding() + MaterialTheme.spacing.medium,
+                ),
         ) {
             Details(
                 definition = model!!,
-                extracted = extracted
+                extracted = extracted,
             )
 
             ListDivider()
 
             Languages(
-                languages = languages
+                languages = languages,
             )
         }
 
@@ -133,14 +140,14 @@ fun ObjectCharacterRecognitionDetails(
             },
             onDismissRequest = {
                 ocrToBeDeleted = null
-            }
+            },
         )
     }
 }
 
 fun LazyListScope.Details(
     definition: ExternalObjectCharacterRecognitionModelDefinition,
-    extracted: Long?
+    extracted: Long?,
 ) {
     val sizeFormat = DecimalFormat("#.##")
     val size = definition.size / 1e6
@@ -150,21 +157,22 @@ fun LazyListScope.Details(
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainer,
             contentColor = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.extraLarge)
+            modifier =
+                Modifier
+                    .clip(MaterialTheme.shapes.extraLarge),
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                modifier = Modifier
-                    .padding(
-                        vertical = MaterialTheme.spacing.medium,
-                        horizontal = MaterialTheme.spacing.large,
-                    )
-                    .fillMaxWidth()
+                modifier =
+                    Modifier
+                        .padding(
+                            vertical = MaterialTheme.spacing.medium,
+                            horizontal = MaterialTheme.spacing.large,
+                        ).fillMaxWidth(),
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraLarge),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     OcrDetailsData(
                         label = stringResource(R.string.language_details_download_size_label),
@@ -199,55 +207,54 @@ fun LazyListScope.Details(
 }
 
 fun LazyListScope.Languages(
-    languages: List<Language>
-) {
-    return item {
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
+    languages: List<Language>,
+) = item {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        modifier =
+            Modifier
                 .padding(bottom = MaterialTheme.spacing.extraSmall)
-                .clip(MaterialTheme.shapes.extraLarge)
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-                modifier = Modifier
+                .clip(MaterialTheme.shapes.extraLarge),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+            modifier =
+                Modifier
                     .padding(
                         vertical = MaterialTheme.spacing.medium,
                         horizontal = MaterialTheme.spacing.large,
-                    )
-                    .fillMaxWidth()
-            ) {
-                Text(
-                    text = stringResource(R.string.ocr_details_supported_languages_label),
-                    style = MaterialTheme.typography.labelLarge
-                )
+                    ).fillMaxWidth(),
+        ) {
+            Text(
+                text = stringResource(R.string.ocr_details_supported_languages_label),
+                style = MaterialTheme.typography.labelLarge,
+            )
 
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
-                ) {
-                    languages.chunked(2).forEach { row ->
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            row.forEach { language ->
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    LanguageBadge(
-                                        language = language,
-                                        size = MaterialTheme.spacing.medium,
-                                    )
-                                    Text(
-                                        text = language.name,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1
-                                    )
-                                }
+            Column(
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+            ) {
+                languages.chunked(2).forEach { row ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        row.forEach { language ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                LanguageBadge(
+                                    language = language,
+                                    size = MaterialTheme.spacing.medium,
+                                )
+                                Text(
+                                    text = language.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                )
                             }
                         }
                     }
@@ -263,17 +270,17 @@ fun OcrDetailsData(
     value: String,
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.hairline)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.hairline),
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelLarge
+            style = MaterialTheme.typography.labelLarge,
         )
 
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -286,15 +293,16 @@ fun ObjectCharacterRecognitionDetailsPreview() {
     ObjectCharacterRecognitionDetails(
         id = "paddle-ocr",
         innerPadding = PaddingValues(),
-        scaffoldViewModel = ScaffoldViewModel(
-            navigationViewModel = navigationViewModel
-        ),
+        scaffoldViewModel =
+            ScaffoldViewModel(
+                navigationViewModel = navigationViewModel,
+            ),
         navigationViewModel = navigationViewModel,
-        objectCharacterRecognitionViewModel = ObjectCharacterRecognitionViewModel(
-            context = LocalContext.current,
-            objectCharacterRecognitionRepository = ObjectCharacterRecognitionRepositoryMemoryRepository(),
-            externalObjectCharacterRecognitionModelsRepository = ExternalObjectCharacterRecognitionModelsMemoryRepository()
-        )
+        objectCharacterRecognitionViewModel =
+            ObjectCharacterRecognitionViewModel(
+                context = LocalContext.current,
+                objectCharacterRecognitionRepository = ObjectCharacterRecognitionRepositoryMemoryRepository(),
+                externalObjectCharacterRecognitionModelsRepository = ExternalObjectCharacterRecognitionModelsMemoryRepository(),
+            ),
     )
 }
-

@@ -56,7 +56,7 @@ class CameraTranslationViewModel(
     private val objectCharacterRecognizerRepository: ObjectCharacterRecognitionRepository,
     private val languageViewModel: LanguageViewModel,
     private val languagePreferenceRepository: LanguagePreferenceRepository,
-    private val ocrPostProcessor: OcrPostProcessor? = null
+    private val ocrPostProcessor: OcrPostProcessor? = null,
 ) : ViewModel() {
     private val _surfaceRequests = MutableStateFlow<SurfaceRequest?>(null)
     val surfaceRequests: StateFlow<SurfaceRequest?> = _surfaceRequests.asStateFlow()
@@ -86,51 +86,59 @@ class CameraTranslationViewModel(
 
     private var _camera: Camera? = null
     private var _cameraProvider: ProcessCameraProvider? = null
-    private val _cameraPreviewUseCase = Preview.Builder().build().apply {
-        setSurfaceProvider { newSurfaceRequest ->
-            _surfaceRequests.update { newSurfaceRequest }
+    private val _cameraPreviewUseCase =
+        Preview.Builder().build().apply {
+            setSurfaceProvider { newSurfaceRequest ->
+                _surfaceRequests.update { newSurfaceRequest }
+            }
         }
-    }
 
     private val _results = MutableStateFlow<List<CameraTranslationResult>>(emptyList())
     val detectedBoxes: StateFlow<List<CameraTranslationResult>> = _results.asStateFlow()
 
     private val _trackingImageAnalyzerExecutor = Executors.newCachedThreadPool()
-    private var _trackingImageAnalyzerUseCase = ImageAnalysis.Builder()
-        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-        .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
-        .setResolutionSelector(
-            ResolutionSelector.Builder().apply {
-                setResolutionStrategy(
-                    ResolutionStrategy(
-                        Size(960, 960),
-                        ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
-                    )
-                )
-            }.build()
-        )
-        .build()
+    private var _trackingImageAnalyzerUseCase =
+        ImageAnalysis
+            .Builder()
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
+            .setResolutionSelector(
+                ResolutionSelector
+                    .Builder()
+                    .apply {
+                        setResolutionStrategy(
+                            ResolutionStrategy(
+                                Size(960, 960),
+                                ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
+                            ),
+                        )
+                    }.build(),
+            ).build()
 
     // TODO: Make thread count configurable from preferences
     private val _threads = flowOf(4)
 
     private val _language = languagePreferenceRepository.getSourceLanguage().distinctUntilChanged()
 
-    private val _detectorData = _language.filterNotNull().map { language ->
-        if (language !is app.versta.translate.core.entity.Language) {
-            return@map null
+    private val _detectorData =
+        _language.filterNotNull().map { language ->
+            if (language !is app.versta.translate.core.entity.Language) {
+                return@map null
+            }
+
+            objectCharacterRecognizerRepository.getObjectCharacterRecognitionDetectorByLanguage(language = language)
         }
 
-        objectCharacterRecognizerRepository.getObjectCharacterRecognitionDetectorByLanguage(language = language)
-    }
+    private val _recognizerData =
+        _language
+            .filterNotNull()
+            .map { language ->
+                if (language !is app.versta.translate.core.entity.Language) {
+                    return@map null
+                }
 
-    private val _recognizerData = _language.filterNotNull().map { language ->
-        if (language !is app.versta.translate.core.entity.Language) {
-            return@map null
-        }
-
-        objectCharacterRecognizerRepository.getObjectCharacterRecognizerByLanguage(language = language)
-    }.distinctUntilChanged()
+                objectCharacterRecognizerRepository.getObjectCharacterRecognizerByLanguage(language = language)
+            }.distinctUntilChanged()
 
     private val _loadingProgress = MutableStateFlow<LoadingProgress>(LoadingProgress.Idle)
     val loadingProgress: Flow<LoadingProgress> = _loadingProgress.asStateFlow().sample(10)
@@ -141,63 +149,68 @@ class CameraTranslationViewModel(
     private val _loadMutex = Mutex()
     private val _frameMutex = Mutex()
 
-    private val _objectCharacterRecognitionAnalyzer = ObjectCharacterRecognitionAnalyzer(
-        objectCharacterRecognitionInference = objectCharacterRecognitionInference,
-        tokenizer = objectCharacterRecognitionTokenizer,
-        postProcessor = ocrPostProcessor,
-        beforeFrameProcessing = {
-            viewModelScope.launch {
-                _cameraProvider?.unbindAll()
-            }
-        },
-        onFrameProcessed = { objects, timestamp ->
-            viewModelScope.launch(Dispatchers.Default) {
-                if (!_frameMutex.tryLock()) {
-                    return@launch
+    private val _objectCharacterRecognitionAnalyzer =
+        ObjectCharacterRecognitionAnalyzer(
+            objectCharacterRecognitionInference = objectCharacterRecognitionInference,
+            tokenizer = objectCharacterRecognitionTokenizer,
+            postProcessor = ocrPostProcessor,
+            beforeFrameProcessing = {
+                viewModelScope.launch {
+                    _cameraProvider?.unbindAll()
                 }
-
-                try {
-                    val languages = languageViewModel.languagePair.first() ?: return@launch
-
-                    val results = objects.filter {
-                        it.score >= 0.8f && it.text.isNotBlank()
-                    }.map {
-                        val translated = translationViewModel.translate(it.text, languages)
-
-                        CameraTranslationResult(
-                            points = it.points,
-                            score = it.score,
-                            text = it.text,
-                            translated = translated,
-                            colors = it.colors,
-                            fontSize = it.fontSize,
-                            lineHeight = it.lineHeight,
-                            fontWeight = it.fontWeight
-                        )
+            },
+            onFrameProcessed = { objects, timestamp ->
+                viewModelScope.launch(Dispatchers.Default) {
+                    if (!_frameMutex.tryLock()) {
+                        return@launch
                     }
 
-                    _results.value = results
-                } finally {
-                    _translating.value = false
-                    _frameMutex.unlock()
+                    try {
+                        val languages = languageViewModel.languagePair.first() ?: return@launch
+
+                        val results =
+                            objects
+                                .filter {
+                                    it.score >= 0.8f && it.text.isNotBlank()
+                                }.map {
+                                    val translated = translationViewModel.translate(it.text, languages)
+
+                                    CameraTranslationResult(
+                                        points = it.points,
+                                        score = it.score,
+                                        text = it.text,
+                                        translated = translated,
+                                        colors = it.colors,
+                                        fontSize = it.fontSize,
+                                        lineHeight = it.lineHeight,
+                                        fontWeight = it.fontWeight,
+                                    )
+                                }
+
+                        _results.value = results
+                    } finally {
+                        _translating.value = false
+                        _frameMutex.unlock()
+                    }
                 }
-            }
-        }
-    )
+            },
+        )
 
     private fun bindViewFinder(
         cameraProvider: ProcessCameraProvider,
-        lifecycleOwner: LifecycleOwner
+        lifecycleOwner: LifecycleOwner,
     ): Camera? {
         try {
-            val useCaseGroup = UseCaseGroup.Builder()
-                .addUseCase(_cameraPreviewUseCase)
-                .build()
+            val useCaseGroup =
+                UseCaseGroup
+                    .Builder()
+                    .addUseCase(_cameraPreviewUseCase)
+                    .build()
 
             return cameraProvider.bindToLifecycle(
                 lifecycleOwner = lifecycleOwner,
                 cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
-                useCaseGroup = useCaseGroup
+                useCaseGroup = useCaseGroup,
             )
         } catch (e: Exception) {
             Timber.Forest.tag("PreviewViewModel").e(e, "Error binding to camera lifecycle")
@@ -207,22 +220,24 @@ class CameraTranslationViewModel(
 
     private fun bindAnalysisCapture(
         cameraProvider: ProcessCameraProvider,
-        lifecycleOwner: LifecycleOwner
+        lifecycleOwner: LifecycleOwner,
     ): Camera? {
         try {
             _trackingImageAnalyzerUseCase.setAnalyzer(
                 _trackingImageAnalyzerExecutor,
-                _objectCharacterRecognitionAnalyzer
+                _objectCharacterRecognitionAnalyzer,
             )
 
-            val useCaseGroup = UseCaseGroup.Builder()
-                .addUseCase(_trackingImageAnalyzerUseCase)
-                .build()
+            val useCaseGroup =
+                UseCaseGroup
+                    .Builder()
+                    .addUseCase(_trackingImageAnalyzerUseCase)
+                    .build()
 
             return cameraProvider.bindToLifecycle(
                 lifecycleOwner = lifecycleOwner,
                 cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
-                useCaseGroup = useCaseGroup
+                useCaseGroup = useCaseGroup,
             )
         } catch (e: Exception) {
             Timber.Forest.tag("PreviewViewModel").e(e, "Error binding to camera lifecycle")
@@ -248,21 +263,24 @@ class CameraTranslationViewModel(
 
     private fun initializeCamera(
         cameraProvider: ProcessCameraProvider,
-        lifecycleOwner: LifecycleOwner
+        lifecycleOwner: LifecycleOwner,
     ): Camera? {
         try {
             cameraProvider.unbindAll() // Only unbind once during initial setup
 
-            val useCaseGroup = UseCaseGroup.Builder()
-                .addUseCase(_cameraPreviewUseCase)
-                .addUseCase(_trackingImageAnalyzerUseCase)
-                .build()
+            val useCaseGroup =
+                UseCaseGroup
+                    .Builder()
+                    .addUseCase(_cameraPreviewUseCase)
+                    .addUseCase(_trackingImageAnalyzerUseCase)
+                    .build()
 
-            _camera = cameraProvider.bindToLifecycle(
-                lifecycleOwner = lifecycleOwner,
-                cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
-                useCaseGroup = useCaseGroup
-            )
+            _camera =
+                cameraProvider.bindToLifecycle(
+                    lifecycleOwner = lifecycleOwner,
+                    cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
+                    useCaseGroup = useCaseGroup,
+                )
             return _camera
         } catch (e: Exception) {
             Timber.Forest.tag("PreviewViewModel").e(e, "Error binding to camera lifecycle")
@@ -273,7 +291,7 @@ class CameraTranslationViewModel(
     fun enableAnalyzer() {
         _trackingImageAnalyzerUseCase.setAnalyzer(
             _trackingImageAnalyzerExecutor,
-            _objectCharacterRecognitionAnalyzer
+            _objectCharacterRecognitionAnalyzer,
         )
         _translating.value = true
     }
@@ -283,7 +301,10 @@ class CameraTranslationViewModel(
         _translating.value = false
     }
 
-    suspend fun capture(appContext: Context, lifecycleOwner: LifecycleOwner) {
+    suspend fun capture(
+        appContext: Context,
+        lifecycleOwner: LifecycleOwner,
+    ) {
         _results.value = emptyList()
         _cameraProvider = ProcessCameraProvider.Companion.awaitInstance(appContext)
         _viewFinderReady.value = false
@@ -296,7 +317,10 @@ class CameraTranslationViewModel(
         enableAnalyzer()
     }
 
-    suspend fun viewfinder(appContext: Context, lifecycleOwner: LifecycleOwner) {
+    suspend fun viewfinder(
+        appContext: Context,
+        lifecycleOwner: LifecycleOwner,
+    ) {
         _results.value = emptyList()
         _cameraProvider = ProcessCameraProvider.Companion.awaitInstance(appContext)
         _viewFinderReady.value = true
@@ -307,7 +331,10 @@ class CameraTranslationViewModel(
         disableAnalyzer()
     }
 
-    private fun generateZoomPresets(min: Float, max: Float): List<Float> {
+    private fun generateZoomPresets(
+        min: Float,
+        max: Float,
+    ): List<Float> {
         if (max <= min || min <= 0f) return listOf(min.coerceAtLeast(0.01f))
 
         val common = listOf(0.5f, 1f, 2f, 5f, 10f, 30f, 100f)
@@ -320,9 +347,12 @@ class CameraTranslationViewModel(
         val steps = 6
         val lnMin = ln(min)
         val lnMax = ln(max)
-        return (0 until steps).map { i ->
-            exp(lnMin + i * (lnMax - lnMin) / (steps - 1))
-        }.map { it.coerceIn(min, max) }.distinct().sorted()
+        return (0 until steps)
+            .map { i ->
+                exp(lnMin + i * (lnMax - lnMin) / (steps - 1))
+            }.map { it.coerceIn(min, max) }
+            .distinct()
+            .sorted()
     }
 
     fun ratioToSliderPosition(ratio: Float): Float {
@@ -357,10 +387,11 @@ class CameraTranslationViewModel(
 
     fun setZoomRatio(ratio: Float) {
         val clamped = ratio.coerceIn(_minZoomRatio.value, _maxZoomRatio.value)
-        val camera = _camera ?: run {
-            _currentZoomRatio.value = clamped
-            return
-        }
+        val camera =
+            _camera ?: run {
+                _currentZoomRatio.value = clamped
+                return
+            }
 
         try {
             camera.cameraControl.setZoomRatio(clamped)
@@ -379,7 +410,11 @@ class CameraTranslationViewModel(
         return nearest to ratioToSliderPosition(nearest)
     }
 
-    fun focusOnPoint(surfaceBounds: Size, x: Float, y: Float) {
+    fun focusOnPoint(
+        surfaceBounds: Size,
+        x: Float,
+        y: Float,
+    ) {
         // Create point for CameraX's CameraControl.startFocusAndMetering() and submit...
     }
 
@@ -387,23 +422,27 @@ class CameraTranslationViewModel(
         objectCharacterRecognitionInference.cancel()
     }
 
-    suspend fun load(detect: ObjectCharacterRecognitionDetectorWithFiles, recognize: ObjectCharacterRecognitionRecognizerWithFiles) {
+    suspend fun load(
+        detect: ObjectCharacterRecognitionDetectorWithFiles,
+        recognize: ObjectCharacterRecognitionRecognizerWithFiles,
+    ) {
         cancelTranslation()
 
-        viewModelScope.async(Dispatchers.IO) {
-            _loadMutex.withLock {
-                _cameraTranslationState.value = ReadyState.NotReady
-                _loadingProgress.value = LoadingProgress.InProgress
+        viewModelScope
+            .async(Dispatchers.IO) {
+                _loadMutex.withLock {
+                    _cameraTranslationState.value = ReadyState.NotReady
+                    _loadingProgress.value = LoadingProgress.InProgress
 
-                try {
-                    objectCharacterRecognitionTokenizer.load(recognize.tokenizer.vocabulary)
-                    objectCharacterRecognitionInference.load(detect = detect, recognize = recognize, threads = 4)
-                } catch (e: Exception) {
-                    Timber.tag(TAG).e(e)
-                    _loadingProgress.value = LoadingProgress.Error(e)
+                    try {
+                        objectCharacterRecognitionTokenizer.load(recognize.tokenizer.vocabulary)
+                        objectCharacterRecognitionInference.load(detect = detect, recognize = recognize, threads = 4)
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).e(e)
+                        _loadingProgress.value = LoadingProgress.Error(e)
+                    }
                 }
-            }
-        }.await()
+            }.await()
     }
 
     private fun close() {

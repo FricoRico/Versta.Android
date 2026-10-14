@@ -12,9 +12,8 @@ import java.nio.ByteOrder
  */
 class TextStyleAnalysisPostProcessor(
     private val ocrTextAnalyzer: OcrTextAnalyzer,
-    private val recognizeSize: Int = 960
+    private val recognizeSize: Int = 960,
 ) : OcrPostProcessor {
-
     override fun process(context: OcrPostProcessorContext): OcrPostProcessorContext {
         val results = context.results
 
@@ -26,8 +25,10 @@ class TextStyleAnalysisPostProcessor(
             // Create bounding box buffer from actual result points
             // Each result has 4 points (corners), each point is 2 ints (x, y)
             // Format: [count, box0_p0_x, box0_p0_y, box0_p1_x, box0_p1_y, ..., box0_p3_x, box0_p3_y, box1_...]
-            val boxesBuffer = ByteBuffer.allocateDirect(4 + results.size * 4 * 2 * 4) // 4 bytes for count, then 8 ints per box
-                .order(ByteOrder.nativeOrder())
+            val boxesBuffer =
+                ByteBuffer
+                    .allocateDirect(4 + results.size * 4 * 2 * 4) // 4 bytes for count, then 8 ints per box
+                    .order(ByteOrder.nativeOrder())
 
             // Write count
             boxesBuffer.putInt(results.size)
@@ -44,32 +45,34 @@ class TextStyleAnalysisPostProcessor(
             boxesBuffer.rewind()
 
             // Analyze all text regions in one JNI call
-            val metrics = ocrTextAnalyzer.analyzeTextRegions(
-                imageProxy = context.imageProxy,
-                boxesBuffer = boxesBuffer,
-                recognizeSize = recognizeSize
-            )
+            val metrics =
+                ocrTextAnalyzer.analyzeTextRegions(
+                    imageProxy = context.imageProxy,
+                    boxesBuffer = boxesBuffer,
+                    recognizeSize = recognizeSize,
+                )
 
             // Map metrics back to results
-            val updatedResults = results.mapIndexed { index, result ->
-                val metric = metrics.getOrNull(index)
-                if (metric != null) {
-                    ObjectCharacterRecogniserResult(
-                        points = result.points,
-                        score = result.score,
-                        tokens = result.tokens,
-                        text = result.text,
-                        colors = metric.colors,
-                        lines = result.lines,
-                        fontSize = metric.fontSize,
-                        lineHeight = metric.lineHeight,  // NEW: Pass line height
-                        fontWeight = metric.fontWeight
-                    )
-                } else {
-                    // Keep original result if no metrics available
-                    result
+            val updatedResults =
+                results.mapIndexed { index, result ->
+                    val metric = metrics.getOrNull(index)
+                    if (metric != null) {
+                        ObjectCharacterRecogniserResult(
+                            points = result.points,
+                            score = result.score,
+                            tokens = result.tokens,
+                            text = result.text,
+                            colors = metric.colors,
+                            lines = result.lines,
+                            fontSize = metric.fontSize,
+                            lineHeight = metric.lineHeight, // NEW: Pass line height
+                            fontWeight = metric.fontWeight,
+                        )
+                    } else {
+                        // Keep original result if no metrics available
+                        result
+                    }
                 }
-            }
 
             context.copy(results = updatedResults)
         } catch (e: Exception) {
@@ -82,4 +85,3 @@ class TextStyleAnalysisPostProcessor(
         private val TAG: String = TextStyleAnalysisPostProcessor::class.java.simpleName
     }
 }
-

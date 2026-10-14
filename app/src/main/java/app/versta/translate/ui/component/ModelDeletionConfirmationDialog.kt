@@ -24,13 +24,13 @@ fun ModelDeletionConfirmationDialog(
         title = {
             Text(
                 text = stringResource(titleRes),
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.headlineSmall,
             )
         },
         text = {
             Text(
                 text = stringResource(descriptionRes, model),
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
             )
         },
         onDismissRequest = {
@@ -40,7 +40,7 @@ fun ModelDeletionConfirmationDialog(
             TextButton(
                 onClick = {
                     onConfirmation(model)
-                }
+                },
             ) {
                 Text(stringResource(R.string.delete))
             }
@@ -49,10 +49,10 @@ fun ModelDeletionConfirmationDialog(
             TextButton(
                 onClick = {
                     onDismissRequest()
-                }
+                },
             ) {
                 Text(stringResource(R.string.cancel))
             }
-        }
+        },
     )
 }

@@ -22,9 +22,13 @@ class NavigationViewModel(
 
     private val backNavigationListener = mutableListOf<(NavKey?) -> Unit>()
 
-    fun navigate(route: NavKey, parent: NavKey? = null) {
-        val currentParent = _navigationBackStack
-            .getOrNull(_navigationBackStack.size - 2)
+    fun navigate(
+        route: NavKey,
+        parent: NavKey? = null,
+    ) {
+        val currentParent =
+            _navigationBackStack
+                .getOrNull(_navigationBackStack.size - 2)
 
         if (parent != null && currentParent != null && parent::class == currentParent::class) {
             replace(route)
@@ -35,7 +39,10 @@ class NavigationViewModel(
         _navigationBackStack.add(route)
     }
 
-    fun clearAndNavigate(route: NavKey, parent: NavKey? = null) {
+    fun clearAndNavigate(
+        route: NavKey,
+        parent: NavKey? = null,
+    ) {
         invokeOnNavigationCallback()
 
         _navigationBackStack.clear()

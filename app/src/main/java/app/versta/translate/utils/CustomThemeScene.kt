@@ -18,16 +18,20 @@ class CustomThemeScene {
         val theme: CustomTheme
     }
 
-    internal class ObsidianThemeMetadata(override val theme: CustomTheme) : ThemeMetadata
+    internal class ObsidianThemeMetadata(
+        override val theme: CustomTheme,
+    ) : ThemeMetadata
 
     companion object {
         internal val CustomThemeKey: String = CustomTheme::class.qualifiedName!!
 
-        fun obsidian(): Map<String, Any> = mapOf(
-            CustomThemeKey to ObsidianThemeMetadata(
-                CustomTheme.Obsidian
+        fun obsidian(): Map<String, Any> =
+            mapOf(
+                CustomThemeKey to
+                    ObsidianThemeMetadata(
+                        CustomTheme.Obsidian,
+                    ),
             )
-        )
     }
 }
 

@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.Color
 @Composable
 fun ContentColor(
     contentColor: Color,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(LocalContentColor provides contentColor) {
         content()

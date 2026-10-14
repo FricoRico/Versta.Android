@@ -14,40 +14,48 @@ import java.nio.ByteOrder
 class PaddleObjectCharacterRecognitionDetectInput(
     private val ortEnvironment: OrtEnvironment,
     private val paddleOCR: PaddleOCR,
-    val detectSize: Int = 640
+    val detectSize: Int = 640,
 ) {
-    val buffer: ByteBuffer = ByteBuffer
-        .allocateDirect(detectSize * detectSize * 3 * OnnxJavaType.FLOAT.size)
-        .order(ByteOrder.nativeOrder())
+    val buffer: ByteBuffer =
+        ByteBuffer
+            .allocateDirect(detectSize * detectSize * 3 * OnnxJavaType.FLOAT.size)
+            .order(ByteOrder.nativeOrder())
 
     private val inputShape = longArrayOf(1, 3, detectSize.toLong(), detectSize.toLong())
     private var inputTensor: OnnxTensor? = null
 
-    fun preprocess(input: Buffer, width: Int, height: Int, rotation: Int): Boolean {
+    fun preprocess(
+        input: Buffer,
+        width: Int,
+        height: Int,
+        rotation: Int,
+    ): Boolean {
         buffer.clear()
         return paddleOCR.preProcessDetect(
             input = input,
             output = buffer,
             width = width,
             height = height,
-            rotation = rotation
+            rotation = rotation,
         )
     }
 
     fun get(): Map<String, OnnxTensorLike> {
         buffer.rewind()
         if (inputTensor == null) {
-            inputTensor = OnnxTensor.createTensor(
-                ortEnvironment,
-                buffer,
-                inputShape,
-                OnnxJavaType.FLOAT
-            )
+            inputTensor =
+                OnnxTensor.createTensor(
+                    ortEnvironment,
+                    buffer,
+                    inputShape,
+                    OnnxJavaType.FLOAT,
+                )
         }
         return mapOf("x" to inputTensor!!)
     }
 
     fun clear() = buffer.clear()
+
     fun rewind() = buffer.rewind()
 
     fun destroy() {
@@ -60,15 +68,17 @@ class PaddleObjectCharacterRecognitionDetectOutput(
     private val ortEnvironment: OrtEnvironment,
     private val paddleOCR: PaddleOCR,
     val detectSize: Int = 640,
-    val maxCandidates: Int = 100
+    val maxCandidates: Int = 100,
 ) {
-    val outputBuffer: ByteBuffer = ByteBuffer
-        .allocateDirect(detectSize * detectSize * OnnxJavaType.FLOAT.size)
-        .order(ByteOrder.nativeOrder())
+    val outputBuffer: ByteBuffer =
+        ByteBuffer
+            .allocateDirect(detectSize * detectSize * OnnxJavaType.FLOAT.size)
+            .order(ByteOrder.nativeOrder())
 
-    val resultBuffer: ByteBuffer = ByteBuffer
-        .allocateDirect(1 + maxCandidates * 4 * 2 * OnnxJavaType.INT32.size)
-        .order(ByteOrder.nativeOrder())
+    val resultBuffer: ByteBuffer =
+        ByteBuffer
+            .allocateDirect(1 + maxCandidates * 4 * 2 * OnnxJavaType.INT32.size)
+            .order(ByteOrder.nativeOrder())
 
     private val outputShape = longArrayOf(1, 1, detectSize.toLong(), detectSize.toLong())
     private var outputTensor: OnnxTensor? = null
@@ -79,22 +89,27 @@ class PaddleObjectCharacterRecognitionDetectOutput(
     val isEmpty: Boolean get() = _results.isEmpty()
 
     operator fun get(index: Int): ObjectCharacterRecogniserResult = _results[index]
+
     fun forEach(action: (ObjectCharacterRecogniserResult) -> Unit) = _results.forEach(action)
 
     fun getTensor(): OnnxTensor {
         if (outputTensor == null) {
             outputBuffer.rewind()
-            outputTensor = OnnxTensor.createTensor(
-                ortEnvironment,
-                outputBuffer,
-                outputShape,
-                OnnxJavaType.FLOAT
-            )
+            outputTensor =
+                OnnxTensor.createTensor(
+                    ortEnvironment,
+                    outputBuffer,
+                    outputShape,
+                    OnnxJavaType.FLOAT,
+                )
         }
         return outputTensor!!
     }
 
-    fun run(session: OrtSession, inputs: Map<String, OnnxTensorLike>) {
+    fun run(
+        session: OrtSession,
+        inputs: Map<String, OnnxTensorLike>,
+    ) {
         outputBuffer.clear()
         resultBuffer.clear()
 
@@ -106,10 +121,11 @@ class PaddleObjectCharacterRecognitionDetectOutput(
     }
 
     fun parse(): List<ObjectCharacterRecogniserResult> {
-        _results = paddleOCR.postProcessDetect(
-            input = outputBuffer,
-            output = resultBuffer
-        )
+        _results =
+            paddleOCR.postProcessDetect(
+                input = outputBuffer,
+                output = resultBuffer,
+            )
         return _results
     }
 
@@ -118,5 +134,4 @@ class PaddleObjectCharacterRecognitionDetectOutput(
         outputTensor = null
         _results = emptyList()
     }
-
 }

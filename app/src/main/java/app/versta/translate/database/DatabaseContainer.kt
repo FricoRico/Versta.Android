@@ -10,17 +10,17 @@ import app.versta.translate.database.migrations.Migration4
 import app.versta.translate.database.migrations.Migration6
 import kotlinx.serialization.json.Json
 import timber.log.Timber
-import java.app.versta.translate.database.sqldelight.VoiceModel
 import java.app.versta.translate.database.sqldelight.ObjectCharacterRecognitionDetectorModel
 import java.app.versta.translate.database.sqldelight.ObjectCharacterRecognitionRecognizerModel
 import java.app.versta.translate.database.sqldelight.SpeechRecognitionModel
+import java.app.versta.translate.database.sqldelight.VoiceModel
 
 interface Migration {
     fun migrate(database: DatabaseContainer)
 }
 
 class DatabaseContainer(
-    context: Context
+    context: Context,
 ) {
     companion object {
         private val TAG = DatabaseContainer::class.java.simpleName
@@ -30,27 +30,33 @@ class DatabaseContainer(
 
     val driver = AndroidSqliteDriver(Database.Schema, context, DB_FILE)
 
-    private val _database = Database(
-        driver = driver,
-        VoiceModelAdapter = VoiceModel.Adapter(
-            architecturesAdapter = ListOfStringsAdapter,
-        ),
-        ObjectCharacterRecognitionDetectorModelAdapter = ObjectCharacterRecognitionDetectorModel.Adapter(
-            architecturesAdapter = ListOfStringsAdapter,
-        ),
-        ObjectCharacterRecognitionRecognizerModelAdapter = ObjectCharacterRecognitionRecognizerModel.Adapter(
-            architecturesAdapter = ListOfStringsAdapter,
-        ),
-        SpeechRecognitionModelAdapter = SpeechRecognitionModel.Adapter(
-            architecturesAdapter = ListOfStringsAdapter,
-        ),
-    )
+    private val _database =
+        Database(
+            driver = driver,
+            VoiceModelAdapter =
+                VoiceModel.Adapter(
+                    architecturesAdapter = ListOfStringsAdapter,
+                ),
+            ObjectCharacterRecognitionDetectorModelAdapter =
+                ObjectCharacterRecognitionDetectorModel.Adapter(
+                    architecturesAdapter = ListOfStringsAdapter,
+                ),
+            ObjectCharacterRecognitionRecognizerModelAdapter =
+                ObjectCharacterRecognitionRecognizerModel.Adapter(
+                    architecturesAdapter = ListOfStringsAdapter,
+                ),
+            SpeechRecognitionModelAdapter =
+                SpeechRecognitionModel.Adapter(
+                    architecturesAdapter = ListOfStringsAdapter,
+                ),
+        )
 
-    private val _migrations = listOf(
-        Migration3,
-        Migration4,
-        Migration6
-    )
+    private val _migrations =
+        listOf(
+            Migration3,
+            Migration4,
+            Migration6,
+        )
 
     val data = _database.dataQueries
     val languages = _database.languageQueries
@@ -61,8 +67,8 @@ class DatabaseContainer(
     val speechRecognitionModels = _database.speechRecognitionModelQueries
 
     fun transaction(body: TransactionWithoutReturn.() -> Unit) = _database.transaction { body() }
-    fun <T> transactionForResult(body: TransactionWithReturn<T>.() -> T) =
-        _database.transactionWithResult { body() }
+
+    fun <T> transactionForResult(body: TransactionWithReturn<T>.() -> T) = _database.transactionWithResult { body() }
 
     private fun runMigrations() {
         _migrations.forEach { migration ->
@@ -79,13 +85,14 @@ class DatabaseContainer(
     }
 }
 
-val ListOfStringsAdapter = object : ColumnAdapter<List<String>, String> {
-    override fun decode(databaseValue: String) =
-        if (databaseValue.isEmpty()) {
-            listOf()
-        } else {
-            Json.decodeFromString<List<String>>(databaseValue)
-        }
+val ListOfStringsAdapter =
+    object : ColumnAdapter<List<String>, String> {
+        override fun decode(databaseValue: String) =
+            if (databaseValue.isEmpty()) {
+                listOf()
+            } else {
+                Json.decodeFromString<List<String>>(databaseValue)
+            }
 
-    override fun encode(value: List<String>) = Json.encodeToString(value)
-}
+        override fun encode(value: List<String>) = Json.encodeToString(value)
+    }

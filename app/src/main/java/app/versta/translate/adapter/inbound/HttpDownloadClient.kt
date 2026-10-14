@@ -16,23 +16,35 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-class HttpDownloadClient(val output: File) : DownloadClient {
+class HttpDownloadClient(
+    val output: File,
+) : DownloadClient {
     /**
      * Download the file and checks the file against the checksum if provided.
      */
-    override suspend fun download(uri: URI, checksum: URI?, listener: DownloadListener) {
-        return suspendCoroutine { coroutine ->
-            ensureOutputDirectory(output)
+    override suspend fun download(
+        uri: URI,
+        checksum: URI?,
+        listener: DownloadListener,
+    ) = suspendCoroutine { coroutine ->
+        ensureOutputDirectory(output)
 
-            val request = Request.Builder().url(uri.toString()).build()
+        val request = Request.Builder().url(uri.toString()).build()
 
-            client.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
+        client.newCall(request).enqueue(
+            object : Callback {
+                override fun onFailure(
+                    call: Call,
+                    e: IOException,
+                ) {
                     listener.onError(e)
                     coroutine.resumeWithException(e)
                 }
 
-                override fun onResponse(call: Call, response: Response) {
+                override fun onResponse(
+                    call: Call,
+                    response: Response,
+                ) {
                     try {
                         response.use {
                             if (!response.isSuccessful) {
@@ -40,9 +52,10 @@ class HttpDownloadClient(val output: File) : DownloadClient {
                             }
 
                             val body = response.body ?: throw Exception("Response body is empty")
-                            val file = uri.path?.substringAfterLast('/')?.let {
-                                output.resolve(it)
-                            }
+                            val file =
+                                uri.path?.substringAfterLast('/')?.let {
+                                    output.resolve(it)
+                                }
                             if (file == null) {
                                 throw Exception("Output file could not be resolved")
                             }
@@ -56,7 +69,7 @@ class HttpDownloadClient(val output: File) : DownloadClient {
                             var bytesRead: Long
 
                             while (source.read(sink.buffer, 8192).also
-                                { bytesRead = it } != -1L
+                                    { bytesRead = it } != -1L
                             ) {
                                 downloaded += bytesRead
 
@@ -79,14 +92,17 @@ class HttpDownloadClient(val output: File) : DownloadClient {
                         coroutine.resumeWithException(e)
                     }
                 }
-            })
-        }
+            },
+        )
     }
 
     /**
      * Verifies the downloaded file against the remote checksum.
      */
-    private fun verify(stream: InputStream, checksum: URI): Boolean {
+    private fun verify(
+        stream: InputStream,
+        checksum: URI,
+    ): Boolean {
         val request = Request.Builder().url(checksum.toString()).build()
         val response = client.newCall(request).execute()
 
@@ -107,9 +123,10 @@ class HttpDownloadClient(val output: File) : DownloadClient {
                 bytesRead = it.read(buffer)
             }
         }
-        val actual = hash.digest().joinToString("") {
-            "%02x".format(it)
-        }
+        val actual =
+            hash.digest().joinToString("") {
+                "%02x".format(it)
+            }
 
         return actual == expected
     }

@@ -55,13 +55,13 @@ fun TextToSpeechButton(
                     TextToSpeechSynthesisState.Preparing -> onCancelTextToSpeech()
                     TextToSpeechSynthesisState.Synthesizing -> onCancelTextToSpeech()
                 }
-            }
+            },
         ) {
             Box {
                 AnimatedVisibility(
                     visible = textToSpeechSynthesisState == TextToSpeechSynthesisState.Idle,
                     enter = fadeIn(),
-                    exit = fadeOut()
+                    exit = fadeOut(),
                 ) {
                     Icon(ImageVector.vectorResource(R.drawable.rounded_graphic_eq_24), contentDescription = stringResource(R.string.text_to_speak_speak))
                 }
@@ -69,19 +69,19 @@ fun TextToSpeechButton(
                 AnimatedVisibility(
                     visible = textToSpeechSynthesisState == TextToSpeechSynthesisState.Preparing,
                     enter = fadeIn(),
-                    exit = fadeOut()
+                    exit = fadeOut(),
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         strokeWidth = MaterialTheme.spacing.hairline,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
                 AnimatedVisibility(
                     visible = textToSpeechSynthesisState == TextToSpeechSynthesisState.Synthesizing,
                     enter = fadeIn(),
-                    exit = fadeOut()
+                    exit = fadeOut(),
                 ) {
                     Icon(ImageVector.vectorResource(R.drawable.rounded_stop_24), contentDescription = stringResource(R.string.text_to_speech_stop))
                 }
@@ -90,20 +90,22 @@ fun TextToSpeechButton(
 
         if (textToSpeechVoiceAvailable) {
             Box(
-                modifier = Modifier
-                    .offset(x = shieldOffset, y = -shieldOffset)
+                modifier =
+                    Modifier
+                        .offset(x = shieldOffset, y = -shieldOffset),
             ) {
                 Surface(
                     shape = MaterialTheme.shapes.extraLarge,
                     color = if (enabled && textToSpeechAvailable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
                     contentColor = if (enabled && textToSpeechAvailable) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier
-                        .requiredSize(shieldSize)
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onTap = { /* Do nothing */ }
-                            )
-                        },
+                    modifier =
+                        Modifier
+                            .requiredSize(shieldSize)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onTap = { /* Do nothing */ },
+                                )
+                            },
                 ) {
                     Text(
                         text = "HD",
@@ -111,7 +113,7 @@ fun TextToSpeechButton(
                         style = MaterialTheme.typography.labelSmall,
                         textAlign = TextAlign.Center,
                         lineHeight = shieldLineHeight,
-                        fontSize = shieldFontSize
+                        fontSize = shieldFontSize,
                     )
                 }
             }
