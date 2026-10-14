@@ -26,6 +26,13 @@ object Supertonic3 {
     const val STYLES_DIRECTORY = "voice_styles"
 
     /**
+     * The four model stages every Supertonic 3 bundle must ship, keyed by their
+     * names in `files.inference.models`.
+     */
+    val MODEL_STAGES: Set<String> =
+        setOf("duration_predictor", "text_encoder", "vector_estimator", "vocoder")
+
+    /**
      * Languages with Supertonic 3 coverage; thirty-one languages, two voice
      * genders each.
      */

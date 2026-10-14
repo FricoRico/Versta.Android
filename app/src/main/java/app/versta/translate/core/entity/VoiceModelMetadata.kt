@@ -21,7 +21,12 @@ class VoiceModelMetadata(
     val files: VoiceModelFilesMetadata,
     var root: Path? = null,
 ) {
-    fun isValid() = baseModel.isNotBlank() && architectures.isNotEmpty() && (root != null && files.isValid(root!!)) && root?.isAbsolute == true
+    fun isValid() =
+        baseModel.isNotBlank() &&
+            architectures.isNotEmpty() &&
+            (root != null && files.isValid(root!!)) &&
+            root?.isAbsolute == true &&
+            (!architectures.contains(VoiceModelArchitecture.Supertonic3) || files.inference.models.keys == Supertonic3.MODEL_STAGES)
 
     fun setRootPath(path: Path): VoiceModelMetadata {
         root = path

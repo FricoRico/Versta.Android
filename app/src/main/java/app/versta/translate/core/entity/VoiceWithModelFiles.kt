@@ -25,7 +25,8 @@ data class VoiceWithModelFiles(
     fun isValid() =
         inference.isValid() &&
             tokenizer.isValid() &&
-            voices.isValid()
+            voices.isValid() &&
+            (!isSupertonic3 || inference.models.keys == Supertonic3.MODEL_STAGES)
 
     /**
      * Resolves the voice file for [language] and [gender]. Supertonic 3 voices
