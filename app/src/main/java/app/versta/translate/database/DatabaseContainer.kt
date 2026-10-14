@@ -3,6 +3,7 @@ package app.versta.translate.database
 import android.content.Context
 import android.database.DatabaseUtils
 import android.database.sqlite.SQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import app.cash.sqldelight.ColumnAdapter
 import app.cash.sqldelight.TransactionWithReturn
 import app.cash.sqldelight.TransactionWithoutReturn
@@ -55,7 +56,19 @@ class DatabaseContainer(
 
     private val appContext: Context = context.applicationContext
 
-    val driver = AndroidSqliteDriver(Database.Schema, context, DB_FILE)
+    private val driverCallback =
+        object : AndroidSqliteDriver.Callback(Database.Schema) {
+            /**
+             * Runs after the `.sqm` migration chain, before any query is
+             * served: repair the pre-release `Language.bidirectional` gap
+             * (NEU-18). Idempotent; one PRAGMA on healthy databases.
+             */
+            override fun onOpen(db: SupportSQLiteDatabase) {
+                LanguageBidirectionalRepair.runIfNeeded(db, appContext)
+            }
+        }
+
+    val driver = AndroidSqliteDriver(Database.Schema, context, DB_FILE, callback = driverCallback)
 
     private val _database =
         Database(
