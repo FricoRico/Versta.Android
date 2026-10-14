@@ -2,7 +2,6 @@ package app.versta.translate.adapter.outbound
 
 import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModelDefinition
 import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModels
-import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModelWithState
 import app.versta.translate.core.entity.ObjectCharacterRecognitionModuleWithFiles
 import kotlinx.coroutines.flow.Flow
 

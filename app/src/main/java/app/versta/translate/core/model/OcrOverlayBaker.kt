@@ -10,7 +10,6 @@ import app.versta.translate.core.entity.FontWeight
 import app.versta.translate.core.entity.OcrBlockLayoutCache
 import app.versta.translate.core.entity.OcrBlockRender
 import app.versta.translate.core.entity.OCR_TEXT_HORIZONTAL_INSET
-import app.versta.translate.core.entity.OcrLineQuad
 import app.versta.translate.core.entity.lineQuadOf
 import app.versta.translate.utils.mapPoints
 import app.versta.translate.utils.mapToArray

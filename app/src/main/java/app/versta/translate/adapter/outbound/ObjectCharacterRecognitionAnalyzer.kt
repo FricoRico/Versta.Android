@@ -162,10 +162,12 @@ class ObjectCharacterRecognitionAnalyzer(
         _acquireInFlight = true
         val epoch = ++_acquireEpoch
 
-        val snap = ByteBuffer.allocateDirect(width * height * 4).let { fresh ->
-            val current = _snapshot
-            if (current != null && current.capacity() == fresh.capacity()) current else fresh
-        }
+        // Reuse the cached snapshot buffer; only reallocate when the frame
+        // size changed (allocating a throwaway direct buffer per dispatch to
+        // learn the size churned direct memory on the acquire path).
+        val needed = width * height * 4
+        val snap = _snapshot?.takeIf { it.capacity() == needed }
+            ?: ByteBuffer.allocateDirect(needed)
         _snapshot = snap
         snap.clear()
         val src = input.duplicate()

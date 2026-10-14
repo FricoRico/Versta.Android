@@ -7,7 +7,6 @@ import app.versta.translate.core.entity.ObjectCharacterRecogniserColors
 import app.versta.translate.core.entity.OcrLineResult
 import app.versta.translate.core.entity.OcrTextBox
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ObjectCharacterRecognitionAnalyzerMappingTest {
