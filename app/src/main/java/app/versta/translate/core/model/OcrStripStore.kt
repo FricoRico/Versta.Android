@@ -30,7 +30,8 @@ class OcrStripStore {
 
     /**
      * Attach patches to [lines] (one block's lines in reading order, keyed by
-     * [blockId] + slot index). Returns one render payload per line, or null
+     * [blockId] + line text + repeat counter — positional indexes shift when a
+     * frame-edge line culls). Returns one render payload per line, or null
      * where the line has no strip.
      */
     fun accept(
@@ -38,8 +39,15 @@ class OcrStripStore {
         lines: List<ObjectCharacterRecogniserResult>,
     ): List<OcrRenderStrip?> {
         val out = ArrayList<OcrRenderStrip?>(lines.size)
-        for ((index, line) in lines.withIndex()) {
-            val key = "$blockId#$index"
+        val seen = HashMap<String, Int>()
+        for (line in lines) {
+            // Stable identity within the anchor: the canonical line's text
+            // (plus a repeat counter for same-text lines). A positional index
+            // shifts whenever a frame-edge line culls, orphaning every cached
+            // patch below it for the anchor's remaining life.
+            val ordinal = seen.getOrDefault(line.text, 0)
+            seen[line.text] = ordinal + 1
+            val key = "$blockId#${line.text}#$ordinal"
             val strip = line.strip
 
             when {
