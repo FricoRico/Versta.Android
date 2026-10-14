@@ -109,6 +109,10 @@ jobs:
           arch: x86_64
           profile: pixel_6
           force-avd-creation: false
+          # Pin the emulator binary: the "latest" channel intermittently
+          # serves a broken archive (sdkmanager: "Error on ZipFile unknown
+          # archive"). 16428233 = 37.2.12.0, verified working on this job.
+          emulator-build: "16428233"
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back virtualscene -camera-front emulated
           disable-animations: true
           # android-emulator-runner executes each script line as a separate
