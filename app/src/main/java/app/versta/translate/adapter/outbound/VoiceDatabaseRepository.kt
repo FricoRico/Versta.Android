@@ -1,8 +1,9 @@
 package app.versta.translate.adapter.outbound
 
 import app.versta.translate.core.entity.Language
-import app.versta.translate.core.entity.TextToSpeechDataMetadata
+import app.versta.translate.core.entity.Supertonic3
 import app.versta.translate.core.entity.VoiceModel
+import app.versta.translate.core.entity.VoiceModelArchitecture
 import app.versta.translate.core.entity.VoiceModelMetadata
 import app.versta.translate.core.entity.VoiceWithModelFiles
 import app.versta.translate.database.DatabaseContainer
@@ -147,37 +148,37 @@ class VoiceDatabaseRepository(
     }
 
     /**
-     * Maps a [VoiceModelMetadata] to a list of [VoiceDatabaseModel].
+     * Maps a [VoiceModelMetadata] to a list of [VoiceDatabaseModel]. Supertonic
+     * 3 bundles ship per-gender style files shared across languages, so their
+     * voices come from the bundle's canonical mapping; legacy bundles derive
+     * the voice language and gender from Kokoro file naming.
      * @param data The metadata to map.
      * @return The mapped database model.
      */
     private fun mapVoiceMetadataToVoiceDatabaseModel(
         modelId: String,
         data: VoiceModelMetadata,
-    ): List<VoiceDatabaseModel> =
-        data.files.voices.map {
+    ): List<VoiceDatabaseModel> {
+        if (data.architectures.contains(VoiceModelArchitecture.Supertonic3)) {
+            return Supertonic3.VOICES.map {
+                VoiceDatabaseModel(
+                    modelId = modelId,
+                    language = it.language,
+                    gender = it.gender.value.lowercase(),
+                )
+            }
+        }
+
+        return data.files.voices.map {
             val file = Path(it).fileName.toString()
 
             val language =
-                when {
-                    file.startsWith("a") -> "en"
-                    file.startsWith("b") -> "en"
-                    file.startsWith("j") -> "ja"
-                    file.startsWith("f") -> "fr"
-                    file.startsWith("e") -> "es"
-                    file.startsWith("h") -> "hi"
-                    file.startsWith("i") -> "it"
-                    file.startsWith("z") -> "zh"
-                    file.startsWith("p") -> "pt"
-                    else -> throw Exception("Determining language from file name: $it")
-                }
+                legacyVoiceLanguages[file.firstOrNull()]
+                    ?: throw Exception("Determining language from file name: $it")
 
             val gender =
-                when {
-                    file.startsWith("f", 1) -> "female"
-                    file.startsWith("m", 1) -> "male"
-                    else -> throw Exception("Determining gender from file name: $it")
-                }
+                legacyVoiceGenders[file.getOrNull(1)]
+                    ?: throw Exception("Determining gender from file name: $it")
 
             VoiceDatabaseModel(
                 modelId = modelId,
@@ -185,8 +186,28 @@ class VoiceDatabaseRepository(
                 gender = gender,
             )
         }
+    }
 
     companion object {
         private val TAG: String = VoiceDatabaseRepository::class.java.simpleName
+
+        private val legacyVoiceLanguages =
+            mapOf(
+                'a' to "en",
+                'b' to "en",
+                'j' to "ja",
+                'f' to "fr",
+                'e' to "es",
+                'h' to "hi",
+                'i' to "it",
+                'z' to "zh",
+                'p' to "pt",
+            )
+
+        private val legacyVoiceGenders =
+            mapOf(
+                'f' to "female",
+                'm' to "male",
+            )
     }
 }
