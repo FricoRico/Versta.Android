@@ -1,0 +1,156 @@
+name: android-test
+
+# Instrumented tests on a hardware-accelerated emulator.
+#
+# Runner choice: ubuntu-latest with KVM. GitHub's arm64 macOS runners no
+# longer expose a working accelerator to the Android emulator — `-gpu host`
+# dies in MoltenVK (VK_ERROR_OUT_OF_DEVICE_MEMORY on the paravirtual GPU) and
+# software-GL boots fail HVF initialisation (HV_UNSUPPORTED). Verified on
+# this branch (runs 38631089499, 38633331139). The x86_64 flavour runs the
+# same Kotlin/JNI test sources; what an arm64 device would add is the NEON
+# build variants of the native bridges, which are compile-gated by the
+# assemble job across all four ABIs.
+
+on:
+  push:
+    paths:
+      - "app/**"
+      - "gradle/**"
+      - "gradlew"
+      - "build.gradle*"
+      - "settings.gradle*"
+      - "gradle.properties"
+      - ".github/workflows/android-test.yml"
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - "app/**"
+      - "gradle/**"
+      - "gradlew"
+      - "build.gradle*"
+      - "settings.gradle*"
+      - "gradle.properties"
+      - ".github/workflows/android-test.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: android-test-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: "17"
+  ABI_FLAVOR: "x86_64"
+
+jobs:
+  connected-check:
+    name: connected-check (x86_64, API 34, KVM)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ""
+
+      - name: Install NDK, CMake, platform and build-tools
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
+
+      # Same rationale as ci.yml: third-party wrapper jars vendored inside
+      # native submodules fail upstream checksum validation; the root wrapper
+      # is pinned by hash instead.
+      - name: Validate root Gradle Wrapper
+        env:
+          WRAPPER_JAR_SHA256: e996d452d2645e70c01c11143ca2d3742734a28da2bf61f25c82bdc288c9e637
+        run: |
+          echo "$WRAPPER_JAR_SHA256  gradle/wrapper/gradle-wrapper.jar" | sha256sum --check -
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+          validate-wrappers: false
+
+      # Emulator images plus a booted AVD snapshot are ~2 GB; cache them.
+      # Bump the key suffix to rotate.
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ runner.os }}-34-google_apis-x86_64-pixel_6-v1
+
+      - name: Run instrumented tests on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          force-avd-creation: false
+          # Pin the emulator binary: the "latest" channel intermittently
+          # serves a broken archive (sdkmanager: "Error on ZipFile unknown
+          # archive"). 16428233 = 37.2.12.0, verified working on this job.
+          emulator-build: "16428233"
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back virtualscene -camera-front emulated
+          disable-animations: true
+          # android-emulator-runner executes each script line as a separate
+          # `sh -c`, so the smoke logic is one folded line. connectedAndroidTest
+          # uninstalls the APK when it finishes, so the launch smoke
+          # reinstalls it. The suite result always wins the exit code; a fatal
+          # crash in the smoke launch also fails the run.
+          script: >-
+            ./gradlew :app:connectedX86_64DebugAndroidTest --console=plain --stacktrace;
+            TEST_EXIT=$?;
+            mkdir -p smoke-out;
+            APK=$(ls app/build/outputs/apk/x86_64/debug/*.apk 2>/dev/null | head -1);
+            [ -n "$APK" ] && adb install -r "$APK";
+            adb shell monkey -p app.versta.translate -c android.intent.category.LAUNCHER 1;
+            sleep 12;
+            adb exec-out screencap -p > smoke-out/app-launch.png;
+            adb logcat -d -v threadtime > smoke-out/logcat.txt;
+            grep -E "FATAL EXCEPTION|ANR in app.versta.translate" smoke-out/logcat.txt && TEST_EXIT=90;
+            exit $TEST_EXIT
+
+      - name: Upload connected test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: connected-test-reports
+          path: |
+            app/build/reports/androidTests/connected/**
+            app/build/outputs/connected_android_test_additional_output/**
+            smoke-out/**
+          if-no-files-found: ignore
+
+      # The assembled debug APK is kept as an artifact so anyone can pull the
+      # exact build CI verified onto a local emulator or physical device
+      # (e.g. the x86_64 local loop from AGENTS.md) without rebuilding.
+      - name: Upload debug APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ env.ABI_FLAVOR }}-debug
+          path: app/build/outputs/apk/${{ env.ABI_FLAVOR }}/debug/*.apk
+          if-no-files-found: ignore
