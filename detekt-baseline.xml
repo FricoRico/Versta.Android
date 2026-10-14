@@ -145,8 +145,8 @@
     <ID>RethrowCaughtException:TarballExtractor.kt$TarballExtractor$throw e</ID>
     <ID>ReturnCount:BergamotTinyInference.kt$BergamotTinyInference$override fun translate( text: String, maxBeamWidth: Int, maxSequenceLength: Int, ): String</ID>
     <ID>ReturnCount:CameraFrameTransform.kt$CameraFrameTransform$fun overlayUvMatrix( contentUv: FloatArray, frameW: Int, frameH: Int, homography: FloatArray, overlayW: Int, overlayH: Int, ): FloatArray?</ID>
-    <ID>ReturnCount:CameraTranslationViewModel.kt$CameraTranslationViewModel$@OptIn(ExperimentalCamera2Interop::class) private fun stabilizationSupported(cameraProvider: ProcessCameraProvider): Boolean</ID>
     <ID>ReturnCount:CameraTranslationViewModel.kt$CameraTranslationViewModel$fun onLiveGlFrame( buffer: ByteBuffer, width: Int, height: Int, ): LiveOverlayTick?</ID>
+    <ID>ReturnCount:CameraTranslationViewModel.kt$CameraTranslationViewModel$private fun stabilizationSupported(cameraProvider: ProcessCameraProvider): Boolean</ID>
     <ID>ReturnCount:CameraTranslationViewModel.kt$CameraTranslationViewModel$suspend fun takeStill(appContext: Context)</ID>
     <ID>ReturnCount:ExternalLanguageModel.kt$fun ExternalLanguageModelDefinitions.isValid(): Boolean</ID>
     <ID>ReturnCount:Language.kt$LanguageOptionPair$fun toLanguagePair(): LanguagePair?</ID>

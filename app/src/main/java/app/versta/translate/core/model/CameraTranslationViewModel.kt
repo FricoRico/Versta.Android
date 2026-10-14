@@ -10,7 +10,6 @@ import android.util.Size
 import android.view.View
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
-import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DisplayOrientedMeteringPointFactory
@@ -134,7 +133,6 @@ class CameraTranslationViewModel(
      * preview surface itself, plain per-request stabilization keeps the
      * tracked overlay glued to a stabilized viewfinder.
      */
-    @OptIn(ExperimentalCamera2Interop::class)
     private fun stabilizationSupported(cameraProvider: ProcessCameraProvider): Boolean {
         val info =
             runCatching {
@@ -151,7 +149,6 @@ class CameraTranslationViewModel(
         return modes.contains(CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON)
     }
 
-    @OptIn(ExperimentalCamera2Interop::class)
     private fun <B : ExtendableBuilder<*>> stabilized(
         builder: B,
         enabled: Boolean,
