@@ -168,7 +168,7 @@
     <ID>ReturnCount:VoiceDatabaseRepository.kt$VoiceDatabaseRepository$private fun mapVoiceModelDatabaseModelToVoiceModelFiles(data: VoiceModelDatabaseModel?): VoiceWithModelFiles?</ID>
     <ID>ReturnCount:WhisperSpeechRecognition.kt$WhisperSpeechRecognition.Companion$internal fun isDegenerate(text: String): Boolean</ID>
     <ID>SerialVersionUIDInSerializableClass:DownloadStatus.kt$DownloadStatus : Serializable</ID>
-    <ID>SpreadOperator:DatabaseContainer.kt$DatabaseContainer.MigrationCallback$( Database.Schema, *_migrations .map { migration -&gt; AfterVersion(migration.afterVersion.toLong()) { migration.migrate(this@DatabaseContainer) } }.toTypedArray(), )</ID>
+    <ID>TooGenericExceptionCaught:DatabaseContainer.kt$DatabaseContainer$e: Exception</ID>
     <ID>SpreadOperator:DownloadManager.kt$DownloadManager$(*taskToQueue.getWorkData().toList().toTypedArray())</ID>
     <ID>ThrowsCount:DownloadExternalDataWorker.kt$DownloadExternalDataWorker$private fun readMetadata(output: File?): DataModel</ID>
     <ID>ThrowsCount:DownloadLanguageWorker.kt$DownloadLanguageWorker$private fun readMetadata(output: File?): LanguageBundleData</ID>

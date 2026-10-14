@@ -14,7 +14,7 @@ import java.io.ByteArrayInputStream
 import java.nio.file.Path
 
 class ExternalSpeechRecognitionModelsFileRepositoryTest {
-    private fun definitionsJson(): String =
+    private fun definitionsJson(largeVersion: String = "v2.0.0"): String =
         """
         [
             {
@@ -35,7 +35,7 @@ class ExternalSpeechRecognitionModelsFileRepositoryTest {
                 "architectures": ["Whisper"],
                 "languages": ["en", "nl", "de"],
                 "size": 811329223,
-                "version": "v2.0.0",
+                "version": "$largeVersion",
                 "bundle": "https://mock.versta.app/whisper-large-bundle.tar.gz",
                 "checksum": "https://mock.versta.app/whisper-large-bundle.tar.gz.sha256"
             },
@@ -131,6 +131,45 @@ class ExternalSpeechRecognitionModelsFileRepositoryTest {
 
         assertEquals(listOf("whisper-large"), result.updates.map { it.definition.id })
         assertEquals(99L, result.updates.first().extracted)
+    }
+
+    @Test
+    fun getDefinitionsByState_olderImportedDoubleDigitVersion_marksUpdate() {
+        val repo = repository(definitionsJson(largeVersion = "v1.10.0"))
+        awaitDefinitions(repo)
+        // Lexicographic order treats v1.2.0 as newer than v1.10.0; numeric order
+        // must still surface the update.
+        val imported = listOf(importedModel("whisper-large", "v1.2.0", size = 99L))
+
+        val result =
+            runBlocking {
+                repo.getDefinitionsByState(flowOf(imported)).first()
+            }
+
+        assertEquals(listOf("whisper-large"), result.updates.map { it.definition.id })
+        assertTrue(result.installed.isEmpty())
+        assertEquals(
+            listOf("whisper-base-en", "whisper-tiny"),
+            result.available.map { it.definition.id },
+        )
+    }
+
+    @Test
+    fun getDefinitionsByState_newerImportedVersion_notMarkedAsUpdate() {
+        val repo = repository()
+        awaitDefinitions(repo)
+        // Lexicographic order treats v10.0.0 as older than v2.0.0; numeric order
+        // must not downgrade a newer install.
+        val imported = listOf(importedModel("whisper-large", "v10.0.0", size = 99L))
+
+        val result =
+            runBlocking {
+                repo.getDefinitionsByState(flowOf(imported)).first()
+            }
+
+        assertTrue(result.updates.none { it.definition.id == "whisper-large" })
+        assertTrue(result.installed.none { it.definition.id == "whisper-large" })
+        assertTrue(result.available.none { it.definition.id == "whisper-large" })
     }
 
     @Test

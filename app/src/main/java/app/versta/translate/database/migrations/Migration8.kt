@@ -1,5 +1,6 @@
 package app.versta.translate.database.migrations
 
+import android.content.Context
 import app.cash.sqldelight.db.QueryResult
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.database.Migration
@@ -16,9 +17,12 @@ import kotlin.io.path.exists
 object Migration8 : Migration {
     private val TAG = Migration8::class.java.simpleName
 
-    override val afterVersion = 8
+    override val afterVersion = 8L
 
-    override fun migrate(database: DatabaseContainer) {
+    override fun migrate(
+        database: DatabaseContainer,
+        context: Context,
+    ) {
         // The old tables still exist at this point; read their model
         // directories with raw SQL (the generated queries are gone),
         // remove the extracted files, then drop the tables.

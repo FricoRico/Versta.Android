@@ -37,6 +37,7 @@ kotlinxCoroutinesTest = "1.10.2"
 ktlintGradle = "14.2.0"
 ktlint = "1.8.0"
 detekt = "1.23.8"
+gpp = "4.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -97,4 +98,5 @@ sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 gradle-crypto-checksum = { id = "org.gradle.crypto.checksum", version.ref = "gradleCheckSum" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradle" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+triplet-play = { id = "com.github.triplet.play", version.ref = "gpp" }
 
