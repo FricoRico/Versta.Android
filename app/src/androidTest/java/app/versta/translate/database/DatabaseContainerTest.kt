@@ -2,8 +2,10 @@ package app.versta.translate.database
 
 import android.content.Context
 import android.database.DatabaseUtils
+import android.database.sqlite.SQLiteConstraintException
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.platform.app.InstrumentationRegistry
+import app.cash.sqldelight.db.QueryResult
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -372,6 +374,135 @@ class DatabaseContainerTest {
             fail("Migration failure must crash instead of being logged and swallowed")
         } catch (e: IllegalArgumentException) {
             assertTrue(e.message.orEmpty().contains("metadata"))
+        }
+    }
+
+    @Test
+    fun driver_enablesForeignKeyConstraints() {
+        val pragma =
+            container()
+                .driver
+                .executeQuery(
+                    identifier = null,
+                    sql = "PRAGMA foreign_keys",
+                    mapper = { cursor ->
+                        cursor.next()
+                        QueryResult.Value(cursor.getLong(0))
+                    },
+                    parameters = 0,
+                ).value
+
+        assertEquals(1L, pragma)
+    }
+
+    @Test
+    fun deletingVoiceModel_cascadesToVoiceRows() {
+        val container = container()
+        container.voiceModels.upsert(
+            id = "model-1",
+            baseModel = "styletts2",
+            architectures = listOf("Kokoro"),
+            path = "/nonexistent",
+            version = "v1.4.0",
+        )
+        container.voices.insertOrIgnore(modelId = "model-1", language = "en", gender = "female")
+
+        container.voiceModels.deleteById("model-1")
+
+        assertTrue(
+            container.voices
+                .getAll()
+                .executeAsList()
+                .isEmpty(),
+        )
+    }
+
+    @Test
+    fun deletingLanguage_cascadesToLanguageModelRows() {
+        val container = container()
+        container.languages.insertOrIgnore(id = "en-nl", source = "en", target = "nl", bidirectional = false)
+        container.languageModels.upsert(
+            languageId = "en-nl",
+            baseModel = "leanmt",
+            path = "/nonexistent",
+            version = "v2.1.0",
+        )
+
+        container.languages.deleteById("en-nl")
+
+        assertTrue(
+            container.languageModels
+                .getAll()
+                .executeAsList()
+                .isEmpty(),
+        )
+    }
+
+    @Test
+    fun voiceInsert_withoutParentModel_throwsForeignKeyViolation() {
+        assertForeignKeyViolation {
+            container().voices.insertOrIgnore(modelId = "ghost", language = "en", gender = "female")
+        }
+    }
+
+    @Test
+    fun languageModelInsert_withoutParentLanguage_throwsForeignKeyViolation() {
+        assertForeignKeyViolation {
+            container().languageModels.upsert(
+                languageId = "ghost",
+                baseModel = "leanmt",
+                path = "/nonexistent",
+                version = "v2.1.0",
+            )
+        }
+    }
+
+    @Test
+    fun v6Database_withOrphanedRows_sweepsBeforeEnforcement() {
+        databaseV6()
+        SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
+            database.execSQL(
+                "INSERT INTO Voice (modelId, language, gender) VALUES (?, ?, ?)",
+                arrayOf("ghost-voice-model", "en", "female"),
+            )
+            insertLegacyLanguageModel(database)
+        }
+
+        val container = container()
+
+        assertEquals(Database.Schema.version, storedVersion())
+        assertTrue(
+            container.voices
+                .getAll()
+                .executeAsList()
+                .none { it.modelId == "ghost-voice-model" },
+        )
+        assertTrue(
+            container.languageModels
+                .getAll()
+                .executeAsList()
+                .isEmpty(),
+        )
+        assertEquals(
+            0L,
+            container.voices
+                .countOrphaned()
+                .executeAsOne(),
+        )
+        assertEquals(
+            0L,
+            container.languageModels
+                .countOrphaned()
+                .executeAsOne(),
+        )
+    }
+
+    private fun assertForeignKeyViolation(block: () -> Unit) {
+        try {
+            block()
+            fail("Foreign key enforcement must reject orphaned child rows")
+        } catch (e: SQLiteConstraintException) {
+            assertTrue(e.message.orEmpty().contains("FOREIGN KEY"))
         }
     }
 }
