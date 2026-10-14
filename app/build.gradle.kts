@@ -23,6 +23,7 @@ plugins {
     alias(libs.plugins.gradle.crypto.checksum)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.triplet.play)
 }
 
 sqldelight {
@@ -53,8 +54,8 @@ android {
         applicationId = "app.versta.translate"
         minSdk = 28
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.3.1"
+        versionCode = 13
+        versionName = "1.3.2-beta.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -88,6 +89,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            ndk {
+                // Embed native symbol tables in the AAB so Play Android Vitals
+                // can symbolicate C++ (LeanMT/Whisper/espeak) crashes for the
+                // beta. SYMBOL_TABLE only: FULL debug info would bloat the
+                // bundle past Play's upload-size comfort zone.
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -142,8 +150,15 @@ android {
     flavorDimensions += "abi"
 
     productFlavors {
+        // Scope every flavour to its own ABI. Without per-flavour abiFilters,
+        // AGP cannot tell that the flavour names are ABIs and builds the CMake
+        // target for all four ABIs into every variant (~4x native compile work
+        // per assemble and all four .so sets packaged in every APK).
         create("arm64-v8a") {
             dimension = "abi"
+            ndk {
+                abiFilters += "arm64-v8a"
+            }
             externalNativeBuild {
                 cmake {
                     // Architecture-specific SIMD/optimisation flags are set in
@@ -156,11 +171,26 @@ android {
         }
         create("armeabi-v7a") {
             dimension = "abi"
+            ndk {
+                abiFilters += "armeabi-v7a"
+            }
         }
         create("x86") {
             dimension = "abi"
+            ndk {
+                abiFilters += "x86"
+            }
         }
         create("x86_64") {
+            dimension = "abi"
+            ndk {
+                abiFilters += "x86_64"
+            }
+        }
+        // Release lane only: one AAB carrying every ABI for Play upload (Play
+        // accepts a single bundle per release). Per-ABI flavours stay the fast
+        // path for local/debug work; nothing debuggable should use this.
+        create("universal") {
             dimension = "abi"
         }
     }
@@ -203,6 +233,32 @@ detekt {
     baseline = rootProject.file("detekt-baseline.xml")
 }
 
+// Play release automation (see .github/workflows/release-beta.yml and
+// RELEASE.md). Auth is keyless: CI mints an OIDC token, exchanges it via
+// Workload Identity Federation, and GPP picks it up as Application Default
+// Credentials (google-github-actions/auth writes GOOGLE_APPLICATION_CREDENTIALS).
+// No service-account JSON key exists anywhere — the GCP org policy
+// iam.disableServiceAccountKeyCreation blocks them. Publish tasks only run
+// where ADC exists; local/debug builds are unaffected because publishing is
+// disabled for every variant except universalRelease below.
+play {
+    useApplicationDefaultCredentials = true
+    track.set("internal")
+    defaultToAppBundles.set(true)
+    // Repeated beta uploads reuse the same configured versionCode; AUTO bumps
+    // past whatever Play already has instead of failing the run.
+    resolutionStrategy.set(com.github.triplet.gradle.androidpublisher.ResolutionStrategy.AUTO)
+    enabled.set(false)
+}
+
+android {
+    playConfigs {
+        register("universalRelease") {
+            enabled.set(true)
+        }
+    }
+}
+
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
     jvmTarget = "17"
     autoCorrect = false
@@ -220,6 +276,15 @@ tasks.configureEach {
 tasks.apply {
     register("getRemoteData") {
         doLast {
+            // src/main/res/raw holds only generated, gitignored JSON, so a
+            // clean checkout has no raw/ directory. Create it before writing;
+            // without this every CI build fails at preBuild with
+            // FileNotFoundException.
+            layout.projectDirectory
+                .dir("src/main/res/raw")
+                .asFile
+                .mkdirs()
+
             URI("https://models.versta.app/data/data.json")
                 .toURL()
                 .openStream()
