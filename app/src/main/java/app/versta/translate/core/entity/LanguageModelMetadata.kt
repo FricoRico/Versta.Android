@@ -54,11 +54,21 @@ data class LanguageBundleMetadata(
     val metadata: List<LanguageMetadata>,
     val bidirectional: Boolean,
     val languages: List<String>,
+    @SerialName("leanmt_binary_version")
+    val leanmtBinaryVersion: Long? = null,
 ) {
     fun isValid() =
         languages.isNotEmpty() &&
             (if (bidirectional) languages.size % 2 == 0 else true) &&
             metadata.isNotEmpty()
+
+    /**
+     * Whether the bundle's declared binary format version matches the vendored
+     * leanmt's `kBinaryFileVersion`. Bundles pre-dating v2.1.0 do not declare
+     * the field and are treated as incompatible, so a stale artifact is
+     * rejected at install time instead of reaching the native loader.
+     */
+    fun isBinaryVersionSupported(supported: Long) = leanmtBinaryVersion == supported
 
     fun languagePairs(): List<LanguagePair> =
         metadata.map {

@@ -46,6 +46,8 @@ Versta runs its models entirely on-device through native C++ inference (JNI) and
 
 These open-source models are optimized for mobile devices, keeping them lightweight and efficient. In order for the models to be compatible, our conversion tools can be used to export the models to the required format. More information on our [Versta.Models](https://github.com/FricoRico/Versta.Models) GitHub page.
 
+Translation bundles v2.1.0 and newer declare a `leanmt_binary_version` in their manifest. The app checks it against the bundled LeanMT library's binary format version at install time and refuses incompatible bundles with a clear error, instead of failing later on first use. Older bundles without the field are treated as incompatible; re-download once the catalog serves a refreshed bundle.
+
 ## Feedback
 Your feedback is crucial to the development of Versta. If you encounter any issues or have suggestions for improvement, please open an issue on our [GitHub issue](https://github.com/FricoRico/Versta.Android/issues) page.
 

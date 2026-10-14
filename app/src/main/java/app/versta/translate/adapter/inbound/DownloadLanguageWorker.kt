@@ -4,7 +4,9 @@ import android.content.Context
 import android.content.Intent
 import androidx.work.WorkerParameters
 import app.versta.translate.MainApplication
+import app.versta.translate.bridge.leanmt.LeanmtVersion
 import app.versta.translate.core.entity.DownloadStatus
+import app.versta.translate.core.entity.IncompatibleModelBundleException
 import app.versta.translate.core.entity.LanguageBundleData
 import app.versta.translate.core.entity.LanguageBundleMetadata
 import app.versta.translate.core.entity.LanguageModelMetadata
@@ -70,6 +72,8 @@ class DownloadLanguageWorker(
             throw Exception("Invalid metadata file")
         }
 
+        preFlightBinaryVersion(languageBundleMetadata)
+
         val languageModelMetadata =
             languageBundleMetadata.metadata.map {
                 val languageMetadataFile = File(output.resolve(it.directory), "metadata.json")
@@ -89,6 +93,33 @@ class DownloadLanguageWorker(
             bundle = languageBundleMetadata,
             languages = languageModelMetadata,
         )
+    }
+
+    /**
+     * Gates the install on the bundle's declared leanmt binary format version
+     * against the vendored leanmt's `kBinaryFileVersion`, queried from the
+     * compiled library. Runs before any JNI model load so an incompatible
+     * bundle fails with a clean error instead of leanmt's fail-fast native
+     * error at first use. Bundles pre-dating v2.1.0 lack the field and are
+     * rejected the same way; a re-download only resolves them once the catalog
+     * serves refreshed bundles.
+     */
+    private fun preFlightBinaryVersion(metadata: LanguageBundleMetadata) {
+        val supported = LeanmtVersion().binaryFileVersion()
+
+        Timber
+            .tag(TAG)
+            .i(
+                "Bundle declares leanmt_binary_version ${metadata.leanmtBinaryVersion}, " +
+                    "vendored leanmt supports $supported",
+            )
+
+        if (!metadata.isBinaryVersionSupported(supported)) {
+            throw IncompatibleModelBundleException(
+                declared = metadata.leanmtBinaryVersion,
+                supported = supported,
+            )
+        }
     }
 
     companion object {
