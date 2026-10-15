@@ -42,5 +42,6 @@ target_link_libraries(
         openjtalk
         leanmt
         whisper
+        MNN
         ${OpenCV_LIBS}
 )
