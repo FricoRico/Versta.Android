@@ -31,7 +31,7 @@
 #include <vector>
 
 #include "supertonic_engine.h"
-#include "tinyjson.h"
+#include "include/tinyjson.h"  // same spelling as the engine sources
 
 using supertonic::Config;
 using supertonic::Engine;
