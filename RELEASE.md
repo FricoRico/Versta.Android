@@ -61,9 +61,9 @@ mid-range device (e.g. Pixel 6a):
   turns on, GPP auto-uploads `mapping.txt`).
 - Deliberate choice: **no Firebase/Sentry SDK**. Android vitals is zero-code
   and matches the app's no-telemetry license stance. Revisit only with a
-  founder decision and an opt-in switch.
+  maintainer decision and an opt-in switch.
 - Cadence during beta: I check vitals daily; new crash clusters get an issue
-  with repro + affected device/ABI within 24 h. Founder sees a weekly digest
+  with repro + affected device/ABI within 24 h. The maintainer gets a weekly digest
   while a beta cohort is open.
 
 ## Rollback
