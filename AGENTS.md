@@ -27,6 +27,12 @@ The canonical layout and rules live in `/mnt/storage/paperclip/STORAGE.md`
 `~/tools/env.sh` already redirects `GRADLE_USER_HOME`, `ANDROID_AVD_HOME`,
 `npm_config_cache`, and `XDG_CACHE_HOME` there.
 
+**Never change host configuration** (storage size, mounts, partitions, quotas,
+VM/CPU/RAM limits, swap, kernel/sysctl, system services, network) to achieve a
+goal. If you hit a resource limit, apply the storage policy first; if the
+constraint is genuinely host-level, comment on your issue naming the exact
+change needed and mark it blocked with a human/admin as unblock owner.
+
 ## Repo map
 
 - `app/` — the single Android application module (Kotlin + Compose). See `/app/AGENTS.md`.
