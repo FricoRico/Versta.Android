@@ -137,3 +137,10 @@ jobs:
 
       - name: Assemble debug (arm64-v8a)
         run: ./gradlew :app:assembleArm64-v8aDebug --console=plain
+
+      # Release variants are only exercised by the release lane; keep the
+      # universal-release Kotlin compile covered per commit so a flavour-
+      # scoped dependency gap can't escape to publish time (it did once —
+      # universalRelease lacked the vendored ONNX Runtime AAR, 2026-10-14).
+      - name: Compile universal release Kotlin
+        run: ./gradlew :app:compileUniversalReleaseKotlin --console=plain
