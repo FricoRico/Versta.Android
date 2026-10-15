@@ -20,7 +20,7 @@
 #include <mutex>
 #include <random>
 
-#include "tinyjson.h"
+#include "include/tinyjson.h"  // shared headers live in src/include/, spelled include/<h> like Log.h
 
 #ifdef __ANDROID__
 #include <android/log.h>
