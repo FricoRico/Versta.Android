@@ -16,6 +16,17 @@ camera/OCR, speech, and text-to-speech entirely on-device.
 - Source-available under the Source First license. Attribution must be preserved.
 - Android only. Kotlin is the primary language; native inference lives in C++ via JNI.
 
+## Machine storage policy (NEU-93)
+
+The build machine's main disk is small (32 GB, chronically >90% full); a large
+volume is mounted at `/mnt/storage`. **Keep all bulk storage under
+`/mnt/storage/paperclip/`, not in `~/`** — models, emulator images, Gradle/npm
+caches, APK/AAB outputs outside the repo, large logs, heavy scratch workspaces.
+The canonical layout and rules live in `/mnt/storage/paperclip/STORAGE.md`
+(loaded into every OpenCode session via global instructions — follow it).
+`~/tools/env.sh` already redirects `GRADLE_USER_HOME`, `ANDROID_AVD_HOME`,
+`npm_config_cache`, and `XDG_CACHE_HOME` there.
+
 ## Repo map
 
 - `app/` — the single Android application module (Kotlin + Compose). See `/app/AGENTS.md`.
