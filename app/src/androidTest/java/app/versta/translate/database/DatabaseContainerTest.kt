@@ -211,7 +211,9 @@ class DatabaseContainerTest {
     fun freshInstall_createsCurrentSchemaWithoutRunningMigrations() {
         val container = container()
 
-        assertEquals(Database.Schema.version, storedVersion())
+        // The database file is created lazily on first query, so the version
+        // assert comes last: storedVersion() opens read-only and throws while
+        // the file does not exist yet.
         assertTrue(
             container.voices
                 .getAll()
@@ -230,6 +232,7 @@ class DatabaseContainerTest {
                 .executeAsList()
                 .isEmpty(),
         )
+        assertEquals(Database.Schema.version, storedVersion())
     }
 
     @Test
