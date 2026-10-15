@@ -130,8 +130,17 @@ jobs:
       - name: Install NDK, CMake, platform and build-tools
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
 
+      # setup-gradle v4 validates every gradle-wrapper.jar in the tree against
+      # Gradle's published checksums. The MNN submodule vendors a flatbuffers
+      # *sample* wrapper whose jar has never been published by Gradle, which
+      # fails this job before it builds. Allowlist that one pinned checksum;
+      # branch: tags/3.6.1 -> d407447, so any edit to the jar changes its hash
+      # and fails validation again. The repo's own wrapper is still validated
+      # here and, without submodules, in static-analysis and android-lint.
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        env:
+          ALLOWED_GRADLE_WRAPPER_CHECKSUMS: ee3739525a995bcb5601621a6e2daec1f183bbefc375743acc235cec33547e04
         with:
           cache-read-only: false
 
