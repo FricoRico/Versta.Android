@@ -43,6 +43,17 @@ endif()
 
 add_subdirectory(mnn mnn)
 
+# MNN's own CMakeLists exports its headers with a directory-scoped
+# include_directories() only, which stops at the mnn/ subtree — the bridge
+# target compiles supertonic_engine.cc (<MNN/Interpreter.hpp>) from outside
+# it and saw no MNN headers. Export them on the target, the same way
+# cld2.cmake and ocr-clipper.cmake do, so every consumer of MNN inherits
+# them.
+target_include_directories(MNN
+        PUBLIC
+        mnn/include
+)
+
 # Play's 16 KB page-size requirement applies to every shipped .so; MNN does
 # not set the flag itself.
 target_link_options(MNN PRIVATE "-Wl,-z,max-page-size=16384")
