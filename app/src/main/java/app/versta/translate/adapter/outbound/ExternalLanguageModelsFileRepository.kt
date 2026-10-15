@@ -9,6 +9,7 @@ import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.LanguageModelPair
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.isValid
+import app.versta.translate.utils.compareVersions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -63,7 +64,7 @@ class ExternalLanguageModelsFileRepository(
                     model.filter { languages ->
                         existing
                             .find {
-                                languages.pair.uniqueEquals(it.pair) && it.files.version < languages.version
+                                languages.pair.uniqueEquals(it.pair) && compareVersions(it.files.version, languages.version) < 0
                             }?.let {
                                 languages.apply {
                                     extracted = it.files.size
