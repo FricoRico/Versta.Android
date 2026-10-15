@@ -4,6 +4,7 @@ import app.versta.translate.core.entity.ExternalSpeechRecognitionModelDefinition
 import app.versta.translate.core.entity.ExternalSpeechRecognitionModelWithState
 import app.versta.translate.core.entity.ExternalSpeechRecognitionModels
 import app.versta.translate.core.entity.SpeechRecognitionWithFiles
+import app.versta.translate.utils.compareVersions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -42,7 +43,7 @@ class ExternalSpeechRecognitionModelsFileRepository(
                 updates =
                     models.mapNotNull { model ->
                         installed
-                            .find { it.id == model.id && it.version < model.version }
+                            .find { it.id == model.id && compareVersions(it.version, model.version) < 0 }
                             ?.let { ExternalSpeechRecognitionModelWithState(definition = model, extracted = it.size) }
                     },
                 available =

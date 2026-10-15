@@ -1,0 +1,1 @@
+Beta build of Versta with the redesigned core screens. Translation, voice and image translation run fully offline after model download. Please report problems via GitHub Issues or the beta feedback email.
