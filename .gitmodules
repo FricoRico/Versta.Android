@@ -20,3 +20,4 @@
 [submodule "app/native/jni/third_party/MNN"]
 	path = app/native/jni/third_party/mnn
 	url = https://github.com/alibaba/MNN.git
+	branch = tags/3.6.1

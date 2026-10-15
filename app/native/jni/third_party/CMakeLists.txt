@@ -66,3 +66,5 @@ target_include_directories(leanmt PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/leanmt/src)
 
 include(whisper.cpp.cmake)
+
+include(mnn.cmake)
