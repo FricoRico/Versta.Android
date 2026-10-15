@@ -17,5 +17,7 @@ set(SRC_FILES
         ${SRC_DIR}/vocabulary.cc
         ${SRC_DIR}/leanmt.cc
         ${SRC_DIR}/whisper.cc
+        ${SRC_DIR}/supertonic.cc
+        ${SRC_DIR}/supertonic_engine.cc
         PARENT_SCOPE
 )
