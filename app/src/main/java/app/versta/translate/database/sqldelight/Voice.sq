@@ -29,3 +29,14 @@ DELETE FROM Voice WHERE modelId = :modelId;
 
 deleteByIds:
 DELETE FROM Voice WHERE modelId IN :modelIds;
+
+-- Rows whose parent VoiceModel is gone. Possible only while foreign keys are
+-- unenforced; kept for the one-time orphan sweep and the pre-enable integrity
+-- metric, and as the post-sweep invariant check (must stay 0).
+countOrphaned:
+SELECT COUNT(*) FROM Voice
+WHERE NOT EXISTS (SELECT 1 FROM VoiceModel WHERE VoiceModel.id = Voice.modelId);
+
+deleteOrphaned:
+DELETE FROM Voice
+WHERE NOT EXISTS (SELECT 1 FROM VoiceModel WHERE VoiceModel.id = Voice.modelId);

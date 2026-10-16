@@ -41,3 +41,14 @@ DELETE FROM LanguageModel WHERE languageId IN :languageIds;
 
 removeNotIn:
 DELETE FROM LanguageModel WHERE languageId NOT IN :languageIds;
+
+-- Rows whose parent Language is gone. Possible only while foreign keys are
+-- unenforced; kept for the one-time orphan sweep and the pre-enable integrity
+-- metric, and as the post-sweep invariant check (must stay 0).
+countOrphaned:
+SELECT COUNT(*) FROM LanguageModel
+WHERE NOT EXISTS (SELECT 1 FROM Language WHERE Language.id = LanguageModel.languageId);
+
+deleteOrphaned:
+DELETE FROM LanguageModel
+WHERE NOT EXISTS (SELECT 1 FROM Language WHERE Language.id = LanguageModel.languageId);

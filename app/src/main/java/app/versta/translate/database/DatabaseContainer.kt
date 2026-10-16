@@ -7,9 +7,12 @@ import app.cash.sqldelight.ColumnAdapter
 import app.cash.sqldelight.TransactionWithReturn
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
+import app.versta.translate.adapter.outbound.CrashReporter
+import app.versta.translate.adapter.outbound.TimberCrashReporter
 import app.versta.translate.database.migrations.Migration3
 import app.versta.translate.database.migrations.Migration4
 import app.versta.translate.database.migrations.Migration6
+import app.versta.translate.database.migrations.Migration8
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.app.versta.translate.database.sqldelight.ObjectCharacterRecognitionDetectorModel
@@ -46,6 +49,7 @@ interface Migration {
 
 class DatabaseContainer(
     context: Context,
+    val crashReporter: CrashReporter = TimberCrashReporter,
 ) {
     companion object {
         private val TAG = DatabaseContainer::class.java.simpleName
@@ -83,6 +87,9 @@ class DatabaseContainer(
             Migration3,
             Migration4,
             Migration6,
+            // The orphan sweep stays last so it cleans up whatever the earlier
+            // migrations of the same release leave behind.
+            Migration8,
         )
 
     val data = _database.dataQueries

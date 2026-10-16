@@ -1,0 +1,6 @@
+-- Witness migration: intentionally changes nothing. Its presence bumps the
+-- schema version 8 -> 9 so the one-time orphan sweep (migrations/8.kt, gated
+-- on boundary 8) runs exactly once on every database already at version 8,
+-- not only on databases upgrading from older schemas. Fresh installs are
+-- created at version 9 and skip the sweep.
+SELECT 1 WHERE 0;
