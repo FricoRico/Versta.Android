@@ -32,13 +32,10 @@ import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
 import app.versta.translate.adapter.outbound.LicenseDataStoreRepository
 import app.versta.translate.adapter.outbound.LicenseRepository
+import app.versta.translate.adapter.outbound.MnnObjectCharacterRecognition
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionInference
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepository
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepositoryDatabaseRepository
-import app.versta.translate.adapter.outbound.OcrPostProcessorPipeline
-import app.versta.translate.adapter.outbound.PaddleObjectCharacterRecognition
-import app.versta.translate.adapter.outbound.PaddleObjectCharacterRecognitionTokenizer
-import app.versta.translate.adapter.outbound.ParagraphGroupingPostProcessor
 import app.versta.translate.adapter.outbound.SpeechRecognitionDatabaseRepository
 import app.versta.translate.adapter.outbound.SpeechRecognitionInference
 import app.versta.translate.adapter.outbound.SpeechRecognitionRepository
@@ -126,7 +123,6 @@ interface ApplicationModuleInterface {
     val outputTranslationInference: TranslationInference
     val textToSpeechTokenizer: TextToSpeechTokenizer
     val textToSpeechInference: TextToSpeechInference
-    val objectCharacterRecognitionTokenizer: PaddleObjectCharacterRecognitionTokenizer
     val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference
 
     val speechRecognitionInference: SpeechRecognitionInference
@@ -234,28 +230,12 @@ class ApplicationModule(
     }
 
     override val cameraTranslationViewModel: CameraTranslationViewModel by lazy {
-        // All text metrics (colors, font, style) extracted in PaddleOCR.preprocessTextRegions()
-        // TextStyleAnalysisPostProcessor removed - eliminates ~300ms duplicate processing
-        val ocrPipeline =
-            OcrPostProcessorPipeline(
-                listOf(
-                    ParagraphGroupingPostProcessor(
-                        verticalThresholdFactor = 1f,
-                        horizontalEps = 5f,
-                        colorTolerance = 0.15f,
-                        fontSizeTolerance = 0.25f,
-                    ),
-                ),
-            )
-
         CameraTranslationViewModel(
             objectCharacterRecognitionInference = objectCharacterRecognitionInference,
-            objectCharacterRecognitionTokenizer = objectCharacterRecognitionTokenizer,
             languageViewModel = languageViewModel,
             languagePreferenceRepository = languagePreferenceRepository,
             translationViewModel = translationViewModel,
             objectCharacterRecognizerRepository = objectCharacterRecognizerRepository,
-            ocrPostProcessor = ocrPipeline,
         )
     }
 
@@ -384,12 +364,8 @@ class ApplicationModule(
         StyleTextToSpeechInference(ortEnvironment)
     }
 
-    override val objectCharacterRecognitionTokenizer: PaddleObjectCharacterRecognitionTokenizer by lazy {
-        PaddleObjectCharacterRecognitionTokenizer()
-    }
-
     override val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference by lazy {
-        PaddleObjectCharacterRecognition(ortEnvironment)
+        MnnObjectCharacterRecognition()
     }
 
     override val speechRecognitionInference: SpeechRecognitionInference by lazy {
