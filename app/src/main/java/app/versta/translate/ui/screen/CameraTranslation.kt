@@ -60,6 +60,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
+import app.versta.translate.core.entity.CameraState
 import app.versta.translate.core.entity.CameraTranslationBlockLine
 import app.versta.translate.core.entity.FontWeight
 import app.versta.translate.core.entity.OCR_TEXT_HORIZONTAL_INSET
@@ -102,6 +103,7 @@ fun CameraTranslation(
     val translating by cameraTranslationViewModel.translating.collectAsStateWithLifecycle()
     val stillBusy by cameraTranslationViewModel.stillBusy.collectAsStateWithLifecycle()
     val viewfinderMode by cameraTranslationViewModel.viewfinderMode.collectAsStateWithLifecycle()
+    val cameraState by cameraTranslationViewModel.cameraState.collectAsStateWithLifecycle()
 
     var ready by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -147,7 +149,10 @@ fun CameraTranslation(
                     .padding(innerPadding),
         ) {
             AnimatedVisibility(
-                visible = ready && cameraPermissionState.status is PermissionStatus.Granted,
+                visible =
+                    ready &&
+                        cameraPermissionState.status is PermissionStatus.Granted &&
+                        cameraState !is CameraState.Unavailable,
                 enter = scaleIn(initialScale = 0.6f) + fadeIn(),
                 exit = ExitTransition.None,
             ) {
@@ -314,6 +319,16 @@ fun CameraTranslation(
             ) {
                 CameraPermissionDenied(cameraPermissionState)
             }
+
+            AnimatedVisibility(
+                visible =
+                    cameraPermissionState.status is PermissionStatus.Granted &&
+                        cameraState is CameraState.Unavailable,
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
+                CameraUnavailable()
+            }
         }
     }
 }
@@ -336,6 +351,21 @@ fun CameraPermissionDenied(state: PermissionState) {
         Button(onClick = { state.launchPermissionRequest() }) {
             Text(text = stringResource(R.string.vision_permission_request))
         }
+    }
+}
+
+/** Placeholder for camera-less devices so the rest of the Vision screen
+ *  (drawer, model loading, navigation) stays usable. */
+@Composable
+fun CameraUnavailable() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = stringResource(R.string.vision_camera_unavailable),
+            modifier = Modifier.padding(MaterialTheme.spacing.large),
+        )
     }
 }
 
