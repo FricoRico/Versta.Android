@@ -210,6 +210,7 @@
     <string name="vision_capture">Capture</string>
     <string name="vision_translate">Translate</string>
     <string name="vision_restart">Restart</string>
+    <string name="vision_camera_unavailable">No camera available on this device. Vision translation needs a camera.</string>
     <string name="vision_permission_rationale">Without camera permission the vision feature is not available. Please grant the permission in the app settings.</string>
     <string name="vision_permission_denied">Without camera permission the vision feature is not available.</string>
     <string name="vision_permission_request">Request permission</string>

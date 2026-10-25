@@ -39,6 +39,7 @@ import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionInference
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepository
 import app.versta.translate.adapter.outbound.mapOcrLineResult
 import app.versta.translate.core.entity.BakedOverlay
+import app.versta.translate.core.entity.CameraState
 import app.versta.translate.core.entity.CameraTranslationBlockLine
 import app.versta.translate.core.entity.CameraTranslationResult
 import app.versta.translate.core.entity.Language
@@ -47,6 +48,7 @@ import app.versta.translate.core.entity.LiveOverlayTick
 import app.versta.translate.core.entity.ObjectCharacterRecogniserResult
 import app.versta.translate.core.entity.ObjectCharacterRecognitionBundleWithFiles
 import app.versta.translate.utils.CameraFrameTransform
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -101,6 +103,11 @@ class CameraTranslationViewModel(
 
     private var _camera: Camera? = null
     private var _cameraProvider: ProcessCameraProvider? = null
+
+    /** Camera bring-up outcome; the Vision screen swaps the viewfinder for a
+     *  placeholder on [CameraState.Unavailable] instead of crashing. */
+    private val _cameraState = MutableStateFlow<CameraState>(CameraState.Unknown)
+    val cameraState: StateFlow<CameraState> = _cameraState.asStateFlow()
 
     // Preview stays at a modest target: the GL loop reads an upright
     // full-frame copy of the very buffer it presents back for the tracker,
@@ -374,6 +381,9 @@ class CameraTranslationViewModel(
      */
     suspend fun takeStill(appContext: Context) {
         if (_stillBusy.value) return
+        // No camera brought up (camera-less device or failed bind): the use
+        // cases were never built, so there is nothing to take a picture with.
+        if (!::_imageCaptureUseCase.isInitialized) return
         _stillBusy.value = true
 
         try {
@@ -587,13 +597,33 @@ class CameraTranslationViewModel(
         _lastLiveBlocks = emptyList()
         clearOverlayContent()
         _objectCharacterRecognitionAnalyzer.reset()
-        _cameraProvider = ProcessCameraProvider.Companion.awaitInstance(appContext)
+
+        // CameraX init surfaces asynchronously (its retry loop can hold the
+        // call for many seconds) and then throws here — e.g.
+        // InitializationException on camera-less devices. Uncaught it escapes
+        // the calling coroutine and kills the process; degrade instead.
+        val cameraProvider =
+            try {
+                ProcessCameraProvider.Companion.awaitInstance(appContext)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Camera provider unavailable")
+                _cameraState.value = CameraState.Unavailable
+                _viewfinderMode.value = !toLive
+                return
+            }
+        _cameraProvider = cameraProvider
         _viewfinderMode.value = !toLive
 
         if (_camera == null || !toLive) {
-            initializeCamera(_cameraProvider!!, lifecycleOwner)
+            if (initializeCamera(cameraProvider, lifecycleOwner) == null) {
+                _cameraState.value = CameraState.Unavailable
+                return
+            }
             initZoomState()
         }
+        _cameraState.value = CameraState.Ready
 
         if (toLive) {
             _liveTrackingActive.value = true
