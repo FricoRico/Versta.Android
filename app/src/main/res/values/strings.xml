@@ -206,4 +206,11 @@
     <string name="conversation_no_model_message">Download a speech recognition model to start listening.</string>
     <string name="conversation_start_listening">Start listening</string>
     <string name="conversation_stop_listening">Stop listening</string>
+    <string name="vision_torch">Torch</string>
+    <string name="vision_capture">Capture</string>
+    <string name="vision_translate">Translate</string>
+    <string name="vision_restart">Restart</string>
+    <string name="vision_permission_rationale">Without camera permission the vision feature is not available. Please grant the permission in the app settings.</string>
+    <string name="vision_permission_denied">Without camera permission the vision feature is not available.</string>
+    <string name="vision_permission_request">Request permission</string>
 </resources>

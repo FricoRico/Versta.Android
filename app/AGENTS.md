@@ -10,7 +10,7 @@ All code lives under `app.versta.translate`. One file per top-level
 declaration, named after it (companion objects and secondary types may live
 in the same file when they are implementation details).
 
-- `core/entity` — pure domain models: `data class`, `sealed class`, `enum class`, value objects. No Android framework types, no ViewModel, no `MainApplication`/composition-root access.
+- `core/entity` — pure domain models: `data class`, `sealed class`, `enum class`, value objects. No Android framework types except graphics primitives shared with the JNI/render boundary (`android.graphics.PointF`/`Bitmap`/`Matrix`, Compose `Color`); no ViewModel, no `MainApplication`/composition-root access.
 - `core/model` — `ViewModel` subclasses. Own UI state via `MutableStateFlow` + `asStateFlow()`, expose `Flow`s, orchestrate ports. Dependency-injected by constructor.
 - `adapter/inbound` — driving adapters: WorkManager `Worker`s, notification builders, Activity-registered helpers (`ModelFilePicker`, `TranslateBubble*`).
 - `adapter/outbound` — driven adapters. Ports are Kotlin interfaces declared here; real and mock implementations sit beside them.
@@ -67,6 +67,7 @@ Rules:
 ## State management
 
 - ViewModel state: `private val _x = MutableStateFlow<T>(initial); val x = _x.asStateFlow()`.
+- Exception: the camera-overlay hot path in `CameraTranslationViewModel` (`detectedBoxes`, `frameWidth`/`frameHeight`, `blockTranslations`) is Compose snapshot state written synchronously from the GL viewfinder thread — publishing over `StateFlow` + coroutine collect costs 1–2 display frames of overlay lag under motion. The LIVE overlay does not ride Compose at all: the GL viewfinder composites it in the same pass as the camera frame (bake-on-content-change + per-frame homography warp — `liveFrameSink` returns `LiveOverlayTick`; `OcrOverlayBaker` rasters canonical-space content for `LiveGlRenderer`). The snapshot state remains for the STILLS presentation, read inside `Canvas(onDraw)`.
 - Combine/flatten derived flows with `map`, `distinctUntilChanged`, `combine`; keep logic in the ViewModel, not the composable.
 - UI collects with `collectAsStateWithLifecycle()` (never `collectAsState()` unless there is no lifecycle).
 - One-off events and dialog visibility are also modeled as state flows, not lambdas passed around.
@@ -80,8 +81,8 @@ Rules:
 
 ## Inference
 
-- Native C++ via JNI (`bridge/`) for: translation (LeanMT), speech recognition (whisper.cpp), language detection (cld2), TTS phonemization (espeak-ng, open-jtalk), and OCR (PaddleOCR). See `/app/native/AGENTS.md`.
-- ONNX Runtime (`OrtEnvironment`, `OrtSession`) only for StyleTTS2 synthesis and OCR inference fallbacks.
+- Native C++ via JNI (`bridge/`) for: translation (LeanMT), speech recognition (whisper.cpp), language detection (cld2), TTS phonemization (espeak-ng, open-jtalk), and OCR (PP-OCR models on MNN). See `/app/native/AGENTS.md`.
+- ONNX Runtime (`OrtEnvironment`, `OrtSession`) only for StyleTTS2 synthesis.
 - Bridge classes own a native handle: private `external fun`s, guards against `handle == 0L`, `AutoCloseable`, and `System.loadLibrary("app_versta_translate_bridge")` in the companion. See `bridge/whisper/Whisper.kt` for the canonical shape.
 - Blocking native calls run on a background dispatcher (`Dispatchers.Default`/`Dispatchers.IO`) from the calling coroutine; never call the native bridge on the main thread.
 - Ports wrap bridge classes so the rest of the app depends on the port, not the JNI wrapper.
