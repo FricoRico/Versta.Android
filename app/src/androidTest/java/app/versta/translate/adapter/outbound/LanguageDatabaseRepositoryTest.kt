@@ -8,12 +8,14 @@ import app.versta.translate.core.entity.LanguageMetadata
 import app.versta.translate.core.entity.LanguageModelConfigurationMetadata
 import app.versta.translate.core.entity.LanguageModelFilesMetadata
 import app.versta.translate.core.entity.LanguageModelMetadata
+import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.database.DatabaseContainer
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -99,24 +101,27 @@ class LanguageDatabaseRepositoryTest {
         )
     }
 
-    private fun bundleData(version: String = "v2.0.0") =
-        LanguageBundleData(
-            bundle =
-                LanguageBundleMetadata(
-                    version = version,
-                    metadata =
-                        listOf(
-                            LanguageMetadata(
-                                directory = "module",
-                                sourceLanguage = "ar",
-                                targetLanguage = "en",
-                            ),
+    private fun bundleData(
+        version: String = "v2.0.0",
+        source: String = "ar",
+        target: String = "en",
+    ) = LanguageBundleData(
+        bundle =
+            LanguageBundleMetadata(
+                version = version,
+                metadata =
+                    listOf(
+                        LanguageMetadata(
+                            directory = "module",
+                            sourceLanguage = source,
+                            targetLanguage = target,
                         ),
-                    bidirectional = false,
-                    languages = listOf("ar", "en"),
-                ),
-            languages = listOf(moduleMetadata()),
-        )
+                    ),
+                bidirectional = false,
+                languages = listOf(source, target),
+            ),
+        languages = listOf(moduleMetadata(source = source, target = target)),
+    )
 
     @Test
     fun upsertLanguageModels_storesBundleVersion_notModuleEngineVersion() =
@@ -169,5 +174,43 @@ class LanguageDatabaseRepositoryTest {
             val updated = withTimeout(5_000) { channel.receive() }
             channel.cancel()
             assertTrue(updated.any { it.pair.uniqueId() == "ar-en" })
+        }
+
+    @Test
+    fun upsertLanguageModels_registryCodedBundleJoinsCatalogBcp47Pair() =
+        runBlocking {
+            val repo = repository()
+
+            repo.upsertLanguageModels(bundleData(source = "en", target = "zh"))
+
+            val pair =
+                repo
+                    .getLanguages()
+                    .first()
+                    .first { it.pair.uniqueId() == "en-zh" }
+                    .pair
+            assertTrue(pair.uniqueEquals(LanguagePair.fromIsoCodes("en", "zh-Hans")))
+        }
+
+    @Test
+    fun upsertLanguageModels_traditionalChineseStaysDistinctFromSimplified() =
+        runBlocking {
+            val repo = repository()
+
+            repo.upsertLanguageModels(bundleData(source = "en", target = "zh"))
+            repo.upsertLanguageModels(bundleData(source = "en", target = "zh_hant"))
+
+            val pairs =
+                repo
+                    .getLanguages()
+                    .first()
+                    .map { it.pair }
+                    .filter { it.uniqueId() in setOf("en-zh", "en-zh_hant") }
+            assertEquals(setOf("en-zh", "en-zh_hant"), pairs.map { it.uniqueId() }.toSet())
+            assertFalse(
+                pairs
+                    .first { it.uniqueId() == "en-zh_hant" }
+                    .uniqueEquals(LanguagePair.fromIsoCodes("en", "zh-Hans")),
+            )
         }
 }
