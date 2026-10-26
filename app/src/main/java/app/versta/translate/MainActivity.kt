@@ -10,9 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -28,14 +25,11 @@ import app.versta.translate.ui.component.ModelLoadingProgressDialog
 import app.versta.translate.ui.component.Router
 import app.versta.translate.ui.component.TrialLicenseConfirmationDialog
 import app.versta.translate.ui.component.TrialLicenseDrawer
-import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.theme.TranslateTheme
 import app.versta.translate.utils.setEdgeToEdgeConfig
 import app.versta.translate.utils.viewModelFactory
 
 open class MainActivity : ComponentActivity() {
-    private var initialRoute by mutableStateOf<Screens?>(null)
-
     private val _licenseViewModel by viewModels<LicenseViewModel>(
         factoryProducer = {
             viewModelFactory {
@@ -134,8 +128,6 @@ open class MainActivity : ComponentActivity() {
         if (input != null) {
             MainApplication.module.textTranslationViewModel.setTranslateOnInput(true)
             MainApplication.module.textTranslationViewModel.setInput(input)
-
-            initialRoute = Screens.TextTranslationLegacy
         }
     }
 
