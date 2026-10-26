@@ -31,7 +31,7 @@ class DownloadLanguageWorker(
     override fun extractDownload(
         taskId: UUID,
         file: File,
-    ) {
+    ): Boolean {
         var output: File? = null
 
         try {
@@ -51,7 +51,10 @@ class DownloadLanguageWorker(
             output?.deleteRecursively()
             setStatus(taskId, DownloadStatus.Error(e))
             Timber.tag(TAG).e(e, "Extracting file ${file.absolutePath}")
+            return false
         }
+
+        return true
     }
 
     /**
