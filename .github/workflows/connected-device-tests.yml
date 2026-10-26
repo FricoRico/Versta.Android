@@ -1,0 +1,120 @@
+name: connected-device-tests
+
+# Standing connected-test gate for Phase 2 (promoted from the NEU-40 one-off,
+# NEU-137). Runs the NEU-29 bundle-gate instrumentation tests
+# (LeanmtVersionTest, LanguageBundleMetadataTest) on an emulator with
+# hardware acceleration. Verified green as a one-off on GitHub-hosted KVM
+# runners in 12m39s (run 38646671171) with zero box dependency.
+#
+# Triggers on pushes/PRs to refactor/translation-orchestrator that touch the
+# translation stack (orchestration core, adapters, leanmt bridge/native code),
+# test sources, or the build configuration. Also manual via workflow_dispatch.
+#
+# Proposal (NEU-137): make this workflow's job a required status check for
+# PRs into refactor/translation-orchestrator so it gates Phase 2 merges.
+on:
+  push:
+    branches: [refactor/translation-orchestrator]
+    paths:
+      - "app/src/main/java/app/versta/translate/core/**"
+      - "app/src/main/java/app/versta/translate/adapter/**"
+      - "app/src/main/java/app/versta/translate/bridge/**"
+      - "app/src/main/java/app/versta/translate/utils/**"
+      - "app/native/**"
+      - "app/src/androidTest/**"
+      - "app/build.gradle.kts"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - "gradle/**"
+      - ".github/workflows/connected-device-tests.yml"
+  pull_request:
+    branches: [refactor/translation-orchestrator]
+    paths:
+      - "app/src/main/java/app/versta/translate/core/**"
+      - "app/src/main/java/app/versta/translate/adapter/**"
+      - "app/src/main/java/app/versta/translate/bridge/**"
+      - "app/src/main/java/app/versta/translate/utils/**"
+      - "app/native/**"
+      - "app/src/androidTest/**"
+      - "app/build.gradle.kts"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - "gradle/**"
+      - ".github/workflows/connected-device-tests.yml"
+  workflow_dispatch:
+
+# One active run per ref: retriggering or pushing again cancels the stale run.
+concurrency:
+  group: connected-device-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write # upload-artifact
+
+jobs:
+  connected-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install NDK, CMake, platform and build-tools
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Runner image: /dev/kvm is root:kvm 0660 — open it, else accel silently
+      # disables itself and the TCG boot times out before boot_completed.
+      - name: Enable KVM permissions
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -la /dev/kvm
+
+      # qemu bundled with the SDK emulator hard-depends on libpulse, absent on
+      # the current ubuntu image: "error while loading shared libraries:
+      # libpulse.so.0" = guest never starts (connection refused on :5554).
+      - name: Install qemu runtime libs
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libpulse0
+
+      - name: KVM check
+        run: ls -la /dev/kvm || true
+
+      # API 29 keeps the footprint small; both tests are API-agnostic
+      # (minSdk 28): one is pure kotlinx-serialization logic, the other reads
+      # the vendored leanmt version over JNI. Scoped to the NEU-29 classes so
+      # the Phase 2 gate stays at the ~13 min one-off runtime; extending to
+      # the full androidTest suite needs a measured runtime first.
+      - name: Run NEU-29 instrumentation tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          target: default
+          force-avd-creation: true
+          emulator-options: -no-window -no-snapshot-save -noaudio -no-boot-anim -gpu swiftshader_indirect
+          disable-animations: true
+          script: ./gradlew :app:connectedX86_64DebugAndroidTest --console=plain -Pandroid.testInstrumentationRunnerArguments.class=app.versta.translate.bridge.leanmt.LeanmtVersionTest,app.versta.translate.core.entity.LanguageBundleMetadataTest
+
+      - name: Print test result XMLs
+        if: always()
+        run: find app/build/outputs/androidTest-results -name "*.xml" -exec sh -c 'echo "--- $1"; cat "$1"' _ {} \; || true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: connected-androidTest-results
+          path: app/build/outputs/androidTest-results/
+          if-no-files-found: ignore
