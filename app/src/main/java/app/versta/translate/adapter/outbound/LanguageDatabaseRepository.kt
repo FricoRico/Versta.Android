@@ -13,9 +13,12 @@ import app.versta.translate.core.entity.PivotPairModelFiles
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.executeAsListFlow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
 import okio.Path.Companion.toPath
 import timber.log.Timber
+import java.io.File
 import java.util.Locale
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.absolutePathString
@@ -28,12 +31,17 @@ class LanguageDatabaseRepository(
 ) : LanguageRepository {
     /**
      * Gets the languages available in the repository.
+     *
+     * Observes both the language and the model tables so installs, updates and
+     * removals emit regardless of which table changed.
      */
     override fun getLanguagePairs() =
-        database.languages
-            .getAll()
-            .executeAsListFlow()
-            .map { it.map { language -> mapLanguageDatabaseModelToLanguagePair(language) } }
+        combine(
+            database.languages.getAll().executeAsListFlow(),
+            database.languageModels.getAll().executeAsListFlow(),
+        ) { languages, _ ->
+            languages.map { language -> mapLanguageDatabaseModelToLanguagePair(language) }
+        }
 
     /**
      * Gets the source languages available in the repository.
@@ -56,17 +64,21 @@ class LanguageDatabaseRepository(
 
     /**
      * Gets the language models metadata available in the repository.
+     *
+     * Observes both the language and the model tables: the queries run inside
+     * [upsertLanguageModels] touch both, and observing only the language table
+     * misses the emission when the installer commits while the screen is open.
      */
     override fun getLanguages(): Flow<List<LanguageModelPair>> =
-        database.languages.getAll().executeAsListFlow().map {
-            it
+        combine(
+            database.languages.getAll().executeAsListFlow(),
+            database.languageModels.getAll().executeAsListFlow(),
+        ) { languages, languageModels ->
+            languages
                 .map { language ->
                     val languageModel =
                         mapLanguageModelDatabaseModelToLanguageModelFiles(
-                            data =
-                                database.languageModels
-                                    .getAllByLanguageId(language.id)
-                                    .executeAsOneOrNull(),
+                            data = languageModels.firstOrNull { it.languageId == language.id },
                         ) ?: return@map null
 
                     LanguageModelPair(
@@ -193,7 +205,27 @@ class LanguageDatabaseRepository(
      * @param metadata The metadata to insert or update.
      */
     override fun upsertLanguageModel(metadata: LanguageModelMetadata) {
-        val languageModel = mapLanguageMetadataToLanguageModelDatabaseModel(data = metadata)
+        upsertLanguageModel(metadata = metadata, bundleVersion = metadata.version)
+    }
+
+    /**
+     * Inserts or updates a single language model in the repository.
+     *
+     * The stored version identifies the installed bundle, matching the version
+     * scheme used by the external catalog, so [app.versta.translate.adapter.outbound.ExternalLanguageModelsRepository.getDefinitionsByState]
+     * can compare installed against catalog versions. Per-module engine
+     * versions (e.g. the MarianMT version baked into a module's metadata.json)
+     * are not meaningful for that comparison.
+     */
+    private fun upsertLanguageModel(
+        metadata: LanguageModelMetadata,
+        bundleVersion: String,
+    ) {
+        val languageModel =
+            mapLanguageMetadataToLanguageModelDatabaseModel(
+                data = metadata,
+                version = bundleVersion.ifBlank { metadata.version },
+            )
         upsertLanguageModelDatabaseModel(data = languageModel)
     }
 
@@ -208,7 +240,10 @@ class LanguageDatabaseRepository(
                     languageBundleMetadata = metadata.bundle,
                     languageModelMetadata = it,
                 )
-                upsertLanguageModel(metadata = it)
+                upsertLanguageModel(
+                    metadata = it,
+                    bundleVersion = metadata.bundle.version,
+                )
             }
         }
     }
@@ -333,7 +368,10 @@ class LanguageDatabaseRepository(
      * Maps a [LanguageModelMetadata] to a [LanguageModelDatabaseModel].
      * @param data The language metadata to map.
      */
-    private fun mapLanguageMetadataToLanguageModelDatabaseModel(data: LanguageModelMetadata): LanguageModelDatabaseModel {
+    private fun mapLanguageMetadataToLanguageModelDatabaseModel(
+        data: LanguageModelMetadata,
+        version: String = data.version,
+    ): LanguageModelDatabaseModel {
         val source = Language.fromIsoCode(data.sourceLanguage)
         val target = Language.fromIsoCode(data.targetLanguage)
         val pair =
@@ -346,12 +384,21 @@ class LanguageDatabaseRepository(
             languageId = pair.id,
             baseModel = data.baseModel,
             path = data.root?.absolutePathString() ?: "",
-            version = data.version,
+            version = version,
         )
     }
 
     /**
      * Maps a [LanguageModelDatabaseModel] to a [LanguageModel].
+     *
+     * The exposed [LanguageModel.version] is the installed bundle version,
+     * which is what the external catalog compares against in
+     * [app.versta.translate.adapter.outbound.ExternalLanguageModelsRepository.getDefinitionsByState].
+     * The bundle version is stored at install time; installs predating that
+     * still carry the per-module engine version, so the bundle's own
+     * metadata.json next to the module directory takes precedence when it
+     * exists.
+     *
      * @param data The language model database model to map.
      * @return The mapped language model files.
      */
@@ -363,11 +410,56 @@ class LanguageDatabaseRepository(
         val path = data.path.toPath().toNioPath()
 
         try {
-            return LanguageModel.load(path = path)
+            val model = LanguageModel.load(path = path)
+            return model.copy(version = resolveInstalledVersion(path, data.version, model.version))
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Failed to load language model files")
             return null
         }
+    }
+
+    /**
+     * Resolves the version exposed for an installed language model. Order of
+     * precedence: the extracted bundle's metadata.json (ground truth for the
+     * installed bundle, heals installs that predate bundle-version storage),
+     * the version column stored at install time, then the per-module metadata
+     * version as a legacy fallback.
+     */
+    private fun resolveInstalledVersion(
+        modulePath: java.nio.file.Path,
+        storedVersion: String,
+        moduleVersion: String,
+    ): String {
+        val bundleVersion = loadBundleVersion(modulePath.parent)
+
+        return when {
+            !bundleVersion.isNullOrBlank() -> bundleVersion
+            storedVersion.isNotBlank() -> storedVersion
+            else -> moduleVersion
+        }
+    }
+
+    /**
+     * Reads the bundle version from the metadata.json at the root of the
+     * extracted bundle (the parent of a module's root directory).
+     */
+    private fun loadBundleVersion(bundlePath: java.nio.file.Path?): String? {
+        val metadataFile =
+            bundlePath
+                ?.let { File(it.toFile(), "metadata.json") }
+                ?.takeIf { it.exists() }
+
+        val version =
+            try {
+                metadataFile?.let {
+                    _serializer.decodeFromString<LanguageBundleMetadata>(it.readText()).version
+                }
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Failed to read bundle metadata at $bundlePath")
+                null
+            }
+
+        return version?.takeIf { it.isNotBlank() }
     }
 
     /**
@@ -394,5 +486,10 @@ class LanguageDatabaseRepository(
 
     companion object {
         private val TAG: String = LanguageDatabaseRepository::class.java.simpleName
+
+        private val _serializer =
+            Json {
+                ignoreUnknownKeys = true
+            }
     }
 }
