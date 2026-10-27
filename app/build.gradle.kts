@@ -65,8 +65,6 @@ android {
         externalNativeBuild {
             cmake {
                 targets("app_versta_translate_bridge")
-                arguments += "-DUSE_MBROLA=OFF"
-                arguments += "-DUSE_ASYNC=OFF"
                 arguments += "-DCMAKE_BUILD_TYPE=Release"
             }
         }
@@ -91,7 +89,7 @@ android {
             )
             ndk {
                 // Embed native symbol tables in the AAB so Play Android Vitals
-                // can symbolicate C++ (LeanMT/Whisper/espeak) crashes for the
+                // can symbolicate C++ (LeanMT/Whisper/MNN) crashes for the
                 // beta. SYMBOL_TABLE only: FULL debug info would bloat the
                 // bundle past Play's upload-size comfort zone.
                 debugSymbolLevel = "SYMBOL_TABLE"
@@ -319,7 +317,6 @@ tasks.apply {
 
         val metadata =
             mapOf(
-                "versta_data.json" to "https://models.versta.app/data/data.json",
                 "versta_translation_models.json" to "https://models.versta.app/translation/models.json",
                 "versta_speech_recognition_models.json" to "https://models.versta.app/speech-recognition/models.json",
                 "versta_text_to_speech_models.json" to "https://models.versta.app/text-to-speech/models.json",
@@ -444,28 +441,6 @@ tasks.apply {
                 if (violations.isNotEmpty()) fail(file, violations)
             }
 
-            // data.json -> List<ExternalDataDefinition>
-            run {
-                val file = "versta_data.json"
-                val violations = mutableListOf<String>()
-                checkNonEmptyRoot(file)?.forEachIndexed { i, def ->
-                    val where = "data[$i]"
-                    val fields =
-                        checkDefinition(
-                            file,
-                            where,
-                            def,
-                            listOf("id", "type", "version"),
-                            violations,
-                        ) ?: return@forEachIndexed
-                    // DataType entry names, matched case-insensitively by the app.
-                    if (!setOf("TTS").any { it.equals(fields["type"] as? String, ignoreCase = true) }) {
-                        violations += "$where: `type` is not a known DataType entry"
-                    }
-                }
-                finalize(file, violations)
-            }
-
             // translation/models.json -> List<List<ExternalLanguageModelDefinition>>
             run {
                 val file = "versta_translation_models.json"
@@ -566,7 +541,7 @@ tasks.apply {
                     // `voices` and `architectures` are defaulted ctor parameters:
                     // optional keys, but entries must still decode.
                     fields["architectures"]?.let {
-                        if (!enumList(it, setOf("Kokoro", "StyleTTS2"))) {
+                        if (!enumList(it, setOf("Supertonic3"))) {
                             violations += "$where: `architectures` contains unknown VoiceModelArchitecture entries"
                         }
                     }

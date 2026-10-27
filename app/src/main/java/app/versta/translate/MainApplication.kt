@@ -1,7 +1,5 @@
 package app.versta.translate
 
-import ai.onnxruntime.OrtEnvironment
-import ai.onnxruntime.OrtLoggingLevel
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -14,10 +12,6 @@ import app.versta.translate.adapter.inbound.TarballExtractor
 import app.versta.translate.adapter.outbound.AudioTrackPlayer
 import app.versta.translate.adapter.outbound.BergamotTinyInference
 import app.versta.translate.adapter.outbound.DEFAULT_CACHE_SIZE
-import app.versta.translate.adapter.outbound.DataDatabaseRepository
-import app.versta.translate.adapter.outbound.DataRepository
-import app.versta.translate.adapter.outbound.ExternalDataFileRepository
-import app.versta.translate.adapter.outbound.ExternalDataRepository
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsFileRepository
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsRepository
 import app.versta.translate.adapter.outbound.ExternalObjectCharacterRecognitionModelsFileRepository
@@ -90,7 +84,6 @@ val Context.dataStore by preferencesDataStore(name = "preferences")
 interface ApplicationModuleInterface {
     val database: DatabaseContainer
 
-    val dataRepository: DataRepository
     val languageRepository: LanguageRepository
     val languagePreferenceRepository: LanguagePreferenceRepository
     val licenseRepository: LicenseRepository
@@ -100,7 +93,6 @@ interface ApplicationModuleInterface {
     val textToSpeechPreferenceRepository: TextToSpeechPreferenceRepository
     val externalLanguageModelsRepository: ExternalLanguageModelsRepository
     val externalVoiceModelsRepository: ExternalVoiceModelsRepository
-    val externalDataRepository: ExternalDataRepository
     val externalObjectCharacterRecognitionModelsRepository: ExternalObjectCharacterRecognitionModelsRepository
     val objectCharacterRecognizerRepository: ObjectCharacterRecognitionRepository
 
@@ -119,7 +111,6 @@ interface ApplicationModuleInterface {
     val objectCharacterRecognitionViewModel: ObjectCharacterRecognitionViewModel
     val loggingViewModel: LoggingViewModel
 
-    val ortEnvironment: OrtEnvironment
     val extractor: CompressedFileExtractor
     val validator: FileHashValidator
     val translationService: Leanmt
@@ -137,10 +128,6 @@ class ApplicationModule(
     private val context: Context,
 ) : ApplicationModuleInterface {
     override val database = DatabaseContainer(context)
-
-    override val dataRepository: DataRepository by lazy {
-        DataDatabaseRepository(database)
-    }
 
     override val languageRepository: LanguageRepository by lazy {
         LanguageDatabaseRepository(database)
@@ -176,10 +163,6 @@ class ApplicationModule(
 
     override val externalVoiceModelsRepository: ExternalVoiceModelsRepository by lazy {
         ExternalVoiceModelsFileRepository(context.resources.openRawResource((R.raw.versta_text_to_speech_models)))
-    }
-
-    override val externalDataRepository: ExternalDataRepository by lazy {
-        ExternalDataFileRepository(context.resources.openRawResource(R.raw.versta_data))
     }
 
     override val externalObjectCharacterRecognitionModelsRepository: ExternalObjectCharacterRecognitionModelsRepository by lazy {
@@ -321,16 +304,6 @@ class ApplicationModule(
             externalSpeechRecognitionModelsRepository = externalSpeechRecognitionModelsRepository,
             speechRecognitionInference = speechRecognitionInference,
             languageViewModel = languageViewModel,
-        )
-    }
-
-    override val ortEnvironment: OrtEnvironment by lazy {
-        OrtEnvironment.getEnvironment(
-            OrtLoggingLevel.ORT_LOGGING_LEVEL_FATAL,
-            "VerstaInference",
-            OrtEnvironment.ThreadingOptions().apply {
-                setGlobalSpinControl(true)
-            },
         )
     }
 

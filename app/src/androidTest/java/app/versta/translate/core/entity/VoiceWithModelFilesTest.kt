@@ -2,7 +2,6 @@ package app.versta.translate.core.entity
 
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -116,32 +115,5 @@ class VoiceWithModelFilesTest {
 
         assertNull(files.getVoice(Language.fromIsoCode("zh")))
         assertNull(files.getVoice(Language.fromIsoCode("ca")))
-    }
-
-    @Test
-    fun legacyBundlesStayParsable() {
-        root.resolve("model.onnx").writeBytes(byteArrayOf(0))
-        root.resolve("vocab.txt").writeText("")
-        root.resolve("af_alpha.bin").writeBytes(byteArrayOf(0))
-        root.resolve("metadata.json").writeText(
-            """
-            {
-                "version": "v1.2.0",
-                "base_model": "hexgrad/Kokoro-82M",
-                "architectures": ["StyleTTS2"],
-                "files": {
-                    "inference": { "model": "model.onnx" },
-                    "tokenizer": { "vocabulary": "vocab.txt" },
-                    "voices": ["af_alpha.bin"]
-                }
-            }
-            """.trimIndent(),
-        )
-
-        val files = VoiceWithModelFiles.load("kokoro", root.toPath())
-
-        assertFalse(files.isSupertonic3)
-        assertTrue(files.isValid())
-        assertEquals(root.toPath().resolve("af_alpha.bin"), files.getVoice(Language.fromIsoCode("en")))
     }
 }

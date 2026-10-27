@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.map
 import okio.Path.Companion.toPath
 import timber.log.Timber
 import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.deleteRecursively
 import java.app.versta.translate.database.sqldelight.Voice as VoiceDatabaseModel
@@ -155,8 +154,9 @@ class VoiceDatabaseRepository(
     /**
      * Maps a [VoiceModelMetadata] to a list of [VoiceDatabaseModel]. Supertonic
      * 3 bundles ship per-gender style files shared across languages, so their
-     * voices come from the bundle's canonical mapping; legacy bundles derive
-     * the voice language and gender from Kokoro file naming.
+     * voices come from the bundle's canonical mapping. Unknown architectures
+     * throw, rolling back the install transaction so a broken bundle leaves no
+     * rows behind.
      * @param data The metadata to map.
      * @return The mapped database model.
      */
@@ -164,55 +164,20 @@ class VoiceDatabaseRepository(
         modelId: String,
         data: VoiceModelMetadata,
     ): List<VoiceDatabaseModel> {
-        if (data.architectures.contains(VoiceModelArchitecture.Supertonic3)) {
-            return Supertonic3.VOICES.map {
-                VoiceDatabaseModel(
-                    modelId = modelId,
-                    language = it.language,
-                    gender = it.gender.value.lowercase(),
-                )
-            }
+        require(data.architectures.contains(VoiceModelArchitecture.Supertonic3)) {
+            "Unsupported voice model architecture: ${data.architectures}"
         }
 
-        return data.files.voices.map {
-            val file = Path(it).fileName.toString()
-
-            val language =
-                legacyVoiceLanguages[file.firstOrNull()]
-                    ?: throw Exception("Determining language from file name: $it")
-
-            val gender =
-                legacyVoiceGenders[file.getOrNull(1)]
-                    ?: throw Exception("Determining gender from file name: $it")
-
+        return Supertonic3.VOICES.map {
             VoiceDatabaseModel(
                 modelId = modelId,
-                language = language,
-                gender = gender,
+                language = it.language,
+                gender = it.gender.value.lowercase(),
             )
         }
     }
 
     companion object {
         private val TAG: String = VoiceDatabaseRepository::class.java.simpleName
-
-        private val legacyVoiceLanguages =
-            mapOf(
-                'a' to "en",
-                'b' to "en",
-                'j' to "ja",
-                'f' to "fr",
-                'e' to "es",
-                'h' to "hi",
-                'i' to "it",
-                'z' to "zh",
-                'p' to "pt",
-            )
-
-        private val legacyVoiceGenders =
-            mapOf(
-                'f' to "female",
-                'm' to "male",
-            )
     }
 }

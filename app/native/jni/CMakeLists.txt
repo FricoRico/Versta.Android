@@ -37,10 +37,7 @@ target_link_libraries(
         log
         android
         GLESv2
-        ucd
         cld2
-        espeak-ng
-        openjtalk
         leanmt
         whisper
         MNN
