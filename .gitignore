@@ -9,6 +9,7 @@
 release
 .externalNativeBuild
 .cxx
+.ccache
 local.properties
 *.keystore
 keystore.properties

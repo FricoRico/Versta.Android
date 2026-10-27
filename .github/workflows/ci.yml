@@ -146,18 +146,53 @@ jobs:
           if-no-files-found: ignore
 
   # Proves the full toolchain (Kotlin + CMake native build) compiles.
-  # Heavy (~20+ min cold): the native inference bridge is built from the git
-  # submodules. The per-flavour abiFilters in app/build.gradle.kts scope this
-  # to one architecture; without it every assemble builds all four ABIs.
   # Kept as a gate so broken native builds never reach develop.
+  # The per-flavour abiFilters in app/build.gradle.kts scope this to one
+  # architecture; without it every assemble builds all four ABIs.
+  #
+  # Native-build caching (NEU-183): the vendored inference bridge (MNN,
+  # whisper.cpp, leanmt, cld2, neon-sse) cold-compiles
+  # in ~5m20s while its inputs only move when a submodule pin or a main-repo
+  # file under app/native changes (~monthly), so every Kotlin-only PR would
+  # otherwise pay the full cost. Compilation is routed through ccache
+  # (preinstalled on the ubuntu image) via CMake's
+  # CMAKE_<LANG>_COMPILER_LAUNCHER environment variables — no Gradle files
+  # involved, no effect outside this job.
+  #
+  # Cache contract:
+  #   path: .ccache (CCACHE_DIR, inside the workspace)
+  #   key : ccache-arm64-v8a-<runner.os>-ndk28.1.13356709-cmake3.31.6-<nativeHash>
+  #         nativeHash = git hash-object of
+  #           git ls-tree -r HEAD -- app/native .gitmodules   (minus the
+  #           generated graphify-out stat indexes)
+  #         which covers every main-repo bridge source AND every submodule
+  #         gitlink pin. The ndk/cmake segments must track the pins in this
+  #         job's sdkmanager step (and app/build.gradle.kts).
+  #   No restore-keys on purpose: a native change must show a clean cache
+  #   MISS and a full rebuild in the log, not a silent partial restore.
+  #   ccache content-hashes its compile inputs, so artifacts can never go
+  #   stale under a hit either.
+  #   Isolation: GitHub defaults — branch-scoped, PRs restore the base
+  #   branch's cache, nothing shared across repos.
   assemble:
     name: assemble
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CMAKE_C_COMPILER_LAUNCHER: ccache
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Hash native inputs for the cache key
+        id: native-inputs
+        run: |
+          hash=$(git ls-tree -r HEAD -- app/native .gitmodules | grep -v 'graphify-out' | git hash-object --stdin)
+          echo "hash=$hash" >> "$GITHUB_OUTPUT"
+          echo "native inputs hash: $hash"
 
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
@@ -172,6 +207,17 @@ jobs:
 
       - name: Install NDK, CMake, platform and build-tools
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
+
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-arm64-v8a-${{ runner.os }}-ndk28.1.13356709-cmake3.31.6-${{ steps.native-inputs.outputs.hash }}
+
+      - name: ccache preflight
+        run: |
+          ccache --version
+          ccache --zero-stats
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -199,6 +245,21 @@ jobs:
       # universalRelease lacked the vendored ONNX Runtime AAR, 2026-10-14).
       - name: Compile universal release Kotlin
         run: ./gradlew :app:compileUniversalReleaseKotlin --console=plain
+
+      # Warm-cache runs must show near-total direct hits here; a hit-rate
+      # collapse on an unchanged native tree means the key or launcher
+      # wiring regressed.
+      - name: ccache stats
+        if: always()
+        run: ccache --show-stats
+
+      # Cheap packaging assertion (NEU-183): the debug APK must carry the
+      # freshly built bridge, not a stale/absent one.
+      - name: Verify the APK carries the native bridge
+        run: |
+          apk=app/build/outputs/apk/arm64-v8a/debug/app-arm64-v8a-debug.apk
+          test -f "$apk" || { echo "::error::APK not found at $apk"; exit 1; }
+          unzip -l "$apk" | grep -E "lib/arm64-v8a/lib.+\.so" || { echo "::error::no arm64-v8a shared library in $apk"; exit 1; }
 
   # Baked-catalog gate self-check, fully hermetic (NEU-177): runs both gate
   # lanes against committed registry-layout fixtures in
