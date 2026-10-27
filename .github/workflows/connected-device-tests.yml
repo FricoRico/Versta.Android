@@ -10,8 +10,12 @@ name: connected-device-tests
 # translation stack (orchestration core, adapters, leanmt bridge/native code),
 # test sources, or the build configuration. Also manual via workflow_dispatch.
 #
-# Proposal (NEU-137): make this workflow's job a required status check for
-# PRs into refactor/translation-orchestrator so it gates Phase 2 merges.
+# Gate (NEU-137/NEU-151): the `connected-tests` job is a required status check
+# on refactor/translation-orchestrator via the repo ruleset "Phase 2 gate".
+# Changes outside the `paths` filter are covered by the inverse-path twin
+# .github/workflows/connected-device-tests-shim.yml, which posts a fast-passing
+# `connected-tests` check so the required context never hangs as `Expected`.
+# Keep the `paths` lists in both files in sync (same globs).
 on:
   push:
     branches: [refactor/translation-orchestrator]
