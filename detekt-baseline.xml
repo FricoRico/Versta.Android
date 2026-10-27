@@ -117,11 +117,12 @@
     <ID>LongParameterList:OcrEngine.kt$OcrEngine$( input: Buffer, inputWidth: Int, inputHeight: Int, rotationDegrees: Int, profile: Int, forcedRecognizer: String?, )</ID>
     <ID>LongParameterList:SpeechRecognitionMetadata.kt$SpeechRecognitionMetadata$( val id: String = "", val version: String = "", @SerialName("base_model") val baseModel: String = "", val languages: List&lt;String&gt;, val architectures: List&lt;SpeechRecognitionArchitecture&gt; = emptyList(), val files: SpeechRecognitionFilesMetadata, var root: Path? = null, )</ID>
     <ID>LongParameterList:SpeechRecognitionSettings.kt$( models: List&lt;ExternalSpeechRecognitionModelWithState&gt;, translationLanguageIsoCodes: Set&lt;String&gt;, header: @Composable (Int) -&gt; Unit, downloadTasks: List&lt;ExternalSpeechRecognitionDownloadTask&gt;, onClick: (ExternalSpeechRecognitionModelDefinition) -&gt; Unit, onDownload: ((ExternalSpeechRecognitionModelDefinition) -&gt; Unit)? = null, onCancel: (() -&gt; Unit)? = null, onSwipeToDelete: ((ExternalSpeechRecognitionModelDefinition) -&gt; Unit)? = null, )</ID>
+    <ID>LongParameterList:TextToSpeechViewModel.kt$TextToSpeechViewModel$( context: Context, private val espeakNG: ESpeakNG, private val openJTalk: OpenJTalk, private val tokenizer: TextToSpeechTokenizer, private val model: TextToSpeechInference, private val audioPlayer: AudioPlayer, private val dataRepository: DataRepository, private val voiceRepository: VoiceRepository, private val textToSpeechPreferenceRepository: TextToSpeechPreferenceRepository, private val externalDataRepository: ExternalDataRepository, private val languagePreferenceRepository: LanguagePreferenceRepository, )</ID>
     <ID>LongParameterList:VoiceSettings.kt$( voices: List&lt;ExternalVoiceModelDefinition&gt;, header: @Composable (Int) -&gt; Unit, downloadTasks: List&lt;ExternalVoiceDownloadTask&gt;, onClick: (ExternalVoiceModelDefinition) -&gt; Unit, onDownload: ((ExternalVoiceModelDefinition) -&gt; Unit)? = null, onCancel: (() -&gt; Unit)? = null, onSwipeToDelete: ((ExternalVoiceModelDefinition) -&gt; Unit)? = null, )</ID>
     <ID>LongParameterList:VoiceWaveform.kt$( path: Path, knotX: FloatArray, knotY: FloatArray, centerY: Float, topScale: Float, mirror: Float, )</ID>
     <ID>LongParameterList:Whisper.kt$Whisper$( model: WhisperModel, callback: WhisperSegmentCallback, vadEnabled: Boolean = true, vadThreshold: Float = 0.8f, language: String? = null, initialPrompt: String? = SpeechRecognitionInitialPrompts.forLanguage(language), noSpeechThreshold: Float = 0.6f, endpointSilenceMs: Int = 600, maxUtteranceMs: Int = 15_000, )</ID>
     <ID>LongParameterList:Whisper.kt$Whisper$( modelHandle: Long, vadEnabled: Boolean, vadThreshold: Float, language: String, initialPrompt: String, noSpeechThreshold: Float, endpointSilenceMs: Int, maxUtteranceMs: Int, )</ID>
-    <ID>LoopWithTooManyJumpStatements:JapaneseTransliterator.kt$JapaneseTransliterator$for</ID>
+    <ID>LoopWithTooManyJumpStatements:JapaneseTransliterator.kt$JapaneseTransliterator.Companion$for</ID>
     <ID>LoopWithTooManyJumpStatements:OcrBlockLayout.kt$OcrBlockLayout$for</ID>
     <ID>LoopWithTooManyJumpStatements:VerstaGlSurfaceView.kt$VerstaGlSurfaceView.GlThread$while</ID>
     <ID>LoopWithTooManyJumpStatements:WhisperSpeechRecognition.kt$WhisperSpeechRecognition$while</ID>
@@ -167,11 +168,14 @@
     <ID>SerialVersionUIDInSerializableClass:DownloadStatus.kt$DownloadStatus : Serializable</ID>
     <ID>TooGenericExceptionCaught:DatabaseContainer.kt$DatabaseContainer$e: Exception</ID>
     <ID>SpreadOperator:DownloadManager.kt$DownloadManager$(*taskToQueue.getWorkData().toList().toTypedArray())</ID>
+    <ID>ThrowsCount:DownloadExternalDataWorker.kt$DownloadExternalDataWorker$private fun readMetadata(output: File?): DataModel</ID>
     <ID>ThrowsCount:DownloadLanguageWorker.kt$DownloadLanguageWorker$private fun readMetadata(output: File?): LanguageBundleData</ID>
     <ID>ThrowsCount:DownloadSpeechRecognitionWorker.kt$DownloadSpeechRecognitionWorker$private fun readMetadata(output: File?): SpeechRecognitionModel</ID>
     <ID>ThrowsCount:DownloadVoiceWorker.kt$DownloadVoiceWorker$private fun readMetadata(output: File?): VoiceModel</ID>
     <ID>ThrowsCount:SpeechRecognitionWithFiles.kt$SpeechRecognitionWithFiles.Companion$fun load( id: String, path: Path, ): SpeechRecognitionWithFiles</ID>
     <ID>TooGenericExceptionCaught:CameraTranslationViewModel.kt$CameraTranslationViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DataDatabaseRepository.kt$DataDatabaseRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DownloadExternalDataWorker.kt$DownloadExternalDataWorker$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DownloadLanguageWorker.kt$DownloadLanguageWorker$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DownloadObjectCharacterRecognitionWorker.kt$DownloadObjectCharacterRecognitionWorker$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DownloadSpeechRecognitionWorker.kt$DownloadSpeechRecognitionWorker$e: Exception</ID>
@@ -185,6 +189,7 @@
     <ID>TooGenericExceptionCaught:ObjectCharacterRecognitionRepositoryDatabaseRepository.kt$ObjectCharacterRecognitionRepositoryDatabaseRepository$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SpeechRecognitionDatabaseRepository.kt$SpeechRecognitionDatabaseRepository$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SpeechRecognitionViewModel.kt$SpeechRecognitionViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:StyleTextToSpeech2Inference.kt$StyleTextToSpeechInference$e: Exception</ID>
     <ID>TooGenericExceptionCaught:TarballExtractor.kt$TarballExtractor$e: Exception</ID>
     <ID>TooGenericExceptionCaught:TextToSpeechViewModel.kt$TextToSpeechViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:TextTranslationViewModel.kt$TextTranslationViewModel$e: Exception</ID>
@@ -192,6 +197,9 @@
     <ID>TooGenericExceptionCaught:VoiceDatabaseRepository.kt$VoiceDatabaseRepository$e: Exception</ID>
     <ID>TooGenericExceptionThrown:3.kt$Migration3$throw Exception("Determining gender from file name: $it")</ID>
     <ID>TooGenericExceptionThrown:3.kt$Migration3$throw Exception("Determining language from file name: $it")</ID>
+    <ID>TooGenericExceptionThrown:DownloadExternalDataWorker.kt$DownloadExternalDataWorker$throw Exception("Invalid data metadata file")</ID>
+    <ID>TooGenericExceptionThrown:DownloadExternalDataWorker.kt$DownloadExternalDataWorker$throw Exception("Invalid metadata file")</ID>
+    <ID>TooGenericExceptionThrown:DownloadExternalDataWorker.kt$DownloadExternalDataWorker$throw Exception("Output file is null")</ID>
     <ID>TooGenericExceptionThrown:DownloadLanguageWorker.kt$DownloadLanguageWorker$throw Exception("Invalid language metadata file")</ID>
     <ID>TooGenericExceptionThrown:DownloadLanguageWorker.kt$DownloadLanguageWorker$throw Exception("Invalid metadata file")</ID>
     <ID>TooGenericExceptionThrown:DownloadLanguageWorker.kt$DownloadLanguageWorker$throw Exception("Output file is null")</ID>
@@ -221,6 +229,7 @@
     <ID>TooGenericExceptionThrown:WhisperModel.kt$WhisperModel$throw RuntimeException("Failed to load whisper model from $modelPath")</ID>
     <ID>TooGenericExceptionThrown:WhisperModel.kt$WhisperModel$throw RuntimeException("Whisper model is not loaded")</ID>
     <ID>TooManyFunctions:CameraTranslationViewModel.kt$CameraTranslationViewModel : ViewModel</ID>
+    <ID>TooManyFunctions:ESpeakNG.kt$ESpeakNG : AutoCloseable</ID>
     <ID>TooManyFunctions:LanguageDatabaseRepository.kt$LanguageDatabaseRepository : LanguageRepository</ID>
     <ID>TooManyFunctions:LanguageMemoryRepository.kt$LanguageMemoryRepository : LanguageRepository</ID>
     <ID>TooManyFunctions:LanguagePreferenceDataStoreRepository.kt$LanguagePreferenceDataStoreRepository : LanguagePreferenceRepository</ID>
@@ -231,6 +240,7 @@
     <ID>TooManyFunctions:LiveGlRenderer.kt$LiveGlRenderer : AutoCloseable</ID>
     <ID>TooManyFunctions:NavigationViewModel.kt$NavigationViewModel : ViewModel</ID>
     <ID>TooManyFunctions:OcrEngine.kt$OcrEngine : AutoCloseable</ID>
+    <ID>TooManyFunctions:TensorUtils.kt$TensorUtils$Companion</ID>
     <ID>TooManyFunctions:TextToSpeechViewModel.kt$TextToSpeechViewModel : ViewModel</ID>
     <ID>TooManyFunctions:TextTranslationViewModel.kt$TextTranslationViewModel : ViewModel</ID>
     <ID>TooManyFunctions:TranslationPreferenceDataStoreRepository.kt$TranslationPreferenceDataStoreRepository : TranslationPreferenceRepository</ID>
@@ -241,6 +251,7 @@
     <ID>UnusedParameter:TextTranslation.kt$textToSpeechViewModel: TextToSpeechViewModel</ID>
     <ID>UnusedParameter:TranslationViewModel.kt$TranslationViewModel$languages: LanguagePair</ID>
     <ID>UnusedPrivateMember:Conversation.kt$@OptIn(ExperimentalPermissionsApi::class) @Preview(showBackground = true) @Composable private fun ConversationPreview()</ID>
+    <ID>UnusedPrivateMember:ExternalDataFileRepository.kt$ExternalDataFileRepository$private fun mapBundleToDataFiles( path: Path, ): DataWithFiles?</ID>
     <ID>UnusedPrivateMember:GradientMicButton.kt$@OptIn(ExperimentalMaterial3ExpressiveApi::class) @Preview(showBackground = true, backgroundColor = 0xFF0F1419) @Composable private fun GradientMicButtonDarkPreview()</ID>
     <ID>UnusedPrivateMember:GradientMicButton.kt$@OptIn(ExperimentalMaterial3ExpressiveApi::class) @Preview(showBackground = true, backgroundColor = 0xFFF8F9FF) @Composable private fun GradientMicButtonLightPreview()</ID>
     <ID>UnusedPrivateMember:LanguageSettings.kt$@Composable @Preview(showBackground = true) private fun PreviewLanguageSettings()</ID>
@@ -255,16 +266,25 @@
     <ID>UnusedPrivateMember:VoiceWaveform.kt$@OptIn(ExperimentalMaterial3ExpressiveApi::class) @Preview(widthDp = 420, showBackground = true, backgroundColor = 0xFFF8F9FF) @Composable private fun VoiceWaveformLightPreview()</ID>
     <ID>UnusedPrivateProperty:AudioTrackPlayer.kt$AudioTrackPlayer.Companion$private val TAG = AudioTrackPlayer::class.java.simpleName</ID>
     <ID>UnusedPrivateProperty:BubbleActivity.kt$BubbleActivity.Companion$private val TAG: String = MainActivity::class.java.simpleName</ID>
+    <ID>UnusedPrivateProperty:ExternalDataMemoryRepository.kt$ExternalDataMemoryRepository$private val _mockPath = Path("")</ID>
     <ID>UnusedPrivateProperty:HttpDownloadClient.kt$HttpDownloadClient.Companion$private val TAG = HttpDownloadClient::class.java.simpleName</ID>
     <ID>UnusedPrivateProperty:MainActivity.kt$MainActivity.Companion$private val TAG = MainActivity::class.java.simpleName</ID>
     <ID>UnusedPrivateProperty:TarballExtractor.kt$TarballExtractor.Companion$private val TAG: String = TarballExtractor::class.java.simpleName</ID>
     <ID>UnusedPrivateProperty:TextTranslationViewModel.kt$TextTranslationViewModel.Companion$private val TAG = TextTranslationViewModel::class.java.simpleName</ID>
+    <ID>UseCheckOrError:ESpeakNG.kt$ESpeakNG$throw IllegalStateException("Not initialized")</ID>
     <ID>UseCheckOrError:Leanmt.kt$Leanmt$throw IllegalStateException("Translation model is not loaded")</ID>
     <ID>UseCheckOrError:MicrophoneCapture.kt$MicrophoneCapture$throw IllegalStateException("Failed to initialize AudioRecord")</ID>
     <ID>UseCheckOrError:MicrophoneCapture.kt$MicrophoneCapture$throw IllegalStateException("Microphone not available (buffer size $minBuffer)")</ID>
+    <ID>UseCheckOrError:OpenJTalk.kt$OpenJTalk$throw IllegalStateException("Not initialized")</ID>
+    <ID>UseCheckOrError:StyleTextToSpeech2Inference.kt$StyleTextToSpeechInference$throw IllegalStateException("Session is not loaded")</ID>
+    <ID>UseCheckOrError:StyleTextToSpeech2Inference.kt$StyleTextToSpeechInference$throw IllegalStateException("Voice style is not loaded")</ID>
+    <ID>UseCheckOrError:StyleTextToSpeech2Inference.kt$StyleTextToSpeechInference$throw IllegalStateException("Waveform output is null")</ID>
     <ID>UseCheckOrError:WhisperSpeechRecognition.kt$WhisperSpeechRecognition$throw IllegalStateException("Speech recognition is not loaded")</ID>
     <ID>UseRequire:DataWithFiles.kt$DataWithFiles.Companion$throw IllegalArgumentException("Data files are not complete and valid: $data")</ID>
     <ID>UseRequire:DataWithFiles.kt$DataWithFiles.Companion$throw IllegalArgumentException("Text-to-speech data metadata file not found: ${metadataFile.absolutePath}")</ID>
+    <ID>UseRequire:ExternalDataFileRepository.kt$ExternalDataFileRepository$throw IllegalArgumentException("Data bundle metadata file not found: ${bundleMetadataFile.absolutePath}")</ID>
+    <ID>UseRequire:ExternalDataFileRepository.kt$ExternalDataFileRepository$throw IllegalArgumentException("Data directory not found: ${dataPath.absolutePathString()}")</ID>
+    <ID>UseRequire:ExternalDataFileRepository.kt$ExternalDataFileRepository$throw IllegalArgumentException("Invalid data definition")</ID>
     <ID>UseRequire:ExternalLanguageModelsFileRepository.kt$ExternalLanguageModelsFileRepository$throw IllegalArgumentException("Invalid language model")</ID>
     <ID>UseRequire:ExternalObjectCharacterRecognitionModelsFileRepository.kt$ExternalObjectCharacterRecognitionModelsFileRepository$throw IllegalArgumentException("Invalid OCR model definition")</ID>
     <ID>UseRequire:ExternalSpeechRecognitionModelsFileRepository.kt$ExternalSpeechRecognitionModelsFileRepository$throw IllegalArgumentException("Invalid speech recognition model definition")</ID>
@@ -276,8 +296,10 @@
     <ID>UseRequire:SpeechRecognitionWithFiles.kt$SpeechRecognitionWithFiles.Companion$throw IllegalArgumentException( "Speech recognition model metadata file not found: ${metadataFile.absolutePath}", )</ID>
     <ID>UseRequire:SpeechRecognitionWithFiles.kt$SpeechRecognitionWithFiles.Companion$throw IllegalArgumentException( "Speech recognition model metadata is not complete and valid: $metadata", )</ID>
     <ID>UseRequire:SpeechRecognitionWithFiles.kt$SpeechRecognitionWithFiles.Companion$throw IllegalArgumentException("Speech recognition model files are not complete and valid: $files")</ID>
+    <ID>UseRequire:TensorUtils.kt$TensorUtils.Companion$throw IllegalArgumentException("Argument is not an array.")</ID>
     <ID>UseRequire:VoiceWithModelFiles.kt$VoiceWithModelFiles.Companion$throw IllegalArgumentException("Voice model files are not complete and valid: $files")</ID>
     <ID>UseRequire:VoiceWithModelFiles.kt$VoiceWithModelFiles.Companion$throw IllegalArgumentException("Voice model metadata file not found: ${metadataFile.absolutePath}")</ID>
     <ID>UtilityClassWithPublicConstructor:DeviceUtils.kt$DeviceUtils</ID>
+    <ID>UtilityClassWithPublicConstructor:TensorUtils.kt$TensorUtils</ID>
   </CurrentIssues>
 </SmellBaseline>

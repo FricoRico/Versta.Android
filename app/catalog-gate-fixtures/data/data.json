@@ -1,0 +1,10 @@
+[
+  {
+    "id": "versta-tts-data",
+    "size": 42120130,
+    "type": "tts",
+    "version": "v1.0.0",
+    "bundle": "https://models.versta.app/data/v1.0.0/versta-tts-data-bundle.tar.gz",
+    "checksum": "https://models.versta.app/data/v1.0.0/versta-tts-data-bundle.tar.sha256"
+  }
+]
