@@ -1,0 +1,73 @@
+name: connected-device-tests-path-shim
+
+# Inverse-path twin of connected-device-tests.yml (NEU-151).
+#
+# The `connected-tests` job is a required status check on
+# refactor/translation-orchestrator (repo ruleset "Phase 2 gate"). Because the
+# real workflow is path-filtered, PRs that don't touch the translation stack
+# would never produce a `connected-tests` check run, and their merge box would
+# hang forever on `Expected — waiting for status to be reported`. This shim
+# triggers on exactly the complement of the real workflow's path filter and
+# posts a fast-passing check with the SAME job name (`connected-tests`), so
+# every push/PR to the branch reports the required context exactly once.
+#
+# The `paths-ignore` list below MUST stay in sync with the `paths` list in
+# connected-device-tests.yml — same globs, same order. For any given change,
+# GitHub runs the real workflow when at least one file matches the list, and
+# this shim only when none do (mixed changes run the real suite, which is the
+# coverage we require).
+
+on:
+  push:
+    branches: [refactor/translation-orchestrator]
+    paths-ignore:
+      - "app/src/main/java/app/versta/translate/core/**"
+      - "app/src/main/java/app/versta/translate/adapter/**"
+      - "app/src/main/java/app/versta/translate/bridge/**"
+      - "app/src/main/java/app/versta/translate/utils/**"
+      - "app/native/**"
+      - "app/src/androidTest/**"
+      - "app/build.gradle.kts"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - "gradle/**"
+      - ".github/workflows/connected-device-tests.yml"
+  pull_request:
+    branches: [refactor/translation-orchestrator]
+    paths-ignore:
+      - "app/src/main/java/app/versta/translate/core/**"
+      - "app/src/main/java/app/versta/translate/adapter/**"
+      - "app/src/main/java/app/versta/translate/bridge/**"
+      - "app/src/main/java/app/versta/translate/utils/**"
+      - "app/native/**"
+      - "app/src/androidTest/**"
+      - "app/build.gradle.kts"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - "gradle/**"
+      - ".github/workflows/connected-device-tests.yml"
+
+# Distinct group from the real workflow so the two never cancel each other.
+concurrency:
+  group: connected-device-tests-shim-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  connected-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Translation stack untouched — connected tests not required
+        run: |
+          {
+            echo "### connected-tests (path shim)"
+            echo
+            echo "No changed file matches the translation-stack path filter of"
+            echo "\`connected-device-tests.yml\`, so the instrumented connected suite"
+            echo "is not required for this change (NEU-151)."
+          } >> "$GITHUB_STEP_SUMMARY"
