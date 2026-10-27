@@ -1,0 +1,56 @@
+import kotlin.String;
+import kotlin.collections.List;
+
+CREATE TABLE OcrModuleModel (
+    id TEXT NOT NULL PRIMARY KEY,
+    bundleId TEXT NOT NULL,
+    module TEXT NOT NULL,
+    directory TEXT NOT NULL,
+    languages TEXT AS List<String> NOT NULL,
+    path TEXT NOT NULL,
+    version TEXT NOT NULL
+);
+
+getAllModules:
+SELECT * FROM OcrModuleModel;
+
+getModuleById:
+SELECT * FROM OcrModuleModel WHERE id = :id LIMIT 1;
+
+getModulesByBundleId:
+SELECT * FROM OcrModuleModel WHERE bundleId = :bundleId;
+
+upsertModule {
+    UPDATE OcrModuleModel SET
+        bundleId = :bundleId,
+        module = :module,
+        directory = :directory,
+        languages = :languages,
+        path = :path,
+        version = :version
+    WHERE id = :id;
+
+    INSERT OR IGNORE INTO OcrModuleModel (
+        id,
+        bundleId,
+        module,
+        directory,
+        languages,
+        path,
+        version
+    ) VALUES (
+        :id,
+        :bundleId,
+        :module,
+        :directory,
+        :languages,
+        :path,
+        :version
+    );
+}
+
+deleteModuleById:
+DELETE FROM OcrModuleModel WHERE id = :id;
+
+deleteModulesByBundleId:
+DELETE FROM OcrModuleModel WHERE bundleId = :bundleId;

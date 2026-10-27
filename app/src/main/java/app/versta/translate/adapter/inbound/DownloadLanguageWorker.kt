@@ -31,7 +31,7 @@ class DownloadLanguageWorker(
     override fun extractDownload(
         taskId: UUID,
         file: File,
-    ) {
+    ): Boolean {
         var output: File? = null
 
         try {
@@ -51,7 +51,10 @@ class DownloadLanguageWorker(
             output?.deleteRecursively()
             setStatus(taskId, DownloadStatus.Error(e))
             Timber.tag(TAG).e(e, "Extracting file ${file.absolutePath}")
+            return false
         }
+
+        return true
     }
 
     /**
@@ -85,10 +88,15 @@ class DownloadLanguageWorker(
             throw Exception("Invalid language metadata file")
         }
 
-        return LanguageBundleData(
-            bundle = languageBundleMetadata,
-            languages = languageModelMetadata,
-        )
+        val data =
+            LanguageBundleData(
+                bundle = languageBundleMetadata,
+                languages = languageModelMetadata,
+            )
+
+        require(data.isLanguageBoundaryConsistent()) { "Bundle languages do not cover the declared module directions" }
+
+        return data
     }
 
     companion object {

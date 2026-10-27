@@ -3,6 +3,7 @@ agp = "9.3.1"
 kotlin = "2.3.10"
 coreKtx = "1.17.0"
 junitVersion = "1.3.0"
+junit4 = "4.13.2"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.12.4"
@@ -37,10 +38,12 @@ kotlinxCoroutinesTest = "1.10.2"
 ktlintGradle = "14.2.0"
 ktlint = "1.8.0"
 detekt = "1.23.8"
+gpp = "4.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+junit4 = { group = "junit", name = "junit", version.ref = "junit4" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
@@ -97,4 +100,5 @@ sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 gradle-crypto-checksum = { id = "org.gradle.crypto.checksum", version.ref = "gradleCheckSum" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradle" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+triplet-play = { id = "com.github.triplet.play", version.ref = "gpp" }
 

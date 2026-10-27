@@ -4,8 +4,8 @@ Applies to `develop` (the active development branch) and `main`.
 
 | Setting | Proposed value | Why |
 | --- | --- | --- |
-| Require a pull request before merging | on | Founder reviews every PR; no direct pushes. |
-| Required approvals | 1 | Solo founder today; keep it cheap. |
+| Require a pull request before merging | on | Maintainer reviews every PR; no direct pushes. |
+| Required approvals | 1 | Single maintainer today; keep it cheap. |
 | Require status checks to pass | on | The three CI jobs below. |
 | Required checks | `static-analysis`, `android-lint`, `assemble` | These are the job names in `.github/workflows/ci.yml`. |
 | Require branches to be up to date before merging | on | Guarantees the merged result was actually tested by CI. |
@@ -16,7 +16,7 @@ Applies to `develop` (the active development branch) and `main`.
 
 Apply via: repo **Settings → Branches → Add rule** for `develop`, repeat for `main`.
 
-Notes for the founder (one-time actions):
+Notes for the maintainer (one-time actions):
 1. GitHub Actions is enabled for the repo (default for public repos).
 2. Add the three check names above as *required* only after the first workflow
    run has completed, otherwise GitHub cannot find them in the picker.

@@ -31,6 +31,7 @@ class AutoDetectLanguage : LanguageOption {
 
 data class Language(
     override val locale: Locale,
+    val normalizedCode: String = normalizeLanguageCode(locale.toLanguageTag()),
 ) : LanguageOption {
     override val name: String = locale.displayLanguage
     override val isoCode: String = locale.language
@@ -64,9 +65,15 @@ data class Language(
         fun fromLocale(locale: Locale): Language = Language(locale = locale)
 
         /**
-         * Returns a language instance from the given ISO code.
+         * Returns a language instance from the given ISO code. The raw code is
+         * normalized before the locale funnel drops script and region subtags,
+         * so pair identity keeps the registry distinction (zh vs zh_hant).
          */
-        fun fromIsoCode(isoCode: String): Language = Language(locale = LocaleUtils.getLocale(isoCode))
+        fun fromIsoCode(isoCode: String): Language =
+            Language(
+                locale = LocaleUtils.getLocale(isoCode),
+                normalizedCode = normalizeLanguageCode(isoCode),
+            )
     }
 }
 
@@ -97,15 +104,20 @@ data class LanguagePair(
     val source: Language,
     val target: Language,
 ) {
-    val id: String = "${source.locale.language}-${target.locale.language}"
+    /**
+     * Directional pair identity in registry-normalized codes (NEU-133): catalog
+     * BCP-47 codes and bundle registry codes meet through
+     * [normalizeLanguageCode], never string equality.
+     */
+    val id: String = "${source.normalizedCode}-${target.normalizedCode}"
 
-    fun isValid(): Boolean = source.locale.language != target.locale.language
+    fun isValid(): Boolean = source.normalizedCode != target.normalizedCode
 
     /**
      * Returns a string representation of the language pair.
      */
     fun uniqueId(): String =
-        listOf(source.isoCode, target.isoCode)
+        listOf(source.normalizedCode, target.normalizedCode)
             .sortedBy { it }
             .joinToString("-")
 
