@@ -54,8 +54,8 @@ android {
         applicationId = "app.versta.translate"
         minSdk = 28
         targetSdk = 36
-        versionCode = 13
-        versionName = "1.3.2-beta.1"
+        versionCode = 14
+        versionName = "1.3.2-beta.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -248,6 +248,14 @@ play {
     enabled.set(false)
 }
 
+// Per-test pass/skip/fail lines in CI logs so execution is provable from the
+// workflow log even though reports only upload on failure.
+tasks.withType<Test>().configureEach {
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
+}
+
 android {
     playConfigs {
         register("universalRelease") {
@@ -280,6 +288,27 @@ tasks.configureEach {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Baked model catalog gate
+//
+// `getRemoteData` writes whatever https://models.versta.app serves at build
+// time straight into res/raw and everything downstream trusts it: each
+// External*FileRepository parses its catalog inside a fire-and-forget
+// CoroutineScope(Dispatchers.IO).launch at startup. An empty, truncated, or
+// mid-publish registry response therefore ships as a broken beta (the
+// 1.3.2-beta.1 incident: languages gone / zero-valid groups -> uncaught
+// exception in that coroutine). `validateBakedCatalogs` runs right after the
+// downloads and fails the build when a catalog cannot be decoded the way the
+// app would decode it, or when it is structurally valid JSON but holds no
+// usable definition.
+//
+// The checks deliberately mirror the app's own decode semantics: the
+// ListSerializer roots in adapter/outbound/External*FileRepository.kt, the
+// required (non-defaulted) constructor fields on the External*Definition
+// classes, the isValid() rules in core/entity/External*Model.kt, and
+// case-insensitive enum names (decodeEnumsCaseInsensitive = true). Divergence
+// here must stay intentional.
+// ---------------------------------------------------------------------------
 tasks.apply {
     // The metadata JSONs are gitignored build inputs (app/src/main/res/.gitignore),
     // so every checkout fetches them once. Declared inputs/outputs make the task
@@ -321,8 +350,279 @@ tasks.apply {
         }
     }
 
-    preBuild {
+    register("validateBakedCatalogs") {
         dependsOn("getRemoteData")
+
+        doLast {
+            fun fail(
+                file: String,
+                violations: List<String>,
+            ): Nothing =
+                throw GradleException(
+                    buildString {
+                        appendLine("Baked catalog $file failed validation (${violations.size} violation(s)):")
+                        violations.forEach { appendLine("  - $it") }
+                        appendLine()
+                        append(
+                            "Refusing to bake a broken catalog into the app. models.versta.app may be " +
+                                "mid-publish or degraded; retry when the registry is healthy, or " +
+                                "investigate the publish before rebuilding.",
+                        )
+                    },
+                )
+
+            fun decode(file: String): Any? {
+                val target = layout.projectDirectory.file("src/main/res/raw/$file").asFile
+                if (!target.isFile) fail(file, listOf("expected file is missing: ${target.path}"))
+                if (target.length() == 0L) fail(file, listOf("file is empty"))
+                return try {
+                    groovy.json.JsonSlurper().parse(target)
+                } catch (e: Exception) {
+                    fail(file, listOf("not parseable as JSON: ${e.message}"))
+                }
+            }
+
+            // Field decoders mirroring kotlinx.serialization constructor binding:
+            // a required field that is absent or mistyped fails the app's decode.
+            fun obj(value: Any?): Map<*, *>? = value as? Map<*, *>
+
+            fun nonBlank(value: Any?): Boolean = (value as? String)?.isNotBlank() == true
+
+            fun positiveNumber(value: Any?): Boolean = (value as? Number)?.toLong()?.let { it > 0 } == true
+
+            fun isNumber(value: Any?) = value is Number
+
+            fun isBool(value: Any?) = value is Boolean
+
+            fun stringList(value: Any?): Boolean = value is List<*> && value.all { it is String && it.isNotBlank() }
+
+            // decodeEnumsCaseInsensitive = true on the app side: enum entries
+            // match by name, ignoring case (no @SerialName on the entries).
+            fun enumList(
+                value: Any?,
+                allowed: Set<String>,
+            ): Boolean = value is List<*> && value.all { it is String && allowed.any { a -> a.equals(it, ignoreCase = true) } }
+
+            fun parseableUri(value: Any?): Boolean = (value as? String)?.let { runCatching { URI(it) }.isSuccess } == true
+
+            fun checkDefinition(
+                file: String,
+                where: String,
+                def: Any?,
+                requiredNonBlank: List<String>,
+                out: MutableList<String>,
+            ): Map<*, *>? {
+                val fields = obj(def)
+                if (fields == null) {
+                    out += "$where: definition is not a JSON object"
+                    return null
+                }
+                requiredNonBlank.forEach {
+                    if (!nonBlank(fields[it])) out += "$where: required field `$it` missing or blank"
+                }
+                if (!nonBlank(fields["bundle"]) || !parseableUri(fields["bundle"])) out += "$where: `bundle` missing, blank, or not a parseable URI"
+                if (!nonBlank(fields["checksum"]) || !parseableUri(fields["checksum"])) out += "$where: `checksum` missing, blank, or not a parseable URI"
+                if (!positiveNumber(fields["size"])) out += "$where: `size` missing or not a positive number"
+                return fields
+            }
+
+            fun checkNonEmptyRoot(file: String): List<*>? {
+                val root = decode(file)
+                if (root !is List<*>) {
+                    fail(file, listOf("root element must be a JSON array (app decodes a ListSerializer root)"))
+                }
+                if (root.isEmpty()) {
+                    fail(file, listOf("root array is empty: the app treats catalogs as non-empty at startup"))
+                }
+                return root
+            }
+
+            fun finalize(
+                file: String,
+                violations: List<String>,
+            ) {
+                if (violations.isNotEmpty()) fail(file, violations)
+            }
+
+            // data.json -> List<ExternalDataDefinition>
+            run {
+                val file = "versta_data.json"
+                val violations = mutableListOf<String>()
+                checkNonEmptyRoot(file)?.forEachIndexed { i, def ->
+                    val where = "data[$i]"
+                    val fields =
+                        checkDefinition(
+                            file,
+                            where,
+                            def,
+                            listOf("id", "type", "version"),
+                            violations,
+                        ) ?: return@forEachIndexed
+                    // DataType entry names, matched case-insensitively by the app.
+                    if (!setOf("TTS").any { it.equals(fields["type"] as? String, ignoreCase = true) }) {
+                        violations += "$where: `type` is not a known DataType entry"
+                    }
+                }
+                finalize(file, violations)
+            }
+
+            // translation/models.json -> List<List<ExternalLanguageModelDefinition>>
+            run {
+                val file = "versta_translation_models.json"
+                val violations = mutableListOf<String>()
+                checkNonEmptyRoot(file)?.forEachIndexed { g, group ->
+                    val where = "translation[$g]"
+                    if (group !is List<*>) {
+                        violations += "$where: language pair group is not a JSON array"
+                        return@forEachIndexed
+                    }
+                    if (group.isEmpty()) {
+                        // An empty group passes Definitions.isValid() but crashes
+                        // mapLanguageModelDefinitionToDownloadableLanguageModel on
+                        // models.first().
+                        violations += "$where: language pair group is empty"
+                        return@forEachIndexed
+                    }
+                    val decoded = mutableListOf<Map<*, *>>()
+                    group.forEachIndexed { i, def ->
+                        val fields =
+                            checkDefinition(
+                                file,
+                                "$where[$i]",
+                                def,
+                                listOf("base_model", "source_language", "target_language", "version"),
+                                violations,
+                            ) ?: return@forEachIndexed
+                        if (!isBool(fields["bidirectional"])) violations += "$where[$i]: required field `bidirectional` missing or not a boolean"
+                        if (!isNumber(fields["score"])) violations += "$where[$i]: required field `score` missing or not a number"
+                        if (!enumList(fields["architectures"], setOf("MarianMTModel", "BergamotTinyModel"))) {
+                            violations += "$where[$i]: `architectures` missing or contains unknown LanguageModelArchitecture entries"
+                        }
+                        decoded += fields
+                    }
+                    // Pair-consistency rule (ExternalLanguageModelDefinitions.isValid):
+                    // only when every definition in the group is bidirectional.
+                    if (decoded.size != group.size || decoded.any { it["bidirectional"] != true }) return@forEachIndexed
+                    if (decoded.size != 2) {
+                        violations += "$where: all-bidirectional pair group must hold exactly 2 mirrored definitions, found ${decoded.size}"
+                        return@forEachIndexed
+                    }
+                    val a = decoded[0]
+                    val b = decoded[1]
+                    if (a["source_language"] != b["target_language"] ||
+                        a["target_language"] != b["source_language"] ||
+                        a["size"] != b["size"] ||
+                        a["version"] != b["version"] ||
+                        a["bundle"] != b["bundle"] ||
+                        a["checksum"] != b["checksum"]
+                    ) {
+                        violations += "$where: bidirectional definitions are not a mirrored pair (ExternalLanguageModelDefinitions.isValid rule)"
+                    }
+                }
+                finalize(file, violations)
+            }
+
+            // speech-recognition/models.json -> List<ExternalSpeechRecognitionModelDefinition>
+            run {
+                val file = "versta_speech_recognition_models.json"
+                val violations = mutableListOf<String>()
+                checkNonEmptyRoot(file)?.forEachIndexed { i, def ->
+                    val where = "speechRecognition[$i]"
+                    val fields =
+                        checkDefinition(
+                            file,
+                            where,
+                            def,
+                            listOf("id", "name", "base_model", "version"),
+                            violations,
+                        ) ?: return@forEachIndexed
+                    if (!enumList(fields["architectures"], setOf("Whisper"))) {
+                        violations += "$where: `architectures` missing or contains unknown SpeechRecognitionArchitecture entries"
+                    }
+                    if ((fields["architectures"] as? List<*>).isNullOrEmpty()) {
+                        violations += "$where: `architectures` must be non-empty (isValid rule)"
+                    }
+                    if (!stringList(fields["languages"]) || (fields["languages"] as? List<*>).isNullOrEmpty()) {
+                        violations += "$where: `languages` missing or empty"
+                    }
+                }
+                finalize(file, violations)
+            }
+
+            // text-to-speech/models.json -> List<ExternalVoiceModelDefinition>
+            run {
+                val file = "versta_text_to_speech_models.json"
+                val violations = mutableListOf<String>()
+                checkNonEmptyRoot(file)?.forEachIndexed { i, def ->
+                    val where = "voice[$i]"
+                    val fields =
+                        checkDefinition(
+                            file,
+                            where,
+                            def,
+                            listOf("id", "name", "base_model", "version"),
+                            violations,
+                        ) ?: return@forEachIndexed
+                    // `voices` and `architectures` are defaulted ctor parameters:
+                    // optional keys, but entries must still decode.
+                    fields["architectures"]?.let {
+                        if (!enumList(it, setOf("Kokoro", "StyleTTS2"))) {
+                            violations += "$where: `architectures` contains unknown VoiceModelArchitecture entries"
+                        }
+                    }
+                    fields["voices"]?.let { voices ->
+                        if (voices !is List<*>) {
+                            violations += "$where: `voices` is not a JSON array"
+                            return@let
+                        }
+                        voices.forEachIndexed { v, voice ->
+                            val vf = obj(voice)
+                            if (vf == null) {
+                                violations += "$where.voices[$v]: not a JSON object"
+                                return@forEachIndexed
+                            }
+                            if (!setOf("Male", "Female").any { it.equals(vf["gender"] as? String, ignoreCase = true) }) {
+                                violations += "$where.voices[$v]: `gender` is not a known VoiceGender entry"
+                            }
+                            if (!nonBlank(vf["language"])) violations += "$where.voices[$v]: `language` missing or blank"
+                        }
+                    }
+                }
+                finalize(file, violations)
+            }
+
+            // object-character-recognition/models.json ->
+            // List<ExternalObjectCharacterRecognitionModelDefinition>
+            run {
+                val file = "versta_object_character_recognition_models.json"
+                val violations = mutableListOf<String>()
+                checkNonEmptyRoot(file)?.forEachIndexed { i, def ->
+                    val where = "ocr[$i]"
+                    val fields =
+                        checkDefinition(
+                            file,
+                            where,
+                            def,
+                            listOf("id", "name", "base_model", "version"),
+                            violations,
+                        ) ?: return@forEachIndexed
+                    if (!enumList(fields["architectures"], setOf("PaddleOCR"))) {
+                        violations += "$where: `architectures` missing or contains unknown ObjectCharacterRecognitionArchitecture entries"
+                    }
+                    if ((fields["architectures"] as? List<*>).isNullOrEmpty()) {
+                        violations += "$where: `architectures` must be non-empty (isValid rule)"
+                    }
+                    if (!stringList(fields["languages"]) || (fields["languages"] as? List<*>).isNullOrEmpty()) {
+                        violations += "$where: `languages` missing or empty"
+                    }
+                }
+                finalize(file, violations)
+            }
+        }
+    }
+
+    preBuild {
+        dependsOn("validateBakedCatalogs")
     }
 }
 
@@ -374,6 +674,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.compose.ui.text)
+    testImplementation(libs.junit4)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

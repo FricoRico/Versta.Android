@@ -32,6 +32,8 @@ import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
 import app.versta.translate.adapter.outbound.LicenseDataStoreRepository
 import app.versta.translate.adapter.outbound.LicenseRepository
+import app.versta.translate.adapter.outbound.LoggingPreferenceDataStoreRepository
+import app.versta.translate.adapter.outbound.LoggingPreferenceRepository
 import app.versta.translate.adapter.outbound.MnnObjectCharacterRecognition
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionInference
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepository
@@ -77,8 +79,13 @@ import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.theme.ObsidianColorScheme
 import app.versta.translate.utils.CustomTheme
 import app.versta.translate.utils.FileLoggingTree
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import timber.log.Timber.Forest.plant
+import timber.log.Timber.Forest.uproot
 
 val Context.dataStore by preferencesDataStore(name = "preferences")
 
@@ -89,6 +96,7 @@ interface ApplicationModuleInterface {
     val languageRepository: LanguageRepository
     val languagePreferenceRepository: LanguagePreferenceRepository
     val licenseRepository: LicenseRepository
+    val loggingPreferenceRepository: LoggingPreferenceRepository
     val translatorPreferenceRepository: TranslationPreferenceRepository
     val voiceRepository: VoiceRepository
     val textToSpeechPreferenceRepository: TextToSpeechPreferenceRepository
@@ -148,6 +156,10 @@ class ApplicationModule(
 
     override val licenseRepository: LicenseRepository by lazy {
         LicenseDataStoreRepository(context.dataStore)
+    }
+
+    override val loggingPreferenceRepository: LoggingPreferenceRepository by lazy {
+        LoggingPreferenceDataStoreRepository(context.dataStore)
     }
 
     override val translatorPreferenceRepository: TranslationPreferenceRepository by lazy {
@@ -248,7 +260,10 @@ class ApplicationModule(
     }
 
     override val loggingViewModel: LoggingViewModel by lazy {
-        LoggingViewModel(context.getExternalFilesDir(null))
+        LoggingViewModel(
+            context.getExternalFilesDir(null),
+            loggingPreferenceRepository,
+        )
     }
 
     override val languageViewModel: LanguageViewModel by lazy {
@@ -374,6 +389,10 @@ class ApplicationModule(
 }
 
 class MainApplication : Application() {
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    private var fileLoggingTree: FileLoggingTree? = null
+
     override fun onCreate() {
         super.onCreate()
 
@@ -382,6 +401,8 @@ class MainApplication : Application() {
 
         context = this
         module = ApplicationModule(this)
+
+        observeLoggingPreference()
     }
 
     private fun handleLogging() {
@@ -389,7 +410,40 @@ class MainApplication : Application() {
             plant(Timber.DebugTree())
         }
 
-        plant(FileLoggingTree(getExternalFilesDir(null)))
+        syncFileLoggingTree(diagnosticsEnabled = false)
+    }
+
+    private fun observeLoggingPreference() {
+        applicationScope.launch {
+            module.loggingPreferenceRepository.isLoggingEnabled().collect { enabled ->
+                syncFileLoggingTree(diagnosticsEnabled = enabled)
+            }
+        }
+    }
+
+    @Synchronized
+    private fun syncFileLoggingTree(diagnosticsEnabled: Boolean) {
+        val enabled =
+            FileLoggingTree.shouldEnableFileLogging(
+                isDebugBuild = BuildConfig.DEBUG,
+                diagnosticsEnabled = diagnosticsEnabled,
+            )
+        val current = fileLoggingTree
+
+        if (enabled && current != null) return
+
+        if (!enabled) {
+            if (current != null) {
+                uproot(current)
+                current.close()
+                fileLoggingTree = null
+            }
+            return
+        }
+
+        val tree = FileLoggingTree(getExternalFilesDir(null))
+        plant(tree)
+        fileLoggingTree = tree
     }
 
     private fun createNotificationChannels() {
