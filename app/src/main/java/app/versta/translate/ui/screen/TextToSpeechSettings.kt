@@ -1,13 +1,6 @@
 package app.versta.translate.ui.screen
 
 import android.icu.text.DecimalFormat
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -18,12 +11,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExposedDropdownMenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Slider
@@ -34,7 +25,6 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +32,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -55,16 +44,11 @@ import app.versta.translate.R
 import app.versta.translate.adapter.outbound.AudioMockPlayer
 import app.versta.translate.adapter.outbound.DEFAULT_SPEED
 import app.versta.translate.adapter.outbound.DEFAULT_VOICE_GENDER
-import app.versta.translate.adapter.outbound.DataMemoryRepository
-import app.versta.translate.adapter.outbound.ExternalDataMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.TextToSpeechMockInference
 import app.versta.translate.adapter.outbound.TextToSpeechMockTokenizer
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
-import app.versta.translate.bridge.speech.ESpeakNG
-import app.versta.translate.bridge.speech.OpenJTalk
-import app.versta.translate.core.entity.DownloadStatus
 import app.versta.translate.core.entity.VoiceGender
 import app.versta.translate.core.model.NavigationViewModel
 import app.versta.translate.core.model.ScaffoldViewModel
@@ -110,8 +94,6 @@ fun TextToSpeechSettings(
         maxThreadCount,
     )
     val textToSpeechEnabled by textToSpeechViewModel.enabled.collectAsStateWithLifecycle(false)
-    val downloadTasks by textToSpeechViewModel.downloadTasks.collectAsStateWithLifecycle(emptyList())
-    val downloadTask = downloadTasks.firstOrNull()
 
     var settingsChanged by remember {
         mutableStateOf(false)
@@ -129,14 +111,6 @@ fun TextToSpeechSettings(
         }
 
         textToSpeechViewModel.reloadVoice()
-    }
-
-    LaunchedEffect(downloadTask) {
-        if (downloadTask == null || downloadTask.status !is DownloadStatus.Error) {
-            return@LaunchedEffect
-        }
-
-        textToSpeechViewModel.setTextToSpeechEnabled(false)
     }
 
     ScaffoldComponentProvider(
@@ -168,8 +142,8 @@ fun TextToSpeechSettings(
         ) {
             item {
                 SettingsButtonItem(
-                    headlineContent = "Enable Text-to-Speech",
-                    supportingContent = "Enabling this will download the necessary data.",
+                    headlineContent = stringResource(R.string.text_to_speech_settings_enable_title),
+                    supportingContent = stringResource(R.string.text_to_speech_settings_enable_description),
                     onClick = {
                         settingsChanged = true
                         textToSpeechViewModel.setTextToSpeechEnabled(!textToSpeechEnabled)
@@ -183,16 +157,6 @@ fun TextToSpeechSettings(
                             },
                         )
                     },
-                    underlineContent = {
-                        Box(
-                            modifier = Modifier.animateContentSize(),
-                        ) {
-                            TextToSpeechDataDownloadProgress(
-                                status = downloadTask?.status,
-                            )
-                        }
-                    },
-                    underlineContentPadding = PaddingValues(MaterialTheme.spacing.extraSmall),
                     groupSize = 1,
                     index = 0,
                 )
@@ -391,111 +355,6 @@ fun TextToSpeechSettings(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun TextToSpeechDataDownloadProgress(
-    status: DownloadStatus?,
-) {
-    if (status == null || status is DownloadStatus.Completed || status is DownloadStatus.Idle) {
-        return
-    }
-
-    val padding =
-        PaddingValues(
-            start = MaterialTheme.spacing.large,
-            end = MaterialTheme.spacing.large,
-            bottom = MaterialTheme.spacing.large,
-        )
-    AnimatedVisibility(
-        visible = status is DownloadStatus.Queued,
-        enter = fadeIn(),
-        exit = fadeOut(),
-    ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-            modifier = Modifier.padding(padding),
-        ) {
-            Text(
-                text = "Waiting for other downloads to finish...",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-
-            LinearWavyProgressIndicator(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                trackColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-            )
-        }
-    }
-
-    AnimatedVisibility(
-        visible = status is DownloadStatus.Progress,
-        enter = fadeIn(),
-        exit = fadeOut(),
-    ) {
-        if (status !is DownloadStatus.Progress) return@AnimatedVisibility
-        val progress = status.downloaded.toFloat() / status.total.toFloat()
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-            modifier = Modifier.padding(padding),
-        ) {
-            Text(
-                text = "Downloading required data...",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-
-            LinearWavyProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-            )
-        }
-    }
-
-    AnimatedVisibility(
-        visible = status is DownloadStatus.Processing,
-        enter = fadeIn(),
-        exit = fadeOut(),
-    ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-            modifier = Modifier.padding(padding),
-        ) {
-            Text(
-                text = "Extracting...",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-
-            LinearWavyProgressIndicator(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-                wavelength = MaterialTheme.spacing.extraExtraLarge,
-                waveSpeed = MaterialTheme.spacing.large,
-            )
-        }
-    }
-
-    AnimatedVisibility(
-        visible = status is DownloadStatus.Error,
-        enter = fadeIn(),
-        exit = fadeOut(),
-    ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-            modifier = Modifier.padding(padding),
-        ) {
-            Text(
-                text = "Something went wrong while downloading the required data. Please try again.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-    }
-}
-
 @Composable
 @Preview(showBackground = true)
 fun TextToSpeechSettingsPreview() {
@@ -510,17 +369,12 @@ fun TextToSpeechSettingsPreview() {
         navigationViewModel = navigationViewModel,
         textToSpeechViewModel =
             TextToSpeechViewModel(
-                context = LocalContext.current,
-                espeakNG = ESpeakNG(),
-                openJTalk = OpenJTalk(),
                 tokenizer = TextToSpeechMockTokenizer(),
                 model = TextToSpeechMockInference(),
                 audioPlayer = AudioMockPlayer(),
-                dataRepository = DataMemoryRepository(),
                 voiceRepository = VoiceMemoryRepository(),
                 textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
                 languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-                externalDataRepository = ExternalDataMemoryRepository(),
             ),
     )
 }

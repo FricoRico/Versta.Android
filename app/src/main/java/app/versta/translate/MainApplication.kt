@@ -41,8 +41,8 @@ import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepositor
 import app.versta.translate.adapter.outbound.SpeechRecognitionDatabaseRepository
 import app.versta.translate.adapter.outbound.SpeechRecognitionInference
 import app.versta.translate.adapter.outbound.SpeechRecognitionRepository
-import app.versta.translate.adapter.outbound.StyleTextToSpeech2Tokenizer
-import app.versta.translate.adapter.outbound.StyleTextToSpeechInference
+import app.versta.translate.adapter.outbound.Supertonic3Inference
+import app.versta.translate.adapter.outbound.Supertonic3Tokenizer
 import app.versta.translate.adapter.outbound.TextToSpeechInference
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceRepository
@@ -54,8 +54,6 @@ import app.versta.translate.adapter.outbound.VoiceDatabaseRepository
 import app.versta.translate.adapter.outbound.VoiceRepository
 import app.versta.translate.adapter.outbound.WhisperSpeechRecognition
 import app.versta.translate.bridge.leanmt.Leanmt
-import app.versta.translate.bridge.speech.ESpeakNG
-import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.model.CameraTranslationViewModel
 import app.versta.translate.core.model.CustomThemeViewModel
 import app.versta.translate.core.model.LanguageViewModel
@@ -124,8 +122,6 @@ interface ApplicationModuleInterface {
     val ortEnvironment: OrtEnvironment
     val extractor: CompressedFileExtractor
     val validator: FileHashValidator
-    val eSpeakNG: ESpeakNG
-    val openJTalk: OpenJTalk
     val translationService: Leanmt
     val intermediateTranslationInference: TranslationInference
     val outputTranslationInference: TranslationInference
@@ -293,17 +289,12 @@ class ApplicationModule(
 
     override val textToSpeechViewModel: TextToSpeechViewModel by lazy {
         TextToSpeechViewModel(
-            context = context,
-            espeakNG = eSpeakNG,
-            openJTalk = openJTalk,
             tokenizer = textToSpeechTokenizer,
             model = textToSpeechInference,
             audioPlayer = AudioTrackPlayer(),
-            dataRepository = dataRepository,
             voiceRepository = voiceRepository,
             textToSpeechPreferenceRepository = textToSpeechPreferenceRepository,
             languagePreferenceRepository = languagePreferenceRepository,
-            externalDataRepository = externalDataRepository,
         )
     }
 
@@ -351,14 +342,6 @@ class ApplicationModule(
         PrecomputedHashFileValidator()
     }
 
-    override val eSpeakNG: ESpeakNG by lazy {
-        ESpeakNG()
-    }
-
-    override val openJTalk: OpenJTalk by lazy {
-        OpenJTalk()
-    }
-
     override val translationService: Leanmt by lazy {
         Leanmt(DEFAULT_CACHE_SIZE.toLong())
     }
@@ -372,11 +355,13 @@ class ApplicationModule(
     }
 
     override val textToSpeechTokenizer: TextToSpeechTokenizer by lazy {
-        StyleTextToSpeech2Tokenizer(eSpeakNG, openJTalk)
+        Supertonic3Tokenizer()
     }
 
     override val textToSpeechInference: TextToSpeechInference by lazy {
-        StyleTextToSpeechInference(ortEnvironment)
+        // The Supertonic3Engine seam binds to the bridge/speech JNI contract
+        // when NEU-69 lands; until then synthesis surfaces a loud error.
+        Supertonic3Inference()
     }
 
     override val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference by lazy {

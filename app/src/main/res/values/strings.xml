@@ -138,6 +138,8 @@
     <string name="text_to_speech_import_failed_title">Uhh ooh!</string>
     <string name="text_to_speech_import_failed_explanation">An unexpected error occurred during the import. This could be due to a corrupted file or an issue with the model. Please try again with a different file.</string>
     <string name="text_to_speech_settings_title">Text-to-Speech</string>
+    <string name="text_to_speech_settings_enable_title">Enable Text-to-Speech</string>
+    <string name="text_to_speech_settings_enable_description">Speaks translations aloud when a voice for the language is installed.</string>
     <string name="text_to_speech_settings_voice_headline">Voice</string>
     <string name="text_to_speech_settings_voice_speech_rate_title">Speech rate</string>
     <string name="text_to_speech_settings_voice_speech_rate_description">Adjust speed of spoken text</string>

@@ -7,5 +7,10 @@ class TextToSpeechMockTokenizer : TextToSpeechTokenizer {
         text: String,
         language: Language,
         splitSentences: Boolean,
-    ): List<LongArray> = emptyList()
+    ): List<LongArray> =
+        if (text.isBlank()) {
+            emptyList()
+        } else {
+            listOf(longArrayOf(0))
+        }
 }
