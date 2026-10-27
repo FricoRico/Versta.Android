@@ -52,7 +52,8 @@ class TranslationViewModel(
     private var outputModel: TranslationInference,
     private val translationPreferenceRepository: TranslationPreferenceRepository,
     private val languageViewModel: LanguageViewModel,
-) : ViewModel() {
+) : ViewModel(),
+    TranslationRunner {
     val cacheSize = translationPreferenceRepository.getCacheSize().distinctUntilChanged()
     val cacheEnabled = translationPreferenceRepository.getCacheEnabled().distinctUntilChanged()
     val beamSize = translationPreferenceRepository.getNumberOfBeams().distinctUntilChanged()
@@ -148,7 +149,7 @@ class TranslationViewModel(
     /**
      * Sets the translation error.
      */
-    fun setTranslationError(throwable: Throwable) {
+    override fun setTranslationError(throwable: Throwable) {
         _translationInProgress.value = false
         _translationError.value = throwable
     }
@@ -163,7 +164,7 @@ class TranslationViewModel(
     /**
      * Translates the input text to the target language.
      */
-    suspend fun translate(
+    override suspend fun translate(
         input: String,
         languages: LanguagePair,
     ): String {
@@ -233,7 +234,7 @@ class TranslationViewModel(
     /**
      * Loads the model from the given files.
      */
-    suspend fun load(
+    override suspend fun load(
         files: PivotPairModelFiles?,
         languages: LanguagePair,
     ) {

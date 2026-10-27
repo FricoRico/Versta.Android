@@ -40,7 +40,8 @@ class LanguageViewModel(
     private val languageRepository: LanguageRepository,
     private val languagePreferenceRepository: LanguagePreferenceRepository,
     private val externalLanguageModelsRepository: ExternalLanguageModelsRepository,
-) : ViewModel() {
+) : ViewModel(),
+    TranslationLanguageProvider {
     val pivotTranslationEnabled =
         languagePreferenceRepository.getPivotTranslation().distinctUntilChanged()
 
@@ -82,8 +83,8 @@ class LanguageViewModel(
             .getDefinitionsByState(_importedLanguages)
             .distinctUntilChanged()
 
-    val languageOptions = languagePreferenceRepository.getLanguagePair().distinctUntilChanged()
-    val languagePair =
+    override val languageOptions = languagePreferenceRepository.getLanguagePair().distinctUntilChanged()
+    override val languagePair =
         combine(sourceLanguage, targetLanguage, autoDetectLanguage) { source, target, detected ->
             if (source == null || target == null) {
                 return@combine null
@@ -113,7 +114,7 @@ class LanguageViewModel(
                 }
             }
         }.distinctUntilChanged()
-    val languageModelFiles =
+    override val languageModelFiles =
         combine(languagePair, pivotTranslationEnabled) { pair, pivot ->
             if (pair == null) {
                 return@combine null
@@ -342,7 +343,7 @@ class LanguageViewModel(
     /**
      * Set the input.
      */
-    fun setAutoDetectInput(text: String) {
+    override fun setAutoDetectInput(text: String) {
         _autoDetectInput.value = text
     }
 
