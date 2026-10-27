@@ -6,12 +6,16 @@ name: connected-device-tests
 # hardware acceleration. Verified green as a one-off on GitHub-hosted KVM
 # runners in 12m39s (run 38646671171) with zero box dependency.
 #
-# Triggers on pushes/PRs to refactor/translation-orchestrator that touch the
-# translation stack (orchestration core, adapters, leanmt bridge/native code),
-# test sources, or the build configuration. Also manual via workflow_dispatch.
-#
-# Proposal (NEU-137): make this workflow's job a required status check for
-# PRs into refactor/translation-orchestrator so it gates Phase 2 merges.
+# Triggers on:
+# - every PR into refactor/translation-orchestrator: no paths filter, because
+#   this workflow's `connected-tests` job is a required status check on that
+#   branch (ruleset "Phase 2 gate", NEU-151). A filter would leave non-touching
+#   PRs stuck on `Expected` and unmergable.
+# - pushes to refactor/translation-orchestrator that touch the translation
+#   stack (orchestration core, adapters, leanmt bridge/native code), test
+#   sources, or the build configuration: post-merge signal, paths-kept to
+#   keep costs down on cherry-picks/docs-only updates.
+# - manual via workflow_dispatch.
 on:
   push:
     branches: [refactor/translation-orchestrator]
@@ -30,19 +34,6 @@ on:
       - ".github/workflows/connected-device-tests.yml"
   pull_request:
     branches: [refactor/translation-orchestrator]
-    paths:
-      - "app/src/main/java/app/versta/translate/core/**"
-      - "app/src/main/java/app/versta/translate/adapter/**"
-      - "app/src/main/java/app/versta/translate/bridge/**"
-      - "app/src/main/java/app/versta/translate/utils/**"
-      - "app/native/**"
-      - "app/src/androidTest/**"
-      - "app/build.gradle.kts"
-      - "build.gradle.kts"
-      - "settings.gradle.kts"
-      - "gradle.properties"
-      - "gradle/**"
-      - ".github/workflows/connected-device-tests.yml"
   workflow_dispatch:
 
 # One active run per ref: retriggering or pushing again cancels the stale run.
