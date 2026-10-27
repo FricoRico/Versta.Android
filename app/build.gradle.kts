@@ -350,7 +350,6 @@ val catalogRegistryDisplay = catalogRegistryOverride ?: catalogRegistryBaseUrl
 // res/raw file name -> path below the registry base.
 val bakedCatalogs =
     mapOf(
-        "versta_data.json" to "data/data.json",
         "versta_translation_models.json" to "translation/models.json",
         "versta_speech_recognition_models.json" to "speech-recognition/models.json",
         "versta_text_to_speech_models.json" to "text-to-speech/models.json",
@@ -478,29 +477,6 @@ fun validateBakedCatalogs(strict: Boolean) {
         if (violations.isNotEmpty()) fail(file, violations)
     }
 
-    // data.json -> List<ExternalDataDefinition>
-    run {
-        val file = "versta_data.json"
-        val violations = mutableListOf<String>()
-        val drift = mutableListOf<String>()
-        checkNonEmptyRoot(file)?.forEachIndexed { i, def ->
-            val where = "data[$i]"
-            val fields =
-                checkDefinition(
-                    file,
-                    where,
-                    def,
-                    listOf("id", "type", "version"),
-                    violations,
-                ) ?: return@forEachIndexed
-            // DataType entry names, matched case-insensitively by the app.
-            if (!setOf("TTS").any { it.equals(fields["type"] as? String, ignoreCase = true) }) {
-                drift += "$where: `type` is not a known DataType entry"
-            }
-        }
-        finalize(file, violations, drift)
-    }
-
     // translation/models.json -> List<List<ExternalLanguageModelDefinition>>
     run {
         val file = "versta_translation_models.json"
@@ -604,7 +580,7 @@ fun validateBakedCatalogs(strict: Boolean) {
             // `voices` and `architectures` are defaulted ctor parameters:
             // optional keys, but entries must still decode.
             fields["architectures"]?.let {
-                if (!enumList(it, setOf("Kokoro", "StyleTTS2"))) {
+                if (!enumList(it, setOf("Supertonic3"))) {
                     drift += "$where: `architectures` contains unknown VoiceModelArchitecture entries"
                 }
             }

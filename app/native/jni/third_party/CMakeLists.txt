@@ -32,9 +32,7 @@ elseif(ANDROID_ABI MATCHES "^x86")
     set(GGML_SSE42         1   CACHE STRING "" FORCE)
 endif()
 
-add_subdirectory(espeak-ng espeak-ng)
 add_subdirectory(neon-sse neon-sse)
-add_subdirectory(open-jtalk/src open-jtalk)
 add_subdirectory(onnxruntime onnxruntime)
 
 # MNN (official Alibaba inference engine) powers the OCR pipeline. Static build:

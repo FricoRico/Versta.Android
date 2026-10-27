@@ -20,7 +20,7 @@ import java.nio.file.Path
  * Covers the app side of the Supertonic 3 voice-model feed entry NEU-68 ships
  * to `versta_text_to_speech_models.json`: the parser must accept the new
  * architecture alongside the sixty-two voice mappings, and the bundle shows up
- * next to a legacy install as available rather than as an update.
+ * next to an unrelated install as available rather than as an update.
  */
 class Supertonic3VoiceModelFeedTest {
     private fun feedJson(): String =
@@ -61,7 +61,7 @@ class Supertonic3VoiceModelFeedTest {
         }
 
     @Test
-    fun legacyInstallDoesNotShadowTheSupertonic3Bundle() =
+    fun unrelatedInstallDoesNotShadowTheSupertonic3Bundle() =
         runBlocking {
             val repository =
                 ExternalVoiceModelsFileRepository(ByteArrayInputStream(feedJson().toByteArray()))
@@ -69,13 +69,13 @@ class Supertonic3VoiceModelFeedTest {
 
             val installed =
                 VoiceWithModelFiles(
-                    id = "kokoro",
+                    id = "other-tts",
                     path = Path.of(""),
-                    baseModel = "hexgrad/Kokoro-82M",
-                    architectures = listOf(VoiceModelArchitecture.StyleTTS2),
+                    baseModel = "other/tts",
+                    architectures = listOf(VoiceModelArchitecture.Supertonic3),
                     version = "v1.2.0",
-                    inference = VoiceModelInferenceFiles(model = Path.of("model.onnx")),
-                    tokenizer = VoiceModelTokenizerFiles(vocabulary = Path.of("vocab.txt")),
+                    inference = VoiceModelInferenceFiles(config = Path.of("tts.json")),
+                    tokenizer = VoiceModelTokenizerFiles(unicodeIndexer = Path.of("unicode_indexer.json")),
                     voices = VoiceModelVoiceFiles(),
                 )
 

@@ -12,7 +12,6 @@
     <ID>CyclomaticComplexMethod:MnnObjectCharacterRecognition.kt$MnnObjectCharacterRecognition$override fun load( bundle: ObjectCharacterRecognitionBundleWithFiles, threads: Int, )</ID>
     <ID>CyclomaticComplexMethod:OcrBlockLayout.kt$OcrBlockLayout$private fun breakOpportunities(text: String): List&lt;BreakOpp&gt;</ID>
     <ID>CyclomaticComplexMethod:OcrOverlayBaker.kt$OcrOverlayBaker$fun bake( blocks: List&lt;CameraTranslationResult&gt;, translations: Map&lt;String, String&gt;, inverseHomography: FloatArray, frameWidth: Int, frameHeight: Int, ): BakedOverlay?</ID>
-    <ID>CyclomaticComplexMethod:StyleTextToSpeech2Tokenizer.kt$StyleTextToSpeech2Tokenizer.Companion$internal fun splitNum(match: String): String</ID>
     <ID>CyclomaticComplexMethod:TextTranslationLegacy.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TextTranslationLegacy( navigationViewModel: NavigationViewModel, languageViewModel: LanguageViewModel, translationViewModel: TranslationViewModel, textTranslationViewModel: TextTranslationViewModel, textToSpeechViewModel: TextToSpeechViewModel, )</ID>
     <ID>CyclomaticComplexMethod:VerstaGlSurfaceView.kt$VerstaGlSurfaceView.GlThread$override fun run()</ID>
     <ID>CyclomaticComplexMethod:VoiceWaveform.kt$@Composable fun VoiceWaveform( spectrum: FloatArray, active: Boolean, modifier: Modifier = Modifier, )</ID>
@@ -79,7 +78,6 @@
     <ID>LongMethod:SpeechRecognitionDetails.kt$@Composable fun SpeechRecognitionDetails( id: String, innerPadding: PaddingValues, scaffoldViewModel: ScaffoldViewModel, navigationViewModel: NavigationViewModel, speechRecognitionViewModel: SpeechRecognitionViewModel, )</ID>
     <ID>LongMethod:SpeechRecognitionSettings.kt$@Composable fun SpeechRecognitionSettings( innerPadding: PaddingValues, scaffoldViewModel: ScaffoldViewModel, navigationViewModel: NavigationViewModel, speechRecognitionViewModel: SpeechRecognitionViewModel, )</ID>
     <ID>LongMethod:SpeechRecognitionSettings.kt$private fun LazyListScope.SpeechRecognitionModels( models: List&lt;ExternalSpeechRecognitionModelWithState&gt;, translationLanguageIsoCodes: Set&lt;String&gt;, header: @Composable (Int) -&gt; Unit, downloadTasks: List&lt;ExternalSpeechRecognitionDownloadTask&gt;, onClick: (ExternalSpeechRecognitionModelDefinition) -&gt; Unit, onDownload: ((ExternalSpeechRecognitionModelDefinition) -&gt; Unit)? = null, onCancel: (() -&gt; Unit)? = null, onSwipeToDelete: ((ExternalSpeechRecognitionModelDefinition) -&gt; Unit)? = null, )</ID>
-    <ID>LongMethod:StyleTextToSpeech2Tokenizer.kt$StyleTextToSpeech2Tokenizer$private fun phonemize( text: String, language: Language, ): List&lt;String&gt;</ID>
     <ID>LongMethod:TextToSpeechButton.kt$@Composable fun TextToSpeechButton( enabled: Boolean = true, textToSpeechSynthesisState: TextToSpeechSynthesisState, textToSpeechAvailable: Boolean, textToSpeechVoiceAvailable: Boolean, onTextToSpeech: () -&gt; Unit, onCancelTextToSpeech: () -&gt; Unit, )</ID>
     <ID>LongMethod:TextToSpeechSettings.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TextToSpeechSettings( innerPadding: PaddingValues, scaffoldViewModel: ScaffoldViewModel, navigationViewModel: NavigationViewModel, textToSpeechViewModel: TextToSpeechViewModel, )</ID>
     <ID>LongMethod:TextToSpeechSettings.kt$@OptIn(ExperimentalMaterial3ExpressiveApi::class) @Composable fun TextToSpeechDataDownloadProgress( status: DownloadStatus?, )</ID>
@@ -139,7 +137,6 @@
     <ID>MatchingDeclarationName:SettingsButtonItem.kt$SettingsDefaults</ID>
     <ID>MatchingDeclarationName:TextField.kt$TextFieldDefaults</ID>
     <ID>MayBeConst:GradientMicButton.kt$private val RING_GLOW_RADIUS_SCALE = 0.78f</ID>
-    <ID>NestedBlockDepth:StyleTextToSpeech2Tokenizer.kt$StyleTextToSpeech2Tokenizer.Companion$internal fun splitNum(match: String): String</ID>
     <ID>NestedBlockDepth:TarballExtractor.kt$TarballExtractor$override fun openFile( uri: Uri, fileName: String, ): File?</ID>
     <ID>NestedBlockDepth:TarballExtractor.kt$TarballExtractor$private fun extractInputStream( stream: InputStream, outputDir: File, total: Int? = null, listener: ExtractionProgressListener? = null, ): File</ID>
     <ID>ObjectPropertyNaming:DownloadWorker.kt$DownloadWorker.Companion$internal val _serializer = Json { ignoreUnknownKeys = true classDiscriminator = "type" }</ID>
@@ -193,7 +190,6 @@
     <ID>TooGenericExceptionCaught:SpeechRecognitionDatabaseRepository.kt$SpeechRecognitionDatabaseRepository$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SpeechRecognitionViewModel.kt$SpeechRecognitionViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:StyleTextToSpeech2Inference.kt$StyleTextToSpeechInference$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:StyleTextToSpeech2Tokenizer.kt$StyleTextToSpeech2Tokenizer$e: Exception</ID>
     <ID>TooGenericExceptionCaught:TarballExtractor.kt$TarballExtractor$e: Exception</ID>
     <ID>TooGenericExceptionCaught:TextToSpeechViewModel.kt$TextToSpeechViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:TextTranslationViewModel.kt$TextTranslationViewModel$e: Exception</ID>
@@ -283,8 +279,6 @@
     <ID>UseCheckOrError:StyleTextToSpeech2Inference.kt$StyleTextToSpeechInference$throw IllegalStateException("Session is not loaded")</ID>
     <ID>UseCheckOrError:StyleTextToSpeech2Inference.kt$StyleTextToSpeechInference$throw IllegalStateException("Voice style is not loaded")</ID>
     <ID>UseCheckOrError:StyleTextToSpeech2Inference.kt$StyleTextToSpeechInference$throw IllegalStateException("Waveform output is null")</ID>
-    <ID>UseCheckOrError:StyleTextToSpeech2Tokenizer.kt$StyleTextToSpeech2Tokenizer$throw IllegalStateException("OpenJTalk is not ready")</ID>
-    <ID>UseCheckOrError:StyleTextToSpeech2Tokenizer.kt$StyleTextToSpeech2Tokenizer$throw IllegalStateException("eSpeakNG is not ready")</ID>
     <ID>UseCheckOrError:WhisperSpeechRecognition.kt$WhisperSpeechRecognition$throw IllegalStateException("Speech recognition is not loaded")</ID>
     <ID>UseRequire:DataWithFiles.kt$DataWithFiles.Companion$throw IllegalArgumentException("Data files are not complete and valid: $data")</ID>
     <ID>UseRequire:DataWithFiles.kt$DataWithFiles.Companion$throw IllegalArgumentException("Text-to-speech data metadata file not found: ${metadataFile.absolutePath}")</ID>
@@ -302,7 +296,6 @@
     <ID>UseRequire:SpeechRecognitionWithFiles.kt$SpeechRecognitionWithFiles.Companion$throw IllegalArgumentException( "Speech recognition model metadata file not found: ${metadataFile.absolutePath}", )</ID>
     <ID>UseRequire:SpeechRecognitionWithFiles.kt$SpeechRecognitionWithFiles.Companion$throw IllegalArgumentException( "Speech recognition model metadata is not complete and valid: $metadata", )</ID>
     <ID>UseRequire:SpeechRecognitionWithFiles.kt$SpeechRecognitionWithFiles.Companion$throw IllegalArgumentException("Speech recognition model files are not complete and valid: $files")</ID>
-    <ID>UseRequire:StyleTextToSpeech2Tokenizer.kt$StyleTextToSpeech2Tokenizer$throw IllegalArgumentException( "Text is too long, must be less than $MAX_PHONEME_LENGTH phonemes", )</ID>
     <ID>UseRequire:TensorUtils.kt$TensorUtils.Companion$throw IllegalArgumentException("Argument is not an array.")</ID>
     <ID>UseRequire:VoiceWithModelFiles.kt$VoiceWithModelFiles.Companion$throw IllegalArgumentException("Voice model files are not complete and valid: $files")</ID>
     <ID>UseRequire:VoiceWithModelFiles.kt$VoiceWithModelFiles.Companion$throw IllegalArgumentException("Voice model metadata file not found: ${metadataFile.absolutePath}")</ID>

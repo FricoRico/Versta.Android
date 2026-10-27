@@ -1,7 +1,6 @@
 package app.versta.translate.database.migrations
 
 import android.content.Context
-import app.versta.translate.core.entity.DataType
 import app.versta.translate.core.entity.Supertonic3
 import app.versta.translate.core.entity.VoiceModelArchitecture
 import app.versta.translate.database.DatabaseContainer
@@ -29,6 +28,12 @@ import kotlin.io.path.exists
  */
 object Migration7 : Migration {
     override val afterVersion = 7L
+
+    /**
+     * Value the retired `DataType.TTS` enum wrote into the `Data` table.
+     * Repeated as a literal so the deleted entity cannot break this migration.
+     */
+    private const val LEGACY_TTS_DATA_TYPE = "tts"
 
     override fun migrate(
         database: DatabaseContainer,
@@ -59,7 +64,7 @@ object Migration7 : Migration {
         database: DatabaseContainer,
         context: Context,
     ) {
-        database.data.getByType(DataType.TTS.value).executeAsList().forEach { data ->
+        database.data.getByType(LEGACY_TTS_DATA_TYPE).executeAsList().forEach { data ->
             removeDirectory(
                 data.path
                     .toPath()
@@ -67,7 +72,7 @@ object Migration7 : Migration {
             )
         }
 
-        database.data.deleteByType(DataType.TTS.value)
+        database.data.deleteByType(LEGACY_TTS_DATA_TYPE)
 
         removeDirectory(context.filesDir.resolve("external-data").toPath())
         removeDirectory(context.filesDir.resolve("external-data.sha256").toPath())
