@@ -199,3 +199,57 @@ jobs:
       # universalRelease lacked the vendored ONNX Runtime AAR, 2026-10-14).
       - name: Compile universal release Kotlin
         run: ./gradlew :app:compileUniversalReleaseKotlin --console=plain
+
+  # Baked-catalog gate self-check, fully hermetic (NEU-177): runs both gate
+  # lanes against committed registry-layout fixtures in
+  # app/catalog-gate-fixtures/, whose text-to-speech catalog deliberately
+  # advertises an architecture this branch does not know. The tolerant lane
+  # (every PR/debug build) must stay green and warn; the strict release lane
+  # must fail and name the violation. Never touches the live registry.
+  catalog-gate:
+    name: catalog-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ""
+
+      # AGP resolves ndkVersion at configuration time even for non-native
+      # task graphs, so the pinned NDK must be installed here too.
+      - name: Install platform, build-tools and NDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      # getRemoteData only re-fetches when res/raw is empty; clear it so each
+      # step reads the fixture, not the previous step's leftovers.
+      - name: Tolerant lane warns on enum drift
+        run: |
+          rm -rf app/src/main/res/raw
+          ./gradlew :app:validateBakedCatalogs -Pmodels.catalog.override=app/catalog-gate-fixtures --console=plain 2>&1 | tee tolerant.log
+          grep -q "catalog gate WARNING" tolerant.log || { echo "::error::tolerant lane produced no enum-drift warning"; exit 1; }
+
+      - name: Strict lane fails on enum drift
+        run: |
+          rm -rf app/src/main/res/raw
+          if ./gradlew :app:validateBakedCatalogsStrict -Pmodels.catalog.override=app/catalog-gate-fixtures --console=plain > strict.log 2>&1; then
+            echo "::error::strict lane passed on a fixture with an unknown VoiceModelArchitecture"
+            cat strict.log
+            exit 1
+          fi
+          grep -q "unknown VoiceModelArchitecture" strict.log || { echo "::error::strict failure did not name the drift violation"; cat strict.log; exit 1; }
+          echo "strict lane red as required:"
+          grep -E "failed validation|unknown VoiceModelArchitecture" strict.log
