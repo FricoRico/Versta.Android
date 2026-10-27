@@ -130,8 +130,17 @@ jobs:
       - name: Install NDK, CMake, platform and build-tools
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
 
+      # setup-gradle v4 validates every gradle-wrapper.jar in the tree against
+      # Gradle's published checksums. The MNN submodule vendors a flatbuffers
+      # *sample* wrapper whose jar has never been published by Gradle, which
+      # fails this job before it builds. Allowlist that one pinned checksum;
+      # branch: tags/3.6.1 -> d407447, so any edit to the jar changes its hash
+      # and fails validation again. The repo's own wrapper is still validated
+      # here and, without submodules, in static-analysis and android-lint.
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        env:
+          ALLOWED_GRADLE_WRAPPER_CHECKSUMS: ee3739525a995bcb5601621a6e2daec1f183bbefc375743acc235cec33547e04
         with:
           cache-read-only: false
           # Validated in the dedicated step below, which can allow-list
@@ -156,3 +165,36 @@ jobs:
       # universalRelease lacked the vendored ONNX Runtime AAR, 2026-10-14).
       - name: Compile universal release Kotlin
         run: ./gradlew :app:compileUniversalReleaseKotlin --console=plain
+
+  # Host-side native tests for the Supertonic 3 engine (app/native/tests):
+  # tinyjson, tts.json config contract, token-normalization fuzz. The
+  # model-dependent tiers are skipped here (no model files in CI) and run on
+  # the dev box / the NEU-68 golden lane instead.
+  native-tests:
+    name: native-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # MNN is ~800 translation units; ccache keeps repeat runs cheap
+      # (NEU-16 pattern).
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: native-tests-${{ runner.os }}
+
+      - name: Configure
+        run: |
+          cmake -S app/native/tests -B build/native-tests \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+
+      - name: Build
+        run: cmake --build build/native-tests -j"$(nproc)"
+
+      - name: Run unit tier
+        run: ./build/native-tests/supertonic_test
