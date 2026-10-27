@@ -12,7 +12,7 @@
     <ID>CyclomaticComplexMethod:MnnObjectCharacterRecognition.kt$MnnObjectCharacterRecognition$override fun load( bundle: ObjectCharacterRecognitionBundleWithFiles, threads: Int, )</ID>
     <ID>CyclomaticComplexMethod:OcrBlockLayout.kt$OcrBlockLayout$private fun breakOpportunities(text: String): List&lt;BreakOpp&gt;</ID>
     <ID>CyclomaticComplexMethod:OcrOverlayBaker.kt$OcrOverlayBaker$fun bake( blocks: List&lt;CameraTranslationResult&gt;, translations: Map&lt;String, String&gt;, inverseHomography: FloatArray, frameWidth: Int, frameHeight: Int, ): BakedOverlay?</ID>
-    <ID>CyclomaticComplexMethod:StyleTextToSpeech2Tokenizer.kt$StyleTextToSpeech2Tokenizer$private fun splitNum(match: String): String</ID>
+    <ID>CyclomaticComplexMethod:StyleTextToSpeech2Tokenizer.kt$StyleTextToSpeech2Tokenizer.Companion$internal fun splitNum(match: String): String</ID>
     <ID>CyclomaticComplexMethod:TextTranslationLegacy.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TextTranslationLegacy( navigationViewModel: NavigationViewModel, languageViewModel: LanguageViewModel, translationViewModel: TranslationViewModel, textTranslationViewModel: TextTranslationViewModel, textToSpeechViewModel: TextToSpeechViewModel, )</ID>
     <ID>CyclomaticComplexMethod:VerstaGlSurfaceView.kt$VerstaGlSurfaceView.GlThread$override fun run()</ID>
     <ID>CyclomaticComplexMethod:VoiceWaveform.kt$@Composable fun VoiceWaveform( spectrum: FloatArray, active: Boolean, modifier: Modifier = Modifier, )</ID>
@@ -124,7 +124,7 @@
     <ID>LongParameterList:VoiceWaveform.kt$( path: Path, knotX: FloatArray, knotY: FloatArray, centerY: Float, topScale: Float, mirror: Float, )</ID>
     <ID>LongParameterList:Whisper.kt$Whisper$( model: WhisperModel, callback: WhisperSegmentCallback, vadEnabled: Boolean = true, vadThreshold: Float = 0.8f, language: String? = null, initialPrompt: String? = SpeechRecognitionInitialPrompts.forLanguage(language), noSpeechThreshold: Float = 0.6f, endpointSilenceMs: Int = 600, maxUtteranceMs: Int = 15_000, )</ID>
     <ID>LongParameterList:Whisper.kt$Whisper$( modelHandle: Long, vadEnabled: Boolean, vadThreshold: Float, language: String, initialPrompt: String, noSpeechThreshold: Float, endpointSilenceMs: Int, maxUtteranceMs: Int, )</ID>
-    <ID>LoopWithTooManyJumpStatements:JapaneseTransliterator.kt$JapaneseTransliterator$for</ID>
+    <ID>LoopWithTooManyJumpStatements:JapaneseTransliterator.kt$JapaneseTransliterator.Companion$for</ID>
     <ID>LoopWithTooManyJumpStatements:OcrBlockLayout.kt$OcrBlockLayout$for</ID>
     <ID>LoopWithTooManyJumpStatements:VerstaGlSurfaceView.kt$VerstaGlSurfaceView.GlThread$while</ID>
     <ID>LoopWithTooManyJumpStatements:WhisperSpeechRecognition.kt$WhisperSpeechRecognition$while</ID>
@@ -138,7 +138,7 @@
     <ID>MatchingDeclarationName:SettingsButtonItem.kt$SettingsDefaults</ID>
     <ID>MatchingDeclarationName:TextField.kt$TextFieldDefaults</ID>
     <ID>MayBeConst:GradientMicButton.kt$private val RING_GLOW_RADIUS_SCALE = 0.78f</ID>
-    <ID>NestedBlockDepth:StyleTextToSpeech2Tokenizer.kt$StyleTextToSpeech2Tokenizer$private fun splitNum(match: String): String</ID>
+    <ID>NestedBlockDepth:StyleTextToSpeech2Tokenizer.kt$StyleTextToSpeech2Tokenizer.Companion$internal fun splitNum(match: String): String</ID>
     <ID>NestedBlockDepth:TarballExtractor.kt$TarballExtractor$override fun openFile( uri: Uri, fileName: String, ): File?</ID>
     <ID>NestedBlockDepth:TarballExtractor.kt$TarballExtractor$private fun extractInputStream( stream: InputStream, outputDir: File, total: Int? = null, listener: ExtractionProgressListener? = null, ): File</ID>
     <ID>ObjectPropertyNaming:DownloadWorker.kt$DownloadWorker.Companion$internal val _serializer = Json { ignoreUnknownKeys = true classDiscriminator = "type" }</ID>

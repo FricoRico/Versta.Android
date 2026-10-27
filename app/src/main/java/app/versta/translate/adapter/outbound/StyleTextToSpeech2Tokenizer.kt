@@ -12,150 +12,6 @@ class StyleTextToSpeech2Tokenizer(
     private val openJTalk: OpenJTalk,
 ) : TextToSpeechTokenizer {
     /**
-     * Helper function to split a string on a regex, but keep the delimiters
-     */
-    private fun split(text: String): List<Pair<Boolean, String>> {
-        val result = mutableListOf<Pair<Boolean, String>>()
-        var prev = 0
-        for (match in _punctuationPattern.findAll(text)) {
-            val fullMatch = match.value
-            if (prev < match.range.first) {
-                result.add(false to text.substring(prev, match.range.first))
-            }
-            if (fullMatch.isNotEmpty()) {
-                result.add(true to fullMatch)
-            }
-            prev = match.range.last + 1
-        }
-        if (prev < text.length) {
-            result.add(false to text.substring(prev))
-        }
-        return result
-    }
-
-    /**
-     * Helper function to split numbers into phonetic equivalents
-     */
-    private fun splitNum(match: String): String =
-        if ("." in match) {
-            match
-        } else if (":" in match) {
-            val (h, m) = match.split(":").map { it.toInt() }
-            when {
-                m == 0 -> "$h o'clock"
-                m < 10 -> "$h oh $m"
-                else -> "$h $m"
-            }
-        } else {
-            val year = match.take(4).toIntOrNull() ?: 0
-            if (year < 1100 || year % 1000 < 10) {
-                match
-            } else {
-                val left = match.take(2)
-                val right = match.substring(2, 4).toIntOrNull() ?: 0
-                val suffix = if (match.endsWith("s")) "s" else ""
-                when {
-                    year % 1000 in 100..999 -> {
-                        when (right) {
-                            0 -> "$left hundred$suffix"
-                            in 1..9 -> "$left oh $right$suffix"
-                            else -> "$left $right$suffix"
-                        }
-                    }
-
-                    else -> {
-                        "$left $right$suffix"
-                    }
-                }
-            }
-        }
-
-    /**
-     * Helper function to format monetary values
-     */
-    private fun flipMoney(match: String): String {
-        val bill = if (match[0] == '$') "dollar" else "pound"
-        return if (match.slice(1 until match.length).toDoubleOrNull() == null) {
-            "${match.slice(1 until match.length)} ${bill}s"
-        } else if (!match.contains(".")) {
-            val suffix = if (match.slice(1 until match.length) == "1") "" else "s"
-            "${match.slice(1 until match.length)} ${bill}$suffix"
-        } else {
-            val (b, c) = match.slice(1 until match.length).split(".")
-            val d = c.padEnd(2, '0').toInt()
-            val coins =
-                if (match[0] == '$') {
-                    if (d == 1) "cent" else "cents"
-                } else {
-                    if (d == 1) "penny" else "pence"
-                }
-            "$b ${bill}${if (b == "1") "" else "s"} and $d $coins"
-        }
-    }
-
-    /**
-     * Helper function to process decimal numbers
-     */
-    private fun pointNum(match: String): String {
-        val (a, b) = match.split(".")
-        return "$a point ${b.toCharArray().joinToString(" ")}"
-    }
-
-    /**
-     * Normalize text for phonemization
-     */
-    private fun normalizeText(text: String): String =
-        text
-            // 1. Handle quotes and brackets
-            .replace("[‘’]".toRegex(), "'")
-            .replace("«".toRegex(), "“")
-            .replace("»".toRegex(), "”")
-            .replace("[“”]".toRegex(), "\"")
-            .replace("\\(".toRegex(), "«")
-            .replace("\\)".toRegex(), "»")
-            // 2. Replace uncommon punctuation marks
-            .replace("、".toRegex(), ", ")
-            .replace("。".toRegex(), ". ")
-            .replace("！".toRegex(), "! ")
-            .replace("，".toRegex(), ", ")
-            .replace("：".toRegex(), ": ")
-            .replace("；".toRegex(), "; ")
-            .replace("？".toRegex(), "? ")
-            // 3. Whitespace normalization
-            .replace("[^\\S \\n]".toRegex(), " ")
-            .replace("  +".toRegex(), " ")
-            .replace("(?<=\\n) +(?=\\n)".toRegex(), "")
-            // 4. Abbreviations
-            .replace("\\bD[Rr]\\.(?= [A-Z])".toRegex(), "Doctor")
-            .replace("\\b(?:Mr\\.|MR\\.(?= [A-Z]))".toRegex(), "Mister")
-            .replace("\\b(?:Ms\\.|MS\\.(?= [A-Z]))".toRegex(), "Miss")
-            .replace("\\b(?:Mrs\\.|MRS\\.(?= [A-Z]))".toRegex(), "Mrs")
-            .replace("\\betc\\.(?! [A-Z])".toRegex(RegexOption.IGNORE_CASE), "etc")
-            // 5. Normalize casual words
-            .replace("\\b(y)eah?\\b".toRegex(RegexOption.IGNORE_CASE), "$1e'a")
-            // 5. Handle numbers and currencies
-            .replace(
-                "\\d*\\.\\d+|\\b\\d{4}s?\\b|(?<!:)\\b(?:[1-9]|1[0-2]):[0-5]\\d\\b(?!:)".toRegex(),
-                { match -> splitNum(match.value) },
-            ).replace("(?<=\\d),(?=\\d)".toRegex(), "")
-            .replace(
-                "[$£]\\d+(?:\\.\\d+)?(?: hundred| thousand| (?:[bm]|tr)illion)*\\b|[$£]\\d+\\.\\d\\d?\\b".toRegex(
-                    RegexOption.IGNORE_CASE,
-                ),
-                { match -> flipMoney(match.value) },
-            ).replace("\\d*\\.\\d+".toRegex(), { match -> pointNum(match.value) })
-            .replace("(?<=\\d)-(?=\\d)".toRegex(), " to ")
-            .replace("(?<=\\d)S".toRegex(), " S")
-            // 6. Handle possessives
-            .replace("(?<=[BCDFGHJ-NP-TV-Z])'?s\\b".toRegex(), "'S")
-            .replace("(?<=X')S\\b".toRegex(), "s")
-            // 7. Handle hyphenated words/letters
-            .replace("(?:[A-Za-z]\\.){2,} [a-z]".toRegex(), { m -> m.value.replace(".", "-") })
-            .replace("(?<=[A-Z])\\.(?=[A-Z])".toRegex(RegexOption.IGNORE_CASE), "-")
-            // 8. Strip leading and trailing whitespace
-            .trim()
-
-    /**
      * Phonemize text using the eSpeak-NG phonemizer
      */
     private fun phonemize(
@@ -173,23 +29,23 @@ class StyleTextToSpeech2Tokenizer(
 
                 openJTalk
                     .phonemize(it.second)
-                    .replace("G".toRegex(), "gw")
-                    .replace("j".toRegex(), "y")
-                    .replace("K".toRegex(), "kw")
-                    .replace("ç".toRegex(), "hy")
-                    .replace("ƫ".toRegex(), "ty")
-                    .replace("ɕ".toRegex(), "sh")
-                    .replace("ɲ".toRegex(), "ny")
-                    .replace("ʥ".toRegex(), "j")
-                    .replace("ʦ".toRegex(), "ts")
-                    .replace("ʨ".toRegex(), "ch")
-                    .replace("ᶀ".toRegex(), "by")
-                    .replace("ᶁ".toRegex(), "dy")
-                    .replace("ᶃ".toRegex(), "gy")
-                    .replace("ᶄ".toRegex(), "ky")
-                    .replace("ᶆ".toRegex(), "my")
-                    .replace("ᶈ".toRegex(), "py")
-                    .replace("ᶉ".toRegex(), "ry")
+                    .replace("G", "gw")
+                    .replace("j", "y")
+                    .replace("K", "kw")
+                    .replace("ç", "hy")
+                    .replace("ƫ", "ty")
+                    .replace("ɕ", "sh")
+                    .replace("ɲ", "ny")
+                    .replace("ʥ", "j")
+                    .replace("ʦ", "ts")
+                    .replace("ʨ", "ch")
+                    .replace("ᶀ", "by")
+                    .replace("ᶁ", "dy")
+                    .replace("ᶃ", "gy")
+                    .replace("ᶄ", "ky")
+                    .replace("ᶆ", "my")
+                    .replace("ᶈ", "py")
+                    .replace("ᶉ", "ry")
                     .trim()
             } else {
                 if (!eSpeakNG.isReady()) {
@@ -199,51 +55,51 @@ class StyleTextToSpeech2Tokenizer(
                 var phonemes =
                     eSpeakNG
                         .phoneme(it.second, voice)
-                        .replace("\\([a-z]+\\)".toRegex(), "")
-                        .replace("kəkˈoːɹoʊ".toRegex(), "kˈoʊkəɹoʊ")
-                        .replace("kəkˈɔːɹəʊ".toRegex(), "kˈəʊkəɹəʊ")
-                        .replace("ʲ".toRegex(), "j")
-                        .replace("r".toRegex(), "ɹ")
-                        .replace("x".toRegex(), "k")
-                        .replace("ɬ".toRegex(), "l")
-                        .replace("-".toRegex(), "—")
-                        .replace("(?<=[a-zɹː])(?=hˈʌndɹɪd)".toRegex(), " ")
-                        .replace(" z(?=[;:,.!?¡¿—…\"«»“” ]|\$)\\)".toRegex(), "z")
+                        .replace(ipaAnnotationPattern, "")
+                        .replace("kəkˈoːɹoʊ", "kˈoʊkəɹoʊ")
+                        .replace("kəkˈɔːɹəʊ", "kˈəʊkəɹəʊ")
+                        .replace("ʲ", "j")
+                        .replace("r", "ɹ")
+                        .replace("x", "k")
+                        .replace("ɬ", "l")
+                        .replace("-", "—")
+                        .replace(hundredSuffixBoundaryPattern, " ")
+                        .replace(strayAnnotationClosurePattern, "z")
 
                 phonemes =
                     when (language.locale) {
                         Locale.FRENCH -> {
                             phonemes
-                                .replace("(.)̃".toRegex()) {
+                                .replace(combiningTildePattern) {
                                     it.groupValues.last()
                                 }
                         }
 
                         Locale.ITALIAN -> {
                             phonemes
-                                .replace("(.)̪".toRegex()) {
+                                .replace(combiningDentalPattern) {
                                     it.groupValues.last()
                                 }
                         }
 
                         Locale.CHINESE -> {
                             phonemes
-                                .replace("[0-9]".toRegex(), "")
-                                .replace("j".toRegex(), "ʝ")
-                                .replace("(.)̪".toRegex()) {
+                                .replace(digitPattern, "")
+                                .replace("j", "ʝ")
+                                .replace(combiningDentalPattern) {
                                     it.groupValues.last()
                                 }
                         }
 
                         Locale.forLanguageTag("pt") -> {
-                            phonemes.replace("(.)̃".toRegex()) {
+                            phonemes.replace(combiningTildePattern) {
                                 it.groupValues.last()
                             }
                         }
 
                         Locale.ENGLISH -> {
                             phonemes
-                                .replace("(?<=nˈaɪn)ti(?!ː)".toRegex(), "di")
+                                .replace(ninetyPattern, "di")
                         }
 
                         else -> {
@@ -310,5 +166,177 @@ class StyleTextToSpeech2Tokenizer(
                     "ɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞↓↑→↗↘'̩'ᵻ".toList()
             ).mapIndexed { index, symbol -> symbol.toString() to index }
                 .toMap()
+
+        private val fancyApostrophePattern = Regex("[‘’]")
+        private val fancyDoubleQuotePattern = Regex("[“”]")
+        private val nonStandardWhitespacePattern = Regex("[^\\S \\n]")
+        private val repeatedWhitespacePattern = Regex("  +")
+        private val whitespaceBetweenNewlinesPattern = Regex("(?<=\\n) +(?=\\n)")
+        private val doctorPattern = Regex("\\bD[Rr]\\.(?= [A-Z])")
+        private val misterPattern = Regex("\\b(?:Mr\\.|MR\\.(?= [A-Z]))")
+        private val missPattern = Regex("\\b(?:Ms\\.|MS\\.(?= [A-Z]))")
+        private val mrsPattern = Regex("\\b(?:Mrs\\.|MRS\\.(?= [A-Z]))")
+        private val etceteraPattern = Regex("\\betc\\.(?! [A-Z])", RegexOption.IGNORE_CASE)
+        private val yeahPattern = Regex("\\b(y)eah?\\b", RegexOption.IGNORE_CASE)
+        private val numberPattern =
+            Regex("\\d*\\.\\d+|\\b\\d{4}s?\\b|(?<!:)\\b(?:[1-9]|1[0-2]):[0-5]\\d\\b(?!:)")
+        private val groupedThousandsPattern = Regex("(?<=\\d),(?=\\d)")
+        private val moneyPattern =
+            Regex(
+                "[$£]\\d+(?:\\.\\d+)?(?: hundred| thousand| (?:[bm]|tr)illion)*\\b|[$£]\\d+\\.\\d\\d?\\b",
+                RegexOption.IGNORE_CASE,
+            )
+        private val decimalPattern = Regex("\\d*\\.\\d+")
+        private val numericRangePattern = Regex("(?<=\\d)-(?=\\d)")
+        private val digitPluralPattern = Regex("(?<=\\d)S")
+        private val possessivePattern = Regex("(?<=[BCDFGHJ-NP-TV-Z])'?s\\b")
+        private val possessiveAfterXPattern = Regex("(?<=X')S\\b")
+        private val dottedAbbreviationPattern = Regex("(?:[A-Za-z]\\.){2,} [a-z]")
+        private val dottedLetterPattern = Regex("(?<=[A-Z])\\.(?=[A-Z])", RegexOption.IGNORE_CASE)
+        private val ipaAnnotationPattern = Regex("\\([a-z]+\\)")
+        private val hundredSuffixBoundaryPattern = Regex("(?<=[a-zɹː])(?=hˈʌndɹɪd)")
+        private val strayAnnotationClosurePattern = Regex(" z(?=[;:,.!?¡¿—…\"«»“” ]|\$)\\)")
+        private val combiningTildePattern = Regex("(.)̃")
+        private val combiningDentalPattern = Regex("(.)̪")
+        private val digitPattern = Regex("[0-9]")
+        private val ninetyPattern = Regex("(?<=nˈaɪn)ti(?!ː)")
+
+        /**
+         * Helper function to split a string on a regex, but keep the delimiters
+         */
+        internal fun split(text: String): List<Pair<Boolean, String>> {
+            val result = mutableListOf<Pair<Boolean, String>>()
+            var prev = 0
+            for (match in _punctuationPattern.findAll(text)) {
+                val fullMatch = match.value
+                if (prev < match.range.first) {
+                    result.add(false to text.substring(prev, match.range.first))
+                }
+                if (fullMatch.isNotEmpty()) {
+                    result.add(true to fullMatch)
+                }
+                prev = match.range.last + 1
+            }
+            if (prev < text.length) {
+                result.add(false to text.substring(prev))
+            }
+            return result
+        }
+
+        /**
+         * Helper function to split numbers into phonetic equivalents
+         */
+        internal fun splitNum(match: String): String =
+            if ("." in match) {
+                match
+            } else if (":" in match) {
+                val (h, m) = match.split(":").map { it.toInt() }
+                when {
+                    m == 0 -> "$h o'clock"
+                    m < 10 -> "$h oh $m"
+                    else -> "$h $m"
+                }
+            } else {
+                val year = match.take(4).toIntOrNull() ?: 0
+                if (year < 1100 || year % 1000 < 10) {
+                    match
+                } else {
+                    val left = match.take(2)
+                    val right = match.substring(2, 4).toIntOrNull() ?: 0
+                    val suffix = if (match.endsWith("s")) "s" else ""
+                    when {
+                        year % 1000 in 100..999 -> {
+                            when (right) {
+                                0 -> "$left hundred$suffix"
+                                in 1..9 -> "$left oh $right$suffix"
+                                else -> "$left $right$suffix"
+                            }
+                        }
+
+                        else -> {
+                            "$left $right$suffix"
+                        }
+                    }
+                }
+            }
+
+        /**
+         * Helper function to format monetary values
+         */
+        internal fun flipMoney(match: String): String {
+            val bill = if (match[0] == '$') "dollar" else "pound"
+            return if (match.slice(1 until match.length).toDoubleOrNull() == null) {
+                "${match.slice(1 until match.length)} ${bill}s"
+            } else if (!match.contains(".")) {
+                val suffix = if (match.slice(1 until match.length) == "1") "" else "s"
+                "${match.slice(1 until match.length)} ${bill}$suffix"
+            } else {
+                val (b, c) = match.slice(1 until match.length).split(".")
+                val d = c.padEnd(2, '0').toInt()
+                val coins =
+                    if (match[0] == '$') {
+                        if (d == 1) "cent" else "cents"
+                    } else {
+                        if (d == 1) "penny" else "pence"
+                    }
+                "$b ${bill}${if (b == "1") "" else "s"} and $d $coins"
+            }
+        }
+
+        /**
+         * Helper function to process decimal numbers
+         */
+        internal fun pointNum(match: String): String {
+            val (a, b) = match.split(".")
+            return "$a point ${b.toCharArray().joinToString(" ")}"
+        }
+
+        /**
+         * Normalize text for phonemization
+         */
+        internal fun normalizeText(text: String): String =
+            text
+                // 1. Handle quotes and brackets
+                .replace(fancyApostrophePattern, "'")
+                .replace("«", "“")
+                .replace("»", "”")
+                .replace(fancyDoubleQuotePattern, "\"")
+                .replace("(", "«")
+                .replace(")", "»")
+                // 2. Replace uncommon punctuation marks
+                .replace("、", ", ")
+                .replace("。", ". ")
+                .replace("！", "! ")
+                .replace("，", ", ")
+                .replace("：", ": ")
+                .replace("；", "; ")
+                .replace("？", "? ")
+                // 3. Whitespace normalization
+                .replace(nonStandardWhitespacePattern, " ")
+                .replace(repeatedWhitespacePattern, " ")
+                .replace(whitespaceBetweenNewlinesPattern, "")
+                // 4. Abbreviations
+                .replace(doctorPattern, "Doctor")
+                .replace(misterPattern, "Mister")
+                .replace(missPattern, "Miss")
+                .replace(mrsPattern, "Mrs")
+                .replace(etceteraPattern, "etc")
+                // 5. Normalize casual words
+                .replace(yeahPattern, "$1e'a")
+                // 5. Handle numbers and currencies
+                .replace(numberPattern) { match -> splitNum(match.value) }
+                .replace(groupedThousandsPattern, "")
+                .replace(moneyPattern) { match -> flipMoney(match.value) }
+                .replace(decimalPattern) { match -> pointNum(match.value) }
+                .replace(numericRangePattern, " to ")
+                .replace(digitPluralPattern, " S")
+                // 6. Handle possessives
+                .replace(possessivePattern, "'S")
+                .replace(possessiveAfterXPattern, "s")
+                // 7. Handle hyphenated words/letters
+                .replace(dottedAbbreviationPattern) { m -> m.value.replace(".", "-") }
+                .replace(dottedLetterPattern, "-")
+                // 8. Strip leading and trailing whitespace
+                .trim()
     }
 }
