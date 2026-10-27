@@ -100,12 +100,13 @@ Rules:
 
 ## Testing
 
-- Tests live in `app/src/androidTest`, mirroring the package of the class under test; one test file per class, named `XTest`.
+- Tests mirror the package of the class under test; one test file per class, named `XTest`.
+- Pure JVM tests (no `android.*`/`androidx.*` runtime calls) live in `app/src/test` and run in the CI `test` job via `./gradlew :app:testArm64-v8aDebugUnitTest`.
+- Tests that need an Android runtime (device APIs, instrumentation) live in `app/src/androidTest` and run via `./gradlew :app:connectedDebugAndroidTest` (device/emulator required).
 - Write unit-style tests against `*Memory`/`*Mock` implementations only — never real drivers, native libraries, file I/O, or the network.
 - One behavior per test; assert observable outcomes, not implementation details.
 - Every new feature ships with unit tests for its core logic.
 - When production code is removed or its behavior changes, remove or update its tests in the same change.
-- Run via `./gradlew :app:connectedDebugAndroidTest` (device/emulator required).
 
 ## Don'ts
 

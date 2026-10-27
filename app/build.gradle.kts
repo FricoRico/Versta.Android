@@ -251,6 +251,14 @@ play {
     enabled.set(false)
 }
 
+// Per-test pass/skip/fail lines in CI logs so execution is provable from the
+// workflow log even though reports only upload on failure.
+tasks.withType<Test>().configureEach {
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
+}
+
 android {
     playConfigs {
         register("universalRelease") {
@@ -415,6 +423,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.compose.ui.text)
+    testImplementation(libs.junit4)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -64,6 +64,49 @@ jobs:
           path: "**/build/reports/detekt/*.sarif"
           if-no-files-found: ignore
 
+  # JVM unit tests (app/src/test) on a single ABI flavor — no emulator, no
+  # connected tests. AGP resolves ndkVersion at configuration time because of
+  # externalNativeBuild, so the pinned NDK must be installed even though the
+  # test task graph never runs a native build.
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ""
+
+      - name: Install platform, build-tools and NDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Unit tests (arm64-v8a debug)
+        run: ./gradlew :app:testArm64-v8aDebugUnitTest --console=plain
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-reports
+          path: |
+            **/build/reports/tests/**
+            **/build/test-results/test*UnitTest/**
+          if-no-files-found: ignore
+
   # Android lint on a single ABI flavor (findings are ABI-independent).
   android-lint:
     name: android-lint
