@@ -60,6 +60,13 @@ data class LanguageBundleMetadata(
             (if (bidirectional) languages.size % 2 == 0 else true) &&
             metadata.isNotEmpty()
 
+    /**
+     * The bundle-declared languages in registry-normalized form (NEU-133).
+     * Bundle manifests already carry registry codes; normalizing here keeps the
+     * join on the catalog side symmetric, never string equality.
+     */
+    fun normalizedLanguages(): Set<String> = languages.map { normalizeLanguageCode(it) }.toSet()
+
     fun languagePairs(): List<LanguagePair> =
         metadata.map {
             LanguagePair.fromIsoCodes(it.sourceLanguage, it.targetLanguage)
@@ -109,4 +116,17 @@ data class LanguageModelConfigurationMetadata(
 data class LanguageBundleData(
     val bundle: LanguageBundleMetadata,
     val languages: List<LanguageModelMetadata>,
-)
+) {
+    /**
+     * Fail-fast check for the bundle language boundary (NEU-133): every
+     * per-module direction code must be covered by the bundle-level declared
+     * `languages`, compared through [normalizeLanguageCode] on both sides.
+     */
+    fun isLanguageBoundaryConsistent(): Boolean {
+        val declared = bundle.normalizedLanguages()
+
+        return languages
+            .flatMap { listOf(it.sourceLanguage, it.targetLanguage) }
+            .all { normalizeLanguageCode(it) in declared }
+    }
+}
