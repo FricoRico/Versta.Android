@@ -10,6 +10,7 @@ import app.versta.translate.core.entity.LanguageModelPair
 import app.versta.translate.core.entity.LanguagePair
 import app.versta.translate.core.entity.PivotPair
 import app.versta.translate.core.entity.PivotPairModelFiles
+import app.versta.translate.core.entity.localeForLanguageCode
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.utils.executeAsListFlow
 import kotlinx.coroutines.flow.Flow
@@ -19,7 +20,6 @@ import kotlinx.serialization.json.Json
 import okio.Path.Companion.toPath
 import timber.log.Timber
 import java.io.File
-import java.util.Locale
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.deleteRecursively
@@ -82,8 +82,8 @@ class LanguageDatabaseRepository(
                         ) ?: return@map null
 
                     LanguageModelPair(
-                        sourceLocale = Locale.forLanguageTag(language.source),
-                        targetLocale = Locale.forLanguageTag(language.target),
+                        sourceLocale = localeForLanguageCode(language.source),
+                        targetLocale = localeForLanguageCode(language.target),
                         files = languageModel,
                     )
                 }.filterNotNull()
@@ -94,7 +94,7 @@ class LanguageDatabaseRepository(
      */
     override fun getTargetLanguagesBySource(sourceLanguage: Language) =
         database.languages
-            .getAllBySourceLanguage(sourceLanguage.locale.language)
+            .getAllBySourceLanguage(sourceLanguage.normalizedCode)
             .executeAsList()
             .map { mapSingleLanguageDatabaseModelToLanguage(it) }
 
@@ -152,11 +152,11 @@ class LanguageDatabaseRepository(
     ): PivotPair? {
         val sourceLanguage =
             database.languages
-                .getBySource(source.locale.language)
+                .getBySource(source.normalizedCode)
                 .executeAsList()
         val targetLanguage =
             database.languages
-                .getByTarget(target.locale.language)
+                .getByTarget(target.normalizedCode)
                 .executeAsList()
 
         val intermediaryPair =
@@ -256,7 +256,7 @@ class LanguageDatabaseRepository(
     override fun deleteLanguageModelsBySourceLanguage(language: Language): List<LanguagePair> {
         val languagePairs =
             database.languages
-                .getBySourceIncludingBidirecional(source = language.isoCode)
+                .getBySourceIncludingBidirecional(source = language.normalizedCode)
                 .executeAsList()
                 .map { mapLanguageDatabaseModelToLanguagePair(it) }
         val languageIds = languagePairs.map { it.id }
@@ -358,8 +358,8 @@ class LanguageDatabaseRepository(
 
         return LanguageDatabaseModel(
             id = pair.id,
-            source = source.locale.language,
-            target = target.locale.language,
+            source = source.normalizedCode,
+            target = target.normalizedCode,
             bidirectional = languageBundleMetadata.bidirectional,
         )
     }
@@ -467,7 +467,7 @@ class LanguageDatabaseRepository(
      * @param data The language to map.
      * @return The mapped language.
      */
-    private fun mapSingleLanguageDatabaseModelToLanguage(data: String): Language = Language.fromIsoCode(data)
+    private fun mapSingleLanguageDatabaseModelToLanguage(data: String): Language = Language(locale = localeForLanguageCode(data))
 
     /**
      * Maps a [LanguageDatabaseModel] to a [LanguagePair].
@@ -475,8 +475,8 @@ class LanguageDatabaseRepository(
      * @return The mapped language pair.
      */
     private fun mapLanguageDatabaseModelToLanguagePair(data: LanguageDatabaseModel): LanguagePair {
-        val source = Language.fromIsoCode(data.source)
-        val target = Language.fromIsoCode(data.target)
+        val source = Language(locale = localeForLanguageCode(data.source))
+        val target = Language(locale = localeForLanguageCode(data.target))
 
         return LanguagePair(
             source = source,
