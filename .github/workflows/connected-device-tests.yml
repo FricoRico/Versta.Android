@@ -1,0 +1,121 @@
+name: connected-device-tests
+
+# Standing connected-test gate for develop (NEU-220: ported from the
+# refactor/translation-orchestrator Phase-2 gate, itself promoted from the
+# NEU-40 one-off in NEU-137). The old gate's ruleset still targets the merged
+# refactor branch only, so develop/main PRs have been mergeable with zero
+# instrumentation evidence since the NEU-4 refactor landed (eab285c) — this
+# workflow restores the lane on the branch that actually receives PRs.
+#
+# Test scope: the original gate ran the NEU-29 bundle-gate classes
+# (LeanmtVersionTest, LanguageBundleMetadataTest). Those classes exist only on
+# the refactor branch lineage — the NEU-29 production code never landed on
+# develop — so this port gates on LeanmtTest instead: the one develop class
+# that loads the native leanmt library over JNI on-device (same "native
+# bridge alive on a real runtime" signal, API-agnostic, no model files
+# needed). Extending scope (full androidTest suite, or the NEU-29 classes
+# once that branch's content is reconciled onto develop) needs a measured
+# runtime first.
+#
+# Triggers on:
+# - every PR into develop: no paths filter, because this workflow's
+#   `connected-tests` job is a required status check on develop (NEU-220
+#   ruleset update). A filter would leave non-touching PRs stuck on
+#   `Expected` and unmergable (same contract as NEU-151).
+# - pushes to develop that touch the translation stack (orchestration core,
+#   adapters, leanmt bridge/native code), test sources, or the build
+#   configuration: post-merge signal, paths-kept to keep costs down on
+#   cherry-picks/docs-only updates.
+# - manual via workflow_dispatch.
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "app/src/main/java/app/versta/translate/core/**"
+      - "app/src/main/java/app/versta/translate/adapter/**"
+      - "app/src/main/java/app/versta/translate/bridge/**"
+      - "app/src/main/java/app/versta/translate/utils/**"
+      - "app/native/**"
+      - "app/src/androidTest/**"
+      - "app/build.gradle.kts"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - "gradle/**"
+      - ".github/workflows/connected-device-tests.yml"
+  pull_request:
+    branches: [develop]
+  workflow_dispatch:
+
+# One active run per ref: retriggering or pushing again cancels the stale run.
+concurrency:
+  group: connected-device-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write # upload-artifact
+
+jobs:
+  connected-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install NDK, CMake, platform and build-tools
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Runner image: /dev/kvm is root:kvm 0660 — open it, else accel silently
+      # disables itself and the TCG boot times out before boot_completed.
+      - name: Enable KVM permissions
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -la /dev/kvm
+
+      # qemu bundled with the SDK emulator hard-depends on libpulse, absent on
+      # the current ubuntu image: "error while loading shared libraries:
+      # libpulse.so.0" = guest never starts (connection refused on :5554).
+      - name: Install qemu runtime libs
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libpulse0
+
+      - name: KVM check
+        run: ls -la /dev/kvm || true
+
+      # API 29 keeps the footprint small; the test is API-agnostic
+      # (minSdk 28): pure JNI lifecycle — instantiate/close the native bridge,
+      # guard translations and model loads before a model is present. See the
+      # header for why the NEU-29 classes are not part of this develop port.
+      - name: Run develop instrumentation smoke
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          target: default
+          force-avd-creation: true
+          emulator-options: -no-window -no-snapshot-save -noaudio -no-boot-anim -gpu swiftshader_indirect
+          disable-animations: true
+          script: ./gradlew :app:connectedX86_64DebugAndroidTest --console=plain -Pandroid.testInstrumentationRunnerArguments.class=app.versta.translate.bridge.leanmt.LeanmtTest
+
+      - name: Print test result XMLs
+        if: always()
+        run: find app/build/outputs/androidTest-results -name "*.xml" -exec sh -c 'echo "--- $1"; cat "$1"' _ {} \; || true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: connected-androidTest-results
+          path: app/build/outputs/androidTest-results/
+          if-no-files-found: ignore
