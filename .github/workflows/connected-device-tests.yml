@@ -177,7 +177,14 @@ jobs:
           force-avd-creation: true
           emulator-options: -no-window -no-snapshot-save -noaudio -no-boot-anim -gpu swiftshader_indirect
           disable-animations: true
-          script: ./gradlew :app:connectedX86_64DebugAndroidTest --console=plain -Pandroid.testInstrumentationRunnerArguments.class=app.versta.translate.bridge.leanmt.LeanmtTest
+          # --build-cache (NEU-227): this lane otherwise recompiles all
+          # Kotlin/javac/packaging per run (0 FROM-CACHE tasks observed warm) —
+          # the Gradle build cache is off by default and gradle.properties
+          # does not enable it. Flag, not gradle.properties, so local/dev
+          # builds are untouched. Reused task outputs must never substitute
+          # for executing the gate: connectedAndroidTest tasks always run
+          # on-device (not cacheable), verified per-run via the result XMLs.
+          script: ./gradlew :app:connectedX86_64DebugAndroidTest --console=plain --build-cache -Pandroid.testInstrumentationRunnerArguments.class=app.versta.translate.bridge.leanmt.LeanmtTest
 
       # Warm-cache runs must show near-total direct hits here; a hit-rate
       # collapse on an unchanged native tree means the key or launcher
