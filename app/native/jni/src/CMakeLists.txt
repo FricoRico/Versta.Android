@@ -1,3 +1,5 @@
+# AC#3 probe for NEU-183: a comment-only touch under app/native must rotate
+# the native-inputs hash -> assemble job cache miss -> visible full rebuild.
 set(SRC_FILES
         ${SRC_DIR}/ocr/anchor.cc
         ${SRC_DIR}/ocr/blocks.cc
