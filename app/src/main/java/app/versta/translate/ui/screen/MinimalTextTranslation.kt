@@ -1,10 +1,5 @@
 package app.versta.translate.ui.screen
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.AnimationConstants.DefaultDurationMillis
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -167,9 +162,6 @@ fun MinimalTextTranslation(
             onCancelTextToSpeech = {
                 onCancelTextToSpeech()
             },
-            onCancel = {
-                translationViewModel.cancelTranslation()
-            },
             onCopy = {
                 textTranslationViewModel.copyTranslatedText(context)
             },
@@ -252,7 +244,6 @@ fun MinimalTextTranslationOutputButtonRow(
     textToSpeechVoiceAvailable: Boolean,
     onTextToSpeech: () -> Unit,
     onCancelTextToSpeech: () -> Unit,
-    onCancel: () -> Unit,
     onCopy: () -> Unit,
     onShare: () -> Unit,
     modifier: Modifier = Modifier,
@@ -275,29 +266,6 @@ fun MinimalTextTranslationOutputButtonRow(
                 onTextToSpeech = onTextToSpeech,
                 onCancelTextToSpeech = onCancelTextToSpeech,
             )
-
-            AnimatedVisibility(
-                visible = translationInProgress,
-                enter = fadeIn(),
-                exit =
-                    fadeOut(
-                        animationSpec =
-                            tween(
-                                durationMillis = DefaultDurationMillis * 2,
-                                delayMillis = DefaultDurationMillis,
-                            ),
-                    ),
-            ) {
-                FilledIconButton(
-                    onClick = onCancel,
-                    colors = FilledIconButtonDefaults.primaryIconButtonColors(),
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.rounded_stop_24),
-                        contentDescription = stringResource(R.string.cancel),
-                    )
-                }
-            }
         }
 
         Row(
@@ -348,6 +316,7 @@ fun MinimalTextTranslationPreview() {
                     TranslationViewModel(
                         intermediateModel = translationMockInference,
                         outputModel = translationMockInference,
+                        createInference = { TranslationMockInference() },
                         translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
                         languageViewModel = languageViewModel,
                     ),
@@ -356,6 +325,7 @@ fun MinimalTextTranslationPreview() {
             TranslationViewModel(
                 intermediateModel = translationMockInference,
                 outputModel = translationMockInference,
+                createInference = { TranslationMockInference() },
                 translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
                 languageViewModel = languageViewModel,
             ),

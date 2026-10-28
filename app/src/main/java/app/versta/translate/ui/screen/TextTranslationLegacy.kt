@@ -1,11 +1,6 @@
 package app.versta.translate.ui.screen
 
 import android.os.Build
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.AnimationConstants.DefaultDurationMillis
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -188,10 +183,6 @@ fun TextTranslationLegacy(
         }
     }
 
-    fun cancelTranslation() {
-        translationViewModel.cancelTranslation()
-    }
-
     fun setInput(text: String) {
         textTranslationViewModel.setInput(text)
     }
@@ -223,10 +214,6 @@ fun TextTranslationLegacy(
 
     fun onCancelTextToSpeech() {
         cancelTextToSpeech()
-    }
-
-    fun onCancel() {
-        cancelTranslation()
     }
 
     fun onClear() {
@@ -400,9 +387,6 @@ fun TextTranslationLegacy(
                 },
                 onCancelTextToSpeech = {
                     onCancelTextToSpeech()
-                },
-                onCancel = {
-                    onCancel()
                 },
                 onCopy = {
                     onCopy()
@@ -584,7 +568,6 @@ fun TextTranslationOutputButtonRow(
     textToSpeechVoiceAvailable: Boolean,
     onTextToSpeech: () -> Unit,
     onCancelTextToSpeech: () -> Unit,
-    onCancel: () -> Unit,
     onCopy: () -> Unit,
     onShare: () -> Unit,
 ) {
@@ -606,29 +589,6 @@ fun TextTranslationOutputButtonRow(
                 onTextToSpeech = onTextToSpeech,
                 onCancelTextToSpeech = onCancelTextToSpeech,
             )
-
-            AnimatedVisibility(
-                visible = translationInProgress,
-                enter = fadeIn(),
-                exit =
-                    fadeOut(
-                        animationSpec =
-                            tween(
-                                durationMillis = DefaultDurationMillis * 2,
-                                delayMillis = DefaultDurationMillis,
-                            ),
-                    ),
-            ) {
-                FilledIconButton(
-                    onClick = onCancel,
-                    colors = FilledIconButtonDefaults.primaryIconButtonColors(),
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.rounded_stop_24),
-                        contentDescription = stringResource(R.string.cancel),
-                    )
-                }
-            }
         }
 
         Row(
@@ -674,6 +634,7 @@ fun TextTranslationLegacyPreview() {
         TranslationViewModel(
             intermediateModel = translationMockInference,
             outputModel = translationMockInference,
+            createInference = { TranslationMockInference() },
             translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
             languageViewModel = languageViewModel,
         )
