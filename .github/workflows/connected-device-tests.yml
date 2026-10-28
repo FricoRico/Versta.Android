@@ -61,9 +61,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
+      # No submodules: the app/androidTest build provably doesn't need them
+      # (ci.yml `assemble` is green on a plain checkout), and a recursive
+      # checkout pulls the vendored MNN tree whose flatbuffers sample
+      # gradle-wrapper.jar (sha256 ee373952…) is unknown to
+      # gradle/actions' wrapper validation and fails the job before Gradle
+      # even starts. Dropping submodules keeps validation scoped to the
+      # repo's own wrapper.
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - uses: actions/setup-java@v4
         with:
