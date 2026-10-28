@@ -61,14 +61,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      # No submodules: the app/androidTest build provably doesn't need them
-      # (ci.yml `assemble` is green on a plain checkout), and a recursive
-      # checkout pulls the vendored MNN tree whose flatbuffers sample
-      # gradle-wrapper.jar (sha256 ee373952…) is unknown to
-      # gradle/actions' wrapper validation and fails the job before Gradle
-      # even starts. Dropping submodules keeps validation scoped to the
-      # repo's own wrapper.
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - uses: actions/setup-java@v4
         with:
@@ -79,6 +74,20 @@ jobs:
         run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
 
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          # Validated in the dedicated step below, which can allow-list
+          # wrapper JARs vendored inside submodules (same convention as
+          # ci.yml's `assemble` job).
+          validate-wrappers: false
+
+      # The MNN submodule vendors a wrapper JAR inside
+      # 3rd_party/flatbuffers/samples/android whose checksum is not in the
+      # known list. It is a sample project that is never executed here;
+      # allow-list its SHA-256 (pinned by the submodule gitlink).
+      - name: Validate Gradle wrappers
+        uses: gradle/actions/wrapper-validation@v4
+        with:
+          allow-checksums: ee3739525a995bcb5601621a6e2daec1f183bbefc375743acc235cec33547e04
 
       # Runner image: /dev/kvm is root:kvm 0660 — open it, else accel silently
       # disables itself and the TCG boot times out before boot_completed.
