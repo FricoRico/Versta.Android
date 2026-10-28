@@ -132,6 +132,11 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
         with:
+          # Explicit like every ci.yml job: without this, pull_request runs
+          # are read-only and this lane never saves its Gradle/build-cache
+          # state (observed: "Cache is read-only: will not save state", so a
+          # PR's warm rerun still recompiles everything).
+          cache-read-only: false
           # Validated in the dedicated step below, which can allow-list
           # wrapper JARs vendored inside submodules (same convention as
           # ci.yml's `assemble` job).
