@@ -81,8 +81,8 @@
     <ID>LongMethod:TextToSpeechButton.kt$@Composable fun TextToSpeechButton( enabled: Boolean = true, textToSpeechSynthesisState: TextToSpeechSynthesisState, textToSpeechAvailable: Boolean, textToSpeechVoiceAvailable: Boolean, onTextToSpeech: () -&gt; Unit, onCancelTextToSpeech: () -&gt; Unit, )</ID>
     <ID>LongMethod:TextToSpeechSettings.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TextToSpeechSettings( innerPadding: PaddingValues, scaffoldViewModel: ScaffoldViewModel, navigationViewModel: NavigationViewModel, textToSpeechViewModel: TextToSpeechViewModel, )</ID>
     <ID>LongMethod:TextToSpeechSettings.kt$@OptIn(ExperimentalMaterial3ExpressiveApi::class) @Composable fun TextToSpeechDataDownloadProgress( status: DownloadStatus?, )</ID>
-    <ID>LongMethod:TextTranslation.kt$@OptIn( ExperimentalPermissionsApi::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalSharedTransitionApi::class, ExperimentalLayoutApi::class, ) @Composable fun TextTranslation( innerPadding: PaddingValues, scaffoldViewModel: ScaffoldViewModel, navigationViewModel: NavigationViewModel, textToSpeechViewModel: TextToSpeechViewModel, textTranslationViewModel: TextTranslationViewModel, )</ID>
-    <ID>LongMethod:TextTranslation.kt$@OptIn(ExperimentalMaterial3ExpressiveApi::class) @Composable fun FloatingTextTranslationInputBar( visible: Boolean, navigationViewModel: NavigationViewModel, textTranslationViewModel: TextTranslationViewModel, )</ID>
+    <ID>LongMethod:TextTranslation.kt$@OptIn( ExperimentalPermissionsApi::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalSharedTransitionApi::class, ExperimentalLayoutApi::class, ) @Composable fun TextTranslation( innerPadding: PaddingValues, scaffoldViewModel: ScaffoldViewModel, navigationViewModel: NavigationViewModel, textToSpeechViewModel: TextToSpeechViewModel, textTranslationViewModel: TextTranslationViewModel, languageViewModel: LanguageViewModel, )</ID>
+    <ID>LongMethod:TextTranslation.kt$@OptIn(ExperimentalMaterial3ExpressiveApi::class) @Composable fun FloatingTextTranslationInputBar( visible: Boolean, navigationViewModel: NavigationViewModel, textTranslationViewModel: TextTranslationViewModel, languageViewModel: LanguageViewModel, )</ID>
     <ID>LongMethod:TextTranslationLegacy.kt$@Composable fun TextTranslationOutput( modifier: Modifier = Modifier, intermediate: String, translation: String, transliteration: String, writingDirection: WritingDirection, )</ID>
     <ID>LongMethod:TextTranslationLegacy.kt$@Composable fun TextTranslationOutputButtonRow( modifier: Modifier = Modifier, translationInProgress: Boolean, textToSpeechSynthesisState: TextToSpeechSynthesisState, textToSpeechAvailable: Boolean, textToSpeechVoiceAvailable: Boolean, onTextToSpeech: () -&gt; Unit, onCancelTextToSpeech: () -&gt; Unit, onCancel: () -&gt; Unit, onCopy: () -&gt; Unit, onShare: () -&gt; Unit, )</ID>
     <ID>LongMethod:TextTranslationLegacy.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TextTranslationLegacy( navigationViewModel: NavigationViewModel, languageViewModel: LanguageViewModel, translationViewModel: TranslationViewModel, textTranslationViewModel: TextTranslationViewModel, textToSpeechViewModel: TextToSpeechViewModel, )</ID>
@@ -161,7 +161,7 @@
     <ID>ReturnCount:SpeechContextStore.kt$SpeechContextStore$fun get(languageIsoCode: String?): IntArray</ID>
     <ID>ReturnCount:SpeechRecognitionDatabaseRepository.kt$SpeechRecognitionDatabaseRepository$private fun mapSpeechRecognitionDatabaseModelToSpeechRecognitionFiles(data: SpeechRecognitionDatabaseModel?): SpeechRecognitionWithFiles?</ID>
     <ID>ReturnCount:TarballExtractor.kt$TarballExtractor$override fun openFile( uri: Uri, fileName: String, ): File?</ID>
-    <ID>ReturnCount:TranslationViewModel.kt$TranslationViewModel$suspend fun translate( input: String, languages: LanguagePair, ): String</ID>
+    <ID>ReturnCount:TranslationViewModel.kt$TranslationViewModel$override suspend fun translate( input: String, languages: LanguagePair, ): String</ID>
     <ID>ReturnCount:VerstaGlSurfaceView.kt$VerstaGlSurfaceView.GlThread$fun setupEgl(): Boolean</ID>
     <ID>ReturnCount:VoiceDatabaseRepository.kt$VoiceDatabaseRepository$private fun mapVoiceModelDatabaseModelToVoiceModelFiles(data: VoiceModelDatabaseModel?): VoiceWithModelFiles?</ID>
     <ID>ReturnCount:WhisperSpeechRecognition.kt$WhisperSpeechRecognition.Companion$internal fun isDegenerate(text: String): Boolean</ID>
@@ -236,7 +236,7 @@
     <ID>TooManyFunctions:LanguagePreferenceMemoryRepository.kt$LanguagePreferenceMemoryRepository : LanguagePreferenceRepository</ID>
     <ID>TooManyFunctions:LanguagePreferenceRepository.kt$LanguagePreferenceRepository</ID>
     <ID>TooManyFunctions:LanguageRepository.kt$LanguageRepository</ID>
-    <ID>TooManyFunctions:LanguageViewModel.kt$LanguageViewModel : ViewModel</ID>
+    <ID>TooManyFunctions:LanguageViewModel.kt$LanguageViewModel : ViewModelTranslationLanguageProvider</ID>
     <ID>TooManyFunctions:LiveGlRenderer.kt$LiveGlRenderer : AutoCloseable</ID>
     <ID>TooManyFunctions:NavigationViewModel.kt$NavigationViewModel : ViewModel</ID>
     <ID>TooManyFunctions:OcrEngine.kt$OcrEngine : AutoCloseable</ID>
@@ -246,7 +246,7 @@
     <ID>TooManyFunctions:TranslationPreferenceDataStoreRepository.kt$TranslationPreferenceDataStoreRepository : TranslationPreferenceRepository</ID>
     <ID>TooManyFunctions:TranslationPreferenceMemoryRepository.kt$TranslationPreferenceMemoryRepository : TranslationPreferenceRepository</ID>
     <ID>TooManyFunctions:TranslationPreferenceRepository.kt$TranslationPreferenceRepository</ID>
-    <ID>TooManyFunctions:TranslationViewModel.kt$TranslationViewModel : ViewModel</ID>
+    <ID>TooManyFunctions:TranslationViewModel.kt$TranslationViewModel : ViewModelTranslationRunner</ID>
     <ID>TooManyFunctions:Whisper.kt$Whisper : AutoCloseableSpeechRecognitionEngine</ID>
     <ID>UnusedParameter:TextTranslation.kt$textToSpeechViewModel: TextToSpeechViewModel</ID>
     <ID>UnusedParameter:TranslationViewModel.kt$TranslationViewModel$languages: LanguagePair</ID>

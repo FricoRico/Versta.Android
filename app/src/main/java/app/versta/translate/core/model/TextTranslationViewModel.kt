@@ -21,11 +21,12 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @OptIn(FlowPreview::class)
 class TextTranslationViewModel(
-    private val translationViewModel: TranslationViewModel,
-    private val languageViewModel: LanguageViewModel,
+    private val translationViewModel: TranslationRunner,
+    private val languageViewModel: TranslationLanguageProvider,
 ) : ViewModel() {
     private val _loadingProgress = MutableStateFlow<LoadingProgress>(LoadingProgress.Idle)
     val loadingProgress: Flow<LoadingProgress> = _loadingProgress.asStateFlow().sample(10)
@@ -62,8 +63,16 @@ class TextTranslationViewModel(
         _translationScope.launch {
             val source = _languageOptions.first()?.source
 
-            val files = _languageModelFiles.first() ?: return@launch
-            val languages = _languages.first() ?: return@launch
+            val files = _languageModelFiles.first()
+            val languages = _languages.first()
+
+            if (files == null || languages == null) {
+                val error = LanguageModelUnavailableException()
+                Timber.tag(TAG).w("Translation unavailable (files=$files, languages=$languages)")
+                _loadingProgress.value = LoadingProgress.Error(error)
+                translationViewModel.setTranslationError(error)
+                return@launch
+            }
 
             clearTranslation()
 
@@ -218,3 +227,13 @@ class TextTranslationViewModel(
         private val TAG = TextTranslationViewModel::class.java.simpleName
     }
 }
+
+/**
+ * Raised as [LoadingProgress.Error] and [TranslationRunner.setTranslationError]
+ * when a translation is requested without an installed model (or resolvable
+ * language pair), so callers never observe a silent no-op.
+ */
+class LanguageModelUnavailableException :
+    Exception(
+        "No language model installed for the selected language pair",
+    )
