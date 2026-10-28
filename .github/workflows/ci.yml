@@ -155,19 +155,21 @@ jobs:
   # in ~5m20s while its inputs only move when a submodule pin or a main-repo
   # file under app/native changes (~monthly), so every Kotlin-only PR would
   # otherwise pay the full cost. Compilation is routed through ccache
-  # (preinstalled on the ubuntu image) via CMake's
-  # CMAKE_<LANG>_COMPILER_LAUNCHER environment variables — no Gradle files
-  # involved, no effect outside this job.
+  # (installed via apt below — the current ubuntu-latest image no longer
+  # ships it) via CMake's CMAKE_<LANG>_COMPILER_LAUNCHER environment
+  # variables — no Gradle files involved, no effect outside this job.
   #
   # Cache contract:
   #   path: .ccache (CCACHE_DIR, inside the workspace)
-  #   key : ccache-arm64-v8a-<runner.os>-ndk28.1.13356709-cmake3.31.6-<nativeHash>
+  #   key : ccache-arm64-v8a-<runner.os>-ccache<ver>-ndk28.1.13356709-cmake3.31.6-<nativeHash>
   #         nativeHash = git hash-object of
   #           git ls-tree -r HEAD -- app/native .gitmodules   (minus the
   #           generated graphify-out stat indexes)
   #         which covers every main-repo bridge source AND every submodule
-  #         gitlink pin. The ndk/cmake segments must track the pins in this
-  #         job's sdkmanager step (and app/build.gradle.kts).
+  #         gitlink pin. <ver> is the installed ccache version, so a distro
+  #         bump degrades to a clean miss instead of mixing cache formats.
+  #         The ndk/cmake segments must track the pins in this job's
+  #         sdkmanager step (and app/build.gradle.kts).
   #   No restore-keys on purpose: a native change must show a clean cache
   #   MISS and a full rebuild in the log, not a silent partial restore.
   #   ccache content-hashes its compile inputs, so artifacts can never go
@@ -208,16 +210,25 @@ jobs:
       - name: Install NDK, CMake, platform and build-tools
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
 
+      # ccache is NOT on the current ubuntu-latest image (exit 127),
+      # so install the distro build; its version joins the cache key.
+      - name: Install ccache
+        id: ccache-setup
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ccache
+          ver=$(ccache --version | sed -n '1s/.*version //p')
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "ccache version: $ver"
+
       - name: Restore ccache
         uses: actions/cache@v4
         with:
           path: .ccache
-          key: ccache-arm64-v8a-${{ runner.os }}-ndk28.1.13356709-cmake3.31.6-${{ steps.native-inputs.outputs.hash }}
+          key: ccache-arm64-v8a-${{ runner.os }}-ccache${{ steps.ccache-setup.outputs.version }}-ndk28.1.13356709-cmake3.31.6-${{ steps.native-inputs.outputs.hash }}
 
       - name: ccache preflight
-        run: |
-          ccache --version
-          ccache --zero-stats
+        run: ccache --zero-stats
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
