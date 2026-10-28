@@ -1,0 +1,19 @@
+[
+  {
+    "id": "paddle-ocr",
+    "name": "Paddle OCR",
+    "base_model": "PaddlePaddle/PP-OCRv6",
+    "architectures": [
+      "PaddleOCR"
+    ],
+    "size": 26852331,
+    "version": "v2.0.0",
+    "bundle": "https://models.versta.app/object-character-recognition/v2.0.0/paddle-ocr-bundle.tar.gz",
+    "checksum": "https://models.versta.app/object-character-recognition/v2.0.0/paddle-ocr-bundle.tar.sha256",
+    "languages": [
+      "en",
+      "ja",
+      "nl"
+    ]
+  }
+]

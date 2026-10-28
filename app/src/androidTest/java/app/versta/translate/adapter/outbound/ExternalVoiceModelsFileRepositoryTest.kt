@@ -19,13 +19,13 @@ class ExternalVoiceModelsFileRepositoryTest {
         """
         [
             {
-                "id": "styletts2-en",
-                "name": "StyleTTS2 (English)",
-                "base_model": "versta/styletts2-en",
-                "size": 163901362,
+                "id": "supertonic3",
+                "name": "Supertonic 3",
+                "base_model": "Supertone/supertonic-3",
+                "size": 114532352,
                 "version": "$version",
-                "bundle": "https://mock.versta.app/styletts2-en-bundle.tar.gz",
-                "checksum": "https://mock.versta.app/styletts2-en-bundle.tar.gz.sha256"
+                "bundle": "https://mock.versta.app/supertonic3-bundle.tar.gz",
+                "checksum": "https://mock.versta.app/supertonic3-bundle.tar.gz.sha256"
             }
         ]
         """.trimIndent()
@@ -40,12 +40,12 @@ class ExternalVoiceModelsFileRepositoryTest {
         VoiceWithModelFiles(
             id = id,
             path = Path.of(""),
-            baseModel = "versta/styletts2-en",
-            architectures = listOf(VoiceModelArchitecture.StyleTTS2),
+            baseModel = "Supertone/supertonic-3",
+            architectures = listOf(VoiceModelArchitecture.Supertonic3),
             version = version,
             size = size,
-            inference = VoiceModelInferenceFiles(model = Path.of("model.bin")),
-            tokenizer = VoiceModelTokenizerFiles(vocabulary = Path.of("vocabulary.bin")),
+            inference = VoiceModelInferenceFiles(config = Path.of("tts.json")),
+            tokenizer = VoiceModelTokenizerFiles(unicodeIndexer = Path.of("unicode_indexer.json")),
             voices = VoiceModelVoiceFiles(),
         )
 
@@ -57,7 +57,7 @@ class ExternalVoiceModelsFileRepositoryTest {
 
         val definitions = awaitDefinitions(repo)
 
-        assertEquals(listOf("styletts2-en"), definitions.map { it.id })
+        assertEquals(listOf("supertonic3"), definitions.map { it.id })
         assertTrue(definitions.all { it.isValid() })
     }
 
@@ -65,14 +65,14 @@ class ExternalVoiceModelsFileRepositoryTest {
     fun getDefinitionsByState_sameVersion_marksInstalled() {
         val repo = repository()
         awaitDefinitions(repo)
-        val imported = listOf(importedModel("styletts2-en", "v1.10.0", size = 42L))
+        val imported = listOf(importedModel("supertonic3", "v1.10.0", size = 42L))
 
         val result =
             runBlocking {
                 repo.getDefinitionsByState(flowOf(imported)).first()
             }
 
-        assertEquals(listOf("styletts2-en"), result.installed.map { it.id })
+        assertEquals(listOf("supertonic3"), result.installed.map { it.id })
         assertEquals(42L, result.installed.first().extracted)
         assertTrue(result.updates.isEmpty())
         assertTrue(result.available.isEmpty())
@@ -84,14 +84,14 @@ class ExternalVoiceModelsFileRepositoryTest {
         awaitDefinitions(repo)
         // Lexicographic order treats v1.2.0 as newer than v1.10.0; numeric order
         // must still surface the update.
-        val imported = listOf(importedModel("styletts2-en", "v1.2.0", size = 99L))
+        val imported = listOf(importedModel("supertonic3", "v1.2.0", size = 99L))
 
         val result =
             runBlocking {
                 repo.getDefinitionsByState(flowOf(imported)).first()
             }
 
-        assertEquals(listOf("styletts2-en"), result.updates.map { it.id })
+        assertEquals(listOf("supertonic3"), result.updates.map { it.id })
         assertEquals(99L, result.updates.first().extracted)
         assertTrue(result.installed.isEmpty())
         assertTrue(result.available.isEmpty())
@@ -103,7 +103,7 @@ class ExternalVoiceModelsFileRepositoryTest {
         awaitDefinitions(repo)
         // Lexicographic order treats v10.0.0 as older than v2.0.0; numeric order
         // must not downgrade a newer install.
-        val imported = listOf(importedModel("styletts2-en", "v10.0.0", size = 99L))
+        val imported = listOf(importedModel("supertonic3", "v10.0.0", size = 99L))
 
         val result =
             runBlocking {
@@ -125,7 +125,7 @@ class ExternalVoiceModelsFileRepositoryTest {
                 repo.getDefinitionsByState(flowOf(emptyList())).first()
             }
 
-        assertEquals(listOf("styletts2-en"), result.available.map { it.id })
+        assertEquals(listOf("supertonic3"), result.available.map { it.id })
         assertTrue(result.installed.isEmpty())
         assertTrue(result.updates.isEmpty())
     }

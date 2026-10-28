@@ -104,23 +104,22 @@ class VoiceDatabaseRepositoryTest {
         )
     }
 
-    private fun brokenLegacyModel(root: File): VoiceModel {
+    private fun brokenModel(root: File): VoiceModel {
         root.mkdirs()
 
         return VoiceModel(
-            bundle = VoiceBundleMetadata("voice-legacy", "v1.4.0", VoiceMetadataFile("voice-legacy")),
+            bundle = VoiceBundleMetadata("voice-broken", "v1.4.0", VoiceMetadataFile("voice-broken")),
             model =
                 VoiceModelMetadata(
                     version = "v1.4.0",
-                    baseModel = "styletts2",
-                    architectures = listOf(VoiceModelArchitecture.Kokoro),
+                    baseModel = "unknown/unknown",
+                    // No recognized architecture: voice mapping fails.
+                    architectures = emptyList(),
                     files =
                         VoiceModelFilesMetadata(
-                            inference = VoiceInferenceFilesMetadata(model = "model.onnx"),
-                            tokenizer = VoiceTokenizerFilesMetadata(vocabulary = "vocab.txt"),
-                            // Unknown Kokoro file-name prefix: the mapping to a
-                            // language and gender fails.
-                            voices = listOf("xq_unknown.bin"),
+                            inference = VoiceInferenceFilesMetadata(),
+                            tokenizer = VoiceTokenizerFilesMetadata(),
+                            voices = emptyList(),
                         ),
                 ).setRootPath(root.toPath()),
         )
@@ -192,7 +191,7 @@ class VoiceDatabaseRepositoryTest {
         val repository = repository(container)
 
         assertThrows(Exception::class.java) {
-            repository.upsertVoiceModel(brokenLegacyModel(context.cacheDir.resolve("voice-legacy")))
+            repository.upsertVoiceModel(brokenModel(context.cacheDir.resolve("voice-broken")))
         }
 
         assertTrue(

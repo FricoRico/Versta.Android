@@ -29,24 +29,21 @@ data class VoiceWithModelFiles(
             (!isSupertonic3 || inference.models.keys == Supertonic3.MODEL_STAGES)
 
     /**
-     * Resolves the voice file for [language] and [gender]. Supertonic 3 voices
-     * resolve to the fixed default style of the language; legacy bundles match
-     * on Kokoro file naming.
+     * Resolves the voice style file for [language] and [gender]. Supertonic 3
+     * voices resolve to the fixed default style of the language; languages
+     * without Supertonic 3 coverage resolve to nothing.
      */
     fun getVoice(
         language: Language,
         gender: VoiceGender = VoiceGender.Female,
-    ): Path? =
-        if (isSupertonic3) {
-            if (!Supertonic3.supports(language)) {
-                return null
-            }
-
-            val style = path.resolve(Supertonic3.styleFileName(Supertonic3.defaultStyle(language, gender)))
-            voices.find { it == style }
-        } else {
-            voices.getVoiceByLanguage(language, gender)
+    ): Path? {
+        if (!isSupertonic3 || !Supertonic3.supports(language)) {
+            return null
         }
+
+        val style = path.resolve(Supertonic3.styleFileName(Supertonic3.defaultStyle(language, gender)))
+        return voices.find { it == style }
+    }
 
     companion object {
         private val serializer = Json { ignoreUnknownKeys = true }
@@ -73,10 +70,6 @@ data class VoiceWithModelFiles(
                     size = path.parent.directorySize(),
                     inference =
                         VoiceModelInferenceFiles(
-                            model =
-                                metadata.files.inference.model
-                                    .takeIf { it.isNotBlank() }
-                                    ?.let { path.resolve(it) },
                             models =
                                 metadata.files.inference.models
                                     .mapValues { path.resolve(it.value) },
@@ -87,10 +80,6 @@ data class VoiceWithModelFiles(
                         ),
                     tokenizer =
                         VoiceModelTokenizerFiles(
-                            vocabulary =
-                                metadata.files.tokenizer.vocabulary
-                                    .takeIf { it.isNotBlank() }
-                                    ?.let { path.resolve(it) },
                             unicodeIndexer =
                                 metadata.files.tokenizer.unicodeIndexer
                                     .takeIf { it.isNotBlank() }
@@ -117,68 +106,20 @@ data class VoiceWithModelFiles(
 
 @Serializable
 data class VoiceModelInferenceFiles(
-    val model: Path? = null,
     val models: Map<String, Path> = emptyMap(),
     val config: Path? = null,
 ) {
-    fun isValid() =
-        if (models.isEmpty()) {
-            model?.exists() == true
-        } else {
-            config?.exists() == true && models.values.all { it.exists() }
-        }
+    fun isValid() = config?.exists() == true && models.values.all { it.exists() }
 }
 
 @Serializable
 data class VoiceModelTokenizerFiles(
-    val vocabulary: Path? = null,
     val unicodeIndexer: Path? = null,
 ) {
-    fun isValid() = vocabulary?.exists() == true || unicodeIndexer?.exists() == true
+    fun isValid() = unicodeIndexer?.exists() == true
 }
 
 @Serializable
 class VoiceModelVoiceFiles : ArrayList<Path>() {
     fun isValid() = all { it.exists() }
-
-    fun languages(): Map<Path, Language> =
-        associate {
-            val file = it.fileName.toString()
-
-            it to
-                when {
-                    file.startsWith("a") -> Language.fromIsoCode("en")
-                    file.startsWith("b") -> Language.fromIsoCode("en")
-                    file.startsWith("j") -> Language.fromIsoCode("ja")
-                    file.startsWith("f") -> Language.fromIsoCode("fr")
-                    file.startsWith("e") -> Language.fromIsoCode("es")
-                    file.startsWith("h") -> Language.fromIsoCode("hi")
-                    file.startsWith("i") -> Language.fromIsoCode("it")
-                    file.startsWith("z") -> Language.fromIsoCode("zh")
-                    file.startsWith("p") -> Language.fromIsoCode("pt")
-                    else -> null
-                }
-        }.filterValues { it != null }.mapValues { it.value!! }
-
-    fun genders(): Map<Path, VoiceGender> =
-        associate {
-            val file = it.fileName.toString()
-
-            it to
-                when {
-                    file.startsWith("f", 1) -> VoiceGender.Female
-                    file.startsWith("m", 1) -> VoiceGender.Male
-                    else -> null
-                }
-        }.filterValues { it != null }.mapValues { it.value!! }
-
-    fun getVoiceByLanguage(
-        language: Language,
-        gender: VoiceGender = VoiceGender.Female,
-    ): Path? =
-        find {
-            languages()[it] == language && genders()[it] == gender
-        } ?: find {
-            languages()[it] == language
-        }
 }

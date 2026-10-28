@@ -1,7 +1,4 @@
 set(SRC_FILES
-        ${SRC_DIR}/tensor_utils.cc
-        ${SRC_DIR}/espeak_ng.cc
-        ${SRC_DIR}/open_jtalk.cc
         ${SRC_DIR}/ocr/anchor.cc
         ${SRC_DIR}/ocr/blocks.cc
         ${SRC_DIR}/ocr/detect.cc
