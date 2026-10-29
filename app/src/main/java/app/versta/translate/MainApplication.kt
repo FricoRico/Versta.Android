@@ -10,8 +10,6 @@ import app.versta.translate.adapter.inbound.FileHashValidator
 import app.versta.translate.adapter.inbound.PrecomputedHashFileValidator
 import app.versta.translate.adapter.inbound.TarballExtractor
 import app.versta.translate.adapter.outbound.AudioTrackPlayer
-import app.versta.translate.adapter.outbound.BergamotTinyInference
-import app.versta.translate.adapter.outbound.DEFAULT_CACHE_SIZE
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsFileRepository
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsRepository
 import app.versta.translate.adapter.outbound.ExternalObjectCharacterRecognitionModelsFileRepository
@@ -41,13 +39,12 @@ import app.versta.translate.adapter.outbound.TextToSpeechInference
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceRepository
 import app.versta.translate.adapter.outbound.TextToSpeechTokenizer
-import app.versta.translate.adapter.outbound.TranslationInference
+import app.versta.translate.adapter.outbound.TranslationEngineManager
 import app.versta.translate.adapter.outbound.TranslationPreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
 import app.versta.translate.adapter.outbound.VoiceDatabaseRepository
 import app.versta.translate.adapter.outbound.VoiceRepository
 import app.versta.translate.adapter.outbound.WhisperSpeechRecognition
-import app.versta.translate.bridge.leanmt.Leanmt
 import app.versta.translate.core.model.CameraTranslationViewModel
 import app.versta.translate.core.model.CustomThemeViewModel
 import app.versta.translate.core.model.LanguageViewModel
@@ -113,9 +110,7 @@ interface ApplicationModuleInterface {
 
     val extractor: CompressedFileExtractor
     val validator: FileHashValidator
-    val translationService: Leanmt
-    val intermediateTranslationInference: TranslationInference
-    val outputTranslationInference: TranslationInference
+    val translationEngineManager: TranslationEngineManager
     val textToSpeechTokenizer: TextToSpeechTokenizer
     val textToSpeechInference: TextToSpeechInference
     val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference
@@ -256,9 +251,9 @@ class ApplicationModule(
 
     override val translationViewModel: TranslationViewModel by lazy {
         TranslationViewModel(
-            intermediateModel = intermediateTranslationInference,
-            outputModel = outputTranslationInference,
-            createInference = { cacheSize -> BergamotTinyInference(Leanmt(cacheSize)) },
+            intermediateModel = translationEngineManager.intermediateModel,
+            outputModel = translationEngineManager.outputModel,
+            createInference = translationEngineManager::createInference,
             translationPreferenceRepository = translatorPreferenceRepository,
             languageViewModel = languageViewModel,
         )
@@ -316,16 +311,8 @@ class ApplicationModule(
         PrecomputedHashFileValidator()
     }
 
-    override val translationService: Leanmt by lazy {
-        Leanmt(DEFAULT_CACHE_SIZE.toLong())
-    }
-
-    override val intermediateTranslationInference: TranslationInference by lazy {
-        BergamotTinyInference(translationService)
-    }
-
-    override val outputTranslationInference: TranslationInference by lazy {
-        BergamotTinyInference(translationService)
+    override val translationEngineManager: TranslationEngineManager by lazy {
+        TranslationEngineManager()
     }
 
     override val textToSpeechTokenizer: TextToSpeechTokenizer by lazy {
