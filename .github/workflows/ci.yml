@@ -184,6 +184,7 @@ jobs:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CMAKE_C_COMPILER_LAUNCHER: ccache
       CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      CCACHE_COMPILERCHECK: content
     steps:
       - uses: actions/checkout@v4
         with:
@@ -262,7 +263,9 @@ jobs:
       # wiring regressed.
       - name: ccache stats
         if: always()
-        run: ccache --show-stats
+        run: |
+          ccache --show-config | grep compiler_check
+          ccache --show-stats -vv
 
       # Cheap packaging assertion (NEU-183): the debug APK must carry the
       # freshly built bridge, not a stale/absent one.
