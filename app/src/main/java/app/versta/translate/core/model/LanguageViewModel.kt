@@ -355,5 +355,6 @@ class LanguageViewModel(
     override fun onCleared() {
         super.onCleared()
         downloadManager.unregister()
+        _languageDetector.close()
     }
 }

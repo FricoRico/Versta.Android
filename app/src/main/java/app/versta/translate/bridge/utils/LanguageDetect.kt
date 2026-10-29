@@ -8,7 +8,15 @@ data class LanguageDetectResult(
     val confidence: Int,
 )
 
+/**
+ * CLD2-backed language detector. [close] runs on the main thread from
+ * ViewModel cleanup while [detectLanguage] runs on Dispatchers.Default, so
+ * [handle] is `@Volatile`: a `0L` read short-circuits here, and a handle
+ * that still crosses JNI after close is rejected by the guarded native
+ * registry, which keeps the instance alive until the in-flight call returns.
+ */
 class LanguageDetect : AutoCloseable {
+    @Volatile
     private var handle: Long
 
     init {
@@ -18,16 +26,25 @@ class LanguageDetect : AutoCloseable {
         }
     }
 
-    fun detectLanguage(text: String): LanguageDetectResult? = detectLanguage(handle, text)
+    fun detectLanguage(text: String): LanguageDetectResult? {
+        val currentHandle = handle
+        if (currentHandle == 0L) {
+            return null
+        }
+        return detectLanguage(currentHandle, text)
+    }
 
     override fun close() {
-        if (handle == 0L) {
+        val currentHandle = handle
+        if (currentHandle == 0L) {
             Timber.tag(TAG).w("Already closed")
             return
         }
 
-        close(handle)
         handle = 0L
+        if (!close(currentHandle)) {
+            Timber.tag(TAG).w("Native registry rejected close of live handle %d", currentHandle)
+        }
     }
 
     private external fun construct(): Long
@@ -45,5 +62,13 @@ class LanguageDetect : AutoCloseable {
         init {
             System.loadLibrary("app_versta_translate_bridge")
         }
+
+        /**
+         * Registry occupancy for regression tests. Must stay `@JvmStatic` and
+         * non-internal: Kotlin mangles `internal` JVM names and the symbol
+         * would never link.
+         */
+        @JvmStatic
+        external fun instanceCount(): Int
     }
 }
