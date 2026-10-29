@@ -95,7 +95,6 @@ fun ApplicationLogs(
         LazyColumn(
             modifier =
                 Modifier
-                    .horizontalScroll(scrollState)
                     .fillMaxSize(),
             contentPadding =
                 PaddingValues(
@@ -141,6 +140,11 @@ fun ApplicationLogs(
                 Text(
                     text = it,
                     softWrap = false,
+                    // One shared state: per-line scrolling keeps the column
+                    // width bounded (a LazyColumn-wide scroll would hand
+                    // unbounded width to every item and collapse weighted
+                    // rows like the diagnostics toggle above — NEU-228).
+                    modifier = Modifier.horizontalScroll(scrollState),
                 )
             }
         }

@@ -21,10 +21,12 @@ import java.io.FileInputStream
 class LoggingViewModel(
     directory: File?,
     private val loggingPreferenceRepository: LoggingPreferenceRepository,
+    private val watcherFactory: (File, () -> Unit) -> LogFileWatcher = ::createLogFileWatcher,
 ) : ViewModel() {
+    private val _directory: File? = directory
     private var _file: File = File(directory, FileLoggingTree.LOG_FILE_NAME)
     private var _backup: File = File(directory, FileLoggingTree.BACKUP_FILE_NAME)
-    private lateinit var observer: FileObserver
+    private var watcher: LogFileWatcher? = null
 
     private val _logs = MutableStateFlow("")
     val logs: StateFlow<String> = _logs.asStateFlow()
@@ -109,33 +111,21 @@ class LoggingViewModel(
     }
 
     /**
-     * Starts a FileObserver to monitor changes in the log file.
+     * Starts watching the log directory for changes to the log file.
      */
     private fun startObserver() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            return
-        }
+        val directory = _directory ?: return
 
-        observer =
-            object : FileObserver(_file, MODIFY or DELETE) {
-                override fun onEvent(
-                    event: Int,
-                    path: String?,
-                ) {
-                    if (event and (MODIFY or DELETE) != 0) {
-                        readLogs()
-                    }
-                }
-            }
-
-        observer.startWatching()
+        watcher = watcherFactory(directory) { readLogs() }
+        watcher?.startWatching()
     }
 
     /**
-     * Stops the FileObserver.
+     * Stops the log file watcher.
      */
     private fun stopObserver() {
-        observer.stopWatching()
+        watcher?.stopWatching()
+        watcher = null
     }
 
     override fun onCleared() {
@@ -151,5 +141,66 @@ class LoggingViewModel(
     companion object {
         private val TAG: String = LoggingViewModel::class.java.simpleName
         private const val MAX_LOG_BYTES = 512 * 1024L
+    }
+}
+
+interface LogFileWatcher {
+    fun startWatching()
+
+    fun stopWatching()
+}
+
+/**
+ * Watches the log DIRECTORY, not the file itself: FileLoggingTree creates
+ * app.log lazily on the first message and the Logging screen's Clear deletes
+ * it, so a file-targeted observer goes permanently silent the moment the
+ * file is (re)created — which is exactly the release flow (toggle off at
+ * first launch, no file yet, toggle on).
+ */
+internal fun createLogFileWatcher(
+    directory: File,
+    onChanged: () -> Unit,
+): LogFileWatcher {
+    val mask = FileObserver.CREATE or FileObserver.MODIFY or FileObserver.DELETE or FileObserver.MOVED_TO
+
+    val observer =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            object : FileObserver(directory, mask) {
+                override fun onEvent(
+                    event: Int,
+                    path: String?,
+                ) {
+                    onLogFileEvent(event, path, onChanged)
+                }
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            object : FileObserver(directory.absolutePath, mask) {
+                override fun onEvent(
+                    event: Int,
+                    path: String?,
+                ) {
+                    onLogFileEvent(event, path, onChanged)
+                }
+            }
+        }
+
+    return object : LogFileWatcher {
+        override fun startWatching() = observer.startWatching()
+
+        override fun stopWatching() = observer.stopWatching()
+    }
+}
+
+private fun onLogFileEvent(
+    event: Int,
+    path: String?,
+    onChanged: () -> Unit,
+) {
+    if (path != FileLoggingTree.LOG_FILE_NAME) return
+
+    val relevant = FileObserver.CREATE or FileObserver.MODIFY or FileObserver.DELETE or FileObserver.MOVED_TO
+    if (event and relevant != 0) {
+        onChanged()
     }
 }
