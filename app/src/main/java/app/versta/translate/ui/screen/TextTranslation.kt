@@ -12,6 +12,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -44,11 +45,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -64,8 +67,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.versta.translate.R
 import app.versta.translate.adapter.outbound.AudioMockPlayer
-import app.versta.translate.adapter.outbound.DataMemoryRepository
-import app.versta.translate.adapter.outbound.ExternalDataMemoryRepository
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsMemoryRepository
 import app.versta.translate.adapter.outbound.LanguageMemoryRepository
 import app.versta.translate.adapter.outbound.LanguagePreferenceMemoryRepository
@@ -75,8 +76,7 @@ import app.versta.translate.adapter.outbound.TextToSpeechPreferenceMemoryReposit
 import app.versta.translate.adapter.outbound.TranslationMockInference
 import app.versta.translate.adapter.outbound.TranslationPreferenceMemoryRepository
 import app.versta.translate.adapter.outbound.VoiceMemoryRepository
-import app.versta.translate.bridge.speech.ESpeakNG
-import app.versta.translate.bridge.speech.OpenJTalk
+import app.versta.translate.core.entity.WritingDirection
 import app.versta.translate.core.model.LanguageViewModel
 import app.versta.translate.core.model.NavigationViewModel
 import app.versta.translate.core.model.ScaffoldViewModel
@@ -92,6 +92,7 @@ import app.versta.translate.utils.darken
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @OptIn(
@@ -107,11 +108,24 @@ fun TextTranslation(
     navigationViewModel: NavigationViewModel,
     textToSpeechViewModel: TextToSpeechViewModel,
     textTranslationViewModel: TextTranslationViewModel,
+    languageViewModel: LanguageViewModel,
 ) {
     val layoutDirection = LocalLayoutDirection.current
     val lazyListState = rememberLazyListState()
 
     val input by textTranslationViewModel.input.collectAsStateWithLifecycle("")
+    val inputTransliteration by textTranslationViewModel.inputTransliteration.collectAsStateWithLifecycle(
+        "",
+    )
+
+    val intermediate by textTranslationViewModel.intermediate.collectAsStateWithLifecycle("")
+
+    val translated by textTranslationViewModel.translated.collectAsStateWithLifecycle("")
+    val translatedTransliteration by textTranslationViewModel.translatedTransliteration.collectAsStateWithLifecycle(
+        "",
+    )
+
+    val targetLanguage by languageViewModel.targetLanguage.collectAsStateWithLifecycle(null)
 
     var floatingInputVisible by rememberSaveable { mutableStateOf(true) }
 
@@ -143,6 +157,7 @@ fun TextTranslation(
                 visible = floatingInputVisible,
                 navigationViewModel = navigationViewModel,
                 textTranslationViewModel = textTranslationViewModel,
+                languageViewModel = languageViewModel,
             )
         },
     ) {
@@ -171,6 +186,61 @@ fun TextTranslation(
             state = lazyListState,
             reverseLayout = true,
         ) {
+            if (translated.isEmpty() && intermediate.isEmpty()) {
+                return@LazyColumn
+            }
+
+            item {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+                ) {
+                    TextTranslationInputEcho(
+                        input = input,
+                        transliteration = inputTransliteration,
+                    )
+
+                    TextTranslationOutput(
+                        intermediate = intermediate,
+                        translation = translated,
+                        transliteration = translatedTransliteration,
+                        writingDirection =
+                            targetLanguage?.getWritingDirection()
+                                ?: WritingDirection.LTR,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TextTranslationInputEcho(
+    input: String,
+    transliteration: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .then(modifier),
+    ) {
+        if (input.isNotEmpty()) {
+            Text(
+                text = input,
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        if (transliteration.isNotEmpty()) {
+            Text(
+                text = transliteration,
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }
@@ -181,10 +251,13 @@ fun FloatingTextTranslationInputBar(
     visible: Boolean,
     navigationViewModel: NavigationViewModel,
     textTranslationViewModel: TextTranslationViewModel,
+    languageViewModel: LanguageViewModel,
 ) {
     val value by textTranslationViewModel.input.collectAsStateWithLifecycle()
 
     var focussed by remember { mutableStateOf(false) }
+
+    val submitScope = rememberCoroutineScope()
 
     fun setFocus(state: Boolean) {
         focussed = state
@@ -195,7 +268,20 @@ fun FloatingTextTranslationInputBar(
     }
 
     fun onSubmit(text: String) {
-        textTranslationViewModel.translate(text)
+        if (text.isEmpty()) {
+            return
+        }
+
+        submitScope.launch {
+            if (!languageViewModel.modelAvailable()) {
+                languageViewModel.setLanguageSuggestionState(true) {
+                    onSubmit(text)
+                }
+                return@launch
+            }
+
+            textTranslationViewModel.translate(text)
+        }
     }
 
     fun onNavigateVision() {
@@ -350,23 +436,20 @@ private fun TextTranslationPreview() {
                     TranslationViewModel(
                         intermediateModel = translationMockInference,
                         outputModel = translationMockInference,
+                        createInference = { TranslationMockInference() },
                         translationPreferenceRepository = TranslationPreferenceMemoryRepository(),
                         languageViewModel = languageViewModel,
                     ),
             ),
+        languageViewModel = languageViewModel,
         textToSpeechViewModel =
             TextToSpeechViewModel(
-                context = LocalContext.current,
-                espeakNG = ESpeakNG(),
-                openJTalk = OpenJTalk(),
                 tokenizer = TextToSpeechMockTokenizer(),
                 model = TextToSpeechMockInference(),
                 audioPlayer = AudioMockPlayer(),
-                dataRepository = DataMemoryRepository(),
                 voiceRepository = VoiceMemoryRepository(),
                 textToSpeechPreferenceRepository = TextToSpeechPreferenceMemoryRepository(),
                 languagePreferenceRepository = LanguagePreferenceMemoryRepository(),
-                externalDataRepository = ExternalDataMemoryRepository(),
             ),
     )
 }

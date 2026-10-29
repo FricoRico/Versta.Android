@@ -3,6 +3,7 @@ package app.versta.translate.database.migrations
 import android.content.Context
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.database.Migration
+import app.versta.translate.utils.compareVersions
 import okio.Path.Companion.toPath
 import java.nio.file.Path
 import kotlin.io.path.exists

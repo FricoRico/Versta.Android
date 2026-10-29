@@ -32,6 +32,7 @@ class DatabaseContainerTest {
     private val externalData: File get() = context.filesDir.resolve("external-data")
     private val externalDataHash: File get() = context.filesDir.resolve("external-data.sha256")
     private val voiceModelsRoot: File get() = context.filesDir.resolve("voice-models")
+    private val textToSpeechData: File get() = context.filesDir.resolve("tts-data")
 
     @Before
     fun setUp() {
@@ -49,6 +50,7 @@ class DatabaseContainerTest {
         externalData.deleteRecursively()
         externalDataHash.delete()
         voiceModelsRoot.deleteRecursively()
+        textToSpeechData.deleteRecursively()
     }
 
     private fun container(): DatabaseContainer = DatabaseContainer(context).also { containers.add(it) }
@@ -207,6 +209,44 @@ class DatabaseContainerTest {
         return model.parentFile!!
     }
 
+    private fun insertVoice(
+        database: SQLiteDatabase,
+        modelId: String,
+        language: String,
+        gender: String,
+    ) {
+        database.execSQL(
+            "INSERT INTO Voice (modelId, language, gender) VALUES (?, ?, ?)",
+            arrayOf(modelId, language, gender),
+        )
+    }
+
+    private fun insertTextToSpeechData(database: SQLiteDatabase) {
+        val path = textToSpeechData.resolve("payload")
+        path.mkdirs()
+        path.resolve("espeak-ng-data").writeText("legacy")
+
+        database.execSQL(
+            "INSERT INTO Data (id, type, path, version) VALUES (?, ?, ?, ?)",
+            arrayOf("versta-tts-data", "tts", path.absolutePath, "v1.0.0"),
+        )
+    }
+
+    /**
+     * Migrations never register Supertonic 3 voice rows: the bundle-install
+     * transaction owns them so they stay parented to their model row under
+     * foreign-key enforcement (NEU-65). Install-path registration is covered
+     * by `VoiceDatabaseRepositoryTest`.
+     */
+    private fun assertNoVoiceRowsRemained(container: DatabaseContainer) {
+        assertTrue(
+            container.voices
+                .getAll()
+                .executeAsList()
+                .isEmpty(),
+        )
+    }
+
     @Test
     fun freshInstall_createsCurrentSchemaWithoutRunningMigrations() {
         val container = container()
@@ -259,7 +299,7 @@ class DatabaseContainerTest {
     }
 
     @Test
-    fun v3Database_backfillsVoicesAndCleansLegacyVoiceModels() {
+    fun v3Database_chainEndsWithLegacyVoiceModelsPurged() {
         databaseV3()
         SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
             insertVoiceModel(database, "voice-surviving", "v1.4.0")
@@ -268,55 +308,84 @@ class DatabaseContainerTest {
 
         val container = container()
 
-        val backfilled =
-            container.voices
+        // Migration4 keeps current versions before Migration7 purges every
+        // pre-Supertonic voice model.
+        assertTrue(
+            container.voiceModels
                 .getAll()
                 .executeAsList()
-                .filter { it.modelId == "voice-surviving" }
-                .map { "${it.language}:${it.gender}" }
-                .toSet()
-        assertEquals(setOf("en:female", "pt:male"), backfilled)
-
-        assertNull(container.voiceModels.getById("voice-legacy").executeAsOneOrNull())
+                .isEmpty(),
+        )
         assertFalse(voiceModelsRoot.resolve("voice-legacy").exists())
+        assertFalse(voiceModelsRoot.resolve("voice-surviving").exists())
 
-        val surviving = container.voiceModels.getById("voice-surviving").executeAsOne()
-        assertEquals(listOf("StyleTTS2"), surviving.architectures)
-        assertTrue(voiceModelsRoot.resolve("voice-surviving/model/model.onnx").exists())
+        assertNoVoiceRowsRemained(container)
     }
 
     @Test
-    fun v4Database_keepsCurrentAndFutureVersionedVoiceModels() {
+    fun v4Database_purgesCurrentAndFutureVersionedVoiceModelsForSupertonic3() {
         databaseV4()
         writeExternalDataFixtures()
         SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
             insertVoiceModel(database, "voice-legacy", "v1.1.0")
             insertVoiceModel(database, "voice-current", "v1.4.0")
             insertVoiceModel(database, "voice-future", "v1.10.0")
+            insertVoice(database, "voice-current", "en", "female")
         }
 
         val container = container()
 
-        assertNull(container.voiceModels.getById("voice-legacy").executeAsOneOrNull())
-        assertNotNull(container.voiceModels.getById("voice-current").executeAsOneOrNull())
-        assertNotNull(container.voiceModels.getById("voice-future").executeAsOneOrNull())
-
-        assertFalse(voiceModelsRoot.resolve("voice-legacy").exists())
-        assertTrue(voiceModelsRoot.resolve("voice-future/model/model.onnx").exists())
-
-        assertEquals(
-            listOf("StyleTTS2"),
+        assertTrue(
             container.voiceModels
-                .getById("voice-future")
-                .executeAsOne()
-                .architectures,
+                .getAll()
+                .executeAsList()
+                .isEmpty(),
         )
+        assertFalse(voiceModelsRoot.resolve("voice-legacy").exists())
+        assertFalse(voiceModelsRoot.resolve("voice-future").exists())
+
+        assertNoVoiceRowsRemained(container)
 
         assertFalse(externalData.exists())
     }
 
     @Test
-    fun v6Database_runsOnlyLanguageModelMigrationWhichCannotSeeDroppedRows() {
+    fun v6Database_removesTextToSpeechDataWithoutRegisteringVoices() {
+        databaseV6()
+        SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
+            insertTextToSpeechData(database)
+        }
+
+        val container = container()
+
+        assertTrue(
+            container.data
+                .getAll()
+                .executeAsList()
+                .isEmpty(),
+        )
+        assertFalse(textToSpeechData.exists())
+        assertNoVoiceRowsRemained(container)
+
+        container.driver.close()
+        containers.remove(container)
+
+        // Reopening the migrated database runs no migration again; no voice
+        // rows appear outside the bundle-install transaction.
+        assertNoVoiceRowsRemained(container())
+    }
+
+    @Test
+    fun v1Database_purgesVoiceRowsThroughFullUpgrade() {
+        databaseV1()
+
+        val container = container()
+
+        assertNoVoiceRowsRemained(container)
+    }
+
+    @Test
+    fun v6Database_runsLanguageModelMigrationAndSupertonic3Cutover() {
         databaseV6()
         SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
             insertVoiceModel(database, "voice-legacy", "v1.1.0")
@@ -333,10 +402,11 @@ class DatabaseContainerTest {
                 .isEmpty(),
         )
 
-        // Database is past Migration4's boundary: legacy voice models and files
-        // stay untouched instead of being re-processed on every cold start.
-        assertNotNull(container.voiceModels.getById("voice-legacy").executeAsOneOrNull())
-        assertTrue(voiceModelsRoot.resolve("voice-legacy/model/model.onnx").exists())
+        // Database is past Migration4's boundary, so the legacy voice model is
+        // not deleted twice — Migration7 removes it exactly once, with files.
+        assertNull(container.voiceModels.getById("voice-legacy").executeAsOneOrNull())
+        assertFalse(voiceModelsRoot.resolve("voice-legacy").exists())
+        assertNoVoiceRowsRemained(container)
     }
 
     @Test

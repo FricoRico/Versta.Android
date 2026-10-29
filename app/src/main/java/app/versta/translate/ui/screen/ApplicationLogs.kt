@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,15 +25,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.versta.translate.BuildConfig
 import app.versta.translate.R
+import app.versta.translate.adapter.outbound.DEFAULT_LOGGING_ENABLED
 import app.versta.translate.adapter.outbound.FileSaverCallback
 import app.versta.translate.adapter.outbound.LogFileSaver
+import app.versta.translate.adapter.outbound.LoggingPreferenceMemoryRepository
 import app.versta.translate.core.model.LoggingViewModel
 import app.versta.translate.core.model.NavigationViewModel
 import app.versta.translate.core.model.ScaffoldViewModel
 import app.versta.translate.ui.component.ScaffoldCompactBarBackNavigationIcon
 import app.versta.translate.ui.component.ScaffoldCompactBarTitle
 import app.versta.translate.ui.component.ScaffoldComponentProvider
+import app.versta.translate.ui.component.SettingsButtonItem
 import app.versta.translate.ui.theme.spacing
 
 @Composable
@@ -48,6 +53,7 @@ fun ApplicationLogs(
     val scrollState = rememberScrollState()
 
     val logs by loggingViewModel.logs.collectAsStateWithLifecycle()
+    val loggingEnabled by loggingViewModel.loggingEnabled.collectAsStateWithLifecycle(DEFAULT_LOGGING_ENABLED)
 
     val onSaveLocationPicked: FileSaverCallback =
         object : FileSaverCallback {
@@ -89,7 +95,6 @@ fun ApplicationLogs(
         LazyColumn(
             modifier =
                 Modifier
-                    .horizontalScroll(scrollState)
                     .fillMaxSize(),
             contentPadding =
                 PaddingValues(
@@ -100,6 +105,28 @@ fun ApplicationLogs(
                 ),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
         ) {
+            if (!BuildConfig.DEBUG) {
+                item {
+                    SettingsButtonItem(
+                        headlineContent = stringResource(R.string.application_logs_diagnostics_toggle_title),
+                        supportingContent = stringResource(R.string.application_logs_diagnostics_toggle_description),
+                        onClick = {
+                            loggingViewModel.setLoggingEnabled(!loggingEnabled)
+                        },
+                        trailingContent = {
+                            Switch(
+                                checked = loggingEnabled,
+                                onCheckedChange = {
+                                    loggingViewModel.setLoggingEnabled(it)
+                                },
+                            )
+                        },
+                        groupSize = 1,
+                        index = 0,
+                    )
+                }
+            }
+
             if (logs.isEmpty()) {
                 item {
                     Text(
@@ -113,6 +140,11 @@ fun ApplicationLogs(
                 Text(
                     text = it,
                     softWrap = false,
+                    // One shared state: per-line scrolling keeps the column
+                    // width bounded (a LazyColumn-wide scroll would hand
+                    // unbounded width to every item and collapse weighted
+                    // rows like the diagnostics toggle above — NEU-228).
+                    modifier = Modifier.horizontalScroll(scrollState),
                 )
             }
         }
@@ -131,6 +163,10 @@ fun ApplicationLogsPreview() {
                 navigationViewModel = navigationViewModel,
             ),
         navigationViewModel = navigationViewModel,
-        loggingViewModel = LoggingViewModel(LocalContext.current.getExternalFilesDir(null)),
+        loggingViewModel =
+            LoggingViewModel(
+                LocalContext.current.getExternalFilesDir(null),
+                LoggingPreferenceMemoryRepository(),
+            ),
     )
 }

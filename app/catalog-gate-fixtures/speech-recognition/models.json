@@ -1,0 +1,19 @@
+[
+  {
+    "id": "large-v3-turbo-q8_0",
+    "name": "Whisper Large Turbo",
+    "base_model": "ggerganov/whisper.cpp",
+    "architectures": [
+      "Whisper"
+    ],
+    "size": 811329223,
+    "version": "v1.0.0",
+    "bundle": "https://models.versta.app/speech-recognition/v1.0.0/whisper.large-bundle.tar.gz",
+    "checksum": "https://models.versta.app/speech-recognition/v1.0.0/whisper.large-bundle.tar.sha256",
+    "languages": [
+      "en",
+      "ja",
+      "nl"
+    ]
+  }
+]

@@ -1,8 +1,9 @@
 package app.versta.translate.adapter.outbound
 
 import app.versta.translate.core.entity.Language
-import app.versta.translate.core.entity.TextToSpeechDataMetadata
+import app.versta.translate.core.entity.Supertonic3
 import app.versta.translate.core.entity.VoiceModel
+import app.versta.translate.core.entity.VoiceModelArchitecture
 import app.versta.translate.core.entity.VoiceModelMetadata
 import app.versta.translate.core.entity.VoiceWithModelFiles
 import app.versta.translate.database.DatabaseContainer
@@ -11,7 +12,6 @@ import kotlinx.coroutines.flow.map
 import okio.Path.Companion.toPath
 import timber.log.Timber
 import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.deleteRecursively
 import java.app.versta.translate.database.sqldelight.Voice as VoiceDatabaseModel
@@ -51,7 +51,11 @@ class VoiceDatabaseRepository(
     }
 
     /**
-     * Inserts or updates the voice model in the repository.
+     * Inserts or updates the voice model in the repository, registering its
+     * voices in the same transaction — the bundle install is the only place
+     * `Voice` rows come into existence, which keeps them parented to their
+     * model row under foreign-key enforcement (NEU-65). `insertOrIgnore` keeps
+     * a reinstall idempotent.
      * @param metadata The metadata to insert or update.
      */
     override fun upsertVoiceModel(metadata: VoiceModel) {
@@ -59,8 +63,10 @@ class VoiceDatabaseRepository(
             mapVoiceMetadataToVoiceModelDatabaseModel(metadata.id, metadata.model)
         val voices = mapVoiceMetadataToVoiceDatabaseModel(metadata.id, metadata.model)
 
-        upsertVoiceDatabaseModel(data = voiceModel)
-        insertOrIgnoreVoices(data = voices)
+        database.transaction {
+            upsertVoiceDatabaseModel(data = voiceModel)
+            insertOrIgnoreVoices(data = voices)
+        }
     }
 
     /**
@@ -94,18 +100,17 @@ class VoiceDatabaseRepository(
     }
 
     /**
-     * Inserts a list of [VoiceDatabaseModel] into the repository, ignoring if it already exists.
+     * Inserts a list of [VoiceDatabaseModel] into the repository, ignoring if it
+     * already exists. Runs inside the caller's transaction.
      * @param data The data to insert.
      */
     private fun insertOrIgnoreVoices(data: List<VoiceDatabaseModel>) {
-        database.voices.transaction {
-            data.forEach {
-                database.voices.insertOrIgnore(
-                    modelId = it.modelId,
-                    language = it.language,
-                    gender = it.gender,
-                )
-            }
+        data.forEach {
+            database.voices.insertOrIgnore(
+                modelId = it.modelId,
+                language = it.language,
+                gender = it.gender,
+            )
         }
     }
 
@@ -147,44 +152,30 @@ class VoiceDatabaseRepository(
     }
 
     /**
-     * Maps a [VoiceModelMetadata] to a list of [VoiceDatabaseModel].
+     * Maps a [VoiceModelMetadata] to a list of [VoiceDatabaseModel]. Supertonic
+     * 3 bundles ship per-gender style files shared across languages, so their
+     * voices come from the bundle's canonical mapping. Unknown architectures
+     * throw, rolling back the install transaction so a broken bundle leaves no
+     * rows behind.
      * @param data The metadata to map.
      * @return The mapped database model.
      */
     private fun mapVoiceMetadataToVoiceDatabaseModel(
         modelId: String,
         data: VoiceModelMetadata,
-    ): List<VoiceDatabaseModel> =
-        data.files.voices.map {
-            val file = Path(it).fileName.toString()
+    ): List<VoiceDatabaseModel> {
+        require(data.architectures.contains(VoiceModelArchitecture.Supertonic3)) {
+            "Unsupported voice model architecture: ${data.architectures}"
+        }
 
-            val language =
-                when {
-                    file.startsWith("a") -> "en"
-                    file.startsWith("b") -> "en"
-                    file.startsWith("j") -> "ja"
-                    file.startsWith("f") -> "fr"
-                    file.startsWith("e") -> "es"
-                    file.startsWith("h") -> "hi"
-                    file.startsWith("i") -> "it"
-                    file.startsWith("z") -> "zh"
-                    file.startsWith("p") -> "pt"
-                    else -> throw Exception("Determining language from file name: $it")
-                }
-
-            val gender =
-                when {
-                    file.startsWith("f", 1) -> "female"
-                    file.startsWith("m", 1) -> "male"
-                    else -> throw Exception("Determining gender from file name: $it")
-                }
-
+        return Supertonic3.VOICES.map {
             VoiceDatabaseModel(
                 modelId = modelId,
-                language = language,
-                gender = gender,
+                language = it.language,
+                gender = it.gender.value.lowercase(),
             )
         }
+    }
 
     companion object {
         private val TAG: String = VoiceDatabaseRepository::class.java.simpleName

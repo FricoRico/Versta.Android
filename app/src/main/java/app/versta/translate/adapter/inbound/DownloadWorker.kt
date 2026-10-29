@@ -57,6 +57,8 @@ abstract class DownloadWorker(
 
     private val _downloadClient = HttpDownloadClient(_downloadDirectory)
 
+    private var _activeTaskFailed = false
+
     override suspend fun doWork(): Result {
         val taskId = UUID.fromString(inputData.getString("taskId"))
 
@@ -80,7 +82,7 @@ abstract class DownloadWorker(
         setForegroundAsync(createForegroundInfo(name))
         handleDownloadQueue()
 
-        return Result.success()
+        return if (_activeTaskFailed) Result.failure() else Result.success()
     }
 
     /**
@@ -115,13 +117,20 @@ abstract class DownloadWorker(
                             setForegroundAsync(createForegroundInfo(task.name))
                             setStatus(task.id, DownloadStatus.Processing)
 
-                            extractDownload(task.id, file)
+                            if (!extractDownload(task.id, file)) {
+                                _activeTaskFailed = true
+                                return
+                            }
 
                             setStatus(task.id, DownloadStatus.Completed)
                             removeDownloadTask(task.id)
                         }
 
                         override fun onError(exception: Exception) {
+                            if (exception !is CancellationException) {
+                                _activeTaskFailed = true
+                            }
+
                             setStatus(task.id, DownloadStatus.Error(exception))
                             removeDownloadTask(task.id)
                         }
@@ -133,6 +142,7 @@ abstract class DownloadWorker(
                 return
             }
 
+            _activeTaskFailed = true
             Timber.tag(TAG).e(e)
         } finally {
             _downloading = false
@@ -141,12 +151,17 @@ abstract class DownloadWorker(
     }
 
     /**
-     * Extracts the downloaded language model.
+     * Extracts the downloaded model.
+     *
+     * @return true when the download was extracted and imported successfully,
+     * false on failure. A failed extraction broadcasts [DownloadStatus.Error]
+     * from the implementation and fails the worker result instead of reporting
+     * [DownloadStatus.Completed].
      */
     protected open fun extractDownload(
         taskId: UUID,
         file: File,
-    ) {}
+    ): Boolean = true
 
     /**
      * Removes the download task from the queue.

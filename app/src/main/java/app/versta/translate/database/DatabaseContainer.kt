@@ -10,10 +10,11 @@ import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import app.versta.translate.database.migrations.Migration3
 import app.versta.translate.database.migrations.Migration4
 import app.versta.translate.database.migrations.Migration6
+import app.versta.translate.database.migrations.Migration7
+import app.versta.translate.database.migrations.Migration8
 import kotlinx.serialization.json.Json
 import timber.log.Timber
-import java.app.versta.translate.database.sqldelight.ObjectCharacterRecognitionDetectorModel
-import java.app.versta.translate.database.sqldelight.ObjectCharacterRecognitionRecognizerModel
+import java.app.versta.translate.database.sqldelight.OcrModuleModel
 import java.app.versta.translate.database.sqldelight.SpeechRecognitionModel
 import java.app.versta.translate.database.sqldelight.VoiceModel
 
@@ -64,13 +65,9 @@ class DatabaseContainer(
                 VoiceModel.Adapter(
                     architecturesAdapter = ListOfStringsAdapter,
                 ),
-            ObjectCharacterRecognitionDetectorModelAdapter =
-                ObjectCharacterRecognitionDetectorModel.Adapter(
-                    architecturesAdapter = ListOfStringsAdapter,
-                ),
-            ObjectCharacterRecognitionRecognizerModelAdapter =
-                ObjectCharacterRecognitionRecognizerModel.Adapter(
-                    architecturesAdapter = ListOfStringsAdapter,
+            OcrModuleModelAdapter =
+                OcrModuleModel.Adapter(
+                    languagesAdapter = ListOfStringsAdapter,
                 ),
             SpeechRecognitionModelAdapter =
                 SpeechRecognitionModel.Adapter(
@@ -83,6 +80,8 @@ class DatabaseContainer(
             Migration3,
             Migration4,
             Migration6,
+            Migration7,
+            Migration8,
         )
 
     val data = _database.dataQueries
@@ -90,7 +89,7 @@ class DatabaseContainer(
     val languageModels = _database.languageModelQueries
     val voices = _database.voiceQueries
     val voiceModels = _database.voiceModelQueries
-    val objectCharacterRecognitionModels = _database.objectCharacterRecognitionModelQueries
+    val ocrModules = _database.ocrModuleModelQueries
     val speechRecognitionModels = _database.speechRecognitionModelQueries
 
     fun transaction(body: TransactionWithoutReturn.() -> Unit) = _database.transaction { body() }
@@ -127,8 +126,8 @@ class DatabaseContainer(
      * Reads the on-disk schema version before the driver opens the database —
      * the first driver access applies the `.sqm` migrations and bumps
      * `user_version`, after which the stored version no longer says which data
-     * migrations still need to run. A missing file means a fresh install, which
-     * is created straight at the current version, so no data migrations apply.
+     * migrations still need to run. A fresh install is created straight at the
+     * current version, so no data migrations apply.
      */
     private fun storedDatabaseVersion(): Long {
         val file = appContext.getDatabasePath(DB_FILE)
