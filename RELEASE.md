@@ -28,6 +28,38 @@ Promotion rule: a cohort may only be promoted (internal → closed → open →
 staged %) after it has held the crash-free + ANR gates for **7 days**.
 Regression on any gate = halt rollout in Play Console, file an issue, triage.
 
+## Baked catalog gate (live registry content vs. app builds)
+
+`validateBakedCatalogs` runs on every build via `preBuild` and checks catalogs
+fetched at build time — **live registry state**, not repo content — so
+strictness is split by lane (NEU-177):
+
+- **PR/debug/local lanes are tolerant.** Decode-contract breakage
+  (unparseable JSON, empty body, missing required fields, mistyped fields,
+  empty roots/groups) fails the build in every lane. *Enum-membership drift* —
+  the registry advertising an architecture/gender/type entry the branch does
+  not know yet, e.g. while a registry transition is mid-flight — demotes to a
+  build-log warning (`catalog gate WARNING`). Same commit, same PR-lane
+  verdict, independent of publish timing.
+- **The release lane is strict.** Every Release assemble/bundle/publish task —
+  including `publishUniversalReleaseBundle`, the beta dispatch path — runs
+  `validateBakedCatalogsStrict` and fails on drift too. The shipped artifact
+  must decode cleanly against the live registry at publish time.
+
+**Ordering rule for catalog/registry transitions:** app-side support for a new
+enum entry must reach `develop` *before* any Release build runs against a
+registry that advertises the entry. If the strict gate fails on unknown enum
+entries at publish time, the registry is ahead of the app — halt the release,
+land the app-side support, then re-run. PR lanes stay green through the entire
+transition; only the release decision is gated.
+
+**Testing the gate hermetically:** `app/catalog-gate-fixtures/` mirrors the
+registry layout and deliberately carries an unknown TTS architecture.
+`-Pmodels.catalog.override=<dir-or-url>` points the fetch at it (relative dirs
+resolve against the repo root); the `catalog-gate` CI job re-runs both lanes
+against it on every commit. The fetched JSONs cache in `app/src/main/res/raw` —
+delete that directory (or use a clean checkout) to force a re-fetch.
+
 ## Shipping a beta build (one click)
 
 1. Confirm the develop HEAD commit is green on the CI workflow (all 3 gates).

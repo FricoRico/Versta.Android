@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -56,6 +57,8 @@ import app.versta.translate.ui.theme.spacing
 import timber.log.Timber
 import kotlin.math.max
 import kotlin.math.min
+
+const val LANGUAGE_PAIR_ROW_TEST_TAG = "language_pair_row"
 
 @Composable
 fun LanguageSettings(
@@ -250,7 +253,7 @@ private fun LazyListScope.Languages(
     items(
         count = languages.size,
         key = { languages[it].pair.uniqueId() },
-    ) { it ->
+    ) {
         val model = remember { languages[it] }
         val task = downloadTasks.firstOrNull { it.model == model }
 
@@ -270,7 +273,13 @@ private fun LazyListScope.Languages(
         SettingsButtonItem(
             index = it + 1,
             groupSize = languages.size + 1,
-            modifier = Modifier.animateItem(),
+            modifier =
+                Modifier
+                    // Smoke-test hook (LanguageSettingsSmokeTest): the release gate
+                    // asserts that this screen renders at least one row for a
+                    // baked-in catalog.
+                    .testTag(LANGUAGE_PAIR_ROW_TEST_TAG)
+                    .animateItem(),
             colors = SettingsDefaults.colors(supportingColor = MaterialTheme.colorScheme.onSurfaceVariant),
             headlineContent = "${source.name} - ${target.name}",
             supportingContent = {

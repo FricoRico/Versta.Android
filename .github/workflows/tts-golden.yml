@@ -1,0 +1,116 @@
+name: TTS golden audio
+
+# Supertonic 3 golden-audio gate (NEU-71). Manual-only: runs on demand before
+# a release and after any engine/model/engine-dependency change. It is not a
+# per-commit gate — the always-on corpus consistency check is
+# Supertonic3GoldenCorpusTest in the regular CI `test` job.
+#
+# Prereqs on the targeted ref:
+#   - native engine merged (app/native/tests builds the `supertonic_synth`
+#     host CLI — contract in tools/tts-golden/README.md)
+#   - tools/tts-golden/manifest.json blessed for linux-x86_64 (verify mode)
+#
+# `bless` mode regenerates the manifest and uploads it as an artifact; a human
+# reviews the WER table and commits it via PR. Never bless from an unreviewed
+# engine change.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "verify against the blessed manifest, or bless new references"
+        required: true
+        default: verify
+        type: choice
+        options: [verify, bless]
+      threads:
+        description: "Engine thread count (pinned by the blessed manifest)"
+        required: true
+        default: "4"
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: "17"
+  BUNDLE_URL: https://models.versta.app/text-to-speech/v2.0.0/supertonic3-bundle.tar.gz
+  BUNDLE_SHA256: d975a46a57525fc7bb8c439d47ac0fca5b2f1ae845d7cb3e626bc5083359daec
+  WHISPER_CPP_REF: v1.8.0
+  WHISPER_MODEL: ggml-base.bin
+  WHISPER_MODEL_URL: https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
+  WHISPER_MODEL_SHA256: 60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe
+
+jobs:
+  tts-golden:
+    name: tts-golden (${{ inputs.mode }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install host toolchain
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake ninja-build build-essential jq python3 ffmpeg
+
+      - name: Build engine host CLI
+        run: |
+          cmake -S app/native/tests -B build/native-tests -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/native-tests --target supertonic_synth -j
+
+      - name: Download voice bundle
+        run: |
+          curl -fSL --retry 3 -o /tmp/supertonic3-bundle.tar.gz "$BUNDLE_URL"
+          echo "$BUNDLE_SHA256  /tmp/supertonic3-bundle.tar.gz" | sha256sum -c -
+          mkdir -p /tmp/supertonic3-bundle
+          tar -xzf /tmp/supertonic3-bundle.tar.gz -C /tmp/supertonic3-bundle
+
+      - name: Cache whisper model
+        id: whisper-model-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/tts-golden/ggml-base.bin
+          key: whisper-ggml-base-v1
+
+      - name: Download whisper model
+        if: steps.whisper-model-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/.cache/tts-golden
+          curl -fSL --retry 3 -o ~/.cache/tts-golden/ggml-base.bin "$WHISPER_MODEL_URL"
+          echo "$WHISPER_MODEL_SHA256  ~/.cache/tts-golden/ggml-base.bin" | sha256sum -c -
+
+      - name: Cache whisper.cpp build
+        id: whisper-build-cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/whisper.cpp
+          key: whisper-cpp-${{ env.WHISPER_CPP_REF }}-x86_64
+
+      - name: Build whisper.cpp CLI
+        if: steps.whisper-build-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch "$WHISPER_CPP_REF" https://github.com/ggml-org/whisper.cpp /tmp/whisper.cpp
+          cmake -S /tmp/whisper.cpp -B /tmp/whisper.cpp/build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build /tmp/whisper.cpp/build --target whisper-cli -j
+
+      - name: Run golden-audio gate
+        run: |
+          BLESS=""
+          if [ "${{ inputs.mode }}" = "bless" ]; then BLESS="--bless"; fi
+          tools/tts-golden/check.sh $BLESS \
+            --synth ./build/native-tests/supertonic_synth \
+            --bundle /tmp/supertonic3-bundle \
+            --whisper-cli /tmp/whisper.cpp/build/bin/whisper-cli \
+            --whisper-model ~/.cache/tts-golden/ggml-base.bin \
+            --threads "${{ inputs.threads }}" | tee tts-golden-report.txt
+
+      - name: Upload report and wavs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tts-golden-${{ inputs.mode }}-${{ github.sha }}
+          path: |
+            tts-golden-report.txt
+            tools/tts-golden/manifest.json
+          if-no-files-found: warn

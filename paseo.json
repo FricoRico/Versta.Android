@@ -1,0 +1,23 @@
+{
+  "worktree": {
+    "setup": [
+      "printf 'sdk.dir=/opt/android-sdk\n' > local.properties",
+      "./gradlew --version >/dev/null && echo 'android toolchain ok'"
+    ],
+    "teardown": [
+      "./gradlew --stop"
+    ],
+    "teardownTimeoutMs": 60000
+  },
+  "metadataGeneration": {
+    "branchName": {
+      "instructions": "Branch names come from the Kaneo card: <PROJECT>-<number>, e.g. VER-35. Cut from develop — that is this repository's default branch, not main — and open the PR against develop. Never revive feat/NEU-* branches."
+    },
+    "commitMessage": {
+      "instructions": "Imperative subject under 72 characters, body explains the why rather than restating the diff. One logical change per commit. No .NEU- ids in the subject; the card carries the reference. Never commit local.properties, keystores or credentials."
+    },
+    "pullRequest": {
+      "instructions": "Open against develop. Title describes the change, not the ticket number. Body: what changed, why, which tests ran (unit / connected / emulator) with their real output, and what is explicitly unverified. UI changes should say which devices or emulator images were used."
+    }
+  }
+}

@@ -4,6 +4,10 @@ import android.content.Context
 import android.database.DatabaseUtils
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.platform.app.InstrumentationRegistry
+import app.versta.translate.R
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -32,6 +36,7 @@ class DatabaseContainerTest {
     private val externalData: File get() = context.filesDir.resolve("external-data")
     private val externalDataHash: File get() = context.filesDir.resolve("external-data.sha256")
     private val voiceModelsRoot: File get() = context.filesDir.resolve("voice-models")
+    private val textToSpeechData: File get() = context.filesDir.resolve("tts-data")
 
     @Before
     fun setUp() {
@@ -49,6 +54,7 @@ class DatabaseContainerTest {
         externalData.deleteRecursively()
         externalDataHash.delete()
         voiceModelsRoot.deleteRecursively()
+        textToSpeechData.deleteRecursively()
     }
 
     private fun container(): DatabaseContainer = DatabaseContainer(context).also { containers.add(it) }
@@ -142,6 +148,55 @@ class DatabaseContainerTest {
 
     private fun databaseV6() = legacyDatabase(6, listOf(languageV1, languageModelV1, voiceModelV2, voiceV4, dataV5, ocrV6))
 
+    /**
+     * `Language` as tagged releases created it, with the `bidirectional`
+     * column that [languageV1] (the pre-release shape) lacks.
+     */
+    private val languageV1WithBidirectional =
+        """
+        CREATE TABLE Language (
+            id TEXT NOT NULL PRIMARY KEY,
+            source TEXT NOT NULL,
+            target TEXT NOT NULL,
+            bidirectional INTEGER DEFAULT 0
+        );
+        """.trimIndent()
+
+    @Serializable
+    private data class CatalogEntry(
+        @SerialName("source_language") val sourceLanguage: String,
+        @SerialName("target_language") val targetLanguage: String,
+        val bidirectional: Boolean,
+    )
+
+    /**
+     * A pair the bundled catalog marks bidirectional. Fails fixture setup if
+     * the catalog ever loses the property [app.versta.translate.database.migrations.Migration1]
+     * backfills from.
+     */
+    private val catalogBidirectionalPair: Pair<String, String> by lazy {
+        context.resources.openRawResource(R.raw.versta_translation_models).use { stream ->
+            Json { ignoreUnknownKeys = true }
+                .decodeFromString<List<List<CatalogEntry>>>(stream.reader().readText())
+                .flatten()
+                .first { it.bidirectional }
+                .let { it.sourceLanguage to it.targetLanguage }
+        }
+    }
+
+    /** A pair absent from the catalog; the backfill must leave it at 0. */
+    private val unknownPair = "zz" to "xx"
+
+    private fun insertLegacyLanguage(
+        database: SQLiteDatabase,
+        pair: Pair<String, String>,
+    ) {
+        database.execSQL(
+            "INSERT INTO Language (id, source, target) VALUES (?, ?, ?)",
+            arrayOf("${pair.first}-${pair.second}", pair.first, pair.second),
+        )
+    }
+
     private fun storedVersion(): Long =
         SQLiteDatabase.openDatabase(databaseFile.absolutePath, null, SQLiteDatabase.OPEN_READONLY).use { database ->
             DatabaseUtils.longForQuery(database, "PRAGMA user_version", null)
@@ -207,11 +262,51 @@ class DatabaseContainerTest {
         return model.parentFile!!
     }
 
+    private fun insertVoice(
+        database: SQLiteDatabase,
+        modelId: String,
+        language: String,
+        gender: String,
+    ) {
+        database.execSQL(
+            "INSERT INTO Voice (modelId, language, gender) VALUES (?, ?, ?)",
+            arrayOf(modelId, language, gender),
+        )
+    }
+
+    private fun insertTextToSpeechData(database: SQLiteDatabase) {
+        val path = textToSpeechData.resolve("payload")
+        path.mkdirs()
+        path.resolve("espeak-ng-data").writeText("legacy")
+
+        database.execSQL(
+            "INSERT INTO Data (id, type, path, version) VALUES (?, ?, ?, ?)",
+            arrayOf("versta-tts-data", "tts", path.absolutePath, "v1.0.0"),
+        )
+    }
+
+    /**
+     * Migrations never register Supertonic 3 voice rows: the bundle-install
+     * transaction owns them so they stay parented to their model row under
+     * foreign-key enforcement (NEU-65). Install-path registration is covered
+     * by `VoiceDatabaseRepositoryTest`.
+     */
+    private fun assertNoVoiceRowsRemained(container: DatabaseContainer) {
+        assertTrue(
+            container.voices
+                .getAll()
+                .executeAsList()
+                .isEmpty(),
+        )
+    }
+
     @Test
     fun freshInstall_createsCurrentSchemaWithoutRunningMigrations() {
         val container = container()
 
-        assertEquals(Database.Schema.version, storedVersion())
+        // The database file is created lazily on first query, so the version
+        // assert comes last: storedVersion() opens read-only and throws while
+        // the file does not exist yet.
         assertTrue(
             container.voices
                 .getAll()
@@ -230,6 +325,7 @@ class DatabaseContainerTest {
                 .executeAsList()
                 .isEmpty(),
         )
+        assertEquals(Database.Schema.version, storedVersion())
     }
 
     @Test
@@ -259,7 +355,52 @@ class DatabaseContainerTest {
     }
 
     @Test
-    fun v3Database_backfillsVoicesAndCleansLegacyVoiceModels() {
+    fun v1Database_addsMissingBidirectionalColumnAndBackfillsFromCatalog() {
+        databaseV1()
+        SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
+            insertLegacyLanguage(database, catalogBidirectionalPair)
+            insertLegacyLanguage(database, unknownPair)
+        }
+
+        val languages = container().languages.getAll().executeAsList()
+
+        val repaired = languages.single { it.source == catalogBidirectionalPair.first && it.target == catalogBidirectionalPair.second }
+        assertEquals("catalog-bidirectional pair must be backfilled to 1", true, repaired.bidirectional)
+
+        val unknown = languages.single { it.source == unknownPair.first && it.target == unknownPair.second }
+        assertEquals("rows absent from the catalog must stay 0", false, unknown.bidirectional)
+    }
+
+    @Test
+    fun v1Database_bidirectionalQueryWorksAfterUpgrade() {
+        databaseV1()
+        SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
+            insertLegacyLanguage(database, catalogBidirectionalPair)
+        }
+
+        // Crashes with "no such column: bidirectional" without Migration1.
+        val matches =
+            container().languages.getBySourceIncludingBidirecional(catalogBidirectionalPair.first).executeAsList()
+
+        assertTrue(matches.any { it.source == catalogBidirectionalPair.first && it.target == catalogBidirectionalPair.second })
+    }
+
+    @Test
+    fun v1Database_withBidirectionalColumnIsLeftUntouched() {
+        legacyDatabase(1, listOf(languageV1WithBidirectional, languageModelV1))
+        SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
+            // Stored as 0 although the catalog says bidirectional: only a
+            // database missing the column is backfilled.
+            insertLegacyLanguage(database, catalogBidirectionalPair)
+        }
+
+        val languages = container().languages.getAll().executeAsList()
+
+        assertEquals(false, languages.single().bidirectional)
+    }
+
+    @Test
+    fun v3Database_chainEndsWithLegacyVoiceModelsPurged() {
         databaseV3()
         SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
             insertVoiceModel(database, "voice-surviving", "v1.4.0")
@@ -268,55 +409,84 @@ class DatabaseContainerTest {
 
         val container = container()
 
-        val backfilled =
-            container.voices
+        // Migration4 keeps current versions before Migration7 purges every
+        // pre-Supertonic voice model.
+        assertTrue(
+            container.voiceModels
                 .getAll()
                 .executeAsList()
-                .filter { it.modelId == "voice-surviving" }
-                .map { "${it.language}:${it.gender}" }
-                .toSet()
-        assertEquals(setOf("en:female", "pt:male"), backfilled)
-
-        assertNull(container.voiceModels.getById("voice-legacy").executeAsOneOrNull())
+                .isEmpty(),
+        )
         assertFalse(voiceModelsRoot.resolve("voice-legacy").exists())
+        assertFalse(voiceModelsRoot.resolve("voice-surviving").exists())
 
-        val surviving = container.voiceModels.getById("voice-surviving").executeAsOne()
-        assertEquals(listOf("StyleTTS2"), surviving.architectures)
-        assertTrue(voiceModelsRoot.resolve("voice-surviving/model/model.onnx").exists())
+        assertNoVoiceRowsRemained(container)
     }
 
     @Test
-    fun v4Database_keepsCurrentAndFutureVersionedVoiceModels() {
+    fun v4Database_purgesCurrentAndFutureVersionedVoiceModelsForSupertonic3() {
         databaseV4()
         writeExternalDataFixtures()
         SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
             insertVoiceModel(database, "voice-legacy", "v1.1.0")
             insertVoiceModel(database, "voice-current", "v1.4.0")
             insertVoiceModel(database, "voice-future", "v1.10.0")
+            insertVoice(database, "voice-current", "en", "female")
         }
 
         val container = container()
 
-        assertNull(container.voiceModels.getById("voice-legacy").executeAsOneOrNull())
-        assertNotNull(container.voiceModels.getById("voice-current").executeAsOneOrNull())
-        assertNotNull(container.voiceModels.getById("voice-future").executeAsOneOrNull())
-
-        assertFalse(voiceModelsRoot.resolve("voice-legacy").exists())
-        assertTrue(voiceModelsRoot.resolve("voice-future/model/model.onnx").exists())
-
-        assertEquals(
-            listOf("StyleTTS2"),
+        assertTrue(
             container.voiceModels
-                .getById("voice-future")
-                .executeAsOne()
-                .architectures,
+                .getAll()
+                .executeAsList()
+                .isEmpty(),
         )
+        assertFalse(voiceModelsRoot.resolve("voice-legacy").exists())
+        assertFalse(voiceModelsRoot.resolve("voice-future").exists())
+
+        assertNoVoiceRowsRemained(container)
 
         assertFalse(externalData.exists())
     }
 
     @Test
-    fun v6Database_runsOnlyLanguageModelMigrationWhichCannotSeeDroppedRows() {
+    fun v6Database_removesTextToSpeechDataWithoutRegisteringVoices() {
+        databaseV6()
+        SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
+            insertTextToSpeechData(database)
+        }
+
+        val container = container()
+
+        assertTrue(
+            container.data
+                .getAll()
+                .executeAsList()
+                .isEmpty(),
+        )
+        assertFalse(textToSpeechData.exists())
+        assertNoVoiceRowsRemained(container)
+
+        container.driver.close()
+        containers.remove(container)
+
+        // Reopening the migrated database runs no migration again; no voice
+        // rows appear outside the bundle-install transaction.
+        assertNoVoiceRowsRemained(container())
+    }
+
+    @Test
+    fun v1Database_purgesVoiceRowsThroughFullUpgrade() {
+        databaseV1()
+
+        val container = container()
+
+        assertNoVoiceRowsRemained(container)
+    }
+
+    @Test
+    fun v6Database_runsLanguageModelMigrationAndSupertonic3Cutover() {
         databaseV6()
         SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
             insertVoiceModel(database, "voice-legacy", "v1.1.0")
@@ -333,10 +503,11 @@ class DatabaseContainerTest {
                 .isEmpty(),
         )
 
-        // Database is past Migration4's boundary: legacy voice models and files
-        // stay untouched instead of being re-processed on every cold start.
-        assertNotNull(container.voiceModels.getById("voice-legacy").executeAsOneOrNull())
-        assertTrue(voiceModelsRoot.resolve("voice-legacy/model/model.onnx").exists())
+        // Database is past Migration4's boundary, so the legacy voice model is
+        // not deleted twice — Migration7 removes it exactly once, with files.
+        assertNull(container.voiceModels.getById("voice-legacy").executeAsOneOrNull())
+        assertFalse(voiceModelsRoot.resolve("voice-legacy").exists())
+        assertNoVoiceRowsRemained(container)
     }
 
     @Test

@@ -81,15 +81,15 @@ fun VoiceDeletionConfirmationDialogPreview() {
     VoiceDeletionConfirmationDialog(
         model =
             ExternalVoiceModelDefinition(
-                id = "kokoro",
-                name = "Kokoro",
-                baseModel = "hexgrad/Kokoro-82M",
-                version = "v1.0.0",
-                size = 163899505,
+                id = "supertonic3",
+                name = "Supertonic 3",
+                baseModel = "Supertone/supertonic-3",
+                version = "v2.0.0",
+                size = 114532352,
                 voices = emptyList(),
                 architectures = emptyList(),
-                bundle = "https://mock.versta.app/kokoro-bundle.tar.gz",
-                checksum = "https://mock.versta.app/kokoro-bundle.tar.gz.sha256",
+                bundle = "https://mock.versta.app/supertonic3-bundle.tar.gz",
+                checksum = "https://mock.versta.app/supertonic3-bundle.tar.gz.sha256",
             ),
         onConfirmation = {},
         onDismissRequest = {},

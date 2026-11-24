@@ -10,10 +10,6 @@ class TranslationMockInference : TranslationInference {
         maxSequenceLength: Int,
     ): String = ""
 
-    override fun cancel() {
-        return
-    }
-
     override fun load(
         files: LanguageModelFiles,
         config: LanguageModelConfiguration,

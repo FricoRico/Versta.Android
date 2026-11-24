@@ -8,8 +8,7 @@ import kotlin.io.path.exists
 enum class VoiceModelArchitecture(
     val value: String,
 ) {
-    Kokoro("Kokoro"),
-    StyleTTS2("StyleTTS2"),
+    Supertonic3("Supertonic3"),
 }
 
 @Serializable
@@ -20,7 +19,12 @@ class VoiceModelMetadata(
     val files: VoiceModelFilesMetadata,
     var root: Path? = null,
 ) {
-    fun isValid() = baseModel.isNotBlank() && architectures.isNotEmpty() && (root != null && files.isValid(root!!)) && root?.isAbsolute == true
+    fun isValid() =
+        baseModel.isNotBlank() &&
+            architectures.isNotEmpty() &&
+            (root != null && files.isValid(root!!)) &&
+            root?.isAbsolute == true &&
+            (!architectures.contains(VoiceModelArchitecture.Supertonic3) || files.inference.models.keys == Supertonic3.MODEL_STAGES)
 
     fun setRootPath(path: Path): VoiceModelMetadata {
         root = path
@@ -42,18 +46,30 @@ data class VoiceModelFilesMetadata(
             }
 }
 
+/**
+ * Inference files of a Supertonic 3 voice model bundle: the four-model set
+ * (`models` keyed by stage) plus the `tts.json` engine [config].
+ */
 @Serializable
 data class VoiceInferenceFilesMetadata(
-    val model: String,
+    val models: Map<String, String> = emptyMap(),
+    val config: String = "",
 ) {
-    fun isValid(path: Path) = path.resolve(model).exists()
+    fun isValid(path: Path) =
+        config.isNotBlank() &&
+            path.resolve(config).exists() &&
+            models.values.all { path.resolve(it).exists() }
 }
 
+/**
+ * Tokenizer files of a voice model bundle. Supertonic 3 bundles carry the
+ * [unicodeIndexer] table; no phonemizer vocabulary is needed.
+ */
 @Serializable
 data class VoiceTokenizerFilesMetadata(
-    val vocabulary: String,
+    @SerialName("unicode_indexer") val unicodeIndexer: String = "",
 ) {
-    fun isValid(path: Path) = path.resolve(vocabulary).exists()
+    fun isValid(path: Path) = unicodeIndexer.isNotBlank() && path.resolve(unicodeIndexer).exists()
 }
 
 @Serializable

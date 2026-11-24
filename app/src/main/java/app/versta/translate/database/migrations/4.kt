@@ -1,7 +1,6 @@
 package app.versta.translate.database.migrations
 
 import android.content.Context
-import app.versta.translate.core.entity.VoiceModelArchitecture
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.database.Migration
 import app.versta.translate.utils.compareVersions
@@ -40,7 +39,7 @@ object Migration4 : Migration {
                 path = data.path,
                 version = data.version,
                 baseModel = data.baseModel,
-                architectures = listOf(VoiceModelArchitecture.StyleTTS2.toString()),
+                architectures = listOf("StyleTTS2"),
             )
         }
 

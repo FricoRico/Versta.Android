@@ -37,12 +37,12 @@ Versta is licensed under the Source First license. This license ensures that:
 For more details, please refer to the [LICENSE.md](LICENSE.md) file and visit [Source First](https://sourcefirst.com/) for more information about the licensing principles.
 
 ## Language Models
-Versta runs its models entirely on-device through native C++ inference (JNI) and ONNX Runtime, so translations are fast and accurate without an internet connection. The current stack includes:
+Versta runs its models entirely on-device through native C++ inference (JNI) and MNN, so translations are fast and accurate without an internet connection. The current stack includes:
 
 - Translation: LeanMT (Firefox MT) models.
 - Speech recognition: Whisper.cpp.
-- Optical character recognition: PaddleOCR.
-- Text-to-speech: espeak-ng and open-jtalk phonemization with StyleTTS2 synthesis.
+- Optical character recognition: PP-OCRv6 models on MNN.
+- Text-to-speech: Supertonic 3 on MNN.
 
 These open-source models are optimized for mobile devices, keeping them lightweight and efficient. In order for the models to be compatible, our conversion tools can be used to export the models to the required format. More information on our [Versta.Models](https://github.com/FricoRico/Versta.Models) GitHub page.
 

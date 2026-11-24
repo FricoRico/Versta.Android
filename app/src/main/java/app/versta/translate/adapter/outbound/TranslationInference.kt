@@ -10,8 +10,6 @@ interface TranslationInference {
         maxSequenceLength: Int,
     ): String
 
-    fun cancel()
-
     fun load(
         files: LanguageModelFiles,
         config: LanguageModelConfiguration,
