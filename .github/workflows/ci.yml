@@ -50,11 +50,20 @@ jobs:
         with:
           cache-read-only: false
 
+      # --build-cache on every gradlew call in this workflow (NEU-308):
+      # the Gradle task-output cache is off by default and gradle.properties
+      # deliberately does not set org.gradle.caching (local-dev behavior
+      # unchanged), so without the flag every PR re-executes the full
+      # Kotlin/javac/lint/test task graph from scratch. Same flag form as the
+      # NEU-227 connected-device-tests lane; cache-read-only: false above
+      # keeps PR runs able to save their state. FROM-CACHE only ever restores
+      # tasks whose inputs are unchanged — source edits still re-execute, and
+      # ccache (assemble job, NEU-212) semantics are untouched.
       - name: ktlint
-        run: ./gradlew :app:ktlintCheck --console=plain
+        run: ./gradlew :app:ktlintCheck --console=plain --build-cache
 
       - name: detekt
-        run: ./gradlew :app:detekt --console=plain
+        run: ./gradlew :app:detekt --console=plain --build-cache
 
       - name: Upload detekt report
         if: failure()
@@ -95,7 +104,7 @@ jobs:
           cache-read-only: false
 
       - name: Unit tests (arm64-v8a debug)
-        run: ./gradlew :app:testArm64-v8aDebugUnitTest --console=plain
+        run: ./gradlew :app:testArm64-v8aDebugUnitTest --console=plain --build-cache
 
       - name: Upload test reports
         if: failure()
@@ -135,7 +144,7 @@ jobs:
           cache-read-only: false
 
       - name: lint
-        run: ./gradlew :app:lintArm64-v8aDebug --console=plain
+        run: ./gradlew :app:lintArm64-v8aDebug --console=plain --build-cache
 
       - name: Upload lint report
         if: failure()
@@ -249,14 +258,14 @@ jobs:
           allow-checksums: ee3739525a995bcb5601621a6e2daec1f183bbefc375743acc235cec33547e04
 
       - name: Assemble debug (arm64-v8a)
-        run: ./gradlew :app:assembleArm64-v8aDebug --console=plain
+        run: ./gradlew :app:assembleArm64-v8aDebug --console=plain --build-cache
 
       # Release variants are only exercised by the release lane; keep the
       # universal-release Kotlin compile covered per commit so a flavour-
       # scoped dependency gap can't escape to publish time (it did once —
       # universalRelease lacked the vendored ONNX Runtime AAR, 2026-10-14).
       - name: Compile universal release Kotlin
-        run: ./gradlew :app:compileUniversalReleaseKotlin --console=plain
+        run: ./gradlew :app:compileUniversalReleaseKotlin --console=plain --build-cache
 
       # Warm-cache runs must show near-total direct hits here; a hit-rate
       # collapse on an unchanged native tree means the key or launcher
@@ -314,13 +323,13 @@ jobs:
       - name: Tolerant lane warns on enum drift
         run: |
           rm -rf app/src/main/res/raw
-          ./gradlew :app:validateBakedCatalogs -Pmodels.catalog.override=app/catalog-gate-fixtures --console=plain 2>&1 | tee tolerant.log
+          ./gradlew :app:validateBakedCatalogs -Pmodels.catalog.override=app/catalog-gate-fixtures --console=plain --build-cache 2>&1 | tee tolerant.log
           grep -q "catalog gate WARNING" tolerant.log || { echo "::error::tolerant lane produced no enum-drift warning"; exit 1; }
 
       - name: Strict lane fails on enum drift
         run: |
           rm -rf app/src/main/res/raw
-          if ./gradlew :app:validateBakedCatalogsStrict -Pmodels.catalog.override=app/catalog-gate-fixtures --console=plain > strict.log 2>&1; then
+          if ./gradlew :app:validateBakedCatalogsStrict -Pmodels.catalog.override=app/catalog-gate-fixtures --console=plain --build-cache > strict.log 2>&1; then
             echo "::error::strict lane passed on a fixture with an unknown VoiceModelArchitecture"
             cat strict.log
             exit 1
