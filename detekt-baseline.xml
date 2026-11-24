@@ -180,7 +180,7 @@
     <ID>TooGenericExceptionCaught:HttpDownloadClient.kt$HttpDownloadClient.&lt;no name provided&gt;$e: Exception</ID>
     <ID>TooGenericExceptionCaught:LanguageDatabaseRepository.kt$LanguageDatabaseRepository$e: Exception</ID>
     <ID>TooGenericExceptionCaught:LoggingViewModel.kt$LoggingViewModel$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:Migration8.kt$Migration8$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:8.kt$Migration8$e: Exception</ID>
     <ID>TooGenericExceptionCaught:NavigationViewModel.kt$NavigationViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ObjectCharacterRecognitionRepositoryDatabaseRepository.kt$ObjectCharacterRecognitionRepositoryDatabaseRepository$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SpeechRecognitionDatabaseRepository.kt$SpeechRecognitionDatabaseRepository$e: Exception</ID>
