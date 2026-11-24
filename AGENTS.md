@@ -20,7 +20,7 @@ camera/OCR, speech, and text-to-speech entirely on-device.
 
 - `app/` — the single Android application module (Kotlin + Compose). See `/app/AGENTS.md`.
 - `app/native/` — C++/JNI bridge library `app_versta_translate_bridge`. See `/app/native/AGENTS.md`.
-- `app/native/jni/third_party/` — vendored native libraries kept as git submodules (leanmt, whisper.cpp, espeak-ng, open-jtalk, cld2, opencv-mobile, onnxruntime, ocr-clipper, neon-sse). Never edit vendored code in place.
+- `app/native/jni/third_party/` — vendored native libraries kept as git submodules (leanmt, whisper.cpp, cld2, opencv-mobile, MNN, neon-sse). Never edit vendored code in place.
 - `gradle/libs.versions.toml` — single source of truth for dependency versions (version catalog).
 - The sibling repo `Versta.Models` (separate project) contains the Python tooling that exports/quantizes the model bundles consumed by this app. It is out of scope here.
 
@@ -74,9 +74,9 @@ Manual, constructor-based. No Hilt/Koin.
   - `./gradlew :app:detekt` — static analysis (config `detekt.yml`; pre-existing findings pinned in `detekt-baseline.xml`, new findings fail).
   - `./gradlew :app:lintArm64-v8aDebug` — Android lint (config `lint.xml`; pre-existing findings pinned in `lint-baseline.xml`, new findings fail).
   - Baseline refresh is an explicit act only: `./gradlew :app:detektBaseline` / `./gradlew :app:updateLintBaseline`. Never rebaseline to hide new debt.
-- `keystore.properties` (gitignored) provides signing credentials; `keystore.properties.example` documents the keys. Never commit secrets.
+- `keystore.properties` (gitignored) provides release signing credentials; `keystore.properties.example` documents the keys. When the file is absent, release signing is skipped so fresh clones and CI can run every Gradle task; debug builds sign with the debug keystore. Never commit secrets.
 - Local toolchain paths on this machine (not on PATH in sandboxed shells): JDK `~/.local/lib/jdk17`, adb `~/Android/Sdk/platform-tools`, graphify `~/.local/bin/graphify`.
-- The `getRemoteData` Gradle task fetches the model-metadata JSON files into `app/src/main/res/raw/` and runs as a `preBuild` dependency. It needs network access.
+- The `getRemoteData` Gradle task fetches the model-metadata JSON files into `app/src/main/res/raw/` and runs as a `preBuild` dependency. It needs network access on the first build per checkout (the JSONs are gitignored); once the files exist, the task's declared outputs + `onlyIf` skip it, so subsequent builds are incremental and fully offline.
 - Emulator loop for visual checks: AVD `Medium_Phone_API_36.1` (x86_64), launched windowed — `-no-window` segfaults during virtual-scene init on this host. Steps: `assembleX86_64Debug` → `adb install -r` → `am force-stop` → `am start -n app.versta.translate/.MainActivity`. Theme flip without UI: `adb shell cmd uimode night yes|no`.
 - The emulator's `/data` (5.8G) trips the package manager's ~10% low-storage threshold quickly; if installs fail with `INSTALL_FAILED_INSUFFICIENT_STORAGE`, free space or cold-boot first.
 

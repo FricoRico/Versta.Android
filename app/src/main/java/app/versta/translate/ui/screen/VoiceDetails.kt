@@ -320,7 +320,7 @@ fun VoiceDetailsPreview() {
     val navigationViewModel = NavigationViewModel(Screens.TextTranslation)
 
     VoiceDetails(
-        id = "kokoro",
+        id = "supertonic3",
         innerPadding = PaddingValues(),
         scaffoldViewModel =
             ScaffoldViewModel(

@@ -1,0 +1,25 @@
+[
+  {
+    "id": "kokoro",
+    "name": "Kokoro",
+    "base_model": "hexgrad/Kokoro-82M",
+    "size": 163901362,
+    "version": "v1.2.0",
+    "voices": [
+      {
+        "gender": "female",
+        "language": "en"
+      },
+      {
+        "gender": "male",
+        "language": "en"
+      }
+    ],
+    "architectures": [
+      "StyleTTS2",
+      "UnknownFixtureEngine"
+    ],
+    "bundle": "https://models.versta.app/text-to-speech/v1.2.0/kokoro-bundle.tar.gz",
+    "checksum": "https://models.versta.app/text-to-speech/v1.2.0/kokoro-bundle.tar.sha256"
+  }
+]

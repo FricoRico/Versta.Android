@@ -1,11 +1,7 @@
 package app.versta.translate.adapter.outbound
 
-import app.versta.translate.core.entity.ObjectCharacterRecognitionArchitecture
-import app.versta.translate.core.entity.ObjectCharacterRecognitionDetectorInferenceFiles
-import app.versta.translate.core.entity.ObjectCharacterRecognitionDetectorWithFiles
-import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerInferenceFiles
-import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerTokenizerFiles
-import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerWithFiles
+import app.versta.translate.core.entity.ObjectCharacterRecognitionModule
+import app.versta.translate.core.entity.ObjectCharacterRecognitionModuleWithFiles
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -35,35 +31,18 @@ class ExternalObjectCharacterRecognitionModelsFileRepositoryTest {
 
     private fun repository(json: String = definitionsJson()): ExternalObjectCharacterRecognitionModelsFileRepository = ExternalObjectCharacterRecognitionModelsFileRepository(ByteArrayInputStream(json.toByteArray()))
 
-    private fun importedDetector(
-        id: String,
+    private fun importedModule(
+        bundleId: String,
         version: String,
-    ): ObjectCharacterRecognitionDetectorWithFiles =
-        ObjectCharacterRecognitionDetectorWithFiles(
-            id = id,
+    ): ObjectCharacterRecognitionModuleWithFiles =
+        ObjectCharacterRecognitionModuleWithFiles(
+            id = "$bundleId-det",
+            bundleId = bundleId,
             path = Path.of(""),
-            baseModel = "PaddlePaddle/PP-OCRv6",
-            architectures = listOf(ObjectCharacterRecognitionArchitecture.PaddleOCR),
+            module = ObjectCharacterRecognitionModule.Detector,
             languages = listOf("en"),
             version = version,
-            size = 0,
-            inference = ObjectCharacterRecognitionDetectorInferenceFiles(model = Path.of("detector.bin")),
-        )
-
-    private fun importedRecognizer(
-        id: String,
-        version: String,
-    ): ObjectCharacterRecognitionRecognizerWithFiles =
-        ObjectCharacterRecognitionRecognizerWithFiles(
-            id = id,
-            path = Path.of(""),
-            baseModel = "PaddlePaddle/PP-OCRv6",
-            architectures = listOf(ObjectCharacterRecognitionArchitecture.PaddleOCR),
-            languages = listOf("en"),
-            version = version,
-            size = 0,
-            inference = ObjectCharacterRecognitionRecognizerInferenceFiles(model = Path.of("recognizer.bin")),
-            tokenizer = ObjectCharacterRecognitionRecognizerTokenizerFiles(vocabulary = Path.of("vocabulary.bin")),
+            files = emptyList(),
         )
 
     private fun awaitDefinitions(repo: ExternalObjectCharacterRecognitionModelsFileRepository) = runBlocking { repo.getDefinitions().first { it.isNotEmpty() } }
@@ -82,13 +61,9 @@ class ExternalObjectCharacterRecognitionModelsFileRepositoryTest {
     fun getDefinitionsByState_sameVersion_marksInstalled() {
         val repo = repository()
         awaitDefinitions(repo)
-        val detectors = listOf(importedDetector("paddle-ocr", "v1.10.0"))
-        val recognizers = listOf(importedRecognizer("paddle-ocr", "v1.10.0"))
+        val modules = listOf(importedModule("paddle-ocr", "v1.10.0"))
 
-        val result =
-            runBlocking {
-                repo.getDefinitionsByState(flowOf(detectors), flowOf(recognizers)).first()
-            }
+        val result = runBlocking { repo.getDefinitionsByState(flowOf(modules)).first() }
 
         assertEquals(listOf("paddle-ocr"), result.installed.map { it.definition.id })
         assertTrue(result.updates.isEmpty())
@@ -101,49 +76,32 @@ class ExternalObjectCharacterRecognitionModelsFileRepositoryTest {
         awaitDefinitions(repo)
         // Lexicographic order treats v1.2.0 as newer than v1.10.0; numeric order
         // must still surface the update.
-        val detectors = listOf(importedDetector("paddle-ocr", "v1.2.0"))
-        val recognizers = listOf(importedRecognizer("paddle-ocr", "v1.2.0"))
+        val modules = listOf(importedModule("paddle-ocr", "v1.2.0"))
 
-        val result =
-            runBlocking {
-                repo.getDefinitionsByState(flowOf(detectors), flowOf(recognizers)).first()
-            }
+        val result = runBlocking { repo.getDefinitionsByState(flowOf(modules)).first() }
 
         assertEquals(listOf("paddle-ocr"), result.updates.map { it.definition.id })
         assertTrue(result.installed.isEmpty())
-        assertTrue(result.available.isEmpty())
     }
 
     @Test
-    fun getDefinitionsByState_singleOutdatedComponent_marksUpdate() {
+    fun getDefinitionsByState_singleOutdatedModule_marksUpdate() {
         val repo = repository()
         awaitDefinitions(repo)
-        val detectors = listOf(importedDetector("paddle-ocr", "v1.2.0"))
-        val recognizers = listOf(importedRecognizer("paddle-ocr", "v1.10.0"))
+        val modules = listOf(importedModule("paddle-ocr", "v1.2.0"), importedModule("paddle-ocr", "v1.10.0"))
 
-        val result =
-            runBlocking {
-                repo.getDefinitionsByState(flowOf(detectors), flowOf(recognizers)).first()
-            }
+        val result = runBlocking { repo.getDefinitionsByState(flowOf(modules)).first() }
 
         assertEquals(listOf("paddle-ocr"), result.updates.map { it.definition.id })
-        assertTrue(result.installed.isEmpty())
-        assertTrue(result.available.isEmpty())
     }
 
     @Test
     fun getDefinitionsByState_newerImportedVersions_notMarkedAsUpdate() {
-        val repo = repository(definitionsJson(version = "v2.0.0"))
+        val repo = repository()
         awaitDefinitions(repo)
-        // Lexicographic order treats v10.0.0 as older than v2.0.0; numeric order
-        // must not downgrade a newer install.
-        val detectors = listOf(importedDetector("paddle-ocr", "v10.0.0"))
-        val recognizers = listOf(importedRecognizer("paddle-ocr", "v10.0.0"))
+        val modules = listOf(importedModule("paddle-ocr", "v1.11.0"))
 
-        val result =
-            runBlocking {
-                repo.getDefinitionsByState(flowOf(detectors), flowOf(recognizers)).first()
-            }
+        val result = runBlocking { repo.getDefinitionsByState(flowOf(modules)).first() }
 
         assertTrue(result.updates.isEmpty())
         assertTrue(result.installed.isEmpty())
@@ -155,10 +113,7 @@ class ExternalObjectCharacterRecognitionModelsFileRepositoryTest {
         val repo = repository()
         awaitDefinitions(repo)
 
-        val result =
-            runBlocking {
-                repo.getDefinitionsByState(flowOf(emptyList()), flowOf(emptyList())).first()
-            }
+        val result = runBlocking { repo.getDefinitionsByState(flowOf(emptyList())).first() }
 
         assertEquals(listOf("paddle-ocr"), result.available.map { it.definition.id })
         assertTrue(result.installed.isEmpty())

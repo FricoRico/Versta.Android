@@ -2,18 +2,13 @@ package app.versta.translate.adapter.outbound
 
 class AudioMockPlayer : AudioPlayer {
     /**
-     * Plays the audio file at the given path.
+     * Plays mono PCM f32 audio of the given [sampleRate] in Hz.
      * @param audio The audio data to play.
      */
-    override fun play(audio: FloatArray) {
-        return
-    }
-
-    /**
-     * Plays the audio file at the given path.
-     * @param audio The audio data to play.
-     */
-    override fun play(audio: ByteArray) {
+    override fun play(
+        audio: FloatArray,
+        sampleRate: Int,
+    ) {
         return
     }
 

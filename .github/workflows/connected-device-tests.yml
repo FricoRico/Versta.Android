@@ -1,0 +1,213 @@
+name: connected-device-tests
+
+# Standing connected-test gate for develop (NEU-220: ported from the
+# refactor/translation-orchestrator Phase-2 gate, itself promoted from the
+# NEU-40 one-off in NEU-137). The old gate's ruleset still targets the merged
+# refactor branch only, so develop/main PRs have been mergeable with zero
+# instrumentation evidence since the NEU-4 refactor landed (eab285c) — this
+# workflow restores the lane on the branch that actually receives PRs.
+#
+# Test scope: the original gate ran the NEU-29 bundle-gate classes
+# (LeanmtVersionTest, LanguageBundleMetadataTest). Those classes exist only on
+# the refactor branch lineage — the NEU-29 production code never landed on
+# develop — so this port gates on LeanmtTest instead: the one develop class
+# that loads the native leanmt library over JNI on-device (same "native
+# bridge alive on a real runtime" signal, API-agnostic, no model files
+# needed). Extending scope (full androidTest suite, or the NEU-29 classes
+# once that branch's content is reconciled onto develop) needs a measured
+# runtime first.
+#
+# Triggers on:
+# - every PR into develop: no paths filter, because this workflow's
+#   `connected-tests` job is a required status check on develop (NEU-220
+#   ruleset update). A filter would leave non-touching PRs stuck on
+#   `Expected` and unmergable (same contract as NEU-151).
+# - pushes to develop that touch the translation stack (orchestration core,
+#   adapters, leanmt bridge/native code), test sources, or the build
+#   configuration: post-merge signal, paths-kept to keep costs down on
+#   cherry-picks/docs-only updates.
+# - manual via workflow_dispatch.
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "app/src/main/java/app/versta/translate/core/**"
+      - "app/src/main/java/app/versta/translate/adapter/**"
+      - "app/src/main/java/app/versta/translate/bridge/**"
+      - "app/src/main/java/app/versta/translate/utils/**"
+      - "app/native/**"
+      - "app/src/androidTest/**"
+      - "app/build.gradle.kts"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - "gradle/**"
+      - ".github/workflows/connected-device-tests.yml"
+  pull_request:
+    branches: [develop]
+  workflow_dispatch:
+
+# One active run per ref: retriggering or pushing again cancels the stale run.
+concurrency:
+  group: connected-device-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write # upload-artifact
+
+jobs:
+  # ccache for the x86_64 externalNativeBuild tree (NEU-227), mirroring the
+  # NEU-212-fixed ci.yml `assemble` convention byte-for-byte in mechanism:
+  # CCACHE_DIR inside the workspace, compiler launchers via job-level env
+  # variables, and CCACHE_COMPILERCHECK=content — run-stable across fresh
+  # runner NDK installs (mtime mode was NEU-212's 0%-hit root cause; content
+  # removes mtime/inode from the compiler hash entirely). No Gradle files
+  # involved, no effect outside this job.
+  #
+  # Cache contract (same as ci.yml, ABI segment swapped to x86_64):
+  #   path: .ccache (CCACHE_DIR, inside the workspace)
+  #   key : ccache-x86_64-<runner.os>-ccache<ver>-ndk28.1.13356709-cmake3.31.6-<nativeHash>
+  #         nativeHash = git hash-object of
+  #           git ls-tree -r HEAD -- app/native .gitmodules   (minus the
+  #           generated graphify-out stat indexes)
+  #         which covers every main-repo bridge source AND every submodule
+  #         gitlink pin. <ver> is the installed ccache version, so a distro
+  #         bump degrades to a clean miss instead of mixing cache formats.
+  #         The ndk/cmake segments must track the pins in this job's
+  #         sdkmanager step (and app/build.gradle.kts).
+  #   No restore-keys on purpose: a native change must show a clean cache
+  #   MISS and a full rebuild in the log, not a silent partial restore.
+  #   ccache content-hashes its compile inputs, so artifacts can never go
+  #   stale under a hit either.
+  #   Isolation: GitHub defaults — branch-scoped, PRs restore the base
+  #   branch's cache, nothing shared across repos.
+  connected-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CMAKE_C_COMPILER_LAUNCHER: ccache
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      CCACHE_COMPILERCHECK: content
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Hash native inputs for the cache key
+        id: native-inputs
+        run: |
+          hash=$(git ls-tree -r HEAD -- app/native .gitmodules | grep -v 'graphify-out' | git hash-object --stdin)
+          echo "hash=$hash" >> "$GITHUB_OUTPUT"
+          echo "native inputs hash: $hash"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install NDK, CMake, platform and build-tools
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.1.13356709" "cmake;3.31.6"
+
+      # ccache is NOT on the current ubuntu-latest image (exit 127),
+      # so install the distro build; its version joins the cache key.
+      - name: Install ccache
+        id: ccache-setup
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ccache
+          ver=$(ccache --version | sed -n '1s/.*version //p')
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "ccache version: $ver"
+
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-x86_64-${{ runner.os }}-ccache${{ steps.ccache-setup.outputs.version }}-ndk28.1.13356709-cmake3.31.6-${{ steps.native-inputs.outputs.hash }}
+
+      - name: ccache preflight
+        run: ccache --zero-stats
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          # Explicit like every ci.yml job: without this, pull_request runs
+          # are read-only and this lane never saves its Gradle/build-cache
+          # state (observed: "Cache is read-only: will not save state", so a
+          # PR's warm rerun still recompiles everything).
+          cache-read-only: false
+          # Validated in the dedicated step below, which can allow-list
+          # wrapper JARs vendored inside submodules (same convention as
+          # ci.yml's `assemble` job).
+          validate-wrappers: false
+
+      # The MNN submodule vendors a wrapper JAR inside
+      # 3rd_party/flatbuffers/samples/android whose checksum is not in the
+      # known list. It is a sample project that is never executed here;
+      # allow-list its SHA-256 (pinned by the submodule gitlink).
+      - name: Validate Gradle wrappers
+        uses: gradle/actions/wrapper-validation@v4
+        with:
+          allow-checksums: ee3739525a995bcb5601621a6e2daec1f183bbefc375743acc235cec33547e04
+
+      # Runner image: /dev/kvm is root:kvm 0660 — open it, else accel silently
+      # disables itself and the TCG boot times out before boot_completed.
+      - name: Enable KVM permissions
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -la /dev/kvm
+
+      # qemu bundled with the SDK emulator hard-depends on libpulse, absent on
+      # the current ubuntu image: "error while loading shared libraries:
+      # libpulse.so.0" = guest never starts (connection refused on :5554).
+      - name: Install qemu runtime libs
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libpulse0
+
+      - name: KVM check
+        run: ls -la /dev/kvm || true
+
+      # API 29 keeps the footprint small; the test is API-agnostic
+      # (minSdk 28): pure JNI lifecycle — instantiate/close the native bridge,
+      # guard translations and model loads before a model is present. See the
+      # header for why the NEU-29 classes are not part of this develop port.
+      - name: Run develop instrumentation smoke
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          target: default
+          force-avd-creation: true
+          emulator-options: -no-window -no-snapshot-save -noaudio -no-boot-anim -gpu swiftshader_indirect
+          disable-animations: true
+          # --build-cache (NEU-227): this lane otherwise recompiles all
+          # Kotlin/javac/packaging per run (0 FROM-CACHE tasks observed warm) —
+          # the Gradle build cache is off by default and gradle.properties
+          # does not enable it. Flag, not gradle.properties, so local/dev
+          # builds are untouched. Reused task outputs must never substitute
+          # for executing the gate: connectedAndroidTest tasks always run
+          # on-device (not cacheable), verified per-run via the result XMLs.
+          script: ./gradlew :app:connectedX86_64DebugAndroidTest --console=plain --build-cache -Pandroid.testInstrumentationRunnerArguments.class=app.versta.translate.bridge.leanmt.LeanmtTest
+
+      # Warm-cache runs must show near-total direct hits here; a hit-rate
+      # collapse on an unchanged native tree means the key or launcher
+      # wiring regressed (NEU-212 was mtime vs fresh-runner NDK installs).
+      - name: ccache stats
+        if: always()
+        run: |
+          ccache --show-config | grep compiler_check
+          ccache --show-stats -vv
+
+      - name: Print test result XMLs
+        if: always()
+        run: find app/build/outputs/androidTest-results -name "*.xml" -exec sh -c 'echo "--- $1"; cat "$1"' _ {} \; || true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: connected-androidTest-results
+          path: app/build/outputs/androidTest-results/
+          if-no-files-found: ignore

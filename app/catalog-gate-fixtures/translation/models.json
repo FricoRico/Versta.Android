@@ -1,0 +1,32 @@
+[
+  [
+    {
+      "base_model": "Firefox/ar-en",
+      "source_language": "ar",
+      "target_language": "en",
+      "bidirectional": true,
+      "architectures": [
+        "BergamotTinyModel"
+      ],
+      "score": 86.0,
+      "version": "v2.0.0",
+      "size": 50713114,
+      "bundle": "https://models.versta.app/translation/v2.0.0/ar-en-bundle.tar.gz",
+      "checksum": "https://models.versta.app/translation/v2.0.0/ar-en-bundle.tar.sha256"
+    },
+    {
+      "base_model": "Firefox/en-ar",
+      "source_language": "en",
+      "target_language": "ar",
+      "bidirectional": true,
+      "architectures": [
+        "BergamotTinyModel"
+      ],
+      "score": 86.0,
+      "version": "v2.0.0",
+      "size": 50713114,
+      "bundle": "https://models.versta.app/translation/v2.0.0/ar-en-bundle.tar.gz",
+      "checksum": "https://models.versta.app/translation/v2.0.0/ar-en-bundle.tar.sha256"
+    }
+  ]
+]

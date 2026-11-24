@@ -1,0 +1,14 @@
+{
+  "comment": "Golden-audio WER/CER thresholds for NEU-71. Values are provisional smoke-gate floors (whisper ggml-base, female default style, speed 1.0); tighten them after the first blessed run shows real per-language scores. ja is scored on characters (no spaces); all other languages on words.",
+  "defaults": {
+    "wer": { "threshold": 0.25 },
+    "cer": { "threshold": 0.15 }
+  },
+  "languages": {
+    "ja": { "threshold": 0.15 },
+    "ar": { "threshold": 0.30 },
+    "hi": { "threshold": 0.30 },
+    "vi": { "threshold": 0.30 },
+    "ko": { "threshold": 0.30 }
+  }
+}

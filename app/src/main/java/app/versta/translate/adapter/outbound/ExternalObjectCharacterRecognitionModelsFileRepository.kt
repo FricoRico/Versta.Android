@@ -3,10 +3,7 @@ package app.versta.translate.adapter.outbound
 import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModelDefinition
 import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModelWithState
 import app.versta.translate.core.entity.ExternalObjectCharacterRecognitionModels
-import app.versta.translate.core.entity.ObjectCharacterRecognitionDetectorModel
-import app.versta.translate.core.entity.ObjectCharacterRecognitionDetectorWithFiles
-import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerModel
-import app.versta.translate.core.entity.ObjectCharacterRecognitionRecognizerWithFiles
+import app.versta.translate.core.entity.ObjectCharacterRecognitionModuleWithFiles
 import app.versta.translate.utils.compareVersions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,73 +42,39 @@ class ExternalObjectCharacterRecognitionModelsFileRepository(
      * OCR models. These definitions are filtered by the state of the imported OCR models.
      */
     override fun getDefinitionsByState(
-        importedDetectors: Flow<List<ObjectCharacterRecognitionDetectorWithFiles>>,
-        importedRecognizers: Flow<List<ObjectCharacterRecognitionRecognizerWithFiles>>,
+        importedModules: Flow<List<ObjectCharacterRecognitionModuleWithFiles>>,
     ): Flow<ExternalObjectCharacterRecognitionModels> =
-        _downloadableModels
-            .combine(importedDetectors) { models, detectors ->
-                models to detectors
-            }.combine(importedRecognizers) { (models, detectors), recognizers ->
-                ExternalObjectCharacterRecognitionModels(
-                    installed =
-                        models.mapNotNull { model ->
-                            val detector = detectors.find { it.id == model.id }
-                            val recognizer = recognizers.find { it.id == model.id }
+        _downloadableModels.combine(importedModules) { models, modules ->
+            val installedVersions = modules.groupBy({ it.bundleId }, { it.version })
 
-                            if (detector != null && recognizer != null &&
-                                detector.version == model.version &&
-                                recognizer.version == model.version
-                            ) {
-                                ExternalObjectCharacterRecognitionModelWithState(
-                                    definition = model,
-                                    extracted = calculateExtractedSize(detector, recognizer),
-                                )
-                            } else {
-                                null
-                            }
+            ExternalObjectCharacterRecognitionModels(
+                installed =
+                    models.mapNotNull { model ->
+                        val versions = installedVersions[model.id]
+                        if (versions != null && versions.all { compareVersions(it, model.version) == 0 }) {
+                            ExternalObjectCharacterRecognitionModelWithState(definition = model)
+                        } else {
+                            null
+                        }
+                    },
+                updates =
+                    models.mapNotNull { model ->
+                        val versions = installedVersions[model.id]
+                        if (versions != null && versions.any { compareVersions(it, model.version) < 0 }) {
+                            ExternalObjectCharacterRecognitionModelWithState(definition = model)
+                        } else {
+                            null
+                        }
+                    },
+                available =
+                    models
+                        .filter { model ->
+                            installedVersions[model.id] == null
+                        }.map { model ->
+                            ExternalObjectCharacterRecognitionModelWithState(definition = model)
                         },
-                    updates =
-                        models.mapNotNull { model ->
-                            val detector = detectors.find { it.id == model.id }
-                            val recognizer = recognizers.find { it.id == model.id }
-
-                            if (detector != null && recognizer != null &&
-                                isOutdated(model, detector, recognizer)
-                            ) {
-                                ExternalObjectCharacterRecognitionModelWithState(
-                                    definition = model,
-                                    extracted = calculateExtractedSize(detector, recognizer),
-                                )
-                            } else {
-                                null
-                            }
-                        },
-                    available =
-                        models
-                            .filter { model ->
-                                detectors.none { it.id == model.id } || recognizers.none { it.id == model.id }
-                            }.map { model ->
-                                ExternalObjectCharacterRecognitionModelWithState(definition = model)
-                            },
-                )
-            }
-
-    private fun isOutdated(
-        model: ExternalObjectCharacterRecognitionModelDefinition,
-        detector: ObjectCharacterRecognitionDetectorWithFiles,
-        recognizer: ObjectCharacterRecognitionRecognizerWithFiles,
-    ): Boolean =
-        compareVersions(detector.version, model.version) < 0 ||
-            compareVersions(recognizer.version, model.version) < 0
-
-    private fun calculateExtractedSize(
-        detector: ObjectCharacterRecognitionDetectorWithFiles,
-        recognizer: ObjectCharacterRecognitionRecognizerWithFiles,
-    ): Long {
-        // Calculate the size of extracted files (this is a simplified version)
-        // In reality, you would traverse the directories and sum up file sizes
-        return 0L // Placeholder
-    }
+            )
+        }
 
     init {
         _loadingScope.launch {

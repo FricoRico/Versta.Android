@@ -1,8 +1,5 @@
 package app.versta.translate.adapter.outbound
 
-import android.content.Context
-import app.versta.translate.core.entity.DataMetadata
-import app.versta.translate.core.entity.DataWithFiles
 import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.VoiceModel
 import app.versta.translate.core.entity.VoiceWithModelFiles
