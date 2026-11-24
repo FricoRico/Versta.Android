@@ -7,6 +7,7 @@ import app.cash.sqldelight.ColumnAdapter
 import app.cash.sqldelight.TransactionWithReturn
 import app.cash.sqldelight.TransactionWithoutReturn
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
+import app.versta.translate.database.migrations.Migration1
 import app.versta.translate.database.migrations.Migration3
 import app.versta.translate.database.migrations.Migration4
 import app.versta.translate.database.migrations.Migration6
@@ -77,6 +78,7 @@ class DatabaseContainer(
 
     private val _migrations =
         listOf(
+            Migration1,
             Migration3,
             Migration4,
             Migration6,
