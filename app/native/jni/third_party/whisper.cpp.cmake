@@ -23,7 +23,7 @@ set(GGML_OPENMP           OFF CACHE BOOL "" FORCE)
 add_subdirectory(whisper.cpp whisper.cpp)
 
 # Apply optimisation flags only to the whisper/ggml targets so they don't
-# leak into sibling libraries (leanmt, espeak-ng, etc.).
+# leak into sibling libraries (leanmt, cld2, etc.).
 foreach(tgt whisper ggml)
     if(TARGET ${tgt})
         target_compile_options(${tgt} PRIVATE -O3)

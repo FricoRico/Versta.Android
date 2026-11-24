@@ -12,7 +12,7 @@ import app.versta.translate.core.entity.LanguageModelFiles
  *
  * leanmt performs tokenisation and detokenisation internally, so this adapter only
  * forwards raw text and returns the translated text. Pivot translation (when an
- * intermediary model is configured) is handled by the [TranslationViewModel] by
+ * intermediary model is configured) is handled by the [TranslationOrchestrator] by
  * chaining two [translate] calls.
  */
 class BergamotTinyInference(
@@ -43,10 +43,6 @@ class BergamotTinyInference(
                 maxBeamWidth.toLong(),
                 maxSequenceLength.toLong(),
             ).joinToString("\n")
-    }
-
-    override fun cancel() {
-        return
     }
 
     override fun load(

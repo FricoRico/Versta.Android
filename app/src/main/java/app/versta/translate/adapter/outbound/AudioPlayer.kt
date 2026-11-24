@@ -2,16 +2,13 @@ package app.versta.translate.adapter.outbound
 
 interface AudioPlayer {
     /**
-     * Plays the audio file at the given path.
+     * Plays mono PCM f32 audio of the given [sampleRate] in Hz.
      * @param audio The audio data to play.
      */
-    fun play(audio: FloatArray)
-
-    /**
-     * Plays the audio file at the given path.
-     * @param audio The audio data to play.
-     */
-    fun play(audio: ByteArray)
+    fun play(
+        audio: FloatArray,
+        sampleRate: Int,
+    )
 
     /**
      * Stops the audio playback.

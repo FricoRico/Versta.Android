@@ -5,8 +5,8 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1786455247.5293624,
-    "ast_hash": "0234ea142fa914193f4d576b68d55665",
+    "mtime": 1788033179.5248113,
+    "ast_hash": "058490667b5692612e89a602eead2843",
     "semantic_hash": ""
   },
   "app/build.gradle.kts": {
@@ -39,19 +39,9 @@
     "ast_hash": "4dbd7bc16dbffa660487a8ebd55adf54",
     "semantic_hash": ""
   },
-  "app/native/jni/src/ocr_text_analyzer.cc": {
-    "mtime": 1773576501.5660856,
-    "ast_hash": "d75d428ed947de21043c63405a35fa20",
-    "semantic_hash": ""
-  },
   "app/native/jni/src/open_jtalk.cc": {
     "mtime": 1773576501.5660856,
     "ast_hash": "6ac44eff3d4940aebdbcba5faa42cfb2",
-    "semantic_hash": ""
-  },
-  "app/native/jni/src/paddle_ocr.cc": {
-    "mtime": 1773576501.5660856,
-    "ast_hash": "4b15579b89555f782b5fb0db4d4a108b",
     "semantic_hash": ""
   },
   "app/native/jni/src/tensor_utils.cc": {
@@ -85,7 +75,7 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/app/versta/translate/adapter/outbound/WhisperSpeechRecognitionTest.kt": {
-    "mtime": 1786522801.9581978,
+    "mtime": 1786823299.3331175,
     "ast_hash": "ffd5e367f51bb2a9e1df0a137c10a5aa",
     "semantic_hash": ""
   },
@@ -119,24 +109,19 @@
     "ast_hash": "ad8269e7839eb7a101dc3b0fd15104af",
     "semantic_hash": ""
   },
-  "app/src/androidTest/java/app/versta/translate/ui/component/MeshGradientBackgroundTest.kt": {
-    "mtime": 1786688884.1290493,
-    "ast_hash": "6a813895236d20aedc86385f655e82a4",
-    "semantic_hash": ""
-  },
   "app/src/main/java/app/versta/translate/BubbleActivity.kt": {
     "mtime": 1773576501.6740851,
     "ast_hash": "cd0c66c217ae5a87b87d6b549adb6fe1",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/MainActivity.kt": {
-    "mtime": 1786455247.5329058,
-    "ast_hash": "682888f069f0b069c8c6eb99dcc9d615",
+    "mtime": 1787947554.15448,
+    "ast_hash": "c82dff80eb34ebe7303a2469a786047a",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/MainApplication.kt": {
-    "mtime": 1786461778.9035058,
-    "ast_hash": "0a1e87d68a0eb3d360e29ed8d0ef467f",
+    "mtime": 1788033179.5301623,
+    "ast_hash": "9923180628c93692bfc0893a06f6750a",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/inbound/CompressedFileExtractor.kt": {
@@ -160,8 +145,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/inbound/DownloadObjectCharacterRecognitionWorker.kt": {
-    "mtime": 1773576501.675085,
-    "ast_hash": "fe6f605da0e384c755eea37389edf929",
+    "mtime": 1788033179.5301623,
+    "ast_hash": "fcbf32044a341e4714df5b8ffa6f3037",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/inbound/DownloadSpeechRecognitionWorker.kt": {
@@ -230,7 +215,7 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/AudioCapture.kt": {
-    "mtime": 1786522615.674234,
+    "mtime": 1786823299.3331175,
     "ast_hash": "6b0103febe412b4dd5b06f1a290493a1",
     "semantic_hash": ""
   },
@@ -300,18 +285,18 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/ExternalObjectCharacterRecognitionModelsFileRepository.kt": {
-    "mtime": 1773576501.675085,
-    "ast_hash": "08c8ac659450b184946958d56bd76269",
+    "mtime": 1788033179.5301623,
+    "ast_hash": "aaf6d085113f351fdc668d42972f8cff",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/ExternalObjectCharacterRecognitionModelsMemoryRepository.kt": {
-    "mtime": 1773576501.675085,
-    "ast_hash": "51998ccb8657d7ee2d22dbac5dec40e4",
+    "mtime": 1788033179.5301623,
+    "ast_hash": "8942a9c81e0d3a677abe3360726d7370",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/ExternalObjectCharacterRecognitionModelsRepository.kt": {
-    "mtime": 1773576501.675085,
-    "ast_hash": "c41d41036ac645376bd3bf291c5ae286",
+    "mtime": 1788033179.5301623,
+    "ast_hash": "4569e64c79cd2b30e488b348969a4f43",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/ExternalSpeechRecognitionModelsFileRepository.kt": {
@@ -410,7 +395,7 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/MicrophoneCapture.kt": {
-    "mtime": 1786533843.8396964,
+    "mtime": 1786823299.3331175,
     "ast_hash": "dfd9c14bfd784930385cc0539b355b4d",
     "semantic_hash": ""
   },
@@ -420,58 +405,28 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/ObjectCharacterRecognitionAnalyzer.kt": {
-    "mtime": 1773576501.675085,
-    "ast_hash": "3d5d1e426c633970c5701c6fb008a28d",
+    "mtime": 1788033179.5304918,
+    "ast_hash": "37c47aa9ea2707417ab1ef737d79f9ce",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/ObjectCharacterRecognitionInference.kt": {
-    "mtime": 1773576501.675085,
-    "ast_hash": "432e5eecc6179bca7885d602a25eb681",
+    "mtime": 1788033179.5304918,
+    "ast_hash": "17eddb078ffaab54e95395577fcdd883",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/ObjectCharacterRecognitionRepository.kt": {
-    "mtime": 1773576501.675085,
-    "ast_hash": "615f41ddb87a833c3792e368f6496cb8",
+    "mtime": 1788033179.5304918,
+    "ast_hash": "8403ab872bba75cf0127397b0c0f2169",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/ObjectCharacterRecognitionRepositoryDatabaseRepository.kt": {
-    "mtime": 1773576501.675085,
-    "ast_hash": "293732b4aba79edcd7b7bcab47be31b1",
+    "mtime": 1788033179.5304918,
+    "ast_hash": "37755014414b1371443955ba24b9cdda",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/ObjectCharacterRecognitionRepositoryMemoryRepository.kt": {
-    "mtime": 1773576501.675085,
-    "ast_hash": "e3361d428716228616f1c4b186df0953",
-    "semantic_hash": ""
-  },
-  "app/src/main/java/app/versta/translate/adapter/outbound/OcrPostProcessor.kt": {
-    "mtime": 1773576501.675085,
-    "ast_hash": "ed47b45d19c0ae52078d3422a890bdfe",
-    "semantic_hash": ""
-  },
-  "app/src/main/java/app/versta/translate/adapter/outbound/OcrPostProcessorContext.kt": {
-    "mtime": 1773576501.675085,
-    "ast_hash": "ab33b45c3c000beeb9f85ca6bba00229",
-    "semantic_hash": ""
-  },
-  "app/src/main/java/app/versta/translate/adapter/outbound/OcrPostProcessorPipeline.kt": {
-    "mtime": 1773576501.675085,
-    "ast_hash": "21a6028d9d5c271f47cfefa05a7303d8",
-    "semantic_hash": ""
-  },
-  "app/src/main/java/app/versta/translate/adapter/outbound/PaddleObjectCharacterRecognitionInference.kt": {
-    "mtime": 1773584600.253439,
-    "ast_hash": "52467d3a4a965eed5c6231dd3df8cd5c",
-    "semantic_hash": ""
-  },
-  "app/src/main/java/app/versta/translate/adapter/outbound/PaddleObjectCharacterRecognitionTokenizer.kt": {
-    "mtime": 1773576501.675085,
-    "ast_hash": "6d71786d54afaf875a8bb58c7a0cf0e4",
-    "semantic_hash": ""
-  },
-  "app/src/main/java/app/versta/translate/adapter/outbound/ParagraphGroupingPostProcessor.kt": {
-    "mtime": 1773576501.675085,
-    "ast_hash": "171e7b406fdf7205ce9aff68b0396abe",
+    "mtime": 1788033179.5304918,
+    "ast_hash": "03547e219defc586ef3ae46ea680e940",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/SpeechContextStore.kt": {
@@ -485,7 +440,7 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/SpeechRecognitionInference.kt": {
-    "mtime": 1786522671.911223,
+    "mtime": 1786823299.3331175,
     "ast_hash": "0103d8947b6efd7a50251c262898e464",
     "semantic_hash": ""
   },
@@ -495,7 +450,7 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/SpeechRecognitionMockInference.kt": {
-    "mtime": 1786522714.305215,
+    "mtime": 1786823299.3331175,
     "ast_hash": "721ea645b6bf11df6f12a66fd4e04c96",
     "semantic_hash": ""
   },
@@ -512,11 +467,6 @@
   "app/src/main/java/app/versta/translate/adapter/outbound/StyleTextToSpeech2Tokenizer.kt": {
     "mtime": 1773576501.6760852,
     "ast_hash": "4413180bb5c639b15452a9b773ccd18b",
-    "semantic_hash": ""
-  },
-  "app/src/main/java/app/versta/translate/adapter/outbound/TextStyleAnalysisPostProcessor.kt": {
-    "mtime": 1773576501.6760852,
-    "ast_hash": "dd507f64354a53145782c087c1c74049",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/TextToSpeechInference.kt": {
@@ -600,18 +550,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/adapter/outbound/WhisperSpeechRecognition.kt": {
-    "mtime": 1786522697.9352179,
+    "mtime": 1786823299.3331175,
     "ast_hash": "75e1f7f837188b92b0b4264fc4b4c9f7",
-    "semantic_hash": ""
-  },
-  "app/src/main/java/app/versta/translate/bridge/inference/OcrTextAnalyzer.kt": {
-    "mtime": 1773576501.6760852,
-    "ast_hash": "0cb743a38e69f742759159e58c5f082c",
-    "semantic_hash": ""
-  },
-  "app/src/main/java/app/versta/translate/bridge/inference/PaddleOCR.kt": {
-    "mtime": 1773576501.6760852,
-    "ast_hash": "8b4e655e51eab0e00e04322fd6ce9438",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/bridge/inference/TensorUtils.kt": {
@@ -670,8 +610,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/entity/CameraTranslation.kt": {
-    "mtime": 1773576501.6760852,
-    "ast_hash": "a27212497bd3db4ddfb468a905ad6063",
+    "mtime": 1788033179.5304918,
+    "ast_hash": "032b4c2997adafb5dcda3a1d1eb544d0",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/entity/DataMetadata.kt": {
@@ -735,28 +675,18 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/entity/ObjectCharacterRecogniser.kt": {
-    "mtime": 1773576501.6770852,
-    "ast_hash": "f79466d4ffb3dba5a2319b0e8465db90",
+    "mtime": 1788033179.5304918,
+    "ast_hash": "5a8d240f4925454036d942154cc8f773",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/entity/ObjectCharacterRecognitionMetadata.kt": {
-    "mtime": 1773576501.6770852,
-    "ast_hash": "33fd206531ae5749b60c3da2ed884b19",
+    "mtime": 1788033179.5304918,
+    "ast_hash": "b994f9d787a9cc7bd7d1a9ff7c26dcfb",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/entity/ObjectCharacterRecognitionWithFiles.kt": {
-    "mtime": 1786455247.5341868,
-    "ast_hash": "7f1673917499ab0a3a6f95c3645a0cbe",
-    "semantic_hash": ""
-  },
-  "app/src/main/java/app/versta/translate/core/entity/PaddleObjectCharacterRecognitionDetect.kt": {
-    "mtime": 1773576501.6770852,
-    "ast_hash": "0754385b5c49a8e62ca656aa2716a8ee",
-    "semantic_hash": ""
-  },
-  "app/src/main/java/app/versta/translate/core/entity/PaddleObjectCharacterRecognitionRecognize.kt": {
-    "mtime": 1773576501.6770852,
-    "ast_hash": "2d6ee4cb9fedbf77a2ee7cd5c8ae13cd",
+    "mtime": 1788033179.5314918,
+    "ast_hash": "b754fe4134a93328cc46489693bc311b",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/entity/SpeechRecognitionInitialPrompts.kt": {
@@ -810,8 +740,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/model/CameraTranslationViewModel.kt": {
-    "mtime": 1784479012.4536755,
-    "ast_hash": "0ed937c67b95e79f176cc2af081a8ec5",
+    "mtime": 1788611541.5981395,
+    "ast_hash": "bf204b8af762db04ec9f904115dc4c98",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/model/CustomThemeViewModel.kt": {
@@ -835,8 +765,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/model/LoggingViewModel.kt": {
-    "mtime": 1773262152.4287362,
-    "ast_hash": "f50afac0ce0313c907674b05f55873b3",
+    "mtime": 1788033179.5314918,
+    "ast_hash": "e3b04905d6c4c8423e89d51e7ad256bc",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/model/NavigationViewModel.kt": {
@@ -845,8 +775,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/model/ObjectCharacterRecognitionViewModel.kt": {
-    "mtime": 1773576501.6770852,
-    "ast_hash": "fe3d88045487971e6d034be42a0f7158",
+    "mtime": 1788033179.5314918,
+    "ast_hash": "2e06ee0749be0e1bd2b1182f64594f4f",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/model/ScaffoldViewModel.kt": {
@@ -855,7 +785,7 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/core/model/SpeechRecognitionViewModel.kt": {
-    "mtime": 1786522721.7052133,
+    "mtime": 1786823299.3331175,
     "ast_hash": "9b88424c26c3b1f2f99e83cef97b759b",
     "semantic_hash": ""
   },
@@ -880,23 +810,23 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/database/DatabaseContainer.kt": {
-    "mtime": 1786455247.5343626,
-    "ast_hash": "877ebbe733d71762c0f66b13102940d9",
+    "mtime": 1788033179.532492,
+    "ast_hash": "eed7513075457dcdb403be1b393999f9",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/database/migrations/3.kt": {
-    "mtime": 1773576501.6770852,
-    "ast_hash": "1e014f00c5f82828185f921adfc5acfb",
+    "mtime": 1788033179.532492,
+    "ast_hash": "fc358be2c11f12a6d5797aed8984d159",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/database/migrations/4.kt": {
-    "mtime": 1773576501.6770852,
-    "ast_hash": "1e545c43a8438cfa5b6147155f403897",
+    "mtime": 1788033179.532492,
+    "ast_hash": "95966d69e3cc267d024bebeeb7fc32fb",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/database/migrations/6.kt": {
-    "mtime": 1784479012.454145,
-    "ast_hash": "cd508fa80672ed243ded55078ec572c0",
+    "mtime": 1788033179.532492,
+    "ast_hash": "1941badf13e5aaf0e20b73cef7edf22e",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/component/ButtonCard.kt": {
@@ -925,8 +855,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/component/LanguageBadge.kt": {
-    "mtime": 1773576501.678085,
-    "ast_hash": "11e282194e99b11760148c7f7ab18209",
+    "mtime": 1788033179.532492,
+    "ast_hash": "4b5d2d7a8a3896585a6946facaac8553",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/component/LanguageDeletionConfirmationDialog.kt": {
@@ -954,11 +884,6 @@
     "ast_hash": "c16c97fe7d8241b980b08bce6b228246",
     "semantic_hash": ""
   },
-  "app/src/main/java/app/versta/translate/ui/component/MeshGradientBackground.kt": {
-    "mtime": 1786688875.8850505,
-    "ast_hash": "f7eedbbf36284bfd0f52463b6b4b31cd",
-    "semantic_hash": ""
-  },
   "app/src/main/java/app/versta/translate/ui/component/MinimalLanguageSelector.kt": {
     "mtime": 1773576501.678085,
     "ast_hash": "c1bdecae1e4b032ac75862aa6f3c0832",
@@ -980,8 +905,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/component/Router.kt": {
-    "mtime": 1786471113.524893,
-    "ast_hash": "dd0d26ddff7303ef9f7ed5316809d9fa",
+    "mtime": 1788611188.5760958,
+    "ast_hash": "92d560f058d885331dc5a9446f423feb",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/component/ScaffoldCompactBar.kt": {
@@ -1070,8 +995,8 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/screen/CameraTranslation.kt": {
-    "mtime": 1773576501.679085,
-    "ast_hash": "10cbe28c49a05012447a0e81bebc6161",
+    "mtime": 1788611541.5983808,
+    "ast_hash": "ea494ae2f99d906640288325f5723510",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/screen/LanguageAttributions.kt": {
@@ -1410,8 +1335,8 @@
     "semantic_hash": ""
   },
   "DESIGN.md": {
-    "mtime": 1786455247.5293624,
-    "ast_hash": "75f6560014ee1279222056361d618c5e",
+    "mtime": 1787947554.1520028,
+    "ast_hash": "714fea393b58efdef8bc183514cb7971",
     "semantic_hash": ""
   },
   "LICENSE.md": {
@@ -1420,28 +1345,28 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1785879383.8008103,
-    "ast_hash": "cca12480c8213898f23d8d75d7d9172f",
+    "mtime": 1788033179.5248113,
+    "ast_hash": "e1afbc4e23b47c5fa615e9c96b613623",
     "semantic_hash": ""
   },
   "app/AGENTS.md": {
-    "mtime": 1786465638.1354585,
-    "ast_hash": "64da178e7c0b7cbffb5cd26ebab6390a",
+    "mtime": 1788033179.5248113,
+    "ast_hash": "0b4bd96fdcf9f4e905dcd7c42572c09f",
     "semantic_hash": ""
   },
   "app/native/AGENTS.md": {
-    "mtime": 1786465638.1274586,
-    "ast_hash": "1fad35b487efaeb1d3a538f0acf5e51a",
+    "mtime": 1788616602.643055,
+    "ast_hash": "bbd43c56081916a500eb1b895fcec832",
     "semantic_hash": ""
   },
   "app/native/jni/CMakeLists.txt": {
-    "mtime": 1786455247.5303626,
-    "ast_hash": "c51d9ff1f96cb21f41cdffd9bd05e042",
+    "mtime": 1788617313.402991,
+    "ast_hash": "7d61927597beb4dd48fe5f1cb2473ebb",
     "semantic_hash": ""
   },
   "app/native/jni/src/CMakeLists.txt": {
-    "mtime": 1786455247.5303626,
-    "ast_hash": "a58c6c5783b5cf429a7fbb02bbdbcd8c",
+    "mtime": 1788616460.1011007,
+    "ast_hash": "a9579d15eb647a8759806a7dbc29a3ba",
     "semantic_hash": ""
   },
   "app/src/main/ic_launcher-playstore.png": {
@@ -1570,7 +1495,7 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/app/versta/translate/utils/AudioExtensionsTest.kt": {
-    "mtime": 1786553164.3440762,
+    "mtime": 1786823295.427119,
     "ast_hash": "38a23a774d6874521d39133917b45f32",
     "semantic_hash": ""
   },
@@ -1580,18 +1505,248 @@
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/component/VoiceWaveform.kt": {
-    "mtime": 1786565262.427333,
+    "mtime": 1786823299.3341174,
     "ast_hash": "c7109db0e7d463d5519b7347641d43e2",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/ui/screen/Conversation.kt": {
-    "mtime": 1786522939.963171,
+    "mtime": 1786823299.3341174,
     "ast_hash": "de8ae3575d0af076d696fa35d41aab74",
     "semantic_hash": ""
   },
   "app/src/main/java/app/versta/translate/utils/AudioExtensions.kt": {
-    "mtime": 1786563534.00349,
+    "mtime": 1786823299.3341174,
     "ast_hash": "e1f125aac8488ae94e3f6069a15f5b38",
+    "semantic_hash": ""
+  },
+  "app/native/jni/src/include/ocr_pipeline.h": {
+    "mtime": 1788616602.6417499,
+    "ast_hash": "480647f00ba95e16096113f78939eaae",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/app/versta/translate/adapter/outbound/ObjectCharacterRecognitionAnalyzerMappingTest.kt": {
+    "mtime": 1788033179.5284917,
+    "ast_hash": "ff97576b34174b52f6d7e3705f8ddd76",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/app/versta/translate/core/entity/ObjectCharacterRecognitionBundleWithFilesTest.kt": {
+    "mtime": 1788033179.5284917,
+    "ast_hash": "61e20ce853a0b0e82fe716985f26f198",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/adapter/outbound/MnnObjectCharacterRecognition.kt": {
+    "mtime": 1788452915.8791764,
+    "ast_hash": "7ede02f975a71c5d2ed20fcd7e223dd6",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/bridge/inference/OcrEngine.kt": {
+    "mtime": 1788452915.8791764,
+    "ast_hash": "89779a3c6e769d5857ebf03b61018500",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/core/entity/ObjectCharacterRecognitionModule.kt": {
+    "mtime": 1788033179.5314918,
+    "ast_hash": "00c3a3bf47ec9a1944ea3ca3def5cf07",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/core/entity/ObjectCharacterRecognitionModuleMetadata.kt": {
+    "mtime": 1788033179.5314918,
+    "ast_hash": "d0b5c4c42296e70c0fe2708f9f5f3191",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/core/entity/OcrDetectedLine.kt": {
+    "mtime": 1788033179.5314918,
+    "ast_hash": "7fd2930c04bfbe08b0c4ab81a9305d38",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/database/migrations/Migration8.kt": {
+    "mtime": 1788033179.532492,
+    "ast_hash": "535f3d07bf87d3629746ae198d5ef295",
+    "semantic_hash": ""
+  },
+  "app/native/jni/src/include/gl_renderer.h": {
+    "mtime": 1788467632.8954318,
+    "ast_hash": "f785eb84ef3ec5e3a1ae39026cbd962e",
+    "semantic_hash": ""
+  },
+  "app/native/jni/src/include/parallel.h": {
+    "mtime": 1788033179.525492,
+    "ast_hash": "1f296919b3e5863158a8c76e4caed946",
+    "semantic_hash": ""
+  },
+  "app/native/jni/src/ocr/anchor.cc": {
+    "mtime": 1788616602.6421309,
+    "ast_hash": "50fe07cb173ce6b5aba35654f8a19f4f",
+    "semantic_hash": ""
+  },
+  "app/native/jni/src/ocr/blocks.cc": {
+    "mtime": 1788612029.9347816,
+    "ast_hash": "00909e4492ec0713848e8c0863c48acd",
+    "semantic_hash": ""
+  },
+  "app/native/jni/src/ocr/detect.cc": {
+    "mtime": 1788611705.1631904,
+    "ast_hash": "c191a28875e3efad3e83c99ced0af691",
+    "semantic_hash": ""
+  },
+  "app/native/jni/src/ocr/dewarp.cc": {
+    "mtime": 1788612029.9350576,
+    "ast_hash": "2aa30a21acd543faebf9cf522d9cd7ba",
+    "semantic_hash": ""
+  },
+  "app/native/jni/src/ocr/engine.cc": {
+    "mtime": 1788616602.6427004,
+    "ast_hash": "52ac823fed705c1260c1a2c3347c1524",
+    "semantic_hash": ""
+  },
+  "app/native/jni/src/ocr/erase.cc": {
+    "mtime": 1788612029.9352572,
+    "ast_hash": "5eed4606044a4f95901a934066929024",
+    "semantic_hash": ""
+  },
+  "app/native/jni/src/ocr/glyphmatte.cc": {
+    "mtime": 1788612378.4848409,
+    "ast_hash": "9aeea9b2bfde9792a509ab7f2087f5f3",
+    "semantic_hash": ""
+  },
+  "app/native/jni/src/ocr/homography.cc": {
+    "mtime": 1788033179.5274918,
+    "ast_hash": "acfc16a184c3487a55cfe5b4fee0f30f",
+    "semantic_hash": ""
+  },
+  "app/native/jni/src/ocr/recognize.cc": {
+    "mtime": 1788611609.9437258,
+    "ast_hash": "266361d7277b7ace49d64ce4a734f993",
+    "semantic_hash": ""
+  },
+  "app/native/jni/src/ocr/renderer.cc": {
+    "mtime": 1788467621.726262,
+    "ast_hash": "a89ce4136a9815a0e4a9a22f51580495",
+    "semantic_hash": ""
+  },
+  "app/native/jni/src/ocr/track.cc": {
+    "mtime": 1788612291.2577844,
+    "ast_hash": "35838986afec28581b28340cbfbfd46a",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/app/versta/translate/adapter/outbound/ObjectCharacterRecognitionAnalyzerAsyncTest.kt": {
+    "mtime": 1788033179.5284917,
+    "ast_hash": "36c36e14a12d8d5401313cd498f33787",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/app/versta/translate/core/entity/OcrBlockLayoutCacheTest.kt": {
+    "mtime": 1788033179.5284917,
+    "ast_hash": "e2315423aac414c2eafbbd830c0a4725",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/app/versta/translate/core/entity/OcrBlockLayoutTest.kt": {
+    "mtime": 1788033179.5284917,
+    "ast_hash": "cdf0d220c76a5b50cdc3b428ff784a0f",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/app/versta/translate/core/entity/OcrTextMeasureTest.kt": {
+    "mtime": 1788033179.5284917,
+    "ast_hash": "bd340f10fa16b1d06c8c78420cdb261b",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/app/versta/translate/core/model/AnchorWarmupGateTest.kt": {
+    "mtime": 1788033179.5284917,
+    "ast_hash": "73fccb1d6f2125fa87f2e0876bf8e65f",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/app/versta/translate/core/model/OcrOverlayBakerTest.kt": {
+    "mtime": 1788033179.5301623,
+    "ast_hash": "d729af6b1cf77d7b689247c728a83944",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/app/versta/translate/core/model/OcrStripStoreTest.kt": {
+    "mtime": 1788033179.5301623,
+    "ast_hash": "0dc0cb0d1217fe8c49e76567b2e4eed7",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/app/versta/translate/utils/CameraFrameTransformTest.kt": {
+    "mtime": 1788033179.5301623,
+    "ast_hash": "da0f434c25a2119060a63caaaa791c1f",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/bridge/liverender/LiveGlRenderer.kt": {
+    "mtime": 1788467653.925304,
+    "ast_hash": "605685b5d6151304e896e7dd4445e4a7",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/core/entity/OcrBlockLayout.kt": {
+    "mtime": 1788611231.3306096,
+    "ast_hash": "5df5b3bc91cb89cb08e10355db76630b",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/core/entity/OcrBlockLayoutCache.kt": {
+    "mtime": 1788611219.8544545,
+    "ast_hash": "cea58ed375dc211fd518ea68f275cb18",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/core/entity/OcrBlockRender.kt": {
+    "mtime": 1788033179.5314918,
+    "ast_hash": "20567929a7354bee96624f1a8789ab32",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/core/entity/OcrLineQuad.kt": {
+    "mtime": 1788033179.5314918,
+    "ast_hash": "44a0a1ba7357ae790e440db1b0959814",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/core/entity/OcrTextMeasure.kt": {
+    "mtime": 1788033179.5314918,
+    "ast_hash": "c6bbb73cddd49ef6aa354c98fc73ee8b",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/core/model/AnchorWarmupGate.kt": {
+    "mtime": 1788033179.5314918,
+    "ast_hash": "8defb3c58b864805f6f8fef2d09839c6",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/core/model/OcrOverlayBaker.kt": {
+    "mtime": 1788033179.5314918,
+    "ast_hash": "757c925ee85b6714a591b0a2997b42c8",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/core/model/OcrStripStore.kt": {
+    "mtime": 1788033179.532492,
+    "ast_hash": "f02186548057c957f4333290ed5c6a9f",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/ui/component/VerstaGlSurfaceView.kt": {
+    "mtime": 1788612489.3646324,
+    "ast_hash": "bf63cf8e47cb01ef2ea30042378a96ea",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/utils/CameraFrameTransform.kt": {
+    "mtime": 1788033179.5334918,
+    "ast_hash": "0ebbe37447a8fa7e8b81b5e31dae8ceb",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/app/versta/translate/utils/MatrixExtensions.kt": {
+    "mtime": 1788033179.5334918,
+    "ast_hash": "e2a5e595cb02bf242c67658c1feccf09",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-08-25-overlay-parity.md": {
+    "mtime": 1788033179.5352492,
+    "ast_hash": "d454e176dfdf4088eeacc2c540d8ea0b",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-08-28-live-acquire-off-render-thread.md": {
+    "mtime": 1788033179.5353456,
+    "ast_hash": "c520f334921389114c3236c4f2e56ba2",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-08-28-m3-gl-overlay-composite.md": {
+    "mtime": 1788033179.5353456,
+    "ast_hash": "6c8a134d340393c8ca6dc57802039ba3",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-08-28-native-live-tick.md": {
+    "mtime": 1788033179.5353456,
+    "ast_hash": "ac580c9cc7fdea67c2c27686b19f1df5",
     "semantic_hash": ""
   }
 }

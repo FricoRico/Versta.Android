@@ -5,11 +5,19 @@ import app.versta.translate.core.entity.VoiceWithModelFiles
 import app.versta.translate.database.DatabaseContainer
 import app.versta.translate.database.Migration
 import okio.Path.Companion.toPath
-import java.app.versta.translate.database.sqldelight.Voice
+import timber.log.Timber
+import java.io.File
 
 /**
- * Backfills the `Voice` table (added by `3.sqm`) with one row per voice file
- * bundled in each installed voice model.
+ * Backfilled the `Voice` table (added by `3.sqm`) from the voice files of
+ * installed pre-Supertonic voice models.
+ *
+ * Since the Supertonic 3 cut-over the app schema only reads Supertonic 3
+ * bundles, which cannot exist on a database this old, so legacy bundles are
+ * skipped: every row this migration could write for them is purged by
+ * [Migration7] in the same upgrade. A bundle whose metadata file is missing
+ * entirely is corrupt state and still crashes the migration instead of being
+ * swallowed.
  */
 object Migration3 : Migration {
     override val afterVersion = 3L
@@ -20,52 +28,18 @@ object Migration3 : Migration {
     ) {
         database.voiceModels.getAll().executeAsList().forEach { data ->
             val path = data.path.toPath().toNioPath()
-            val voices = voicesFor(data.id, VoiceWithModelFiles.load(data.id, path))
 
-            database.voices.transaction {
-                voices.forEach {
-                    database.voices.insertOrIgnore(
-                        modelId = it.modelId,
-                        language = it.language,
-                        gender = it.gender,
-                    )
-                }
+            require(File(path.toFile(), "metadata.json").exists()) {
+                "Voice model metadata file not found: ${path.toAbsolutePath()}"
+            }
+
+            try {
+                VoiceWithModelFiles.load(data.id, path)
+            } catch (e: IllegalArgumentException) {
+                Timber.tag(TAG).i(e, "Skipping legacy voice model ${data.id}: no longer parsable")
             }
         }
     }
 
-    private fun voicesFor(
-        modelId: String,
-        model: VoiceWithModelFiles,
-    ): List<Voice> =
-        model.voices.map {
-            val file = it.fileName.toString()
-
-            val language =
-                when {
-                    file.startsWith("a") -> "en"
-                    file.startsWith("b") -> "en"
-                    file.startsWith("j") -> "ja"
-                    file.startsWith("f") -> "fr"
-                    file.startsWith("e") -> "es"
-                    file.startsWith("h") -> "hi"
-                    file.startsWith("i") -> "it"
-                    file.startsWith("z") -> "zh"
-                    file.startsWith("p") -> "pt"
-                    else -> throw Exception("Determining language from file name: $it")
-                }
-
-            val gender =
-                when {
-                    file.startsWith("f", 1) -> "female"
-                    file.startsWith("m", 1) -> "male"
-                    else -> throw Exception("Determining gender from file name: $it")
-                }
-
-            Voice(
-                modelId = modelId,
-                language = language,
-                gender = gender,
-            )
-        }
+    private val TAG: String = Migration3::class.java.simpleName
 }

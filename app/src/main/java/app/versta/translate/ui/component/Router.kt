@@ -166,6 +166,7 @@ fun Router(
                                     navigationViewModel = navigationViewModel,
                                     textToSpeechViewModel = textToSpeechViewModel,
                                     textTranslationViewModel = textTranslationViewModel,
+                                    languageViewModel = languageViewModel,
                                 )
                             }
                             entry<Screens.Conversation>(
@@ -188,7 +189,6 @@ fun Router(
                                 CameraTranslation(
                                     innerPadding = innerPadding,
                                     scaffoldViewModel = scaffoldViewModel,
-                                    navigationViewModel = navigationViewModel,
                                     cameraTranslationViewModel = cameraTranslationViewModel,
                                 )
                             }

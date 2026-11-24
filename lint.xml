@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lint>
     <issue id="ViewModelConstructorInComposable" severity="ignore" />
+    <!-- ExperimentalCamera2Interop is an androidx lint-enforced marker, not a
+         Kotlin @RequiresOptIn (the compiler warns "@OptIn has no effect" on
+         it), so the deliberate Camera2 stabilization usage in
+         CameraTranslationViewModel is opted into project-wide here — the
+         check's own configuration mechanism. -->
+    <issue id="UnsafeOptInUsageError">
+        <option
+            name="opt-in"
+            value="androidx.camera.camera2.interop.ExperimentalCamera2Interop" />
+    </issue>
 </lint>

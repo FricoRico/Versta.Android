@@ -1,7 +1,5 @@
 package app.versta.translate
 
-import ai.onnxruntime.OrtEnvironment
-import ai.onnxruntime.OrtLoggingLevel
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -12,12 +10,6 @@ import app.versta.translate.adapter.inbound.FileHashValidator
 import app.versta.translate.adapter.inbound.PrecomputedHashFileValidator
 import app.versta.translate.adapter.inbound.TarballExtractor
 import app.versta.translate.adapter.outbound.AudioTrackPlayer
-import app.versta.translate.adapter.outbound.BergamotTinyInference
-import app.versta.translate.adapter.outbound.DEFAULT_CACHE_SIZE
-import app.versta.translate.adapter.outbound.DataDatabaseRepository
-import app.versta.translate.adapter.outbound.DataRepository
-import app.versta.translate.adapter.outbound.ExternalDataFileRepository
-import app.versta.translate.adapter.outbound.ExternalDataRepository
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsFileRepository
 import app.versta.translate.adapter.outbound.ExternalLanguageModelsRepository
 import app.versta.translate.adapter.outbound.ExternalObjectCharacterRecognitionModelsFileRepository
@@ -32,31 +24,27 @@ import app.versta.translate.adapter.outbound.LanguagePreferenceRepository
 import app.versta.translate.adapter.outbound.LanguageRepository
 import app.versta.translate.adapter.outbound.LicenseDataStoreRepository
 import app.versta.translate.adapter.outbound.LicenseRepository
+import app.versta.translate.adapter.outbound.LoggingPreferenceDataStoreRepository
+import app.versta.translate.adapter.outbound.LoggingPreferenceRepository
+import app.versta.translate.adapter.outbound.MnnObjectCharacterRecognition
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionInference
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepository
 import app.versta.translate.adapter.outbound.ObjectCharacterRecognitionRepositoryDatabaseRepository
-import app.versta.translate.adapter.outbound.OcrPostProcessorPipeline
-import app.versta.translate.adapter.outbound.PaddleObjectCharacterRecognition
-import app.versta.translate.adapter.outbound.PaddleObjectCharacterRecognitionTokenizer
-import app.versta.translate.adapter.outbound.ParagraphGroupingPostProcessor
 import app.versta.translate.adapter.outbound.SpeechRecognitionDatabaseRepository
 import app.versta.translate.adapter.outbound.SpeechRecognitionInference
 import app.versta.translate.adapter.outbound.SpeechRecognitionRepository
-import app.versta.translate.adapter.outbound.StyleTextToSpeech2Tokenizer
-import app.versta.translate.adapter.outbound.StyleTextToSpeechInference
+import app.versta.translate.adapter.outbound.Supertonic3Inference
+import app.versta.translate.adapter.outbound.Supertonic3Tokenizer
 import app.versta.translate.adapter.outbound.TextToSpeechInference
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.TextToSpeechPreferenceRepository
 import app.versta.translate.adapter.outbound.TextToSpeechTokenizer
-import app.versta.translate.adapter.outbound.TranslationInference
+import app.versta.translate.adapter.outbound.TranslationEngineManager
 import app.versta.translate.adapter.outbound.TranslationPreferenceDataStoreRepository
 import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
 import app.versta.translate.adapter.outbound.VoiceDatabaseRepository
 import app.versta.translate.adapter.outbound.VoiceRepository
 import app.versta.translate.adapter.outbound.WhisperSpeechRecognition
-import app.versta.translate.bridge.leanmt.Leanmt
-import app.versta.translate.bridge.speech.ESpeakNG
-import app.versta.translate.bridge.speech.OpenJTalk
 import app.versta.translate.core.model.CameraTranslationViewModel
 import app.versta.translate.core.model.CustomThemeViewModel
 import app.versta.translate.core.model.LanguageViewModel
@@ -80,24 +68,28 @@ import app.versta.translate.ui.screen.Screens
 import app.versta.translate.ui.theme.ObsidianColorScheme
 import app.versta.translate.utils.CustomTheme
 import app.versta.translate.utils.FileLoggingTree
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import timber.log.Timber.Forest.plant
+import timber.log.Timber.Forest.uproot
 
 val Context.dataStore by preferencesDataStore(name = "preferences")
 
 interface ApplicationModuleInterface {
     val database: DatabaseContainer
 
-    val dataRepository: DataRepository
     val languageRepository: LanguageRepository
     val languagePreferenceRepository: LanguagePreferenceRepository
     val licenseRepository: LicenseRepository
+    val loggingPreferenceRepository: LoggingPreferenceRepository
     val translatorPreferenceRepository: TranslationPreferenceRepository
     val voiceRepository: VoiceRepository
     val textToSpeechPreferenceRepository: TextToSpeechPreferenceRepository
     val externalLanguageModelsRepository: ExternalLanguageModelsRepository
     val externalVoiceModelsRepository: ExternalVoiceModelsRepository
-    val externalDataRepository: ExternalDataRepository
     val externalObjectCharacterRecognitionModelsRepository: ExternalObjectCharacterRecognitionModelsRepository
     val objectCharacterRecognizerRepository: ObjectCharacterRecognitionRepository
 
@@ -116,17 +108,11 @@ interface ApplicationModuleInterface {
     val objectCharacterRecognitionViewModel: ObjectCharacterRecognitionViewModel
     val loggingViewModel: LoggingViewModel
 
-    val ortEnvironment: OrtEnvironment
     val extractor: CompressedFileExtractor
     val validator: FileHashValidator
-    val eSpeakNG: ESpeakNG
-    val openJTalk: OpenJTalk
-    val translationService: Leanmt
-    val intermediateTranslationInference: TranslationInference
-    val outputTranslationInference: TranslationInference
+    val translationEngineManager: TranslationEngineManager
     val textToSpeechTokenizer: TextToSpeechTokenizer
     val textToSpeechInference: TextToSpeechInference
-    val objectCharacterRecognitionTokenizer: PaddleObjectCharacterRecognitionTokenizer
     val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference
 
     val speechRecognitionInference: SpeechRecognitionInference
@@ -138,10 +124,6 @@ class ApplicationModule(
 ) : ApplicationModuleInterface {
     override val database = DatabaseContainer(context)
 
-    override val dataRepository: DataRepository by lazy {
-        DataDatabaseRepository(database)
-    }
-
     override val languageRepository: LanguageRepository by lazy {
         LanguageDatabaseRepository(database)
     }
@@ -152,6 +134,10 @@ class ApplicationModule(
 
     override val licenseRepository: LicenseRepository by lazy {
         LicenseDataStoreRepository(context.dataStore)
+    }
+
+    override val loggingPreferenceRepository: LoggingPreferenceRepository by lazy {
+        LoggingPreferenceDataStoreRepository(context.dataStore)
     }
 
     override val translatorPreferenceRepository: TranslationPreferenceRepository by lazy {
@@ -172,10 +158,6 @@ class ApplicationModule(
 
     override val externalVoiceModelsRepository: ExternalVoiceModelsRepository by lazy {
         ExternalVoiceModelsFileRepository(context.resources.openRawResource((R.raw.versta_text_to_speech_models)))
-    }
-
-    override val externalDataRepository: ExternalDataRepository by lazy {
-        ExternalDataFileRepository(context.resources.openRawResource(R.raw.versta_data))
     }
 
     override val externalObjectCharacterRecognitionModelsRepository: ExternalObjectCharacterRecognitionModelsRepository by lazy {
@@ -234,28 +216,12 @@ class ApplicationModule(
     }
 
     override val cameraTranslationViewModel: CameraTranslationViewModel by lazy {
-        // All text metrics (colors, font, style) extracted in PaddleOCR.preprocessTextRegions()
-        // TextStyleAnalysisPostProcessor removed - eliminates ~300ms duplicate processing
-        val ocrPipeline =
-            OcrPostProcessorPipeline(
-                listOf(
-                    ParagraphGroupingPostProcessor(
-                        verticalThresholdFactor = 1f,
-                        horizontalEps = 5f,
-                        colorTolerance = 0.15f,
-                        fontSizeTolerance = 0.25f,
-                    ),
-                ),
-            )
-
         CameraTranslationViewModel(
             objectCharacterRecognitionInference = objectCharacterRecognitionInference,
-            objectCharacterRecognitionTokenizer = objectCharacterRecognitionTokenizer,
             languageViewModel = languageViewModel,
             languagePreferenceRepository = languagePreferenceRepository,
             translationViewModel = translationViewModel,
             objectCharacterRecognizerRepository = objectCharacterRecognizerRepository,
-            ocrPostProcessor = ocrPipeline,
         )
     }
 
@@ -268,7 +234,10 @@ class ApplicationModule(
     }
 
     override val loggingViewModel: LoggingViewModel by lazy {
-        LoggingViewModel(context.getExternalFilesDir(null))
+        LoggingViewModel(
+            context.getExternalFilesDir(null),
+            loggingPreferenceRepository,
+        )
     }
 
     override val languageViewModel: LanguageViewModel by lazy {
@@ -282,8 +251,9 @@ class ApplicationModule(
 
     override val translationViewModel: TranslationViewModel by lazy {
         TranslationViewModel(
-            intermediateModel = intermediateTranslationInference,
-            outputModel = outputTranslationInference,
+            intermediateModel = translationEngineManager.intermediateModel,
+            outputModel = translationEngineManager.outputModel,
+            createInference = translationEngineManager::createInference,
             translationPreferenceRepository = translatorPreferenceRepository,
             languageViewModel = languageViewModel,
         )
@@ -298,17 +268,12 @@ class ApplicationModule(
 
     override val textToSpeechViewModel: TextToSpeechViewModel by lazy {
         TextToSpeechViewModel(
-            context = context,
-            espeakNG = eSpeakNG,
-            openJTalk = openJTalk,
             tokenizer = textToSpeechTokenizer,
             model = textToSpeechInference,
             audioPlayer = AudioTrackPlayer(),
-            dataRepository = dataRepository,
             voiceRepository = voiceRepository,
             textToSpeechPreferenceRepository = textToSpeechPreferenceRepository,
             languagePreferenceRepository = languagePreferenceRepository,
-            externalDataRepository = externalDataRepository,
         )
     }
 
@@ -338,16 +303,6 @@ class ApplicationModule(
         )
     }
 
-    override val ortEnvironment: OrtEnvironment by lazy {
-        OrtEnvironment.getEnvironment(
-            OrtLoggingLevel.ORT_LOGGING_LEVEL_FATAL,
-            "VerstaInference",
-            OrtEnvironment.ThreadingOptions().apply {
-                setGlobalSpinControl(true)
-            },
-        )
-    }
-
     override val extractor: CompressedFileExtractor by lazy {
         TarballExtractor(context)
     }
@@ -356,40 +311,22 @@ class ApplicationModule(
         PrecomputedHashFileValidator()
     }
 
-    override val eSpeakNG: ESpeakNG by lazy {
-        ESpeakNG()
-    }
-
-    override val openJTalk: OpenJTalk by lazy {
-        OpenJTalk()
-    }
-
-    override val translationService: Leanmt by lazy {
-        Leanmt(DEFAULT_CACHE_SIZE.toLong())
-    }
-
-    override val intermediateTranslationInference: TranslationInference by lazy {
-        BergamotTinyInference(translationService)
-    }
-
-    override val outputTranslationInference: TranslationInference by lazy {
-        BergamotTinyInference(translationService)
+    override val translationEngineManager: TranslationEngineManager by lazy {
+        TranslationEngineManager()
     }
 
     override val textToSpeechTokenizer: TextToSpeechTokenizer by lazy {
-        StyleTextToSpeech2Tokenizer(eSpeakNG, openJTalk)
+        Supertonic3Tokenizer()
     }
 
     override val textToSpeechInference: TextToSpeechInference by lazy {
-        StyleTextToSpeechInference(ortEnvironment)
-    }
-
-    override val objectCharacterRecognitionTokenizer: PaddleObjectCharacterRecognitionTokenizer by lazy {
-        PaddleObjectCharacterRecognitionTokenizer()
+        // The Supertonic3Engine seam binds to the bridge/speech JNI contract
+        // when NEU-69 lands; until then synthesis surfaces a loud error.
+        Supertonic3Inference()
     }
 
     override val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference by lazy {
-        PaddleObjectCharacterRecognition(ortEnvironment)
+        MnnObjectCharacterRecognition()
     }
 
     override val speechRecognitionInference: SpeechRecognitionInference by lazy {
@@ -398,6 +335,10 @@ class ApplicationModule(
 }
 
 class MainApplication : Application() {
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    private var fileLoggingTree: FileLoggingTree? = null
+
     override fun onCreate() {
         super.onCreate()
 
@@ -406,6 +347,8 @@ class MainApplication : Application() {
 
         context = this
         module = ApplicationModule(this)
+
+        observeLoggingPreference()
     }
 
     private fun handleLogging() {
@@ -413,7 +356,40 @@ class MainApplication : Application() {
             plant(Timber.DebugTree())
         }
 
-        plant(FileLoggingTree(getExternalFilesDir(null)))
+        syncFileLoggingTree(diagnosticsEnabled = false)
+    }
+
+    private fun observeLoggingPreference() {
+        applicationScope.launch {
+            module.loggingPreferenceRepository.isLoggingEnabled().collect { enabled ->
+                syncFileLoggingTree(diagnosticsEnabled = enabled)
+            }
+        }
+    }
+
+    @Synchronized
+    private fun syncFileLoggingTree(diagnosticsEnabled: Boolean) {
+        val enabled =
+            FileLoggingTree.shouldEnableFileLogging(
+                isDebugBuild = BuildConfig.DEBUG,
+                diagnosticsEnabled = diagnosticsEnabled,
+            )
+        val current = fileLoggingTree
+
+        if (enabled && current != null) return
+
+        if (!enabled) {
+            if (current != null) {
+                uproot(current)
+                current.close()
+                fileLoggingTree = null
+            }
+            return
+        }
+
+        val tree = FileLoggingTree(getExternalFilesDir(null))
+        plant(tree)
+        fileLoggingTree = tree
     }
 
     private fun createNotificationChannels() {
