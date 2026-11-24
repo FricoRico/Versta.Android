@@ -4,6 +4,10 @@ import android.content.Context
 import android.database.DatabaseUtils
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.platform.app.InstrumentationRegistry
+import app.versta.translate.R
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -143,6 +147,55 @@ class DatabaseContainerTest {
     private fun databaseV4() = legacyDatabase(4, listOf(languageV1, languageModelV1, voiceModelV2, voiceV4))
 
     private fun databaseV6() = legacyDatabase(6, listOf(languageV1, languageModelV1, voiceModelV2, voiceV4, dataV5, ocrV6))
+
+    /**
+     * `Language` as tagged releases created it, with the `bidirectional`
+     * column that [languageV1] (the pre-release shape) lacks.
+     */
+    private val languageV1WithBidirectional =
+        """
+        CREATE TABLE Language (
+            id TEXT NOT NULL PRIMARY KEY,
+            source TEXT NOT NULL,
+            target TEXT NOT NULL,
+            bidirectional INTEGER DEFAULT 0
+        );
+        """.trimIndent()
+
+    @Serializable
+    private data class CatalogEntry(
+        @SerialName("source_language") val sourceLanguage: String,
+        @SerialName("target_language") val targetLanguage: String,
+        val bidirectional: Boolean,
+    )
+
+    /**
+     * A pair the bundled catalog marks bidirectional. Fails fixture setup if
+     * the catalog ever loses the property [app.versta.translate.database.migrations.Migration1]
+     * backfills from.
+     */
+    private val catalogBidirectionalPair: Pair<String, String> by lazy {
+        context.resources.openRawResource(R.raw.versta_translation_models).use { stream ->
+            Json { ignoreUnknownKeys = true }
+                .decodeFromString<List<List<CatalogEntry>>>(stream.reader().readText())
+                .flatten()
+                .first { it.bidirectional }
+                .let { it.sourceLanguage to it.targetLanguage }
+        }
+    }
+
+    /** A pair absent from the catalog; the backfill must leave it at 0. */
+    private val unknownPair = "zz" to "xx"
+
+    private fun insertLegacyLanguage(
+        database: SQLiteDatabase,
+        pair: Pair<String, String>,
+    ) {
+        database.execSQL(
+            "INSERT INTO Language (id, source, target) VALUES (?, ?, ?)",
+            arrayOf("${pair.first}-${pair.second}", pair.first, pair.second),
+        )
+    }
 
     private fun storedVersion(): Long =
         SQLiteDatabase.openDatabase(databaseFile.absolutePath, null, SQLiteDatabase.OPEN_READONLY).use { database ->
@@ -299,6 +352,51 @@ class DatabaseContainerTest {
 
         assertFalse(externalData.exists())
         assertFalse(externalDataHash.exists())
+    }
+
+    @Test
+    fun v1Database_addsMissingBidirectionalColumnAndBackfillsFromCatalog() {
+        databaseV1()
+        SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
+            insertLegacyLanguage(database, catalogBidirectionalPair)
+            insertLegacyLanguage(database, unknownPair)
+        }
+
+        val languages = container().languages.getAll().executeAsList()
+
+        val repaired = languages.single { it.source == catalogBidirectionalPair.first && it.target == catalogBidirectionalPair.second }
+        assertEquals("catalog-bidirectional pair must be backfilled to 1", true, repaired.bidirectional)
+
+        val unknown = languages.single { it.source == unknownPair.first && it.target == unknownPair.second }
+        assertEquals("rows absent from the catalog must stay 0", false, unknown.bidirectional)
+    }
+
+    @Test
+    fun v1Database_bidirectionalQueryWorksAfterUpgrade() {
+        databaseV1()
+        SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
+            insertLegacyLanguage(database, catalogBidirectionalPair)
+        }
+
+        // Crashes with "no such column: bidirectional" without Migration1.
+        val matches =
+            container().languages.getBySourceIncludingBidirecional(catalogBidirectionalPair.first).executeAsList()
+
+        assertTrue(matches.any { it.source == catalogBidirectionalPair.first && it.target == catalogBidirectionalPair.second })
+    }
+
+    @Test
+    fun v1Database_withBidirectionalColumnIsLeftUntouched() {
+        legacyDatabase(1, listOf(languageV1WithBidirectional, languageModelV1))
+        SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
+            // Stored as 0 although the catalog says bidirectional: only a
+            // database missing the column is backfilled.
+            insertLegacyLanguage(database, catalogBidirectionalPair)
+        }
+
+        val languages = container().languages.getAll().executeAsList()
+
+        assertEquals(false, languages.single().bidirectional)
     }
 
     @Test
