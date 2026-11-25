@@ -33,7 +33,6 @@ elseif(ANDROID_ABI MATCHES "^x86")
 endif()
 
 add_subdirectory(neon-sse neon-sse)
-add_subdirectory(onnxruntime onnxruntime)
 
 # MNN (official Alibaba inference engine) powers the OCR pipeline. Static build:
 # the bridge is a single shared library and there is no reason to ship a second

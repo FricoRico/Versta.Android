@@ -20,6 +20,4 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keep class ai.onnxruntime.** { *; }
-
 -keep class app.versta.translate.bridge.leanmt.** { *; }

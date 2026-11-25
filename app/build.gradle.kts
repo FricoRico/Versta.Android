@@ -706,43 +706,6 @@ tasks.configureEach {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Release lane: universal flavour + ONNX Runtime
-//
-// The vendored AARs under libs/ are the same upstream ONNX Runtime artifact
-// split per ABI (classes.jar byte-identical across the four; only the
-// jni/<abi>/ payload differs). The `universal` flavour compiles one Kotlin
-// source set for all four ABIs and its AAB must carry every ABI's native
-// libs, so the four vendored splits are merged back into one all-ABI AAR at
-// build time. The acquisition path stays vendored + offline; the shipped
-// natives stay byte-identical to the per-flavour builds.
-// ---------------------------------------------------------------------------
-val universalOnnxRuntimeAbis = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
-
-val stageUniversalOnnxRuntime by tasks.registering(Copy::class) {
-    into(layout.buildDirectory.dir("onnxruntime-universal/stage"))
-    // Everything except the per-ABI jni payload is byte-identical across the
-    // four splits (same classes.jar hash) — copy it once.
-    from(zipTree("$projectDir/libs/arm64-v8a/onnxruntime-1.24.1.aar")) {
-        exclude("jni/**")
-    }
-    universalOnnxRuntimeAbis.forEach { abi ->
-        from(zipTree("$projectDir/libs/$abi/onnxruntime-1.24.1.aar")) {
-            include("jni/$abi/**")
-        }
-    }
-}
-
-val assembleUniversalOnnxRuntimeAar by tasks.registering(Zip::class) {
-    dependsOn(stageUniversalOnnxRuntime)
-    from(layout.buildDirectory.dir("onnxruntime-universal/stage"))
-    destinationDirectory.set(layout.buildDirectory.dir("onnxruntime-universal"))
-    archiveFileName.set("onnxruntime-1.24.1-universal.aar")
-}
-
-val universalOnnxRuntimeAarFile =
-    layout.buildDirectory.file("onnxruntime-universal/onnxruntime-1.24.1-universal.aar")
-
 dependencies {
 
     implementation(libs.androidx.core.ktx)
@@ -794,12 +757,4 @@ dependencies {
     implementation(libs.squareup.okhttp)
     implementation(libs.sqldelight.android)
     implementation(libs.sqldelight.coroutines)
-
-    add("arm64-v8aImplementation", files("$projectDir/libs/arm64-v8a/onnxruntime-1.24.1.aar"))
-    add("armeabi-v7aImplementation", files("$projectDir/libs/armeabi-v7a/onnxruntime-1.24.1.aar"))
-    add("x86Implementation", files("$projectDir/libs/x86/onnxruntime-1.24.1.aar"))
-    add("x86_64Implementation", files("$projectDir/libs/x86_64/onnxruntime-1.24.1.aar"))
-    val universalOnnxRuntime = files(universalOnnxRuntimeAarFile)
-    universalOnnxRuntime.builtBy(assembleUniversalOnnxRuntimeAar)
-    add("universalImplementation", universalOnnxRuntime)
 }
