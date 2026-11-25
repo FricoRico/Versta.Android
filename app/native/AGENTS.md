@@ -7,9 +7,10 @@ This file describes conventions for the C++/JNI bridge library
 ## Layout
 
 - `app/native/jni/CMakeLists.txt` — top-level build. Adds `src` and `third_party`, defines the shared library, include dirs, and links the vendored libs.
-- `app/native/jni/src/*.cc` — one JNI binding file per native component (`whisper.cc`, `leanmt.cc`, `language_detect.cc`, `vocabulary.cc`). The OCR pipeline is split across `engine.cc` (JNI entry points, model/session wiring, orchestration) and per-stage translation units `detect.cc` (DB text detection), `dewarp.cc` (baseline-profile dewarp), `recognize.cc` (CTC decode, script routing), `glyphmatte.cc` (style matte, fg color from the F channel, bg = paper sampled from strip pixels masked by the matte), `erase.cc` (text erasure + background field fill, erased-strip patches), `homography.cc` (DLT/affine/similarity fits + 3x3 math), `anchor.cc` (FAST-9, oriented BRIEF-256, PROSAC RANSAC, homography EKF), `blocks.cc` (paragraph-block union-find grouping), and `track.cc` (anchor acquire/relocalize/KLT coarse tracking for the live preview).
-- `app/native/jni/src/include/` — shared headers (`Log.h`, `config.h`, `ocr_pipeline.h` with the OCR `Engine` state shared by the stage units).
+- `app/native/jni/src/*.cc` — one JNI binding file per native component (`whisper.cc`, `leanmt.cc`, `language_detect.cc`, `vocabulary.cc`, `supertonic.cc`). The Supertonic 3 TTS engine itself is the JNI-free `supertonic_engine.{h,cc}`, so the host tests can build it without a JVM. The OCR pipeline is split across `engine.cc` (JNI entry points, model/session wiring, orchestration) and per-stage translation units `detect.cc` (DB text detection), `dewarp.cc` (baseline-profile dewarp), `recognize.cc` (CTC decode, script routing), `glyphmatte.cc` (style matte, fg color from the F channel, bg = paper sampled from strip pixels masked by the matte), `erase.cc` (text erasure + background field fill, erased-strip patches), `homography.cc` (DLT/affine/similarity fits + 3x3 math), `anchor.cc` (FAST-9, oriented BRIEF-256, PROSAC RANSAC, homography EKF), `blocks.cc` (paragraph-block union-find grouping), and `track.cc` (anchor acquire/relocalize/KLT coarse tracking for the live preview).
+- `app/native/jni/src/include/` — shared headers (`Log.h`, `config.h`, `ocr_pipeline.h` with the OCR `Engine` state shared by the stage units, `tinyjson.h` for `tts.json`/voice-style parsing).
 - `app/native/jni/third_party/` — vendored libraries as git submodules (leanmt, whisper.cpp, cld2, opencv-mobile, MNN, neon-sse). Each with its own `CMakeLists.txt`; per-ABI SIMD flags live here where `ANDROID_ABI` is reliable.
+- `app/native/tests/` — host-side (no device, no JVM) tests for the Supertonic 3 engine, run by the CI `native-tests` job: `cmake -S app/native/tests -B build/native-tests && cmake --build build/native-tests && ./build/native-tests/supertonic_test`. Model-dependent tiers run only when `SUPERTONIC_TEST_MODELS` points at an extracted bundle.
 
 ## JNI binding shape
 
@@ -42,9 +43,22 @@ This file describes conventions for the C++/JNI bridge library
 - Log through the shared `Log.h` helper; never `printf` into production.
 - Standard library and vendored APIs only — no new third-party C++ code checked in directly.
 
+## MNN
+
+- MNN is the inference runtime for both OCR and Supertonic 3 TTS. `third_party/mnn.cmake` is the **single owner** of every MNN option: static build linked into the one bridge `.so`, CPU-only, converter/tools/protobuf/train OFF, `MNN_ARM82` on arm64, `MNN_USE_SSE=OFF` on 32-bit x86 (its SSE path emits 64-bit AVX objects that fail the elf_i386 link). The host test build includes the same file. Never add a second `add_subdirectory(mnn)` or MNN option block anywhere else.
+- PR CI assembles one ABI; when touching MNN options, build every ABI flavour locally (`assembleX86Debug` is the one that catches the SSE link failure).
+
+## Supertonic 3 TTS engine (MNN)
+
+- Four stages per sentence chunk, all in C++ (one JNI call per chunk): `duration_predictor` → `text_encoder` → `vector_estimator` × steps (default 5) → `vocoder`, PCM f32 at the `tts.json` sample rate (44.1 kHz).
+- Lifetime: construct → `load` → (`setStyle`/`synthesize`)* → `close`. `load` on a live handle frees the previous engine, which drops the bound voice style; the Kotlin adapter (`Supertonic3Inference`) re-binds the selected style after every load. `synthesize` without a bound style fails.
+- Contexts live behind `shared_ptr` in the handle map with a short map lock and a per-context mutex, so `close()` during an in-flight call is safe (the last reference frees the engine). Nothing crosses JNI as an exception; failures return `false`/`null`.
+- Latent noise comes from a seeded `std::mt19937` so a fixed binary + seed + threads is bit-identical — the golden-audio hash gate depends on it. `synthesizeWithLatent` injects a caller latent for reference-vector comparison.
+- Token ids < 0 wrap as `id + vocab_size` (ONNX Gather semantics, matching the reference); ids ≥ vocab clamp; input over `kMaxTokens` (1000, the exported `vector_estimator`'s limit) truncates with a warning.
+
 ## OCR pipeline (MNN)
 
-- Inference runs on MNN (vendored static, CPU-only build; converter/tools/protobuf/train all OFF, `MNN_USE_SSE=OFF` on 32-bit x86). Detection strides must be probed on a throwaway interpreter — never on the live session.
+- Detection strides must be probed on a throwaway interpreter — never on the live session.
 - The `OcrEngine` registry is the exception to the unique_ptr handle map: entries are `shared_ptr` behind a registry mutex. The GL loop ticks and the acquire worker analyzes while bundle swaps call `close()` from a coroutine, so an erased handle keeps its `Engine` alive until the in-flight call returns (deferred destruction on the last ref's thread, never mid-call).
 - Never cache MNN `Tensor*` across `resizeSession`; refetch session input/output inside every run. Never `assign(t.shape().begin(), t.shape().end())` — MNN `shape()` returns a fresh vector per call and the double-temporary iterator pair corrupts. Copy the whole `shape()` result instead.
 - PP-OCR CTC has blank at class 0; dictionary index is `argmax - 1` and blank-separated repeated characters survive the collapse.
