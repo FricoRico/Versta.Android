@@ -27,7 +27,6 @@ androidxSplashScreen = "1.2.0"
 androidxWorkRuntime = "2.11.1"
 appacheCommonsCompress = "1.28.0"
 atilikaKuromoji = "0.9.0"
-jetbrainsBioNpy = "0.3.5"
 kotlinxSerialization = "1.10.0"
 sqldelight = "2.2.1"
 timber = "5.0.1"
@@ -80,7 +79,6 @@ androidx-work-runtime = { group = "androidx.work", name = "work-runtime-ktx", ve
 appache-commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "appacheCommonsCompress" }
 atilika-kuromoji-ipadic = { group = "com.atilika.kuromoji", name = "kuromoji-ipadic", version.ref = "atilikaKuromoji" }
 jakewharton-timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
-jetbrains-bio-npy = { group = "org.jetbrains.bio", name = "npy", version.ref = "jetbrainsBioNpy" }
 kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
 

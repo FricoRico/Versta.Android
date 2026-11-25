@@ -82,7 +82,7 @@ Rules:
 ## Inference
 
 - Native C++ via JNI (`bridge/`) for: translation (LeanMT), speech recognition (whisper.cpp), language detection (cld2), text-to-speech (Supertonic 3 on MNN), and OCR (PP-OCR models on MNN). See `/app/native/AGENTS.md`.
-- ONNX Runtime AARs (`app/libs/<abi>/onnxruntime-*.aar`) remain packaged for the OCR stack until the OCR follow-up retires them; no app code uses `OrtEnvironment`/`OrtSession` anymore.
+- No ONNX Runtime: all on-device inference is native (MNN, LeanMT, whisper.cpp, cld2). Models arrive pre-converted from Versta.Models; never add an ORT/TFLite runtime back for a new model, convert it to MNN instead.
 - Bridge classes own a native handle: private `external fun`s, guards against `handle == 0L`, `AutoCloseable`, and `System.loadLibrary("app_versta_translate_bridge")` in the companion. See `bridge/whisper/Whisper.kt` for the canonical shape.
 - Blocking native calls run on a background dispatcher (`Dispatchers.Default`/`Dispatchers.IO`) from the calling coroutine; never call the native bridge on the main thread.
 - Ports wrap bridge classes so the rest of the app depends on the port, not the JNI wrapper.

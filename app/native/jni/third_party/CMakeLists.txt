@@ -33,7 +33,6 @@ elseif(ANDROID_ABI MATCHES "^x86")
 endif()
 
 add_subdirectory(neon-sse neon-sse)
-add_subdirectory(onnxruntime onnxruntime)
 
 # MNN powers OCR and Supertonic 3 TTS; mnn.cmake is the single owner of its options.
 include(mnn.cmake)
