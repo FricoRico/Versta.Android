@@ -31,6 +31,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 
 @OptIn(FlowPreview::class)
 class TextToSpeechViewModel(
@@ -86,6 +87,12 @@ class TextToSpeechViewModel(
 
     private val _loadMutex = Mutex()
 
+    // Native model lifecycle calls (load/close/voice) block and must stay off
+    // the main thread; one lane keeps them in call order.
+    private val _modelDispatcher = Dispatchers.IO.limitedParallelism(1)
+
+    private var _reloadJobs: List<Job> = emptyList()
+
     private val _audioScope = CoroutineScope(Dispatchers.IO)
     private val _audioQueue = LinkedBlockingQueue<FloatArray>()
     private val _synthesizeScope = CoroutineScope(Dispatchers.Default)
@@ -124,21 +131,31 @@ class TextToSpeechViewModel(
         _audioQueue.clear()
 
         _synthesizeScope.launch {
-            for (token in tokens) {
-                if (!_speechInference.value) {
-                    break
+            try {
+                for (token in tokens) {
+                    if (!_speechInference.value) {
+                        break
+                    }
+
+                    val audio = model.synthesize(token, speed.first())
+                    _audioQueue.put(audio)
                 }
-
-                val audio = model.synthesize(token, speed.first())
-                _audioQueue.put(audio)
+            } catch (e: Exception) {
+                // Launched work escapes synthesize()'s try/catch; a native
+                // failure must reach the error surface, not crash the app.
+                Timber.tag(TAG).e(e, "Failed to synthesize speech")
+                setTextToSpeechError(e)
+            } finally {
+                _speechInference.value = false
             }
-
-            _speechInference.value = false
         }
 
         _audioScope.launch {
             while (_speechInference.value || _audioQueue.isNotEmpty()) {
-                play(_audioQueue.take())
+                // Poll rather than take(): when synthesis stops without
+                // queueing another chunk, take() would block this loop forever.
+                val audio = _audioQueue.poll(AUDIO_POLL_MS, TimeUnit.MILLISECONDS) ?: continue
+                play(audio)
             }
 
             _speechProgress.value = TextToSpeechSynthesisState.Idle
@@ -229,11 +246,11 @@ class TextToSpeechViewModel(
      * Loads the voice model from given files.
      */
     private fun loadVoice(files: VoiceWithModelFiles) {
-        close()
         cancelSynthesis()
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(_modelDispatcher) {
             _loadMutex.withLock {
+                close()
                 _loadingProgress.value = LoadingProgress.InProgress
 
                 try {
@@ -254,11 +271,17 @@ class TextToSpeechViewModel(
     private fun setVoice(
         files: VoiceWithModelFiles,
         language: Language,
+        voice: VoiceGender,
     ) {
         cancelSynthesis()
 
-        viewModelScope.launch(Dispatchers.IO) {
-            model.setVoice(path = files.getVoice(language, gender.first()))
+        viewModelScope.launch(_modelDispatcher) {
+            try {
+                model.setVoice(path = files.getVoice(language, voice))
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Failed to set voice")
+                setTextToSpeechError(e)
+            }
         }
     }
 
@@ -267,36 +290,54 @@ class TextToSpeechViewModel(
      */
     private fun clearVoice() {
         cancelSynthesis()
-        model.clearVoice()
+
+        viewModelScope.launch(_modelDispatcher) {
+            try {
+                model.clearVoice()
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Failed to clear voice")
+            }
+        }
     }
 
     /**
      * Reloads the model and voice.
      */
     fun reloadVoice() {
-        viewModelScope.launch {
-            _voiceModel.collect {
-                if (it == null) {
-                    close()
-                    return@collect
+        // Each call restarts the collectors; keeping the old ones would load
+        // the model once more per voice-repository change.
+        _reloadJobs.forEach { it.cancel() }
+
+        val modelJob =
+            viewModelScope.launch {
+                // The model only occupies memory while text-to-speech is enabled.
+                combine(_voiceModel, enabled) { files, isEnabled ->
+                    files.takeIf { isEnabled }
+                }.distinctUntilChanged().collect {
+                    if (it == null) {
+                        launch(_modelDispatcher) { close() }
+                        return@collect
+                    }
+
+                    loadVoice(it)
                 }
-
-                loadVoice(it)
             }
-        }
 
-        viewModelScope.launch {
-            combine(_language, _voiceModel) { language, files ->
-                Pair(language, files)
-            }.collect { (language, files) ->
-                if (language == null || files == null) {
-                    clearVoice()
-                    return@collect
+        val voiceJob =
+            viewModelScope.launch {
+                combine(_language, _voiceModel, gender) { language, files, voice ->
+                    Triple(language, files, voice)
+                }.collect { (language, files, voice) ->
+                    if (language == null || files == null) {
+                        clearVoice()
+                        return@collect
+                    }
+
+                    setVoice(files, language, voice)
                 }
-
-                setVoice(files, language)
             }
-        }
+
+        _reloadJobs = listOf(modelJob, voiceJob)
     }
 
     /**
@@ -316,10 +357,13 @@ class TextToSpeechViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        close()
+        // viewModelScope is already cancelled here; release off the main thread.
+        _audioScope.launch(_modelDispatcher) { close() }
     }
 
     companion object {
         private val TAG: String = TextToSpeechViewModel::class.java.simpleName
+
+        private const val AUDIO_POLL_MS = 50L
     }
 }
