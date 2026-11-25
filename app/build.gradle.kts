@@ -752,7 +752,6 @@ dependencies {
     implementation(libs.appache.commons.compress)
     implementation(libs.atilika.kuromoji.ipadic)
     implementation(libs.jakewharton.timber)
-    implementation(libs.jetbrains.bio.npy)
     implementation(libs.kotlinx.serialization)
     implementation(libs.squareup.okhttp)
     implementation(libs.sqldelight.android)
