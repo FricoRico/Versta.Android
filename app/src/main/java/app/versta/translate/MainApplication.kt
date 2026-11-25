@@ -45,6 +45,7 @@ import app.versta.translate.adapter.outbound.TranslationPreferenceRepository
 import app.versta.translate.adapter.outbound.VoiceDatabaseRepository
 import app.versta.translate.adapter.outbound.VoiceRepository
 import app.versta.translate.adapter.outbound.WhisperSpeechRecognition
+import app.versta.translate.bridge.speech.Supertonic3
 import app.versta.translate.core.model.CameraTranslationViewModel
 import app.versta.translate.core.model.CustomThemeViewModel
 import app.versta.translate.core.model.LanguageViewModel
@@ -320,9 +321,7 @@ class ApplicationModule(
     }
 
     override val textToSpeechInference: TextToSpeechInference by lazy {
-        // The Supertonic3Engine seam binds to the bridge/speech JNI contract
-        // when NEU-69 lands; until then synthesis surfaces a loud error.
-        Supertonic3Inference()
+        Supertonic3Inference(Supertonic3())
     }
 
     override val objectCharacterRecognitionInference: ObjectCharacterRecognitionInference by lazy {

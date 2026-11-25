@@ -12,10 +12,15 @@ import app.versta.translate.core.entity.Language
 import app.versta.translate.core.entity.TextToSpeechSynthesisState
 import app.versta.translate.core.entity.VoiceGender
 import app.versta.translate.core.entity.VoiceWithModelFiles
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,7 +35,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
-import java.util.concurrent.LinkedBlockingQueue
+import java.nio.file.Path
 
 @OptIn(FlowPreview::class)
 class TextToSpeechViewModel(
@@ -41,6 +46,16 @@ class TextToSpeechViewModel(
     private val textToSpeechPreferenceRepository: TextToSpeechPreferenceRepository,
     private val languagePreferenceRepository: LanguagePreferenceRepository,
 ) : ViewModel() {
+    /**
+     * The voice the current preferences ask for: the installed model files for
+     * the target language and the style file for the preferred gender, or
+     * null when the language has no installed voice.
+     */
+    private data class VoiceSelection(
+        val files: VoiceWithModelFiles?,
+        val voice: Path?,
+    )
+
     val enabled = textToSpeechPreferenceRepository.getTextToSpeechEnabled().distinctUntilChanged()
     val speed = textToSpeechPreferenceRepository.getSpeed().distinctUntilChanged()
     val gender = textToSpeechPreferenceRepository.getGender().distinctUntilChanged()
@@ -55,23 +70,27 @@ class TextToSpeechViewModel(
                 voiceRepository.getVoiceModelsByLanguage(language = language)
             }.distinctUntilChanged()
 
-    val voiceAvailable =
-        combine(
-            _language,
-            _voiceModel,
-            gender,
-        ) { language, files, gender ->
-            language != null && files != null && files.getVoice(language, gender) != null
+    private val _selection =
+        combine(_language, _voiceModel, gender) { language, files, gender ->
+            VoiceSelection(files, language?.let { files?.getVoice(it, gender) })
         }.distinctUntilChanged()
 
+    // What the engine actually holds: set only after a load or voice binding
+    // succeeds, reset as soon as either is replaced, closed or fails.
+    private val _loadedModel = MutableStateFlow<VoiceWithModelFiles?>(null)
+    private val _boundVoice = MutableStateFlow<Path?>(null)
+
+    val voiceAvailable = _selection.map { it.voice != null }.distinctUntilChanged()
+
     /**
-     * True when text-to-speech can actually run: the feature is enabled and a
-     * voice for the target language is installed. Languages without Supertonic
-     * 3 coverage (ca, fa, he, zh) never become available.
+     * True when text-to-speech can actually run: the feature is enabled, a
+     * voice for the target language is installed, and that model and voice
+     * have finished loading and binding successfully. Languages without
+     * Supertonic 3 coverage (ca, fa, he, zh) never become available.
      */
     val textToSpeechReady =
-        combine(enabled, voiceAvailable) { enabled, available ->
-            enabled && available
+        combine(enabled, _selection, _loadedModel, _boundVoice) { enabled, selection, loaded, bound ->
+            enabled && selection.voice != null && loaded == selection.files && bound == selection.voice
         }.distinctUntilChanged()
 
     private val _loadingProgress = MutableStateFlow<LoadingProgress>(LoadingProgress.Idle)
@@ -86,88 +105,131 @@ class TextToSpeechViewModel(
 
     private val _loadMutex = Mutex()
 
-    private val _audioScope = CoroutineScope(Dispatchers.IO)
-    private val _audioQueue = LinkedBlockingQueue<FloatArray>()
-    private val _synthesizeScope = CoroutineScope(Dispatchers.Default)
+    // Native model lifecycle calls (load/close/voice) block and must stay off
+    // the main thread; one lane keeps them in call order.
+    private val _modelDispatcher = Dispatchers.IO.limitedParallelism(1)
 
-    private val _speechInference = MutableStateFlow(false)
+    private var _reloadJobs: List<Job> = emptyList()
 
+    // Speech requests: each one owns its job and chunk queue. The generation
+    // identifies the current request; a superseded request may still be inside
+    // a blocking native call, and whatever it returns afterwards is dropped.
+    private val _speechScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val _speechLock = Any()
+    private var _speechGeneration = 0L
+    private var _speechJob: Job? = null
+
+    /**
+     * Speaks [text] in [language], replacing any request in progress. Does
+     * nothing unless [textToSpeechReady].
+     */
     suspend fun synthesize(
         text: String,
         language: Language,
     ) {
         try {
             if (!textToSpeechReady.first()) {
-                Timber.tag(TAG).w("No voice available for ${language.isoCode}, skipping synthesis")
+                Timber.tag(TAG).w("Text-to-speech not ready for ${language.isoCode}, skipping synthesis")
                 return
             }
 
-            synthesizeInChunks(text, language)
+            val tokens = tokenizer.tokenize(text, language)
+            if (tokens.isEmpty()) {
+                return
+            }
+
+            startSpeech(tokens)
         } catch (e: Exception) {
             Timber.tag(TAG).e(e)
             setTextToSpeechError(e)
         }
     }
 
-    private fun synthesizeInChunks(
-        text: String,
-        language: Language,
-    ) {
-        val tokens = tokenizer.tokenize(text, language)
-        if (tokens.isEmpty()) {
-            return
+    private fun startSpeech(tokens: List<LongArray>) {
+        synchronized(_speechLock) {
+            stopSpeech()
+
+            val generation = _speechGeneration
+            _speechProgress.value = TextToSpeechSynthesisState.Preparing
+            _speechJob = _speechScope.launch { speak(generation, tokens) }
         }
+    }
 
-        _speechInference.value = true
-        _speechProgress.value = TextToSpeechSynthesisState.Preparing
+    private suspend fun speak(
+        generation: Long,
+        tokens: List<LongArray>,
+    ) {
+        try {
+            coroutineScope {
+                val chunks = Channel<FloatArray>(Channel.UNLIMITED)
 
-        _audioQueue.clear()
-
-        _synthesizeScope.launch {
-            for (token in tokens) {
-                if (!_speechInference.value) {
-                    break
+                launch {
+                    try {
+                        for (token in tokens) {
+                            val audio = model.synthesize(token, speed.first())
+                            if (!isCurrent(generation)) {
+                                return@launch
+                            }
+                            chunks.send(audio)
+                        }
+                    } finally {
+                        chunks.close()
+                    }
                 }
 
-                val audio = model.synthesize(token, speed.first())
-                _audioQueue.put(audio)
+                for (audio in chunks) {
+                    if (!isCurrent(generation)) {
+                        break
+                    }
+                    updateProgress(generation, TextToSpeechSynthesisState.Synthesizing)
+                    audioPlayer.play(audio, model.sampleRate)
+                }
             }
-
-            _speechInference.value = false
-        }
-
-        _audioScope.launch {
-            while (_speechInference.value || _audioQueue.isNotEmpty()) {
-                play(_audioQueue.take())
-            }
-
-            _speechProgress.value = TextToSpeechSynthesisState.Idle
-        }
-    }
-
-    private fun play(audio: FloatArray) {
-        try {
-            _speechProgress.value = TextToSpeechSynthesisState.Synthesizing
-            audioPlayer.play(audio, model.sampleRate)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Failed to play audio")
-            setTextToSpeechError(e)
+            if (isCurrent(generation)) {
+                Timber.tag(TAG).e(e, "Failed to synthesize speech")
+                setTextToSpeechError(e)
+            }
+        } finally {
+            updateProgress(generation, TextToSpeechSynthesisState.Idle)
         }
     }
 
-    fun cancelSynthesis() {
-        try {
-            _speechInference.value = false
-            _speechProgress.value = TextToSpeechSynthesisState.Idle
+    private fun isCurrent(generation: Long) = synchronized(_speechLock) { generation == _speechGeneration }
 
-            _audioQueue.clear()
+    private fun updateProgress(
+        generation: Long,
+        state: TextToSpeechSynthesisState,
+    ) = synchronized(_speechLock) {
+        if (generation == _speechGeneration) {
+            _speechProgress.value = state
+        }
+    }
+
+    /**
+     * Supersedes the current request: its job is cancelled, its pending and
+     * late audio is dropped, and playback stops. Call with [_speechLock] held.
+     */
+    private fun stopSpeech() {
+        _speechGeneration++
+        _speechJob?.cancel()
+        _speechJob = null
+        _speechProgress.value = TextToSpeechSynthesisState.Idle
+
+        try {
             audioPlayer.stop()
         } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Failed to cancel synthesis")
+            Timber.tag(TAG).e(e, "Failed to stop audio")
         }
     }
 
+    fun cancelSynthesis() = synchronized(_speechLock) { stopSpeech() }
+
     private fun close() {
+        _loadedModel.value = null
+
         try {
             model.close()
         } catch (e: Exception) {
@@ -176,12 +238,10 @@ class TextToSpeechViewModel(
     }
 
     /**
-     * Sets the text-to-speech error.
+     * Sets the text-to-speech error and ends the current request.
      */
     private fun setTextToSpeechError(throwable: Throwable) {
-        _speechInference.value = false
-        _speechProgress.value = TextToSpeechSynthesisState.Idle
-
+        cancelSynthesis()
         _textToSpeechError.value = throwable
     }
 
@@ -229,17 +289,21 @@ class TextToSpeechViewModel(
      * Loads the voice model from given files.
      */
     private fun loadVoice(files: VoiceWithModelFiles) {
-        close()
         cancelSynthesis()
+        _loadedModel.value = null
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(_modelDispatcher) {
             _loadMutex.withLock {
+                close()
                 _loadingProgress.value = LoadingProgress.InProgress
 
                 try {
                     tokenizer.load(files.tokenizer)
                     model.load(files.inference, threadCount.first())
+                    _loadedModel.value = files
                     _loadingProgress.value = LoadingProgress.Completed
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     Timber.tag(TAG).e(e)
                     _loadingProgress.value = LoadingProgress.Error(e)
@@ -249,16 +313,32 @@ class TextToSpeechViewModel(
     }
 
     /**
-     * Sets the voice from given files and language.
+     * Unloads the voice model and stops any speech.
      */
-    private fun setVoice(
-        files: VoiceWithModelFiles,
-        language: Language,
-    ) {
+    private fun unloadVoice() {
         cancelSynthesis()
+        _loadedModel.value = null
 
-        viewModelScope.launch(Dispatchers.IO) {
-            model.setVoice(path = files.getVoice(language, gender.first()))
+        viewModelScope.launch(_modelDispatcher) { close() }
+    }
+
+    /**
+     * Binds the [voice] style for subsequent synthesis.
+     */
+    private fun setVoice(voice: Path) {
+        cancelSynthesis()
+        _boundVoice.value = null
+
+        viewModelScope.launch(_modelDispatcher) {
+            try {
+                model.setVoice(path = voice)
+                _boundVoice.value = voice
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Failed to set voice")
+                setTextToSpeechError(e)
+            }
         }
     }
 
@@ -267,36 +347,54 @@ class TextToSpeechViewModel(
      */
     private fun clearVoice() {
         cancelSynthesis()
-        model.clearVoice()
+        _boundVoice.value = null
+
+        viewModelScope.launch(_modelDispatcher) {
+            try {
+                model.clearVoice()
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Failed to clear voice")
+            }
+        }
     }
 
     /**
      * Reloads the model and voice.
      */
     fun reloadVoice() {
-        viewModelScope.launch {
-            _voiceModel.collect {
-                if (it == null) {
-                    close()
-                    return@collect
+        // Each call restarts the collectors; keeping the old ones would load
+        // the model once more per voice-repository change.
+        _reloadJobs.forEach { it.cancel() }
+
+        val modelJob =
+            viewModelScope.launch {
+                // The model only occupies memory while text-to-speech is enabled.
+                combine(_voiceModel, enabled) { files, isEnabled ->
+                    files.takeIf { isEnabled }
+                }.distinctUntilChanged().collect {
+                    if (it == null) {
+                        unloadVoice()
+                        return@collect
+                    }
+
+                    loadVoice(it)
                 }
-
-                loadVoice(it)
             }
-        }
 
-        viewModelScope.launch {
-            combine(_language, _voiceModel) { language, files ->
-                Pair(language, files)
-            }.collect { (language, files) ->
-                if (language == null || files == null) {
-                    clearVoice()
-                    return@collect
+        val voiceJob =
+            viewModelScope.launch {
+                _selection.collect { selection ->
+                    val voice = selection.voice
+                    if (voice == null) {
+                        clearVoice()
+                        return@collect
+                    }
+
+                    setVoice(voice)
                 }
-
-                setVoice(files, language)
             }
-        }
+
+        _reloadJobs = listOf(modelJob, voiceJob)
     }
 
     /**
@@ -316,7 +414,10 @@ class TextToSpeechViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        close()
+        cancelSynthesis()
+        _speechScope.cancel()
+        // viewModelScope is already cancelled here; release off the main thread.
+        CoroutineScope(_modelDispatcher).launch { close() }
     }
 
     companion object {
