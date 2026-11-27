@@ -15,6 +15,9 @@ tested, do not start these phases for unattended work.
   existing PR. Playbooks chooses the branch name, which may not contain the
   Kaneo ticket ID: the coordinator must verify the PR, branch and head and
   explicitly link the PR to the task rather than assuming automatic linking.
+- `team-correct` updates one already verified PR from its exact current head.
+  It never creates or merges a PR and never force-pushes; the coordinator must
+  verify the resulting PR head and enforce the review-round limit.
 - `team-review` asks Terra and Opus to comment independently on one supplied
   head, then asks two fresh council agents to check the direction. The
   coordinator must honor either council's `human` verdict, verify the reported
