@@ -3,13 +3,11 @@ description: Coordinator-invoked independent reviews of one exact PR head.
 hidden: true
 isolation: worktree
 permissions: { on_request: deny }
-manager:
-  prompt: |
-    The coordinator owns the review-round cap, evidence checks and human
-    escalation. Start only for the supplied round and exact commit; do not
-    ask humans in Paseo, merge, or treat a model verdict as a human approval.
+manager: { mode: none }
 inputs:
   dispatch_id: { type: string, required: true }
+  approved_base_ref: { type: string, required: true }
+  approved_base_sha: { type: string, required: true }
   task: { type: string, required: true }
   pr_url: { type: string, required: true }
   head_sha: { type: string, required: true }

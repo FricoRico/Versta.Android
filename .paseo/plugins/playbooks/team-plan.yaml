@@ -3,14 +3,11 @@ description: Coordinator-invoked planning phase; it cannot implement or approve 
 hidden: true
 isolation: worktree
 permissions: { on_request: deny }
-manager:
-  prompt: |
-    This phase is controlled by the Kaneo coordinator. Never decide a
-    consequential choice or solicit a human decision in Paseo. Return the
-    plan, both council assessments and any open questions to the coordinator;
-    it handles human discussion in Kaneo. Do not start implementation.
+manager: { mode: none }
 inputs:
   dispatch_id: { type: string, required: true }
+  approved_base_ref: { type: string, required: true }
+  approved_base_sha: { type: string, required: true }
   task: { type: string, required: true }
   request: { type: string, required: true }
   context: { type: string, required: true }

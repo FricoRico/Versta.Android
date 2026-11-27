@@ -3,14 +3,11 @@ description: Coordinator-invoked DeepSeek implementation phase; humans merge.
 hidden: true
 isolation: worktree
 permissions: { on_request: deny }
-manager:
-  prompt: |
-    Start this phase only when the coordinator has resolved all consequential
-    decisions in Kaneo and supplied the binding plan. Do not ask humans for
-    decisions in Paseo. Never merge or approve the pull request; return the
-    result or failure to the coordinator.
+manager: { mode: none }
 inputs:
   dispatch_id: { type: string, required: true }
+  approved_base_ref: { type: string, required: true }
+  approved_base_sha: { type: string, required: true }
   task: { type: string, required: true }
   request: { type: string, required: true }
   plan: { type: string, required: true }
