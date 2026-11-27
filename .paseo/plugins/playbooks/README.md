@@ -12,7 +12,9 @@ tested, do not start these phases for unattended work.
   the matter to the human in Kaneo.
 - `team-build` starts a fresh isolated worktree and opens an initial PR. It
   is not a correction or re-review mechanism; do not invoke it to update an
-  existing PR. The coordinator must verify the PR, branch and head itself.
+  existing PR. Playbooks chooses the branch name, which may not contain the
+  Kaneo ticket ID: the coordinator must verify the PR, branch and head and
+  explicitly link the PR to the task rather than assuming automatic linking.
 - `team-review` asks Terra and Opus to comment independently on one supplied
   head, then asks two fresh council agents to check the direction. The
   coordinator must honor either council's `human` verdict, verify the reported
