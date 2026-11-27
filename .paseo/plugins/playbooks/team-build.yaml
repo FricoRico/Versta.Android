@@ -28,7 +28,10 @@ steps:
         Binding plan and human decisions: {{ inputs.plan }}
         Base branch: {{ inputs.base_branch }}
         Implement and verify the plan, commit to the isolated feature branch,
-        push that branch, and open a pull request targeting the base.
+        push HEAD to a new remote feature branch beginning with the exact
+        Kaneo ticket ID, and open a pull request targeting the base. Never
+        reuse an existing remote branch or force-push. Playbooks' local
+        worktree branch name does not need to match the remote branch name.
         Report its URL, the full remote head commit and the exact checks run.
         Never merge it.
     inputs: [task, request, plan, base_branch]

@@ -16,6 +16,7 @@ outputs:
   plan: { type: string, value: "{{ steps.synthesize.outputs.plan }}" }
   decision_required: { type: boolean, value: "{{ steps.synthesize.outputs.decision_required }}" }
   questions: { type: string, value: "{{ steps.synthesize.outputs.questions }}" }
+  dependency_graph: { type: string, value: "{{ steps.synthesize.outputs.dependency_graph }}" }
   terra_council: { type: enum, values: [continue, human], value: "{{ steps.council_terra.outputs.verdict }}" }
   terra_council_notes: { type: string, value: "{{ steps.council_terra.outputs.notes }}" }
   opus_council: { type: enum, values: [continue, human], value: "{{ steps.council_opus.outputs.verdict }}" }
@@ -76,18 +77,23 @@ steps:
         Synthesize a focused plan, naming every affected repository, dependency,
         verification and unresolved consequential decision. Set decision_required
         true when a human must decide. In questions use "none" if there are none.
+        Return dependency_graph as a JSON array with one object per affected
+        repository, using exactly "repo" and "depends_on" fields. Repository
+        names must be Versta.Android, Versta.Models, Versta.Leanmt or
+        Versta.Design; depends_on is an array of affected repository names.
     inputs: [task, request, context, terra_plan, opus_plan, deepseek_plan, terra_feedback, opus_feedback]
     outputs:
       plan: { type: string }
       decision_required: { type: boolean }
       questions: { type: string }
+      dependency_graph: { type: string }
   - id: council_terra
     needs: [synthesize]
     role:
       name: advisor
       agent: { provider: codex, model: gpt-6.1-terra }
-      prompt: "Independently challenge this plan for unnecessary complexity, scope growth and consequential decisions. Report verdict continue or human, with reasons: {{ inputs.plan }}"
-    inputs: [plan]
+      prompt: "Independently challenge this plan and dependency graph for unnecessary complexity, scope growth and consequential decisions. Plan: {{ inputs.plan }}. Dependencies: {{ inputs.dependency_graph }}. Human decision required: {{ inputs.decision_required }}. Questions: {{ inputs.questions }}. Report verdict continue or human, with reasons."
+    inputs: [plan, dependency_graph, decision_required, questions]
     outputs:
       verdict: { type: enum, values: [continue, human] }
       notes: { type: string }
@@ -96,8 +102,8 @@ steps:
     role:
       name: advisor
       agent: { provider: claude, model: claude-opus-5-5 }
-      prompt: "Independently challenge this plan for unnecessary complexity, scope growth and consequential decisions. Report verdict continue or human, with reasons: {{ inputs.plan }}"
-    inputs: [plan]
+      prompt: "Independently challenge this plan and dependency graph for unnecessary complexity, scope growth and consequential decisions. Plan: {{ inputs.plan }}. Dependencies: {{ inputs.dependency_graph }}. Human decision required: {{ inputs.decision_required }}. Questions: {{ inputs.questions }}. Report verdict continue or human, with reasons."
+    inputs: [plan, dependency_graph, decision_required, questions]
     outputs:
       verdict: { type: enum, values: [continue, human] }
       notes: { type: string }
