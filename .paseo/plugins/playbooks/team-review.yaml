@@ -1,6 +1,7 @@
 title: Kaneo team pull request review
 description: Coordinator-invoked independent reviews of one exact PR head.
 hidden: true
+isolation: worktree
 permissions: { on_request: deny }
 manager:
   prompt: |
@@ -8,6 +9,7 @@ manager:
     escalation. Start only for the supplied round and exact commit; do not
     ask humans in Paseo, merge, or treat a model verdict as a human approval.
 inputs:
+  dispatch_id: { type: string, required: true }
   task: { type: string, required: true }
   pr_url: { type: string, required: true }
   head_sha: { type: string, required: true }

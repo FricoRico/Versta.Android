@@ -4,6 +4,10 @@ These hidden phases are **not an autonomous workflow**. They have no trigger:
 the planned coordinator must verify its own identity, preserve durable state,
 and start each phase explicitly. Until that integration is implemented and
 tested, do not start these phases for unattended work.
+Every phase requires a unique coordinator `dispatch_id` for reconciliation.
+This marker is not an exactly-once guarantee or permission to retry a missing
+run. Isolated Playbooks can fall back to workspace definitions; checking
+provenance after a run starts is too late to prevent its first action.
 
 - `team-plan` gathers three independent plans, two critiques and two fresh
   council assessments. It does not start implementation. The coordinator

@@ -10,6 +10,7 @@ manager:
     Do not ask humans in Paseo, approve, merge, force-push, or create another
     PR. If a safety check fails, stop and return the failure.
 inputs:
+  dispatch_id: { type: string, required: true }
   task: { type: string, required: true }
   pr_url: { type: string, required: true }
   base_branch: { type: string, required: true }

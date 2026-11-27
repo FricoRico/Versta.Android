@@ -10,6 +10,7 @@ manager:
     decisions in Paseo. Never merge or approve the pull request; return the
     result or failure to the coordinator.
 inputs:
+  dispatch_id: { type: string, required: true }
   task: { type: string, required: true }
   request: { type: string, required: true }
   plan: { type: string, required: true }

@@ -1,6 +1,7 @@
 title: Kaneo team planning
 description: Coordinator-invoked planning phase; it cannot implement or approve a change.
 hidden: true
+isolation: worktree
 permissions: { on_request: deny }
 manager:
   prompt: |
@@ -9,6 +10,7 @@ manager:
     plan, both council assessments and any open questions to the coordinator;
     it handles human discussion in Kaneo. Do not start implementation.
 inputs:
+  dispatch_id: { type: string, required: true }
   task: { type: string, required: true }
   request: { type: string, required: true }
   context: { type: string, required: true }
