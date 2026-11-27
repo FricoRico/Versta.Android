@@ -1,0 +1,38 @@
+title: Kaneo team implementation
+description: Coordinator-invoked DeepSeek implementation phase; humans merge.
+hidden: true
+isolation: worktree
+permissions: { on_request: deny }
+manager:
+  prompt: |
+    Start this phase only when the coordinator has resolved all consequential
+    decisions in Kaneo and supplied the binding plan. Do not ask humans for
+    decisions in Paseo. Never merge or approve the pull request; return the
+    result or failure to the coordinator.
+inputs:
+  task: { type: string, required: true }
+  request: { type: string, required: true }
+  plan: { type: string, required: true }
+  base_branch: { type: string, required: true }
+outputs:
+  pr_url: { type: string, value: "{{ steps.implement.outputs.pr_url }}" }
+  head_sha: { type: string, value: "{{ steps.implement.outputs.head_sha }}" }
+  report: { type: string, value: "{{ steps.implement.outputs.report }}" }
+steps:
+  - id: implement
+    role:
+      name: builder
+      agent: { provider: opencode, model: vlam/deepseek-v41-flash-1017-vast }
+      prompt: |
+        Task {{ inputs.task }}: {{ inputs.request }}
+        Binding plan and human decisions: {{ inputs.plan }}
+        Base branch: {{ inputs.base_branch }}
+        Implement and verify the plan, commit to the isolated feature branch,
+        push that branch, and open a pull request targeting the base.
+        Report its URL, the full remote head commit and the exact checks run.
+        Never merge it.
+    inputs: [task, request, plan, base_branch]
+    outputs:
+      pr_url: { type: string }
+      head_sha: { type: string }
+      report: { type: string }
