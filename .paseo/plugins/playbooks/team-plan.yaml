@@ -1,0 +1,108 @@
+title: Kaneo team planning
+description: Coordinator-invoked planning phase; it cannot implement or approve a change.
+hidden: true
+isolation: worktree
+permissions: { on_request: deny }
+manager: { mode: none }
+inputs:
+  dispatch_id: { type: string, required: true }
+  approved_base_ref: { type: string, required: true }
+  approved_base_sha: { type: string, required: true }
+  task: { type: string, required: true }
+  request: { type: string, required: true }
+  context: { type: string, required: true }
+outputs:
+  plan: { type: string, value: "{{ steps.synthesize.outputs.plan }}" }
+  decision_required: { type: boolean, value: "{{ steps.synthesize.outputs.decision_required }}" }
+  questions: { type: string, value: "{{ steps.synthesize.outputs.questions }}" }
+  dependency_graph: { type: string, value: "{{ steps.synthesize.outputs.dependency_graph }}" }
+  terra_council: { type: enum, values: [continue, human], value: "{{ steps.council_terra.outputs.verdict }}" }
+  terra_council_notes: { type: string, value: "{{ steps.council_terra.outputs.notes }}" }
+  opus_council: { type: enum, values: [continue, human], value: "{{ steps.council_opus.outputs.verdict }}" }
+  opus_council_notes: { type: string, value: "{{ steps.council_opus.outputs.notes }}" }
+steps:
+  - id: plan_terra
+    role:
+      name: advisor
+      agent: { provider: codex, model: gpt-6.1-terra }
+      prompt: "Task {{ inputs.task }}: {{ inputs.request }}\nContext: {{ inputs.context }}\nIndependently propose a focused plan, tests, dependencies and decisions needing a human."
+    inputs: [task, request, context]
+    outputs: { terra_plan: { type: string } }
+  - id: plan_opus
+    role:
+      name: advisor
+      agent: { provider: claude, model: claude-opus-5-5 }
+      prompt: "Task {{ inputs.task }}: {{ inputs.request }}\nContext: {{ inputs.context }}\nIndependently propose a focused plan, tests, dependencies and decisions needing a human."
+    inputs: [task, request, context]
+    outputs: { opus_plan: { type: string } }
+  - id: plan_deepseek
+    role:
+      name: advisor
+      agent: { provider: opencode, model: vlam/deepseek-v41-flash-1017-vast }
+      prompt: "Task {{ inputs.task }}: {{ inputs.request }}\nContext: {{ inputs.context }}\nIndependently propose a focused plan, tests, dependencies and decisions needing a human."
+    inputs: [task, request, context]
+    outputs: { deepseek_plan: { type: string } }
+  - id: discuss_terra
+    needs: [plan_terra, plan_opus, plan_deepseek]
+    role:
+      name: advisor
+      agent: { provider: codex, model: gpt-6.1-terra }
+      prompt: "Critique these plans and resolve what can safely be resolved without a human:\nTerra: {{ inputs.terra_plan }}\nOpus: {{ inputs.opus_plan }}\nDeepSeek: {{ inputs.deepseek_plan }}"
+    inputs: [terra_plan, opus_plan, deepseek_plan]
+    outputs: { terra_feedback: { type: string } }
+  - id: discuss_opus
+    needs: [plan_terra, plan_opus, plan_deepseek]
+    role:
+      name: advisor
+      agent: { provider: claude, model: claude-opus-5-5 }
+      prompt: "Critique these plans and resolve what can safely be resolved without a human:\nTerra: {{ inputs.terra_plan }}\nOpus: {{ inputs.opus_plan }}\nDeepSeek: {{ inputs.deepseek_plan }}"
+    inputs: [terra_plan, opus_plan, deepseek_plan]
+    outputs: { opus_feedback: { type: string } }
+  - id: synthesize
+    needs: [discuss_terra, discuss_opus]
+    role:
+      name: advisor
+      agent: { provider: opencode, model: vlam/deepseek-v41-flash-1017-vast }
+      prompt: |
+        Task {{ inputs.task }}: {{ inputs.request }}
+        Context: {{ inputs.context }}
+        Plans:
+        {{ inputs.terra_plan }}
+        {{ inputs.opus_plan }}
+        {{ inputs.deepseek_plan }}
+        Discussion:
+        {{ inputs.terra_feedback }}
+        {{ inputs.opus_feedback }}
+        Synthesize a focused plan, naming every affected repository, dependency,
+        verification and unresolved consequential decision. Set decision_required
+        true when a human must decide. In questions use "none" if there are none.
+        Return dependency_graph as a JSON array with one object per affected
+        repository, using exactly "repo" and "depends_on" fields. Repository
+        names must be Versta.Android, Versta.Models, Versta.Leanmt or
+        Versta.Design; depends_on is an array of affected repository names.
+    inputs: [task, request, context, terra_plan, opus_plan, deepseek_plan, terra_feedback, opus_feedback]
+    outputs:
+      plan: { type: string }
+      decision_required: { type: boolean }
+      questions: { type: string }
+      dependency_graph: { type: string }
+  - id: council_terra
+    needs: [synthesize]
+    role:
+      name: advisor
+      agent: { provider: codex, model: gpt-6.1-terra }
+      prompt: "Independently challenge this plan and dependency graph for unnecessary complexity, scope growth and consequential decisions. Plan: {{ inputs.plan }}. Dependencies: {{ inputs.dependency_graph }}. Human decision required: {{ inputs.decision_required }}. Questions: {{ inputs.questions }}. Report verdict continue or human, with reasons."
+    inputs: [plan, dependency_graph, decision_required, questions]
+    outputs:
+      verdict: { type: enum, values: [continue, human] }
+      notes: { type: string }
+  - id: council_opus
+    needs: [synthesize]
+    role:
+      name: advisor
+      agent: { provider: claude, model: claude-opus-5-5 }
+      prompt: "Independently challenge this plan and dependency graph for unnecessary complexity, scope growth and consequential decisions. Plan: {{ inputs.plan }}. Dependencies: {{ inputs.dependency_graph }}. Human decision required: {{ inputs.decision_required }}. Questions: {{ inputs.questions }}. Report verdict continue or human, with reasons."
+    inputs: [plan, dependency_graph, decision_required, questions]
+    outputs:
+      verdict: { type: enum, values: [continue, human] }
+      notes: { type: string }

@@ -1,0 +1,53 @@
+title: Kaneo team review corrections
+description: Coordinator-invoked DeepSeek correction on one existing PR head.
+hidden: true
+isolation: worktree
+permissions: { on_request: deny }
+manager: { mode: none }
+inputs:
+  dispatch_id: { type: string, required: true }
+  approved_base_ref: { type: string, required: true }
+  approved_base_sha: { type: string, required: true }
+  task: { type: string, required: true }
+  pr_url: { type: string, required: true }
+  base_branch: { type: string, required: true }
+  head_branch: { type: string, required: true }
+  head_sha: { type: string, required: true }
+  plan: { type: string, required: true }
+  findings: { type: string, required: true }
+outputs:
+  pr_url: { type: string, value: "{{ steps.correct.outputs.pr_url }}" }
+  previous_head: { type: string, value: "{{ steps.correct.outputs.previous_head }}" }
+  head_sha: { type: string, value: "{{ steps.correct.outputs.head_sha }}" }
+  report: { type: string, value: "{{ steps.correct.outputs.report }}" }
+steps:
+  - id: correct
+    role:
+      name: builder
+      agent: { provider: opencode, model: vlam/deepseek-v41-flash-1017-vast }
+      prompt: |
+        Correct the existing PR {{ inputs.pr_url }} for task {{ inputs.task }}.
+        Verified base {{ inputs.base_branch }}, remote feature branch
+        {{ inputs.head_branch }}, and exact expected head {{ inputs.head_sha }}.
+        Binding plan and human decisions: {{ inputs.plan }}
+        Verified review findings: {{ inputs.findings }}
+
+        Before editing, independently read the PR from GitHub and confirm it is
+        open, belongs to this repository, targets the supplied base, and its
+        remote feature branch and full head SHA exactly match the inputs. Fetch
+        that feature branch and start from the verified head in this isolated
+        worktree. Stop if anything differs or the branch is a default branch.
+        Address the findings within the binding plan and run relevant checks.
+        Recheck the PR head immediately before pushing; if it changed, stop.
+        Push only a fast-forward to the same existing feature branch; never
+        force-push, push a default branch, create another PR, or merge. A rejected
+        push is a stop, not permission to overwrite other work.
+        Return the same PR URL, the previous full head, the new full remote head,
+        and an honest report of changes and checks. New commits invalidate prior
+        reviews and tests; the coordinator verifies all evidence independently.
+    inputs: [task, pr_url, base_branch, head_branch, head_sha, plan, findings]
+    outputs:
+      pr_url: { type: string }
+      previous_head: { type: string }
+      head_sha: { type: string }
+      report: { type: string }
